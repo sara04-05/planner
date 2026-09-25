@@ -1,0 +1,601 @@
+(function(){
+const TODAY=new Date();TODAY.setHours(0,0,0,0);
+const pad=n=>String(n).padStart(2,'0');
+const iso=d=>`${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())}`;
+const parse=s=>{const[y,m,d]=s.split('-').map(Number);return new Date(y,m-1,d)};
+const addDays=(d,n)=>new Date(d.getFullYear(),d.getMonth(),d.getDate()+n);
+const wdi=d=>(d.getDay()+6)%7;
+const weekStart=d=>addDays(d,-wdi(d));
+const dim=(y,m)=>new Date(y,m+1,0).getDate();
+const MON=['January','February','March','April','May','June','July','August','September','October','November','December'];
+const M3=MON.map(m=>m.slice(0,3));
+const WD=['Mon','Tue','Wed','Thu','Fri','Sat','Sun'];
+const WDL=['Monday','Tuesday','Wednesday','Thursday','Friday','Saturday','Sunday'];
+const TI=iso(TODAY);
+const fmtEur=new Intl.NumberFormat('en-IE',{style:'currency',currency:'EUR'});
+const eur=n=>fmtEur.format(n);
+const eur0=n=>'€'+Math.round(n).toLocaleString('en-IE');
+const esc=s=>String(s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const uid=()=>Math.random().toString(36).slice(2,10);
+const dayDiff=(a,b)=>Math.round((a-b)/864e5);
+const short=d=>`${WD[wdi(d)]} ${d.getDate()} ${M3[d.getMonth()]}`;
+const CATS=[['Food','food'],['Coffee','coffee'],['Transport','transport'],['Groceries','groceries'],['School','school'],['Phone','phone'],['Fun','fun'],['Other','other']];
+const cv=c=>`var(--c-${(CATS.find(x=>x[0]===c)||CATS[7])[1]})`;
+const isoWeek=d=>{const t=new Date(Date.UTC(d.getFullYear(),d.getMonth(),d.getDate()));const day=t.getUTCDay()||7;t.setUTCDate(t.getUTCDate()+4-day);const y0=new Date(Date.UTC(t.getUTCFullYear(),0,1));return Math.ceil(((t-y0)/864e5+1)/7)};
+
+/* ---------- talking to the server (api.php) ---------- */
+const HT={uni:['Uni','school'],work:['Work','transport'],study:['Study','food'],personal:['Personal','fun'],health:['Health','groceries'],sleep:['Sleep','other']};
+const CSRF=(document.querySelector('meta[name="csrf-token"]')||{}).content||'';
+const PREFS='sara-planner-prefs';
+let state=null;
+let cursor=new Date(TODAY);
+let blockMsg=null;
+
+/** Only view preferences (tab, filters) live in the browser. All your data lives in the database. */
+const save=()=>{try{localStorage.setItem(PREFS,JSON.stringify({tab:state.tab,taskFilter:state.taskFilter,expPeriod:state.expPeriod}))}catch(e){}};
+function loadPrefs(){try{return JSON.parse(localStorage.getItem(PREFS))||{}}catch(e){return {}}}
+
+async function api(action,data={}){
+  const res=await fetch('api.php?action='+encodeURIComponent(action),{
+    method:'POST',credentials:'same-origin',
+    headers:{'Content-Type':'application/json','X-CSRF-Token':CSRF},
+    body:JSON.stringify(data)
+  });
+  let body={};try{body=await res.json()}catch(e){}
+  if(res.status===401){location.href='login.php';throw new Error('Please log in again.')}
+  if(!res.ok)throw Object.assign(new Error(body.error||'Something went wrong. Try again.'),{status:res.status});
+  return body;
+}
+/** Save in the background. The page has already updated; if saving fails, show why and reload the real data. */
+function sync(action,data){return api(action,data).catch(err=>{toast(err.message);reload()})}
+
+let toastTimer=null;
+function toast(msg){
+  const t=document.getElementById('toast');if(!t)return;
+  t.textContent=msg;t.hidden=false;clearTimeout(toastTimer);
+  toastTimer=setTimeout(()=>{t.hidden=true},4500);
+}
+async function reload(){
+  try{
+    const data=await api('bootstrap');
+    const p=loadPrefs();
+    state={tab:'day',taskFilter:'open',expPeriod:'month',...p,...data,showAll:false};
+    render();
+  }catch(err){
+    view.innerHTML=`<p class="empty">Couldn't load your planner: ${esc(err.message)} <button class="linkbtn" onclick="location.reload()">Try again</button></p>`;
+  }
+}
+
+/* ---------- money maths ---------- */
+const sum=l=>l.reduce((s,e)=>s+e.amount,0);
+function expIn(a,b){const A=iso(a),B=iso(b);return state.exps.filter(e=>e.date>=A&&e.date<=B)}
+function plan(y){
+  const {income,goal}=state.settings, ty=TODAY.getFullYear(), cm=TODAY.getMonth();
+  const target=goal/12; let savedDone=0; const months=[];
+  for(let m=0;m<12;m++){
+    const spent=sum(expIn(new Date(y,m,1),new Date(y,m,dim(y,m))));
+    const status=y<ty||(y===ty&&m<cm)?'past':(y===ty&&m===cm)?'now':'future';
+    const saved=status==='future'?null:income-spent;
+    if(status==='past')savedDone+=saved;
+    months.push({m,spent,saved,status});
+  }
+  const left=y===ty?12-cm:(y>ty?12:0);
+  const need=left?Math.max(0,(goal-savedDone)/left):0;
+  return {y,months,target,savedDone,need,left,income,goal};
+}
+function allowanceFor(y,m){
+  const {income,goal}=state.settings;
+  if(y===TODAY.getFullYear()&&m===TODAY.getMonth())return Math.max(0,income-plan(y).need);
+  return Math.max(0,income-goal/12);
+}
+const dailyAllow=d=>allowanceFor(d.getFullYear(),d.getMonth())/dim(d.getFullYear(),d.getMonth());
+function allowRange(a,b){let t=0;for(let d=new Date(a);d<=b;d=addDays(d,1))t+=dailyAllow(d);return t}
+
+/* ---------- shared pieces ---------- */
+const navBtns=()=>`<button class="btn" data-act="shift" data-n="-1" aria-label="Previous">‹</button><button class="btn" data-act="today">Today</button><button class="btn" data-act="shift" data-n="1" aria-label="Next">›</button>`;
+const hdr=(eyebrow,title,right='')=>`<div class="vh"><div><p class="eyebrow">${eyebrow}</p><h1>${title}</h1></div><div class="nav">${right}</div></div>`;
+const catOpts=()=>CATS.map(c=>`<option>${c[0]}</option>`).join('');
+const expForm=def=>`<form class="addform" data-form="exp" autocomplete="off">
+  <input id="f-desc" name="desc" placeholder="What did you buy?" required aria-label="Description">
+  <select id="f-cat" name="cat" aria-label="Category">${catOpts()}</select>
+  <input id="f-amt" name="amount" type="number" step="0.01" min="0.01" placeholder="€0.00" required inputmode="decimal" aria-label="Amount in euros">
+  <input id="f-date" name="date" type="date" value="${def}" required aria-label="Date">
+  <button class="btn primary">Add</button></form>`;
+function expRows(list,{showDate=true,limit=0}={}){
+  const l=[...list].sort((a,b)=>b.date.localeCompare(a.date));
+  const shown=limit?l.slice(0,limit):l;
+  if(!shown.length)return `<p class="empty">No expenses here yet.</p>`;
+  return shown.map(e=>`<div class="row"><span class="dot" style="background:${cv(e.cat)}"></span><div class="grow"><div class="t">${esc(e.desc)}</div><div class="s">${e.cat}${showDate?' · '+short(parse(e.date)):''}</div></div><span class="amt">${eur(e.amount)}</span><button class="x" data-act="del-exp" data-id="${e.id}" aria-label="Delete ${esc(e.desc)}">×</button></div>`).join('')
+   +(limit&&l.length>limit?`<p class="s" style="padding-top:8px"><button class="linkbtn" data-act="tab" data-tab="money">See all ${l.length} in Expenses →</button></p>`:'');
+}
+function catBars(list){
+  const g={};list.forEach(e=>g[e.cat]=(g[e.cat]||0)+e.amount);
+  const rows=Object.entries(g).sort((a,b)=>b[1]-a[1]);
+  if(!rows.length)return `<p class="empty">Nothing spent in this period.</p>`;
+  const max=rows[0][1];
+  return rows.map(([c,v])=>`<div class="catrow"><span class="lbl"><span class="dot" style="background:${cv(c)}"></span>${c}</span><span class="track"><span style="width:${(v/max*100).toFixed(1)}%;background:${cv(c)}"></span></span><span class="amt">${eur(v)}</span></div>`).join('');
+}
+function barChart(items,limit,{vals=true,limitLabel='limit'}={}){
+  const max=Math.max(limit||0,...items.map(i=>i.v))*1.12||1;
+  const cols=`grid-template-columns:repeat(${items.length},minmax(0,1fr))`;
+  return `<div class="chart"><div class="plot${vals?' show-vals':''}" style="${cols}">
+    ${items.map(i=>`<div class="b ${i.cls||''}" style="height:${Math.max(1.5,i.v/max*100).toFixed(1)}%" title="${i.label}: ${eur(i.v)}">${i.v?`<span>${eur0(i.v)}</span>`:''}</div>`).join('')}
+    ${limit?`<div class="lim" style="bottom:${(limit/max*100).toFixed(1)}%"><em>${limitLabel} ${eur0(limit)}</em></div>`:''}
+  </div><div class="xl" style="${cols}">${items.map(i=>`<span class="${i.today?'today':''}">${i.label}</span>`).join('')}</div></div>`;
+}
+const statusPill=(spent,allow)=>{if(!allow)return '';const r=spent/allow;return r>1?`<span class="pill bad">${eur(spent-allow)} over</span>`:r>.85?`<span class="pill warn">${eur(allow-spent)} left</span>`:`<span class="pill good">${eur(allow-spent)} left</span>`};
+const meterCls=(spent,allow)=>spent>allow?'bad':spent>allow*.85?'warn':'good';
+function taskRow(t){
+  const d=parse(t.due),n=dayDiff(d,TODAY);
+  const due=t.done?`<span class="pill muted">${short(d)}</span>`:n<0?`<span class="pill bad">Overdue</span>`:n===0?`<span class="pill warn">Today</span>`:n===1?`<span class="pill">Tomorrow</span>`:`<span class="pill muted">${short(d)}</span>`;
+  return `<div class="row ${t.done?'done':''}"><input type="checkbox" data-chk="task" data-id="${t.id}" ${t.done?'checked':''} aria-label="Done: ${esc(t.title)}"><span class="prio ${t.priority}" title="${t.priority} priority"></span><div class="grow"><div class="t">${esc(t.title)}</div></div>${t.tag?`<span class="tag">${esc(t.tag)}</span>`:''}${due}<button class="x" data-act="del-task" data-id="${t.id}" aria-label="Delete ${esc(t.title)}">×</button></div>`;
+}
+function subjColor(title){
+  const t=title.toLowerCase(),s=state.subjects.find(x=>t.includes(x.name.toLowerCase()));
+  return s?s.c:'food';
+}
+function studyBlocks(di){
+  const out=[];let cur=null;
+  for(let h=0;h<24;h++){
+    const e=resolveHour(di,h),txt=e&&e.text?e.text.trim():'';
+    if(e&&e.type==='study'&&txt){
+      if(cur&&cur.title===txt&&cur.end===h)cur.end=h+1;
+      else{cur={date:di,start:h,end:h+1,title:txt,rep:e.rep};out.push(cur)}
+    }else cur=null;
+  }
+  out.forEach(b=>{b.key=`${di}|${b.start}|${b.title}`;b.done=!!state.blockDone[b.key]});
+  return out;
+}
+function blockRows(list){
+  if(!list.length)return `<p class="empty">No study blocks yet. Mark an hour as Study in Hour by hour, or add a block below.</p>`;
+  return list.map(b=>`<div class="row ${b.done?'done':''}"><span class="time">${pad(b.start)}–${pad(b.end)}</span><span class="bar-mark" style="background:var(--c-${subjColor(b.title)})"></span><div class="grow"><div class="t">${esc(b.title)}</div><div class="s">${b.end-b.start}h${b.rep?` · ↻ every ${WDL[wdi(parse(b.date))]}`:''}</div></div><input type="checkbox" data-chk="block" data-key="${esc(b.key)}" ${b.done?'checked':''} aria-label="Done: ${esc(b.title)}"><button class="x" data-act="del-block" data-date="${b.date}" data-start="${b.start}" data-end="${b.end}" data-confirm aria-label="Delete ${esc(b.title)}">×</button></div>`).join('');
+}
+function freeRanges(di){
+  const r=[];let st=null;const from=di===TI?new Date().getHours():0;
+  for(let h=from;h<=24;h++){
+    const e=h<24?resolveHour(di,h):null,free=h<24&&!(e&&e.text&&e.text.trim());
+    if(free&&st===null)st=h;
+    if(!free&&st!==null){r.push([st,h]);st=null}
+  }
+  return r;
+}
+function freeChips(di){
+  const r=freeRanges(di);
+  return `<span>Free ${di===TI?'today':'on '+short(parse(di))}:</span>`+(r.length?r.map(([a,z])=>`<button type="button" data-act="pick-free" data-from="${a}" data-to="${Math.min(z,a+2)}" title="Use ${pad(a)}:00–${pad(Math.min(z,a+2))}:00">${pad(a)}–${pad(z)}</button>`).join(''):'<span>no free hours left</span>');
+}
+function blockForm(di,showDate){
+  const r=freeRanges(di),a=r.length?r[0][0]:9,z=r.length?Math.min(r[0][1],a+1):10;
+  const hs=(from,to,sel,lbl)=>{let o='';for(let h=from;h<=to;h++)o+=`<option value="${h}" ${h===sel?'selected':''}>${pad(h)}:00</option>`;return o};
+  const msg=blockMsg?`<p class="formmsg ${blockMsg.ok?'ok':'err'}" role="status">${blockMsg.html}</p>`:'';
+  return `<form class="blockform" data-form="block" autocomplete="off">
+    <input id="bk-title" name="title" placeholder="Add extra study time, e.g. Calculus: series practice" required aria-label="What will you study?">
+    ${showDate?`<input id="bk-date" name="date" type="date" value="${di}" required aria-label="Date">`:`<input type="hidden" name="date" value="${di}">`}
+    <select id="bk-from" name="from" aria-label="Start time">${hs(0,23,a,'from')}</select><span class="bk-to">to</span>
+    <select id="bk-to" name="to" aria-label="End time">${hs(1,24,z,'to')}</select>
+    <button class="btn primary">Add block</button></form>${msg}
+    <div class="freeh" id="freeh">${freeChips(di)}</div>`;
+}
+
+/* ---------- hour by hour ---------- */
+function resolveHour(di,h){
+  const day=state.hours[di]||{},wk=state.weekly[wdi(parse(di))]||{};
+  if(day[h])return {...day[h],rep:false};
+  if(wk[h])return {...wk[h],rep:true};
+  return null;
+}
+function setHour(di,h,patch){
+  const day=state.hours[di]||(state.hours[di]={}),wd=wdi(parse(di)),wk=state.weekly[wd]||(state.weekly[wd]={});
+  const src=day[h]?day:wk[h]?wk:day;
+  const next={...(src[h]||{text:'',type:'personal'}),...patch};
+  if('text' in patch&&!next.text.trim())delete src[h];else src[h]=next;
+}
+function toggleRepeat(di,h){
+  const day=state.hours[di]||(state.hours[di]={}),wd=wdi(parse(di)),wk=state.weekly[wd]||(state.weekly[wd]={});
+  if(day[h]){wk[h]=day[h];delete day[h]}else if(wk[h]){day[h]=wk[h];delete wk[h]}
+}
+function hourRow(di,h){
+  const e=resolveHour(di,h),ty=e&&HT[e.type]?e.type:'';
+  const now=di===TI&&new Date().getHours()===h,hh=pad(h)+':00',dn=WDL[wdi(parse(di))];
+  return `<div class="hr ${now?'now':''}" id="hr-${h}" style="${ty?`--hc:var(--c-${HT[ty][1]})`:''}"><span class="hl">${hh}</span>
+    <select data-hf="type" data-date="${di}" data-h="${h}" aria-label="Type for ${hh}">${ty?'':'<option value="" selected>Type</option>'}${Object.entries(HT).map(([k,v])=>`<option value="${k}" ${k===ty?'selected':''}>${v[0]}</option>`).join('')}</select>
+    <input data-hf="text" data-date="${di}" data-h="${h}" value="${e?esc(e.text):''}" placeholder="${now?'Now':'Free'}" aria-label="Plan for ${hh}">
+    <button class="rep" data-act="hour-repeat" data-date="${di}" data-h="${h}">↻</button>
+  </div>`;
+}
+/** Update one hour row in place (no re-drawing, so focus and open dropdowns are never lost). */
+function paintHourRow(row){
+  const sel=row.querySelector('[data-hf=type]'),di=sel.dataset.date,h=+sel.dataset.h;
+  const e=resolveHour(di,h),ty=e&&HT[e.type]?e.type:'',dn=WDL[wdi(parse(di))];
+  if(ty)row.style.setProperty('--hc',`var(--c-${HT[ty][1]})`);else row.style.removeProperty('--hc');
+  const ph=sel.querySelector('option[value=""]');
+  if(ty){if(ph)ph.remove();if(sel.value!==ty)sel.value=ty}
+  else if(!ph){sel.insertAdjacentHTML('afterbegin','<option value="">Type</option>');sel.value=''}
+  const rep=row.querySelector('.rep');
+  rep.style.visibility=e?'visible':'hidden';rep.tabIndex=e?0:-1;
+  rep.classList.toggle('on',!!(e&&e.rep));
+  rep.title=e&&e.rep?`Repeats every ${dn}. Click to keep it on this day only.`:`Click to repeat every ${dn}`;
+  rep.setAttribute('aria-label',e&&e.rep?'Stop repeating':'Repeat every '+dn);
+}
+function paintHourRows(){document.querySelectorAll('.hr').forEach(paintHourRow)}
+function hourSum(di){
+  const c={};for(let h=0;h<24;h++){const e=resolveHour(di,h);if(e&&HT[e.type]&&e.type!=='sleep')c[e.type]=(c[e.type]||0)+1}
+  const free=[...Array(24).keys()].filter(h=>!resolveHour(di,h)).length;
+  return Object.keys(HT).filter(k=>c[k]).map(k=>`<span style="--hc:var(--c-${HT[k][1]})"><i></i>${HT[k][0]} ${c[k]}h</span>`).join('')+`<span style="--hc:var(--line)"><i></i>Free ${free}h</span>`;
+}
+function hourSection(d){
+  const di=iso(d),rows=(a,b)=>{let o='';for(let h=a;h<=b;h++)o+=hourRow(di,h);return o};
+  return `<section style="margin-top:34px"><div class="sec-h" style="flex-wrap:wrap"><h2>Hour by hour</h2><div class="hsum" id="hsum">${hourSum(di)}</div></div>
+    <p style="font-size:13px;color:var(--muted);margin-bottom:12px">Write your uni, work and everything else for each hour, and pick a type to colour it. Click ↻ to repeat an hour every ${WDL[wdi(d)]}, so your weekly timetable fills itself in.</p>
+    <div class="hours"><div><p class="hcol-h">Night and morning · 00–11</p>${rows(0,11)}</div><div><p class="hcol-h">Afternoon and evening · 12–23</p>${rows(12,23)}</div></div></section>`;
+}
+
+/* ---------- subjects ---------- */
+const findS=id=>state.subjects.find(s=>s.id===id);
+const findC=(sid,cid)=>{const s=findS(sid);return s?s.chapters.find(c=>c.id===cid):null};
+const chDone=c=>c.topics.length?c.topics.every(t=>t.done):c.done;
+const sItems=s=>s.chapters.flatMap(c=>c.topics.length?c.topics:[c]);
+function subjectsSection(){
+  const all=state.subjects.flatMap(sItems),allDone=all.filter(x=>x.done).length;
+  const cards=state.subjects.map(s=>{
+    const it=sItems(s),dn=it.filter(x=>x.done).length,pct=it.length?dn/it.length*100:0;
+    let exam='<span class="pill muted">No exam date</span>';
+    if(s.exam){const ed=parse(s.exam),n=dayDiff(ed,TODAY);exam=n<0?`<span class="pill muted">Exam was ${short(ed)}</span>`:`<span class="pill ${n<=7?'bad':n<=21?'warn':''}">Exam ${short(ed)} · ${n} day${n===1?'':'s'}</span>`}
+    const chs=s.chapters.map(c=>{const d=chDone(c),tn=c.topics.filter(t=>t.done).length,a=`data-sid="${s.id}" data-cid="${c.id}"`;
+      return `<div class="ch ${d?'done':''}"><div class="ch-h"><input type="checkbox" data-chk="ch" ${a} ${d?'checked':''} aria-label="Learned: ${esc(c.title)}"><span class="grow">${esc(c.title)}</span>${c.topics.length?`<span class="cnt">${tn}/${c.topics.length}</span>`:''}<button class="x sm" data-act="del-ch" ${a} data-confirm aria-label="Delete ${esc(c.title)}">×</button></div>
+      ${c.topics.length?`<ul class="topics">${c.topics.map(t=>`<li class="${t.done?'dn':''}"><input type="checkbox" data-chk="topic" ${a} data-tid="${t.id}" ${t.done?'checked':''} aria-label="Learned: ${esc(t.t)}"><span>${esc(t.t)}</span><button class="x sm" data-act="del-topic" ${a} data-tid="${t.id}" aria-label="Delete ${esc(t.t)}">×</button></li>`).join('')}</ul>`:''}
+      <form class="mini" data-form="topic" ${a} autocomplete="off" style="margin-left:28px"><input id="tp-${c.id}" name="t" placeholder="+ Add something to learn" aria-label="Add something to learn in ${esc(c.title)}"></form></div>`}).join('');
+    return `<div class="subj" style="--sc:var(--c-${s.c})"><div class="subj-h"><div><h3>${esc(s.name)}</h3><div style="margin-top:6px">${exam}</div></div><button class="x" data-act="del-subj" data-id="${s.id}" data-confirm aria-label="Delete ${esc(s.name)}">×</button></div>
+      <div class="meter"><span style="width:${pct.toFixed(1)}%;background:var(--sc)"></span></div>
+      <p style="font-size:12px;color:var(--muted);font-weight:600;margin:5px 0 2px">${dn} of ${it.length} learned · ${s.chapters.length} chapter${s.chapters.length===1?'':'s'}</p>
+      ${chs}
+      <form class="mini" data-form="chapter" data-sid="${s.id}" autocomplete="off" style="margin-top:12px"><input id="ch-${s.id}" name="title" placeholder="+ Add a chapter" aria-label="Add a chapter to ${esc(s.name)}"><button class="btn">Add</button></form></div>`;
+  }).join('');
+  return `<section style="margin-top:36px"><div class="sec-h"><h2>Subjects and chapters</h2><span class="meta">${allDone} of ${all.length} things learned</span></div>
+    <form class="addform subjform" data-form="subject" autocomplete="off"><input id="sb-name" name="name" placeholder="Add a subject, e.g. Linear Algebra" required aria-label="Subject name"><input id="sb-exam" name="exam" type="date" aria-label="Exam date (optional)" title="Exam date (optional)"><button class="btn primary">Add subject</button></form>
+    ${state.subjects.length?`<div class="subjects">${cards}</div>`:'<p class="empty">No subjects yet. Add your first one above.</p>'}</section>`;
+}
+
+function revisedPanel(){
+  const tot=state.study.reduce((s,r)=>s+r.h,0),rev=state.study.reduce((s,r)=>s+(r.rev?r.h:0),0);
+  return `<div class="sec-h" style="margin-bottom:8px"><span style="font-weight:700;font-size:14px">Revised so far</span><span class="meta num">${rev}h of ${tot}h</span></div><div class="meter"><span style="width:${tot?(rev/tot*100).toFixed(1):0}%"></span></div>`;
+}
+
+/* ---------- views ---------- */
+const V={};
+V.day=()=>{
+  const d=cursor,di=iso(d),list=expIn(d,d),spent=sum(list),allow=dailyAllow(d);
+  const blocks=studyBlocks(di);
+  let tasks=state.tasks.filter(t=>t.due===di);
+  if(di===TI)tasks=state.tasks.filter(t=>t.due===di||(!t.done&&t.due<TI));
+  tasks.sort((a,b)=>a.done-b.done||a.due.localeCompare(b.due));
+  const rel=dayDiff(d,TODAY);
+  const isNew=!state.exps.length&&!state.tasks.length&&!Object.keys(state.hours).length&&!state.weekly.some(w=>Object.keys(w).length);
+  const welcome=isNew?`<div class="onboard"><span><b>Welcome, ${esc(state.user.name)}!</b> Start by adding your uni and work hours in Hour by hour below, and click ↻ to repeat them every week. Then set your income and savings goal in the Year tab.</span><button class="btn" data-act="tab" data-tab="year">Set up money</button></div>`:'';
+  return welcome+hdr(WDL[wdi(d)]+(rel===0?' · Today':rel===1?' · Tomorrow':rel===-1?' · Yesterday':''),`${d.getDate()} ${MON[d.getMonth()]} ${d.getFullYear()}`,navBtns())+
+  `<div class="cols"><div class="stack">
+    <section><div class="sec-h"><h2>Study blocks</h2><span class="meta">${blocks.filter(b=>b.done).length} of ${blocks.length} done</span></div><div id="blocklist">${blockRows(blocks)}</div>${blockForm(di,false)}</section>
+    <section><div class="sec-h"><h2>Tasks</h2><button class="linkbtn" data-act="tab" data-tab="tasks">All tasks →</button></div>${tasks.length?tasks.map(taskRow).join(''):'<p class="empty">Nothing due on this day.</p>'}</section>
+  </div>
+  <section class="panel"><div class="sec-h"><h2>Money today</h2>${statusPill(spent,allow)}</div>
+    <div class="meter ${meterCls(spent,allow)}" style="margin:6px 0 8px"><span style="width:${Math.min(100,spent/(allow||1)*100).toFixed(1)}%"></span></div>
+    <p class="s" style="font-size:13px;color:var(--muted);margin-bottom:16px">${state.settings.income?`Spent <b class="num" style="color:var(--ink)">${eur(spent)}</b> of your daily allowance of ${eur(allow)}.`:`Spent <b class="num" style="color:var(--ink)">${eur(spent)}</b> today. Set your income in the Year tab to get a daily allowance.`}</p>
+    ${expForm(di)}${expRows(list,{showDate:false})}
+    <div class="total-line"><span>Total for the day</span><span class="amt">${eur(spent)}</span></div>
+  </section></div>`+hourSection(d);
+};
+V.week=()=>{
+  const ws=weekStart(cursor),we=addDays(ws,6),days=[...Array(7)].map((_,i)=>addDays(ws,i));
+  const list=expIn(ws,we),spent=sum(list),allow=allowRange(ws,we);
+  const def=(TODAY>=ws&&TODAY<=we)?TI:iso(ws);
+  const cards=days.map(d=>{
+    const di=iso(d),ts=state.tasks.filter(t=>t.due===di),bs=studyBlocks(di),sp=sum(state.exps.filter(e=>e.date===di));
+    const items=[...bs.map(b=>`<li class="${b.done?'dn':''}"><span class="dot" style="background:var(--c-${subjColor(b.title)})"></span>${pad(b.start)}–${pad(b.end)} ${esc(b.title)}</li>`),...ts.map(t=>`<li class="${t.done?'dn':''}"><span class="prio ${t.priority}" style="width:8px;height:8px;margin-top:5px"></span>${esc(t.title)}</li>`)];
+    return `<div class="wd ${di===TI?'is-today':''}"><button class="wd-h" data-act="goto" data-date="${di}"><span>${WD[wdi(d)]}</span><b>${d.getDate()}</b></button><ul>${items.slice(0,4).join('')||'<li style="color:var(--muted)">Free</li>'}${items.length>4?`<li style="color:var(--muted)">+${items.length-4} more</li>`:''}</ul><div class="foot"><span>Spent</span><span class="amt">${eur(sp)}</span></div></div>`;
+  }).join('');
+  const daily=allow/7;
+  const bars=days.map(d=>{const v=sum(state.exps.filter(e=>e.date===iso(d)));return {label:WD[wdi(d)],v,today:iso(d)===TI,cls:d>TODAY?'fut':v>dailyAllow(d)?'over':''}});
+  return hdr(`Week ${isoWeek(ws)} · ${ws.getFullYear()}`,`${ws.getDate()} ${M3[ws.getMonth()]} – ${we.getDate()} ${M3[we.getMonth()]}`,navBtns())+
+  `<div class="wk-scroll"><div class="weekgrid">${cards}</div></div>
+  <div class="cols"><section class="panel"><div class="sec-h"><h2>Spending this week</h2>${statusPill(spent,allow)}</div>
+    ${barChart(bars,daily,{limitLabel:'daily'})}
+    <div class="legend"><span><i style="background:var(--accent)"></i>Within allowance</span><span><i style="background:var(--bad)"></i>Over daily allowance</span></div>
+    <div style="margin-top:18px">${catBars(list)}</div>
+    <div class="total-line"><span>Week total</span><span class="amt">${eur(spent)}</span></div>
+    <p class="s" style="font-size:12px;color:var(--muted);margin-top:4px">Weekly allowance ${eur(allow)}</p>
+  </section>
+  <section><div class="sec-h"><h2>Add an expense</h2></div>${expForm(def)}${expRows(list,{limit:8})}</section></div>`;
+};
+V.month=()=>{
+  const y=cursor.getFullYear(),m=cursor.getMonth(),first=new Date(y,m,1),last=new Date(y,m,dim(y,m));
+  const list=expIn(first,last),spent=sum(list),allow=allowanceFor(y,m),{income,goal}=state.settings;
+  const isNow=y===TODAY.getFullYear()&&m===TODAY.getMonth(),daily=allow/dim(y,m);
+  let cells=WD.map(w=>`<div class="wh">${w}</div>`).join('')+'<div class="cell blank"></div>'.repeat(wdi(first));
+  for(let i=1;i<=dim(y,m);i++){
+    const d=new Date(y,m,i),di=iso(d),sp=sum(state.exps.filter(e=>e.date===di)),ts=state.tasks.filter(t=>t.due===di&&!t.done);
+    cells+=`<button class="cell ${di===TI?'is-today':''} ${d>TODAY?'fut':''}" data-act="goto" data-date="${di}" aria-label="${short(d)}"><span class="n">${i}</span><span class="tdots">${ts.map(t=>`<i class="${t.priority==='high'?'hi':''}"></i>`).join('')}</span>${sp?`<span class="sp ${sp>daily?'over':''}">${eur0(sp)}</span>`:''}</button>`;
+  }
+  const saved=income-spent;
+  return hdr(isNow?'This month':'Month',`${MON[m]} ${y}`,navBtns())+
+  `<div class="cols wide-l"><section><div class="cal">${cells}</div>
+    <div class="legend"><span><i style="background:var(--c-transport);border-radius:50%"></i>Task due</span><span><i style="background:var(--bad);border-radius:50%"></i>High-priority task</span><span style="color:var(--bad);font-weight:700">€ red</span><span>= over daily allowance (${eur(daily)})</span></div>
+  </section>
+  <div class="stack"><section class="panel"><div class="sec-h"><h2>Money this month</h2>${isNow?statusPill(spent,allow):spent>allow?'<span class="pill bad">Over budget</span>':'<span class="pill good">Within budget</span>'}</div>
+    <div class="meter ${meterCls(spent,allow)}" style="margin:6px 0 16px"><span style="width:${Math.min(100,spent/(allow||1)*100).toFixed(1)}%"></span></div>
+    <dl class="kv"><dt>Income</dt><dd>${eur(income)}</dd><dt>Spent${isNow?' so far':''}</dt><dd>${eur(spent)}</dd><dt>Spending allowance</dt><dd>${eur(allow)}</dd><dt>Savings target</dt><dd>${eur(income-allow)}</dd><dt>${isNow?'Left to save':'Saved'}</dt><dd style="color:${saved>=income-allow?'var(--good)':'var(--bad)'}">${eur(saved)}</dd></dl>
+    <div style="margin-top:16px">${catBars(list)}</div>
+    <div class="total-line"><span>Month total</span><span class="amt">${eur(spent)}</span></div>
+  </section>
+  <section><div class="sec-h"><h2>Add an expense</h2></div>${expForm(isNow?TI:iso(first))}${expRows(list,{limit:6})}</section></div></div>`;
+};
+V.year=()=>{
+  const y=cursor.getFullYear(),p=plan(y),{income,goal}=state.settings;
+  const allowM=Math.max(0,income-goal/12);
+  const bars=p.months.map(o=>({label:M3[o.m].slice(0,1)+M3[o.m].slice(1,3),v:o.spent,today:o.status==='now',cls:o.status==='future'?'fut':o.status==='now'?'now':o.spent>allowM?'over':''}));
+  const done=p.months.filter(o=>o.status!=='future');
+  const totSpent=sum(done.map(o=>({amount:o.spent}))),totInc=income*done.length,totSaved=totInc-totSpent;
+  const rows=p.months.map(o=>{
+    let st;
+    if(o.status==='future')st='<span class="pill muted">Upcoming</span>';
+    else if(o.status==='now')st='<span class="pill">In progress</span>';
+    else st=o.saved>=p.target?'<span class="pill good">On target</span>':`<span class="pill bad">Short ${eur(p.target-o.saved)}</span>`;
+    return `<tr class="${o.status==='now'?'now':o.status==='future'?'fut':''}"><td>${MON[o.m]}</td><td class="r">${o.status==='future'?'–':eur(o.spent)}</td><td class="r">${o.status==='future'?'–':eur(income)}</td><td class="r">${o.saved===null?'–':eur(o.saved)}</td><td class="r">${eur(p.target)}</td><td>${st}</td></tr>`;
+  }).join('');
+  const pct=Math.max(0,Math.min(100,p.savedDone/goal*100));
+  const yList=expIn(new Date(y,0,1),new Date(y,11,31));
+  return hdr('Year overview',`${y}`,navBtns())+
+  `<div class="cols"><section class="panel"><div class="sec-h"><h2>Savings plan</h2><span class="meta">${p.left} month${p.left===1?'':'s'} left</span></div>
+    <div class="inputs"><label for="s-income">Monthly income<input class="field num" id="s-income" type="number" min="0" step="10" value="${income}" data-set="income"></label><label for="s-goal">Savings goal for ${y}<input class="field num" id="s-goal" type="number" min="0" step="50" value="${goal}" data-set="goal"></label></div>
+    <p class="eyebrow">You need to save</p>
+    <p class="save-big">${eur(p.need)}<span style="font-size:18px;color:var(--muted);font-weight:600"> / month</span></p>
+    <p style="font-size:14px;color:var(--muted);margin:10px 0 16px">to reach ${eur0(goal)} by December. That leaves <b style="color:var(--ink)">${eur(Math.max(0,income-p.need))}</b> a month for spending. The even split would be ${eur(p.target)} a month.</p>
+    <div class="meter"><span style="width:${pct.toFixed(1)}%"></span></div>
+    <p style="font-size:13px;margin-top:6px"><b class="num">${eur(p.savedDone)}</b> <span style="color:var(--muted)">saved in finished months · ${pct.toFixed(0)}% of goal</span></p>
+  </section>
+  <section class="panel"><div class="sec-h"><h2>Spending by month</h2><span class="meta">from your daily expenses</span></div>
+    ${barChart(bars,allowM,{vals:false,limitLabel:'budget'})}
+    <div class="legend"><span><i style="background:var(--accent)"></i>Within budget</span><span><i style="background:var(--bad)"></i>Over budget</span><span><i style="background:var(--line)"></i>Upcoming</span></div>
+  </section></div>
+  <section style="margin-top:28px"><div class="sec-h"><h2>Year expenses</h2><span class="meta">Adds up automatically from every daily expense</span></div>
+    <div class="tbl-wrap"><table class="tbl"><thead><tr><th>Month</th><th class="r">Spent</th><th class="r">Income</th><th class="r">Saved</th><th class="r">Target</th><th>Status</th></tr></thead><tbody>${rows}</tbody>
+    <tfoot><tr><td>Total ${y}</td><td class="r">${eur(totSpent)}</td><td class="r">${eur(totInc)}</td><td class="r">${eur(totSaved)}</td><td class="r">${eur(goal)}</td><td></td></tr></tfoot></table></div>
+  </section>
+  <section style="margin-top:28px;max-width:640px"><div class="sec-h"><h2>Where the money went</h2><span class="meta">${yList.length} expenses</span></div>${catBars(yList)}</section>
+  ${income===0?'<div class="onboard" style="margin-top:24px"><span>Enter your monthly income and savings goal above. The planner then works out how much to save each month and your daily spending allowance.</span></div>':''}`;
+};
+V.study=()=>{
+  const ws=weekStart(TODAY),we=addDays(ws,6),todayI=wdi(TODAY);
+  const pc=['var(--bad)','var(--warn)','var(--c-transport)'];
+  const rows=state.study.map((r,i)=>`<tr class="${i===todayI?'is-today':''}"><td class="d">${WD[i].toUpperCase()}</td><td><input class="cellin" data-study="subject" data-i="${i}" value="${esc(r.subject)}" placeholder="Subject" maxlength="80" aria-label="Subject for ${WDL[i]}"></td><td><input class="cellin" data-study="topic" data-i="${i}" value="${esc(r.topic)}" placeholder="Topic" maxlength="120" aria-label="Topic for ${WDL[i]}"></td><td><input class="cellin num" type="number" min="0" max="24" step="0.5" data-study="hours" data-i="${i}" value="${r.h||''}" placeholder="0" aria-label="Hours for ${WDL[i]}"></td><td><input type="checkbox" data-chk="rev" data-i="${i}" ${r.rev?'checked':''} aria-label="Revised on ${WDL[i]}"></td><td><button class="pdots" data-act="prio" data-i="${i}" aria-label="Change priority">${pc.map((c,k)=>`<i style="--pc:${c}" class="${r.p===k?'on':''}"></i>`).join('')}</button></td></tr>`).join('');
+  const blocks=studyBlocks(TI);
+  const items=[...state.upcoming.map(u=>({...u,kind:'own'})),...state.subjects.filter(x=>x.exam).map(x=>({t:`${x.name} exam`,date:x.exam,kind:'exam'}))]
+    .filter(u=>u.kind==='own'||dayDiff(parse(u.date),TODAY)>=0).sort((a,b)=>a.date.localeCompare(b.date));
+  const soon=items.length?items.map(u=>{const n=dayDiff(parse(u.date),TODAY);
+    const pill=n<0?'<span class="pill muted">Passed</span>':n===0?'<span class="pill bad">Today</span>':`<span class="pill ${n<=3?'bad':''}" style="${n>3?'background:var(--paper);color:var(--ink)':''}">${n} day${n===1?'':'s'}</span>`;
+    return `<div class="row" style="border-color:color-mix(in srgb,var(--c-fun) 25%,transparent)"><div class="grow t">${esc(u.t)}${u.kind==='exam'?' <span class="tag">from Subjects</span>':''}</div><span class="s">${short(parse(u.date))}</span>${pill}${u.kind==='own'?`<button class="x" data-act="del-upcoming" data-id="${u.id}" data-confirm aria-label="Delete ${esc(u.t)}">×</button>`:''}</div>`}).join(''):'<p class="empty">No deadlines yet. Add one below, or give a subject an exam date.</p>';
+  return hdr(`Week ${isoWeek(ws)} · ${ws.getDate()} ${M3[ws.getMonth()]} – ${we.getDate()} ${M3[we.getMonth()]}`,'Study planner')+
+  `<div class="cols"><div class="stack"><div class="stbl tbl-wrap"><table><thead><tr><th style="background:var(--t-year)">Day</th><th style="background:var(--t-day)">Subject</th><th style="background:var(--t-month)">Topic</th><th style="background:var(--t-week)">Time</th><th style="background:var(--t-year)">Revised</th><th style="background:var(--t-study)">Priority</th></tr></thead><tbody>${rows}</tbody></table></div>
+    <div class="panel" id="revpanel">${revisedPanel()}</div>
+  </div>
+  <div class="stack"><section><div class="sec-h"><h2>Today's study blocks</h2><span class="meta">${short(TODAY)}</span></div><div id="blocklist">${blockRows(blocks)}</div>${blockForm(TI,true)}</section>
+    <section class="soon"><h2 style="margin-bottom:6px">Coming up</h2>${soon}
+      <form class="mini" data-form="upcoming" autocomplete="off" style="margin-top:10px"><input id="up-title" name="t" placeholder="+ Add a deadline" required aria-label="Deadline"><input name="date" type="date" value="${iso(addDays(TODAY,7))}" required aria-label="Deadline date"><button class="btn">Add</button></form></section>
+    <div class="sticky"><p class="eyebrow">Note to self</p><textarea id="note" rows="2" data-note aria-label="Note to self">${esc(state.note)}</textarea></div>
+  </div></div>`+subjectsSection();
+};
+V.tasks=()=>{
+  const ws=weekStart(TODAY),we=iso(addDays(ws,6));
+  const F={open:t=>!t.done,today:t=>!t.done&&t.due===TI,week:t=>!t.done&&t.due>=iso(ws)&&t.due<=we,overdue:t=>!t.done&&t.due<TI,done:t=>t.done,all:()=>true};
+  const L={open:'Open',today:'Today',week:'This week',overdue:'Overdue',done:'Done',all:'All'};
+  const f=state.taskFilter in F?state.taskFilter:'open';
+  const po={high:0,med:1,low:2};
+  const list=state.tasks.filter(F[f]).sort((a,b)=>a.done-b.done||a.due.localeCompare(b.due)||po[a.priority]-po[b.priority]);
+  const c=k=>state.tasks.filter(F[k]).length;
+  return hdr(`${c('open')} open · ${c('today')} due today · ${c('overdue')} overdue`,'Tasks')+
+  `<form class="addform task" data-form="task" autocomplete="off">
+    <input id="t-title" name="title" placeholder="Add a task…" required aria-label="Task">
+    <input id="t-due" name="due" type="date" value="${TI}" required aria-label="Due date">
+    <select id="t-prio" name="priority" aria-label="Priority"><option value="high">High</option><option value="med" selected>Medium</option><option value="low">Low</option></select>
+    <input id="t-tag" name="tag" placeholder="Tag" aria-label="Tag">
+    <button class="btn primary">Add task</button></form>
+  <div class="filters">${Object.keys(L).map(k=>`<button class="fbtn" data-act="filter" data-f="${k}" aria-pressed="${k===f}">${L[k]}<b>${c(k)}</b></button>`).join('')}</div>
+  <section>${list.length?list.map(taskRow).join(''):'<p class="empty">No tasks in this view.</p>'}</section>
+  <div class="legend" style="margin-top:16px"><span><i style="background:var(--bad);border-radius:50%"></i>High</span><span><i style="background:var(--warn);border-radius:50%"></i>Medium</span><span><i style="background:var(--c-transport);border-radius:50%"></i>Low priority</span></div>`;
+};
+V.money=()=>{
+  const p=state.expPeriod,c=cursor;let a,b,title,eyebrow;
+  if(p==='day'){a=b=c;title=`${c.getDate()} ${MON[c.getMonth()]} ${c.getFullYear()}`;eyebrow=WDL[wdi(c)]}
+  else if(p==='week'){a=weekStart(c);b=addDays(a,6);title=`${a.getDate()} ${M3[a.getMonth()]} – ${b.getDate()} ${M3[b.getMonth()]}`;eyebrow=`Week ${isoWeek(a)}`}
+  else if(p==='month'){a=new Date(c.getFullYear(),c.getMonth(),1);b=new Date(c.getFullYear(),c.getMonth(),dim(c.getFullYear(),c.getMonth()));title=`${MON[c.getMonth()]} ${c.getFullYear()}`;eyebrow='Month'}
+  else{a=new Date(c.getFullYear(),0,1);b=new Date(c.getFullYear(),11,31);title=`${c.getFullYear()}`;eyebrow='Whole year'}
+  const list=expIn(a,b),spent=sum(list);
+  const endElapsed=b<TODAY?b:TODAY,days=a>TODAY?0:dayDiff(endElapsed,a)+1;
+  const allow=allowRange(a,b);
+  const seg=`<div class="seg" role="group" aria-label="Period">${['day','week','month','year'].map(k=>`<button data-act="period" data-p="${k}" aria-pressed="${k===p}">${k[0].toUpperCase()+k.slice(1)}</button>`).join('')}</div>`;
+  // ledger grouped by date
+  const byDate={};list.forEach(e=>(byDate[e.date]=byDate[e.date]||[]).push(e));
+  const dates=Object.keys(byDate).sort().reverse();
+  const lim=state.showAll?dates.length:14;
+  const ledger=dates.length?dates.slice(0,lim).map(d=>`<div class="dgroup"><span>${short(parse(d))}</span><span class="num">${eur(sum(byDate[d]))}</span></div>${expRows(byDate[d],{showDate:false})}`).join('')+(dates.length>lim?`<p style="padding-top:12px"><button class="linkbtn" data-act="showall">Show all ${dates.length} days</button></p>`:''):'<p class="empty">No expenses in this period.</p>';
+  let summary='';
+  if(p==='year'){
+    const y=c.getFullYear();
+    summary=`<section class="panel"><div class="sec-h"><h2>Monthly totals</h2><span class="meta">auto-summed</span></div>${MON.map((mn,m)=>{const v=sum(expIn(new Date(y,m,1),new Date(y,m,dim(y,m))));return `<div class="row" style="padding:7px 0"><span class="grow">${mn}</span><span class="amt" style="${v?'':'color:var(--muted)'}">${eur(v)}</span></div>`}).join('')}<div class="total-line"><span>Total ${y}</span><span class="amt">${eur(spent)}</span></div></section>`;
+  }
+  const def=(TODAY>=a&&TODAY<=b)?TI:iso(a);
+  return hdr(eyebrow,title,seg+navBtns())+
+  `<div class="tiles"><div class="tile"><p class="l">Total spent</p><p class="v">${eur(spent)}</p><p class="s">${list.length} expense${list.length===1?'':'s'}</p></div>
+   <div class="tile"><p class="l">Per day</p><p class="v">${eur(days?spent/days:0)}</p><p class="s">average over ${days} day${days===1?'':'s'}</p></div>
+   <div class="tile"><p class="l">Allowance</p><p class="v">${eur(allow)}</p><p class="s">for this ${p}</p></div>
+   <div class="tile"><p class="l">${spent>allow?'Over by':'Left'}</p><p class="v" style="color:${spent>allow?'var(--bad)':'var(--good)'}">${eur(Math.abs(allow-spent))}</p><p class="s">${allow?Math.round(spent/allow*100):0}% of allowance used</p></div></div>
+  <div class="cols"><section><div class="sec-h"><h2>Add an expense</h2></div>${expForm(def)}${ledger}</section>
+  <div class="stack"><section class="panel"><div class="sec-h"><h2>By category</h2></div>${catBars(list)}<div class="total-line"><span>Total</span><span class="amt">${eur(spent)}</span></div></section>${summary}</div></div>`;
+};
+
+/* ---------- render + events ---------- */
+const view=document.getElementById('view');
+function render(focusId){
+  if(!state)return;
+  document.querySelectorAll('.tab').forEach(t=>t.setAttribute('aria-selected',t.dataset.tab===state.tab));
+  view.innerHTML=V[state.tab]();
+  paintHourRows();
+  blockMsg=null;
+  save();
+  if(focusId){const el=document.getElementById(focusId);if(el)el.focus()}
+}
+function shift(n){
+  const t=state.tab==='money'?state.expPeriod:state.tab,c=cursor;
+  if(t==='day')cursor=addDays(c,n);
+  else if(t==='week')cursor=addDays(c,7*n);
+  else if(t==='month')cursor=new Date(c.getFullYear(),c.getMonth()+n,1);
+  else if(t==='year')cursor=new Date(c.getFullYear()+n,c.getMonth(),1);
+  state.showAll=false;
+}
+document.addEventListener('click',e=>{
+  const b=e.target.closest('[data-act]');if(!b||!state&&b.dataset.act!=='theme')return;
+  const a=b.dataset.act;
+  if(b.hasAttribute('data-confirm')&&!b.dataset.armed){b.dataset.armed='1';b.textContent='Delete?';b.style.fontSize='12px';b.style.fontWeight='700';return}
+  switch(a){
+    case 'del-subj':state.subjects=state.subjects.filter(s=>s.id!==b.dataset.id);sync('subject.delete',{id:b.dataset.id});break;
+    case 'del-ch':{const s=findS(b.dataset.sid);if(s)s.chapters=s.chapters.filter(c=>c.id!==b.dataset.cid);sync('chapter.delete',{id:b.dataset.cid});break}
+    case 'del-topic':{const c=findC(b.dataset.sid,b.dataset.cid);if(c)c.topics=c.topics.filter(t=>t.id!==b.dataset.tid);sync('topic.delete',{id:b.dataset.tid});break}
+    case 'del-upcoming':state.upcoming=state.upcoming.filter(u=>u.id!==b.dataset.id);sync('upcoming.delete',{id:b.dataset.id});break;
+    case 'pick-free':{const f=document.querySelector('form[data-form=block]');if(f){f.elements.from.value=b.dataset.from;f.elements.to.value=b.dataset.to;f.elements.title.focus()}return}
+    case 'del-block':{
+      const di=b.dataset.date,wd=wdi(parse(di)),wk=state.weekly[wd]||(state.weekly[wd]={}),day=state.hours[di]||{};
+      for(let h=+b.dataset.start;h<+b.dataset.end;h++){if(day[h])delete day[h];else delete wk[h]}
+      sync('hours.clear',{date:di,start:+b.dataset.start,end:+b.dataset.end});break}
+    case 'hour-repeat':toggleRepeat(b.dataset.date,+b.dataset.h);sync('hour.repeat',{date:b.dataset.date,hour:+b.dataset.h});break;
+    case 'tab':state.tab=b.dataset.tab;state.showAll=false;window.scrollTo({top:0});break;
+    case 'shift':shift(+b.dataset.n);break;
+    case 'today':cursor=new Date(TODAY);break;
+    case 'goto':cursor=parse(b.dataset.date);state.tab='day';break;
+    case 'del-exp':state.exps=state.exps.filter(x=>x.id!==b.dataset.id);sync('expense.delete',{id:b.dataset.id});break;
+    case 'del-task':state.tasks=state.tasks.filter(x=>x.id!==b.dataset.id);sync('task.delete',{id:b.dataset.id});break;
+    case 'prio':{const i=+b.dataset.i,r=state.study[i];r.p=(r.p+1)%3;sync('study.save',{weekday:i,priority:r.p});break}
+    case 'period':state.expPeriod=b.dataset.p;state.showAll=false;break;
+    case 'filter':state.taskFilter=b.dataset.f;break;
+    case 'showall':state.showAll=true;break;
+    case 'theme':toggleTheme();return;
+    default:return;
+  }
+  render();
+});
+document.addEventListener('change',e=>{
+  if(!state)return;
+  const t=e.target;
+  if(t.id==='bk-date'&&t.value){const fh=document.getElementById('freeh');if(fh)fh.innerHTML=freeChips(t.value);return}
+  if(t.dataset.hf){
+    const di=t.dataset.date,h=+t.dataset.h,field=t.dataset.hf;
+    setHour(di,h,{[field]:t.value});
+    sync('hour.save',{date:di,hour:h,[field]:t.value});
+    const row=t.closest('.hr');if(row)paintHourRow(row);
+    const sm=document.getElementById('hsum');if(sm)sm.innerHTML=hourSum(di);
+    const bl=document.getElementById('blocklist');if(bl)bl.innerHTML=blockRows(studyBlocks(di));
+    const fh=document.getElementById('freeh');if(fh)fh.innerHTML=freeChips(di);
+    return;
+  }
+  if(t.dataset.study){
+    // Weekly study table: subject / topic / hours. Saved without re-drawing so Tab keeps working.
+    const i=+t.dataset.i,f=t.dataset.study,r=state.study[i];
+    if(f==='hours'){const v=Math.max(0,Math.min(24,parseFloat(t.value)||0));r.h=v;t.value=v;sync('study.save',{weekday:i,hours:v})}
+    else{r[f]=t.value.trim();sync('study.save',{weekday:i,[f]:r[f]})}
+    const rp=document.getElementById('revpanel');if(rp)rp.innerHTML=revisedPanel();
+    return;
+  }
+  if(t.dataset.chk){
+    const k=t.dataset.chk,on=t.checked;
+    if(k==='task'){const x=state.tasks.find(i=>i.id===t.dataset.id);if(x)x.done=on;sync('task.toggle',{id:t.dataset.id,done:on})}
+    if(k==='block'){if(on)state.blockDone[t.dataset.key]=true;else delete state.blockDone[t.dataset.key];sync('block.done',{key:t.dataset.key,done:on})}
+    if(k==='rev'){state.study[+t.dataset.i].rev=on;sync('study.save',{weekday:+t.dataset.i,revised:on})}
+    if(k==='ch'){const c=findC(t.dataset.sid,t.dataset.cid);if(c){c.done=on;c.topics.forEach(x=>x.done=on)}sync('chapter.toggle',{id:t.dataset.cid,done:on})}
+    if(k==='topic'){const c=findC(t.dataset.sid,t.dataset.cid);const x=c&&c.topics.find(i=>i.id===t.dataset.tid);if(x)x.done=on;sync('topic.toggle',{id:t.dataset.tid,done:on})}
+    render();
+  } else if(t.dataset.set){
+    const v=parseFloat(t.value);
+    if(!isNaN(v)&&v>=0){state.settings[t.dataset.set]=v;sync('settings.save',{[t.dataset.set]:v});render()}
+  }
+});
+let noteTimer=null;
+document.addEventListener('input',e=>{
+  if(state&&e.target.hasAttribute('data-note')){
+    state.note=e.target.value;clearTimeout(noteTimer);
+    noteTimer=setTimeout(()=>sync('settings.save',{note:state.note}),600);
+  }
+});
+document.addEventListener('submit',async e=>{
+  const f=e.target;
+  if(!f.dataset.form)return;           // normal forms (like Log out) submit as usual
+  e.preventDefault();
+  if(!state||f.dataset.busy)return;
+  const d=Object.fromEntries(new FormData(f));
+  const btn=f.querySelector('button');
+  f.dataset.busy='1';if(btn)btn.disabled=true;
+  try{
+    if(f.dataset.form==='exp'){
+      const amount=Math.round(parseFloat(d.amount)*100)/100;if(!(amount>0)||!d.desc.trim())return;
+      const item={date:d.date||TI,desc:d.desc.trim(),cat:d.cat,amount};
+      const r=await api('expense.add',item);
+      state.exps.push({id:r.id,...item});
+      render('f-desc');
+    } else if(f.dataset.form==='task'){
+      if(!d.title.trim())return;
+      const item={title:d.title.trim(),due:d.due||TI,priority:d.priority,tag:d.tag.trim()};
+      const r=await api('task.add',item);
+      state.tasks.push({id:r.id,...item,done:false});
+      render('t-title');
+    } else if(f.dataset.form==='block'){
+      const di=d.date||TI,a=+d.from,z=+d.to,title=d.title.trim();if(!title)return;
+      if(z<=a){blockMsg={ok:false,html:'The end time has to be after the start time.'};render('bk-title');return}
+      const clash=[];
+      for(let h=a;h<z;h++){const x=resolveHour(di,h);if(x&&x.text&&x.text.trim())clash.push(`${pad(h)}:00 ${HT[x.type]?HT[x.type][0]+': ':''}${esc(x.text)}`)}
+      if(clash.length){blockMsg={ok:false,html:`That time is already taken (${clash.join(', ')}). Pick one of the free times below.`};render('bk-title');return}
+      try{await api('block.add',{date:di,from:a,to:z,title})}
+      catch(err){if(err.status===409||err.status===400){blockMsg={ok:false,html:esc(err.message)};render('bk-title');return}throw err}
+      const day=state.hours[di]||(state.hours[di]={});
+      for(let h=a;h<z;h++)day[h]={text:title,type:'study'};
+      blockMsg={ok:true,html:`Added ${esc(title)}, ${pad(a)}:00–${pad(z)}:00 on ${short(parse(di))}. It's in Hour by hour too.`};
+      render('bk-title');
+    } else if(f.dataset.form==='subject'){
+      if(!d.name.trim())return;
+      const r=await api('subject.add',{name:d.name.trim(),exam:d.exam||''});
+      state.subjects.push({id:r.id,name:d.name.trim(),c:r.c,exam:d.exam||'',chapters:[]});
+      render('sb-name');
+    } else if(f.dataset.form==='chapter'){
+      const s=findS(f.dataset.sid);if(!s||!d.title.trim())return;
+      const r=await api('chapter.add',{subject_id:s.id,title:d.title.trim()});
+      s.chapters.push({id:r.id,title:d.title.trim(),done:false,topics:[]});
+      render('ch-'+s.id);
+    } else if(f.dataset.form==='topic'){
+      const c=findC(f.dataset.sid,f.dataset.cid);if(!c||!d.t.trim())return;
+      const r=await api('topic.add',{chapter_id:c.id,title:d.t.trim()});
+      c.topics.push({id:r.id,t:d.t.trim(),done:false});
+      render('tp-'+c.id);
+    } else if(f.dataset.form==='upcoming'){
+      if(!d.t.trim()||!d.date)return;
+      const r=await api('upcoming.add',{title:d.t.trim(),date:d.date});
+      state.upcoming.push({id:r.id,t:d.t.trim(),date:d.date});
+      render('up-title');
+    }
+  }catch(err){
+    toast(err.message);
+  }finally{
+    delete f.dataset.busy;if(btn&&btn.isConnected)btn.disabled=false;
+  }
+});
+
+/* ---------- theme ---------- */
+const root=document.documentElement,mq=window.matchMedia('(prefers-color-scheme: dark)');
+const eff=()=>root.getAttribute('data-theme')||(mq.matches?'dark':'light');
+const SUN='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4"/></svg>';
+const MOON='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12.8A9 9 0 1 1 11.2 3a7 7 0 0 0 9.8 9.8z"/></svg>';
+function paintThemeBtn(){const d=eff()==='dark';document.getElementById('themeBtn').innerHTML=d?SUN+'Light mode':MOON+'Dark mode'}
+function toggleTheme(){const n=eff()==='dark'?'light':'dark';root.setAttribute('data-theme',n);try{localStorage.setItem('sara-theme',n)}catch(e){}paintThemeBtn()}
+try{const t=localStorage.getItem('sara-theme');if(t==='dark'||t==='light')root.setAttribute('data-theme',t)}catch(e){}
+mq.addEventListener&&mq.addEventListener('change',paintThemeBtn);
+new MutationObserver(paintThemeBtn).observe(root,{attributes:true,attributeFilter:['data-theme']});
+paintThemeBtn();
+
+document.getElementById('coil').innerHTML='<span></span>'.repeat(90);
+document.getElementById('todayChip').textContent=`${WDL[wdi(TODAY)]}, ${TODAY.getDate()} ${MON[TODAY.getMonth()]}`;
+reload();
+})();

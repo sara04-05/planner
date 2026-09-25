@@ -1,0 +1,123 @@
+-- Sara's Planner: MySQL / MariaDB schema
+-- Import this in phpMyAdmin (Import tab) or run: mysql -u root -p < sql/schema.sql
+
+CREATE DATABASE IF NOT EXISTS sara_planner CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
+USE sara_planner;
+
+CREATE TABLE IF NOT EXISTS users (
+  id            INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+  name          VARCHAR(80)  NOT NULL,
+  email         VARCHAR(190) NOT NULL UNIQUE,
+  password_hash VARCHAR(255) NOT NULL,
+  created_at    TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+) ENGINE=InnoDB;
+
+CREATE TABLE IF NOT EXISTS settings (
+  user_id INT UNSIGNED PRIMARY KEY,
+  income  DECIMAL(10,2) NOT NULL DEFAULT 0,
+  goal    DECIMAL(10,2) NOT NULL DEFAULT 0,
+  note    VARCHAR(500)  NOT NULL DEFAULT '',
+  FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+) ENGINE=InnoDB;
+
+CREATE TABLE IF NOT EXISTS expenses (
+  id          INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+  user_id     INT UNSIGNED NOT NULL,
+  date        DATE NOT NULL,
+  description VARCHAR(200) NOT NULL,
+  category    VARCHAR(20)  NOT NULL,
+  amount      DECIMAL(10,2) NOT NULL,
+  created_at  TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  INDEX idx_exp_user_date (user_id, date),
+  FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+) ENGINE=InnoDB;
+
+CREATE TABLE IF NOT EXISTS tasks (
+  id         INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+  user_id    INT UNSIGNED NOT NULL,
+  title      VARCHAR(200) NOT NULL,
+  due        DATE NOT NULL,
+  priority   VARCHAR(4)  NOT NULL DEFAULT 'med',
+  tag        VARCHAR(40) NOT NULL DEFAULT '',
+  done       TINYINT(1)  NOT NULL DEFAULT 0,
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  INDEX idx_task_user_due (user_id, due),
+  FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+) ENGINE=InnoDB;
+
+-- One row per planned hour on a specific date
+CREATE TABLE IF NOT EXISTS hours (
+  user_id INT UNSIGNED NOT NULL,
+  date    DATE NOT NULL,
+  hour    TINYINT UNSIGNED NOT NULL,
+  text    VARCHAR(200) NOT NULL DEFAULT '',
+  type    VARCHAR(10)  NOT NULL DEFAULT 'personal',
+  PRIMARY KEY (user_id, date, hour),
+  FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+) ENGINE=InnoDB;
+
+-- Hours that repeat every week (weekday 0 = Monday ... 6 = Sunday)
+CREATE TABLE IF NOT EXISTS weekly_hours (
+  user_id INT UNSIGNED NOT NULL,
+  weekday TINYINT UNSIGNED NOT NULL,
+  hour    TINYINT UNSIGNED NOT NULL,
+  text    VARCHAR(200) NOT NULL DEFAULT '',
+  type    VARCHAR(10)  NOT NULL DEFAULT 'personal',
+  PRIMARY KEY (user_id, weekday, hour),
+  FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+) ENGINE=InnoDB;
+
+-- Study blocks that were ticked off ("date|startHour|title")
+CREATE TABLE IF NOT EXISTS block_done (
+  user_id   INT UNSIGNED NOT NULL,
+  block_key VARCHAR(255) NOT NULL,
+  PRIMARY KEY (user_id, block_key),
+  FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+) ENGINE=InnoDB;
+
+-- The weekly study table (7 rows per user)
+CREATE TABLE IF NOT EXISTS study_plan (
+  user_id  INT UNSIGNED NOT NULL,
+  weekday  TINYINT UNSIGNED NOT NULL,
+  subject  VARCHAR(80)  NOT NULL DEFAULT '',
+  topic    VARCHAR(120) NOT NULL DEFAULT '',
+  hours    DECIMAL(4,1) NOT NULL DEFAULT 0,
+  revised  TINYINT(1)   NOT NULL DEFAULT 0,
+  priority TINYINT      NOT NULL DEFAULT 1,
+  PRIMARY KEY (user_id, weekday),
+  FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+) ENGINE=InnoDB;
+
+CREATE TABLE IF NOT EXISTS upcoming (
+  id      INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+  user_id INT UNSIGNED NOT NULL,
+  title   VARCHAR(150) NOT NULL,
+  date    DATE NOT NULL,
+  FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+) ENGINE=InnoDB;
+
+CREATE TABLE IF NOT EXISTS subjects (
+  id         INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+  user_id    INT UNSIGNED NOT NULL,
+  name       VARCHAR(80) NOT NULL,
+  color      VARCHAR(20) NOT NULL DEFAULT 'school',
+  exam       DATE NULL,
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+) ENGINE=InnoDB;
+
+CREATE TABLE IF NOT EXISTS chapters (
+  id         INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+  subject_id INT UNSIGNED NOT NULL,
+  title      VARCHAR(150) NOT NULL,
+  done       TINYINT(1) NOT NULL DEFAULT 0,
+  FOREIGN KEY (subject_id) REFERENCES subjects(id) ON DELETE CASCADE
+) ENGINE=InnoDB;
+
+CREATE TABLE IF NOT EXISTS topics (
+  id         INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+  chapter_id INT UNSIGNED NOT NULL,
+  title      VARCHAR(200) NOT NULL,
+  done       TINYINT(1) NOT NULL DEFAULT 0,
+  FOREIGN KEY (chapter_id) REFERENCES chapters(id) ON DELETE CASCADE
+) ENGINE=InnoDB;
