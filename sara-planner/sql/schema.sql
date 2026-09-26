@@ -1,4 +1,4 @@
--- Sara's Planner: MySQL / MariaDB schema
+-- Splanner: MySQL / MariaDB schema
 -- Import this in phpMyAdmin (Import tab) or run: mysql -u root -p < sql/schema.sql
 
 CREATE DATABASE IF NOT EXISTS sara_planner CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;

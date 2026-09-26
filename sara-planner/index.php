@@ -1,6 +1,7 @@
 <?php
 declare(strict_types=1);
 require __DIR__ . '/db.php';
+require __DIR__ . '/layout.php';
 
 $uid = require_login();
 $user = q('SELECT name FROM users WHERE id = ?', [$uid])->fetch();
@@ -16,17 +17,18 @@ if (!$user) {            // account was deleted
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <meta name="csrf-token" content="<?= h(csrf_token()) ?>">
-  <title>Sara's Planner</title>
+  <title>Splanner</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500;12..96,600;12..96,700&family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="assets/style.css">
+  <link href="https://fonts.googleapis.com/css2?family=Pacifico&family=Bricolage+Grotesque:opsz,wght@12..96,500;12..96,600;12..96,700&family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="assets/style.css?v=6">
+  <link rel="icon" href="assets/logo.svg" type="image/svg+xml">
   <script>try{var t=localStorage.getItem('sara-theme');if(t)document.documentElement.setAttribute('data-theme',t)}catch(e){}</script>
 </head>
 <body>
 <div class="app">
   <header class="top">
-    <div class="brand"><b>Sara's Planner</b><span>Hi, <?= h($user['name']) ?></span></div>
+    <div class="brand"><?= logo_html() ?><span>Hi, <?= h($user['name']) ?></span></div>
     <div class="top-r">
       <span class="chip-date" id="todayChip"></span>
       <button class="btn" id="themeBtn" data-act="theme" aria-label="Switch theme"></button>

@@ -70,7 +70,7 @@ function require_login(): int
 {
     $id = current_user_id();
     if (!$id) {
-        header('Location: login.php');
+        header('Location: welcome.php');
         exit;
     }
     return $id;

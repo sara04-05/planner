@@ -1,4 +1,4 @@
-# Sara's Planner (PHP + MySQL)
+# Splanner (PHP + MySQL)
 
 A study, task and money planner where anyone can create an account and gets their own private planner.
 
@@ -6,6 +6,7 @@ A study, task and money planner where anyone can create an account and gets thei
 
 ```
 sara-planner/
+├── welcome.php        The public front page (what logged-out visitors see)
 ├── index.php          The planner page (only for logged-in users)
 ├── login.php          Log in
 ├── register.php       Create an account

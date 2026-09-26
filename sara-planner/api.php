@@ -8,7 +8,6 @@ require __DIR__ . '/db.php';
 header('Content-Type: application/json; charset=utf-8');
 header('Cache-Control: no-store');
 
-/** Stop and send an error the page can show. */
 function fail(int $status, string $msg): never
 {
     http_response_code($status);
@@ -22,7 +21,6 @@ function ok(array $data = []): never
     exit;
 }
 
-// ---------- helpers for reading the request ----------
 function str_in(array $in, string $key, int $max, bool $required = true): string
 {
     $v = trim((string)($in[$key] ?? ''));

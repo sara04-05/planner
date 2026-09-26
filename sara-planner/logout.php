@@ -11,5 +11,5 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && check_csrf($_POST['csrf'] ?? null))
     }
     session_destroy();
 }
-header('Location: login.php');
+header('Location: welcome.php');
 exit;

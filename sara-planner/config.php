@@ -1,6 +1,6 @@
 <?php
 // ------------------------------------------------------------
-// Sara's Planner: settings
+// Splanner: settings
 // Change these to match your database. The defaults work with XAMPP.
 // ------------------------------------------------------------
 
