@@ -156,7 +156,7 @@ CREATE TABLE IF NOT EXISTS google_accounts (
 CREATE TABLE IF NOT EXISTS gcal_events (
   user_id  INT UNSIGNED NOT NULL,
   date     DATE NOT NULL,
-  event_id VARCHAR(255) NOT NULL,
+  event_id VARCHAR(190) NOT NULL,
   sig      CHAR(40) NOT NULL,
   PRIMARY KEY (user_id, event_id),
   INDEX idx_gcal_user_date (user_id, date),

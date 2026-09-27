@@ -135,7 +135,7 @@ function gcal_time(string $date, int $min): array
 }
 
 /** Make Google match the planner for these dates. Only changed hours are sent. Returns how many events were added or removed. */
-function gcal_sync_dates(int $uid, array $dates): int
+function gcal_sync_dates(int $uid, array $dates, bool $retried = false): int
 {
     $acc = gcal_account($uid);
     if (!$acc) throw new RuntimeException('Google Calendar is not connected.');
@@ -165,9 +165,9 @@ function gcal_sync_dates(int $uid, array $dates): int
                     'reminders'   => ['useDefault' => false],
                 ];
                 [$st, $r] = gcal_http('POST', GCAL_API . '/calendars/' . rawurlencode($cal) . '/events', $event, null, gcal_token($uid, $acc));
-                if ($st === 404) {            // the Splanner calendar was deleted in Google: make a new one
+                if ($st === 404 && !$retried) {   // the Splanner calendar was deleted in Google: make a new one, once
                     gcal_calendar($uid, $acc, true);
-                    return $changes + gcal_sync_dates($uid, $dates);
+                    return $changes + gcal_sync_dates($uid, $dates, true);
                 }
                 if ($st !== 200 || empty($r['id'])) throw new RuntimeException("Couldn't add \"{$e['title']}\" to Google Calendar.");
                 q('INSERT INTO gcal_events (user_id, date, event_id, sig) VALUES (?, ?, ?, ?)', [$uid, $date, $r['id'], $sig]);

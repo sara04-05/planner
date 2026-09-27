@@ -272,7 +272,7 @@ function hourSection(d){
 
 /* ---------- Google Calendar ---------- */
 // Changed days wait a moment, so typing several hours sends one update instead of many
-let gcalTimer=null,gcalBusy=false,gcalMsg='';
+let gcalTimer=null,gcalBusy=false,gcalFull=false,gcalMsg='';
 const gcalDates=new Set();
 function gcalBar(){
   const g=state.google;if(!g||!g.configured)return '';
@@ -290,7 +290,9 @@ function gcalLater(di){
   clearTimeout(gcalTimer);gcalTimer=setTimeout(()=>gcalRun(false),2500);
 }
 async function gcalRun(full){
-  if(gcalBusy){gcalTimer=setTimeout(()=>gcalRun(full),1500);return}
+  gcalFull=gcalFull||full;
+  if(gcalBusy){clearTimeout(gcalTimer);gcalTimer=setTimeout(()=>gcalRun(false),1500);return}
+  full=gcalFull;gcalFull=false;
   const dates=[...gcalDates];gcalDates.clear();
   if(!full&&!dates.length)return;
   gcalBusy=true;gcalStatus('Sending to Google Calendar…');

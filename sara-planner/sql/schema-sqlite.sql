@@ -149,7 +149,7 @@ CREATE TABLE IF NOT EXISTS google_accounts (
 CREATE TABLE IF NOT EXISTS gcal_events (
   user_id  INTEGER NOT NULL,
   date     DATE NOT NULL,
-  event_id VARCHAR(255) NOT NULL,
+  event_id VARCHAR(190) NOT NULL,
   sig      CHAR(40) NOT NULL,
   PRIMARY KEY (user_id, event_id),
   FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE

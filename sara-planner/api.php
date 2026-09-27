@@ -530,7 +530,7 @@ try {
         // Send hours to Google Calendar. "dates" = days that were just edited; the same weekday in the next two
         // weeks is sent too, because an edit can change a weekly hour. "full" = the whole next two weeks.
         if (!gcal_configured() || !gcal_account($uid)) fail(400, 'Google Calendar is not connected.');
-        set_time_limit(120);
+        if (function_exists('set_time_limit')) set_time_limit(120);   // some hosts turn this off
         $window = gcal_window();
         $dates = !empty($in['full']) ? $window : [];
         foreach (array_slice((array)($in['dates'] ?? []), 0, 31) as $d) {
