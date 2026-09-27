@@ -45,6 +45,17 @@ function int_in(array $in, string $key, int $min, int $max): int
     return $v;
 }
 
+/** A time like "08:45" as minutes since midnight. 24:00 is allowed as an end time. */
+function time_in(array $in, string $key): int
+{
+    $v = (string)($in[$key] ?? '');
+    if (is_numeric($v)) return int_in([$key => (int)$v * 60], $key, 0, 1440); // old pages send whole hours
+    if (!preg_match('/^(\d{1,2}):(\d{2})$/', $v, $m)) fail(400, 'That time is not valid.');
+    $t = (int)$m[1] * 60 + (int)$m[2];
+    if ((int)$m[2] > 59 || $t > 1440) fail(400, 'That time is not valid.');
+    return $t;
+}
+
 function id_in(array $in, string $key = 'id'): int
 {
     return int_in($in, $key, 1, PHP_INT_MAX);
@@ -73,24 +84,36 @@ $action = (string)($_GET['action'] ?? '');
 // ---------- hour helpers (a day's own entry wins over the weekly one) ----------
 function day_hour(int $uid, string $date, int $h): ?array
 {
-    return q('SELECT text, type FROM hours WHERE user_id = ? AND date = ? AND hour = ?', [$uid, $date, $h])->fetch() ?: null;
+    return q('SELECT text, type, start_min, end_min FROM hours WHERE user_id = ? AND date = ? AND hour = ?', [$uid, $date, $h])->fetch() ?: null;
 }
 
 function week_hour(int $uid, int $wd, int $h): ?array
 {
-    return q('SELECT text, type FROM weekly_hours WHERE user_id = ? AND weekday = ? AND hour = ?', [$uid, $wd, $h])->fetch() ?: null;
+    return q('SELECT text, type, start_min, end_min FROM weekly_hours WHERE user_id = ? AND weekday = ? AND hour = ?', [$uid, $wd, $h])->fetch() ?: null;
 }
 
-function put_day_hour(int $uid, string $date, int $h, string $text, string $type): void
+// start_min / end_min: the part of the hour that is used (0 and 60 = the whole hour)
+function put_day_hour(int $uid, string $date, int $h, string $text, string $type, int $s = 0, int $e = 60): void
 {
     q('DELETE FROM hours WHERE user_id = ? AND date = ? AND hour = ?', [$uid, $date, $h]);
-    q('INSERT INTO hours (user_id, date, hour, text, type) VALUES (?, ?, ?, ?, ?)', [$uid, $date, $h, $text, $type]);
+    q('INSERT INTO hours (user_id, date, hour, text, type, start_min, end_min) VALUES (?, ?, ?, ?, ?, ?, ?)',
+        [$uid, $date, $h, $text, $type, $s, $e]);
 }
 
-function put_week_hour(int $uid, int $wd, int $h, string $text, string $type): void
+function put_week_hour(int $uid, int $wd, int $h, string $text, string $type, int $s = 0, int $e = 60): void
 {
     q('DELETE FROM weekly_hours WHERE user_id = ? AND weekday = ? AND hour = ?', [$uid, $wd, $h]);
-    q('INSERT INTO weekly_hours (user_id, weekday, hour, text, type) VALUES (?, ?, ?, ?, ?)', [$uid, $wd, $h, $text, $type]);
+    q('INSERT INTO weekly_hours (user_id, weekday, hour, text, type, start_min, end_min) VALUES (?, ?, ?, ?, ?, ?, ?)',
+        [$uid, $wd, $h, $text, $type, $s, $e]);
+}
+
+/** One hour as the page wants it: minutes are only sent when they aren't the whole hour. */
+function hour_out(array $r): array
+{
+    $o = ['text' => $r['text'], 'type' => $r['type']];
+    if ((int)$r['start_min'] !== 0) $o['s'] = (int)$r['start_min'];
+    if ((int)$r['end_min'] !== 60)  $o['e'] = (int)$r['end_min'];
+    return $o;
 }
 
 /** Make sure a chapter/topic/subject id belongs to this user. */
@@ -131,15 +154,15 @@ function bootstrap(int $uid): array
 
     // Objects, not arrays, so JSON keeps the hour numbers as keys
     $hours = new stdClass();
-    foreach (q('SELECT date, hour, text, type FROM hours WHERE user_id = ?', [$uid]) as $r) {
+    foreach (q('SELECT date, hour, text, type, start_min, end_min FROM hours WHERE user_id = ?', [$uid]) as $r) {
         $d = $r['date'];
         if (!isset($hours->$d)) $hours->$d = new stdClass();
-        $hours->$d->{$r['hour']} = ['text' => $r['text'], 'type' => $r['type']];
+        $hours->$d->{$r['hour']} = hour_out($r);
     }
     $weekly = [];
     for ($i = 0; $i < 7; $i++) $weekly[$i] = new stdClass();
-    foreach (q('SELECT weekday, hour, text, type FROM weekly_hours WHERE user_id = ?', [$uid]) as $r) {
-        $weekly[(int)$r['weekday']]->{$r['hour']} = ['text' => $r['text'], 'type' => $r['type']];
+    foreach (q('SELECT weekday, hour, text, type, start_min, end_min FROM weekly_hours WHERE user_id = ?', [$uid]) as $r) {
+        $weekly[(int)$r['weekday']]->{$r['hour']} = hour_out($r);
     }
 
     $blockDone = new stdClass();
@@ -294,11 +317,14 @@ try {
         $wd   = weekday_of($date);
         $day  = day_hour($uid, $date, $h);
         $week = $day ? null : week_hour($uid, $wd, $h);
-        $cur  = $day ?? $week ?? ['text' => '', 'type' => 'personal'];
+        $cur  = $day ?? $week ?? ['text' => '', 'type' => 'personal', 'start_min' => 0, 'end_min' => 60];
 
         if (array_key_exists('type', $in)) {
             $cur['type'] = in_array($in['type'], HOUR_TYPES, true) ? $in['type'] : 'personal';
         }
+        if (array_key_exists('s', $in)) $cur['start_min'] = int_in($in, 's', 0, 59);
+        if (array_key_exists('e', $in)) $cur['end_min']   = int_in($in, 'e', 1, 60);
+        if ((int)$cur['end_min'] <= (int)$cur['start_min']) fail(400, 'The end time has to be after the start time.');
         $clear = false;
         if (array_key_exists('text', $in)) {
             $cur['text'] = mb_substr((string)$in['text'], 0, 200);
@@ -308,10 +334,10 @@ try {
         // Same rule as the page: edit the entry that is showing (this day's, else the weekly one)
         if ($week) {
             if ($clear) q('DELETE FROM weekly_hours WHERE user_id = ? AND weekday = ? AND hour = ?', [$uid, $wd, $h]);
-            else put_week_hour($uid, $wd, $h, $cur['text'], $cur['type']);
+            else put_week_hour($uid, $wd, $h, $cur['text'], $cur['type'], (int)$cur['start_min'], (int)$cur['end_min']);
         } else {
             if ($clear) q('DELETE FROM hours WHERE user_id = ? AND date = ? AND hour = ?', [$uid, $date, $h]);
-            else put_day_hour($uid, $date, $h, $cur['text'], $cur['type']);
+            else put_day_hour($uid, $date, $h, $cur['text'], $cur['type'], (int)$cur['start_min'], (int)$cur['end_min']);
         }
         ok();
     }
@@ -324,10 +350,10 @@ try {
         db()->beginTransaction();
         if ($day = day_hour($uid, $date, $h)) {
             q('DELETE FROM hours WHERE user_id = ? AND date = ? AND hour = ?', [$uid, $date, $h]);
-            put_week_hour($uid, $wd, $h, $day['text'], $day['type']);
+            put_week_hour($uid, $wd, $h, $day['text'], $day['type'], (int)$day['start_min'], (int)$day['end_min']);
         } elseif ($week = week_hour($uid, $wd, $h)) {
             q('DELETE FROM weekly_hours WHERE user_id = ? AND weekday = ? AND hour = ?', [$uid, $wd, $h]);
-            put_day_hour($uid, $date, $h, $week['text'], $week['type']);
+            put_day_hour($uid, $date, $h, $week['text'], $week['type'], (int)$week['start_min'], (int)$week['end_min']);
         }
         db()->commit();
         ok();
@@ -352,21 +378,27 @@ try {
 
     case 'block.add': {
         $date  = date_in($in, 'date');
-        $from  = int_in($in, 'from', 0, 23);
-        $to    = int_in($in, 'to', 1, 24);
+        $from  = time_in($in, 'from');   // minutes since midnight
+        $to    = time_in($in, 'to');
         $title = str_in($in, 'title', 200);
         if ($to <= $from) fail(400, 'The end time has to be after the start time.');
         $wd = weekday_of($date);
+        $h0 = intdiv($from, 60);
+        $h1 = intdiv($to + 59, 60);       // first hour not touched
 
         db()->beginTransaction();
-        for ($h = $from; $h < $to; $h++) {
+        for ($h = $h0; $h < $h1; $h++) {
             $e = day_hour($uid, $date, $h) ?? week_hour($uid, $wd, $h);
             if ($e && trim($e['text']) !== '') {
                 db()->rollBack();
                 fail(409, sprintf('%02d:00 is already taken. Pick a free time.', $h));
             }
         }
-        for ($h = $from; $h < $to; $h++) put_day_hour($uid, $date, $h, $title, 'study');
+        for ($h = $h0; $h < $h1; $h++) {
+            $s = $h === $h0 ? $from % 60 : 0;
+            $e = $h === $h1 - 1 ? $to - $h * 60 : 60;
+            put_day_hour($uid, $date, $h, $title, 'study', $s, $e);
+        }
         db()->commit();
         ok();
     }
