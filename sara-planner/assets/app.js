@@ -240,6 +240,7 @@ function hourSection(d){
 }
 
 /* ---------- subjects ---------- */
+const srcOpen=new Set(); // chapters whose "where to find it" box is open while still empty
 const findS=id=>state.subjects.find(s=>s.id===id);
 const findC=(sid,cid)=>{const s=findS(sid);return s?s.chapters.find(c=>c.id===cid):null};
 const chDone=c=>c.topics.length?c.topics.every(t=>t.done):c.done;
@@ -251,7 +252,8 @@ function subjectsSection(){
     let exam='<span class="pill muted">No exam date</span>';
     if(s.exam){const ed=parse(s.exam),n=dayDiff(ed,TODAY);exam=n<0?`<span class="pill muted">Exam was ${short(ed)}</span>`:`<span class="pill ${n<=7?'bad':n<=21?'warn':''}">Exam ${short(ed)} · ${n} day${n===1?'':'s'}</span>`}
     const chs=s.chapters.map(c=>{const d=chDone(c),tn=c.topics.filter(t=>t.done).length,a=`data-sid="${s.id}" data-cid="${c.id}"`;
-      return `<div class="ch ${d?'done':''}"><div class="ch-h"><input type="checkbox" data-chk="ch" ${a} ${d?'checked':''} aria-label="Learned: ${esc(c.title)}"><span class="grow">${esc(c.title)}</span>${c.topics.length?`<span class="cnt">${tn}/${c.topics.length}</span>`:''}<button class="x sm" data-act="del-ch" ${a} data-confirm aria-label="Delete ${esc(c.title)}">×</button></div>
+      return `<div class="ch ${d?'done':''}"><div class="ch-h"><input type="checkbox" data-chk="ch" ${a} ${d?'checked':''} aria-label="Learned: ${esc(c.title)}"><span class="grow">${esc(c.title)}</span>${c.topics.length?`<span class="cnt">${tn}/${c.topics.length}</span>`:''}<button class="srcbtn ${c.src?'on':''}" data-act="src" ${a} title="Where to find this chapter (book, author, literature)" aria-label="Where to find ${esc(c.title)}" aria-expanded="${srcOpen.has(c.id)||!!c.src}">📖</button><button class="x sm" data-act="del-ch" ${a} data-confirm aria-label="Delete ${esc(c.title)}">×</button></div>
+      ${c.src||srcOpen.has(c.id)?`<textarea class="src" id="src-${c.id}" data-src ${a} rows="2" placeholder="Where to find it, e.g.&#10;Book: Java e pesëmbëdhjetë, by …&#10;Literatura: Manuali i BASIC për 8051" aria-label="Where to find ${esc(c.title)}">${esc(c.src||'')}</textarea>`:''}
       ${c.topics.length?`<ul class="topics">${c.topics.map(t=>`<li class="${t.done?'dn':''}"><input type="checkbox" data-chk="topic" ${a} data-tid="${t.id}" ${t.done?'checked':''} aria-label="Learned: ${esc(t.t)}"><span>${esc(t.t)}</span><button class="x sm" data-act="del-topic" ${a} data-tid="${t.id}" aria-label="Delete ${esc(t.t)}">×</button></li>`).join('')}</ul>`:''}
       <form class="mini" data-form="topic" ${a} autocomplete="off" style="margin-left:28px"><input id="tp-${c.id}" name="t" placeholder="+ Add something to learn" aria-label="Add something to learn in ${esc(c.title)}"></form></div>`}).join('');
     return `<div class="subj" style="--sc:var(--c-${s.c})"><div class="subj-h"><div><h3>${esc(s.name)}</h3><div style="margin-top:6px">${exam}</div></div><button class="x" data-act="del-subj" data-id="${s.id}" data-confirm aria-label="Delete ${esc(s.name)}">×</button></div>
@@ -446,11 +448,14 @@ V.money=()=>{
 
 /* ---------- render + events ---------- */
 const view=document.getElementById('view');
+/** Grow a "where to find it" box to fit its text. */
+function fitSrc(t){t.style.height='auto';t.style.height=t.scrollHeight+2+'px'}
 function render(focusId){
   if(!state)return;
   document.querySelectorAll('.tab').forEach(t=>t.setAttribute('aria-selected',t.dataset.tab===state.tab));
   view.innerHTML=V[state.tab]();
   paintHourRows();
+  document.querySelectorAll('textarea[data-src]').forEach(fitSrc);
   blockMsg=null;
   save();
   if(focusId){const el=document.getElementById(focusId);if(el)el.focus()}
@@ -474,6 +479,10 @@ document.addEventListener('click',e=>{
   switch(a){
     case 'del-subj':state.subjects=state.subjects.filter(s=>s.id!==b.dataset.id);sync('subject.delete',{id:b.dataset.id});break;
     case 'del-ch':{const s=findS(b.dataset.sid);if(s)s.chapters=s.chapters.filter(c=>c.id!==b.dataset.cid);sync('chapter.delete',{id:b.dataset.cid});break}
+    case 'src':{const c=findC(b.dataset.sid,b.dataset.cid);if(!c)return;
+      if(c.src||srcOpen.has(c.id)){const el=document.getElementById('src-'+c.id);if(el&&document.activeElement!==el){el.focus();return}}
+      if(!c.src&&srcOpen.has(c.id)){srcOpen.delete(c.id);break}
+      srcOpen.add(c.id);render('src-'+c.id);return}
     case 'del-topic':{const c=findC(b.dataset.sid,b.dataset.cid);if(c)c.topics=c.topics.filter(t=>t.id!==b.dataset.tid);sync('topic.delete',{id:b.dataset.tid});break}
     case 'del-upcoming':state.upcoming=state.upcoming.filter(u=>u.id!==b.dataset.id);sync('upcoming.delete',{id:b.dataset.id});break;
     case 'pick-free':{const f=document.querySelector('form[data-form=block]');if(f){f.elements.from.value=b.dataset.from;f.elements.to.value=b.dataset.to;f.elements.title.focus()}return}
@@ -520,6 +529,13 @@ document.addEventListener('change',e=>{
     const rp=document.getElementById('revpanel');if(rp)rp.innerHTML=revisedPanel();
     return;
   }
+  if(t.hasAttribute('data-src')){
+    // Where to find a chapter. Saved without re-drawing so focus is kept.
+    const c=findC(t.dataset.sid,t.dataset.cid);if(!c)return;
+    c.src=t.value.trim();sync('chapter.source',{id:c.id,source:c.src});
+    const btn=t.closest('.ch').querySelector('.srcbtn');if(btn)btn.classList.toggle('on',!!c.src);
+    return;
+  }
   if(t.dataset.chk){
     const k=t.dataset.chk,on=t.checked;
     if(k==='task'){const x=state.tasks.find(i=>i.id===t.dataset.id);if(x)x.done=on;sync('task.toggle',{id:t.dataset.id,done:on})}
@@ -541,6 +557,7 @@ document.addEventListener('change',e=>{
 });
 let noteTimer=null;
 document.addEventListener('input',e=>{
+  if(e.target.hasAttribute('data-src'))fitSrc(e.target);
   if(state&&e.target.hasAttribute('data-note')){
     state.note=e.target.value;clearTimeout(noteTimer);
     noteTimer=setTimeout(()=>sync('settings.save',{note:state.note}),600);
@@ -587,7 +604,7 @@ document.addEventListener('submit',async e=>{
     } else if(f.dataset.form==='chapter'){
       const s=findS(f.dataset.sid);if(!s||!d.title.trim())return;
       const r=await api('chapter.add',{subject_id:s.id,title:d.title.trim()});
-      s.chapters.push({id:r.id,title:d.title.trim(),done:false,topics:[]});
+      s.chapters.push({id:r.id,title:d.title.trim(),done:false,src:'',topics:[]});
       render('ch-'+s.id);
     } else if(f.dataset.form==='topic'){
       const c=findC(f.dataset.sid,f.dataset.cid);if(!c||!d.t.trim())return;

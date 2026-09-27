@@ -123,6 +123,7 @@ CREATE TABLE IF NOT EXISTS chapters (
   subject_id INT UNSIGNED NOT NULL,
   title      VARCHAR(150) NOT NULL,
   done       TINYINT(1) NOT NULL DEFAULT 0,
+  source     TEXT NULL,
   FOREIGN KEY (subject_id) REFERENCES subjects(id) ON DELETE CASCADE
 ) ENGINE=InnoDB;
 
