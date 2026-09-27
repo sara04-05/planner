@@ -166,11 +166,11 @@ function bootstrap(int $uid): array
         ];
     }
     $chapters = [];
-    $sql = 'SELECT c.id, c.subject_id, c.title, c.done FROM chapters c JOIN subjects s ON s.id = c.subject_id
+    $sql = 'SELECT c.id, c.subject_id, c.title, c.done, c.source FROM chapters c JOIN subjects s ON s.id = c.subject_id
             WHERE s.user_id = ? ORDER BY c.id';
     foreach (q($sql, [$uid]) as $c) {
         $chapters[(int)$c['id']] = ['sid' => (int)$c['subject_id'], 'id' => (string)$c['id'],
-            'title' => $c['title'], 'done' => (bool)$c['done'], 'topics' => []];
+            'title' => $c['title'], 'done' => (bool)$c['done'], 'src' => $c['source'] ?? '', 'topics' => []];
     }
     $sql = 'SELECT t.id, t.chapter_id, t.title, t.done FROM topics t JOIN chapters c ON c.id = t.chapter_id
             JOIN subjects s ON s.id = c.subject_id WHERE s.user_id = ? ORDER BY t.id';
@@ -433,6 +433,14 @@ try {
         $done = empty($in['done']) ? 0 : 1;
         q('UPDATE chapters SET done = ? WHERE id = ?', [$done, $id]);
         q('UPDATE topics SET done = ? WHERE chapter_id = ?', [$done, $id]);
+        ok();
+    }
+
+    case 'chapter.source': {
+        // Where to find this chapter: book, author, literature (free text, can be several lines)
+        $id = id_in($in);
+        own_chapter($uid, $id);
+        q('UPDATE chapters SET source = ? WHERE id = ?', [str_in($in, 'source', 2000, false), $id]);
         ok();
     }
 

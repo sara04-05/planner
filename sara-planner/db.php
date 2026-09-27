@@ -56,6 +56,14 @@ function upgrade_schema(PDO $pdo): void
             PRIMARY KEY (user_id, year, month),
             FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE) ENGINE=InnoDB');
     }
+
+    // Where to find a chapter (book, author, literature). Only adds the column, existing rows are untouched.
+    $cols = DB_DRIVER === 'sqlite'
+        ? array_column($pdo->query('PRAGMA table_info(chapters)')->fetchAll(), 'name')
+        : array_column($pdo->query('SHOW COLUMNS FROM chapters')->fetchAll(), 'Field');
+    if (!in_array('source', $cols, true)) {
+        $pdo->exec('ALTER TABLE chapters ADD COLUMN source TEXT NULL');
+    }
 }
 
 /** Run a prepared statement: q('SELECT * FROM x WHERE id = ?', [$id]) */
