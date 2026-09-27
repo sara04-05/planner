@@ -168,7 +168,13 @@ function bootstrap(int $uid): array
     $chapters = [];
     $sql = 'SELECT c.id, c.subject_id, c.title, c.done, c.source FROM chapters c JOIN subjects s ON s.id = c.subject_id
             WHERE s.user_id = ? ORDER BY c.id';
-    foreach (q($sql, [$uid]) as $c) {
+    try {
+        $rows = q($sql, [$uid])->fetchAll();
+    } catch (PDOException $e) {
+        // Database without the source column yet: load chapters without it
+        $rows = q(str_replace(', c.source', '', $sql), [$uid])->fetchAll();
+    }
+    foreach ($rows as $c) {
         $chapters[(int)$c['id']] = ['sid' => (int)$c['subject_id'], 'id' => (string)$c['id'],
             'title' => $c['title'], 'done' => (bool)$c['done'], 'src' => $c['source'] ?? '', 'topics' => []];
     }

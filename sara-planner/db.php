@@ -58,11 +58,16 @@ function upgrade_schema(PDO $pdo): void
     }
 
     // Where to find a chapter (book, author, literature). Only adds the column, existing rows are untouched.
-    $cols = DB_DRIVER === 'sqlite'
-        ? array_column($pdo->query('PRAGMA table_info(chapters)')->fetchAll(), 'name')
-        : array_column($pdo->query('SHOW COLUMNS FROM chapters')->fetchAll(), 'Field');
-    if (!in_array('source', $cols, true)) {
-        $pdo->exec('ALTER TABLE chapters ADD COLUMN source TEXT NULL');
+    // If the host refuses the change, the site still opens; chapters just won't have a source box.
+    try {
+        $cols = DB_DRIVER === 'sqlite'
+            ? array_column($pdo->query('PRAGMA table_info(chapters)')->fetchAll(), 'name')
+            : array_column($pdo->query('SHOW COLUMNS FROM chapters')->fetchAll(), 'Field');
+        if (!in_array('source', $cols, true)) {
+            $pdo->exec('ALTER TABLE chapters ADD COLUMN source TEXT NULL');
+        }
+    } catch (PDOException $e) {
+        error_log('Could not add chapters.source: ' . $e->getMessage());
     }
 }
 
