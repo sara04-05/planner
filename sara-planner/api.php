@@ -55,7 +55,7 @@ function weekday_of(string $date): int
     return ((int)date('N', strtotime($date))) - 1; // 0 = Monday
 }
 
-const CATEGORIES  = ['Food', 'Coffee', 'Transport', 'Groceries', 'School', 'Phone', 'Fun', 'Other'];
+const CATEGORIES  = ['Food', 'Coffee', 'Transport', 'Groceries', 'School', 'Phone', 'Fun', 'Clothes', 'Gifts', 'Work', 'Other'];
 const PRIORITIES  = ['high', 'med', 'low'];
 const HOUR_TYPES  = ['uni', 'work', 'study', 'personal', 'health', 'sleep'];
 const SUBJ_COLORS = ['school', 'fun', 'transport', 'food', 'groceries', 'coffee', 'phone', 'other'];
