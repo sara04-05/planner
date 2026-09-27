@@ -4,6 +4,7 @@
 declare(strict_types=1);
 
 require __DIR__ . '/db.php';
+require __DIR__ . '/gcal.php';
 
 header('Content-Type: application/json; charset=utf-8');
 header('Cache-Control: no-store');
@@ -76,6 +77,7 @@ if ($_SERVER['REQUEST_METHOD'] !== 'POST') fail(405, 'Use POST.');
 $uid = current_user_id();
 if (!$uid) fail(401, 'Please log in again.');
 if (!check_csrf($_SERVER['HTTP_X_CSRF_TOKEN'] ?? null)) fail(403, 'Your session expired. Reload the page.');
+if (!is_verified($uid)) fail(403, 'Confirm your email first. Reload the page.');
 
 $in = json_decode(file_get_contents('php://input') ?: '{}', true);
 if (!is_array($in)) $in = [];
@@ -237,6 +239,19 @@ function bootstrap(int $uid): array
         'study'     => $study,
         'upcoming'  => $upcoming,
         'subjects'  => array_values($subjects),
+        'google'    => google_status($uid),
+    ];
+}
+
+/** Is Google Calendar set up on this site, connected for this user, and does the next two weeks still need sending? */
+function google_status(int $uid): array
+{
+    $acc = gcal_configured() ? gcal_account($uid) : null;
+    return [
+        'configured' => gcal_configured(),
+        'connected'  => (bool)$acc,
+        'email'      => $acc['google_email'] ?? '',
+        'needsSync'  => $acc && $acc['synced_on'] !== date('Y-m-d'),
     ];
 }
 
@@ -509,6 +524,29 @@ try {
         own_topic($uid, $id);
         q('DELETE FROM topics WHERE id = ?', [$id]);
         ok();
+    }
+
+    case 'gcal.sync': {
+        // Send hours to Google Calendar. "dates" = days that were just edited; the same weekday in the next two
+        // weeks is sent too, because an edit can change a weekly hour. "full" = the whole next two weeks.
+        if (!gcal_configured() || !gcal_account($uid)) fail(400, 'Google Calendar is not connected.');
+        if (function_exists('set_time_limit')) set_time_limit(120);   // some hosts turn this off
+        $window = gcal_window();
+        $dates = !empty($in['full']) ? $window : [];
+        foreach (array_slice((array)($in['dates'] ?? []), 0, 31) as $d) {
+            $d = date_in(['d' => (string)$d], 'd');
+            $dates[] = $d;
+            foreach ($window as $w) if (weekday_of($w) === weekday_of($d)) $dates[] = $w;
+        }
+        $dates = array_values(array_unique($dates));
+        sort($dates);
+        try {
+            $n = gcal_sync_dates($uid, $dates);
+        } catch (RuntimeException $e) {
+            fail(502, $e->getMessage());
+        }
+        if (!empty($in['full'])) q('UPDATE google_accounts SET synced_on = ? WHERE user_id = ?', [date('Y-m-d'), $uid]);
+        ok(['changed' => $n, 'connected' => (bool)gcal_account($uid)]);
     }
 
     default:

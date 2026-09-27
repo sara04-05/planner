@@ -63,6 +63,7 @@ async function reload(){
     const p=loadPrefs();
     state={tab:'day',taskFilter:'open',expPeriod:'month',...p,...data,showAll:false};
     render();
+    if(state.google&&state.google.connected&&state.google.needsSync&&!gcalBusy)gcalRun(true);
   }catch(err){
     view.innerHTML=`<p class="empty">Couldn't load your planner: ${esc(err.message)} <button class="linkbtn" onclick="location.reload()">Try again</button></p>`;
   }
@@ -264,10 +265,49 @@ function hourSum(di){
 }
 function hourSection(d){
   const di=iso(d),rows=(a,b)=>{let o='';for(let h=a;h<=b;h++)o+=hourRow(di,h);return o};
-  return `<section style="margin-top:34px"><div class="sec-h" style="flex-wrap:wrap"><h2>Hour by hour</h2><div class="hsum" id="hsum">${hourSum(di)}</div></div>
+  return `<section style="margin-top:34px"><div class="sec-h" style="flex-wrap:wrap"><h2>Hour by hour</h2><div class="hsum" id="hsum">${hourSum(di)}</div></div>${gcalBar()}
     <p style="font-size:13px;color:var(--muted);margin-bottom:12px">Write your uni, work and everything else for each hour, and pick a type to colour it. Click a time to set minutes, like 08:15–08:45. Click ↻ to repeat an hour every ${WDL[wdi(d)]}, so your weekly timetable fills itself in.</p>
     <div class="hours"><div><p class="hcol-h">Night and morning · 00–11</p>${rows(0,11)}</div><div><p class="hcol-h">Afternoon and evening · 12–23</p>${rows(12,23)}</div></div></section>`;
 }
+
+/* ---------- Google Calendar ---------- */
+// Changed days wait a moment, so typing several hours sends one update instead of many
+let gcalTimer=null,gcalBusy=false,gcalFull=false,gcalMsg='';
+const gcalDates=new Set();
+function gcalBar(){
+  const g=state.google;if(!g||!g.configured)return '';
+  if(!g.connected)return `<div class="gcal"><span>Want these hours in your Google Calendar too?</span><a class="btn" href="calendar.php?start=1">${GCAL_ICON}Show in Google Calendar</a></div>`;
+  return `<div class="gcal on"><span>${GCAL_ICON}<span id="gcalMsg">${gcalMsg||`In Google Calendar${g.email?` (${esc(g.email)})`:''}, in the calendar called <b>Splanner</b>`}</span></span>
+    <button class="linkbtn" data-act="gcal-sync">Sync now</button>
+    <form method="post" action="calendar.php" class="inline"><input type="hidden" name="csrf" value="${esc(CSRF)}"><button class="linkbtn" title="Stop sending hours to Google. What's already there stays until you delete the Splanner calendar.">Disconnect</button></form></div>`;
+}
+const GCAL_ICON='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/></svg>';
+function gcalStatus(msg){gcalMsg=msg;const el=document.getElementById('gcalMsg');if(el)el.innerHTML=msg}
+/** After an hour is saved, send that day (and the same weekday in the next two weeks) to Google. */
+function gcalLater(di){
+  if(!state.google||!state.google.connected)return;
+  if(di)gcalDates.add(di);
+  clearTimeout(gcalTimer);gcalTimer=setTimeout(()=>gcalRun(false),2500);
+}
+async function gcalRun(full){
+  gcalFull=gcalFull||full;
+  if(gcalBusy){clearTimeout(gcalTimer);gcalTimer=setTimeout(()=>gcalRun(false),1500);return}
+  full=gcalFull;gcalFull=false;
+  const dates=[...gcalDates];gcalDates.clear();
+  if(!full&&!dates.length)return;
+  gcalBusy=true;gcalStatus('Sending to Google Calendar…');
+  try{
+    const r=await api('gcal.sync',{dates,full});
+    state.google.needsSync=false;
+    if(!r.connected){state.google.connected=false;render();return}
+    gcalStatus('Up to date in Google Calendar ✓');
+  }catch(err){
+    gcalStatus("Couldn't reach Google Calendar");toast(err.message);
+    if(/connect it again/i.test(err.message)){state.google.connected=false;render()}
+  }finally{gcalBusy=false}
+}
+/** Save an hour change, then pass it on to Google Calendar. */
+const hourSync=(action,data)=>sync(action,data).then(()=>gcalLater(data.date));
 
 /* ---------- subjects ---------- */
 const srcOpen=new Set(); // chapters whose "where to find it" box is open while still empty
@@ -525,8 +565,9 @@ document.addEventListener('click',e=>{
     case 'del-block':{
       const di=b.dataset.date,wd=wdi(parse(di)),wk=state.weekly[wd]||(state.weekly[wd]={}),day=state.hours[di]||{};
       for(let h=+b.dataset.start;h<+b.dataset.end;h++){if(day[h])delete day[h];else delete wk[h]}
-      sync('hours.clear',{date:di,start:+b.dataset.start,end:+b.dataset.end});break}
-    case 'hour-repeat':toggleRepeat(b.dataset.date,+b.dataset.h);sync('hour.repeat',{date:b.dataset.date,hour:+b.dataset.h});break;
+      hourSync('hours.clear',{date:di,start:+b.dataset.start,end:+b.dataset.end});break}
+    case 'hour-repeat':toggleRepeat(b.dataset.date,+b.dataset.h);hourSync('hour.repeat',{date:b.dataset.date,hour:+b.dataset.h});break;
+    case 'gcal-sync':gcalRun(true);return;
     case 'msave-reset':setMonth(+b.dataset.y,+b.dataset.m,'save',null);break;
     case 'tab':state.tab=b.dataset.tab;state.showAll=false;window.scrollTo({top:0});break;
     case 'shift':shift(+b.dataset.n);break;
@@ -553,7 +594,7 @@ document.addEventListener('change',e=>{
     const row=t.closest('.hr');
     if(z<=s){toast('The end time has to be after the start time.');t.value=String(t.dataset.hm==='s'?hS(e):hE(e));return}
     setHour(di,h,{[t.dataset.hm]:v});
-    sync('hour.save',{date:di,hour:h,[t.dataset.hm]:v});
+    hourSync('hour.save',{date:di,hour:h,[t.dataset.hm]:v});
     if(row)paintHourRow(row);
     const bl=document.getElementById('blocklist');if(bl)bl.innerHTML=blockRows(studyBlocks(di));
     return;
@@ -561,7 +602,7 @@ document.addEventListener('change',e=>{
   if(t.dataset.hf){
     const di=t.dataset.date,h=+t.dataset.h,field=t.dataset.hf;
     setHour(di,h,{[field]:t.value});
-    sync('hour.save',{date:di,hour:h,[field]:t.value});
+    hourSync('hour.save',{date:di,hour:h,[field]:t.value});
     const row=t.closest('.hr');if(row)paintHourRow(row);
     const sm=document.getElementById('hsum');if(sm)sm.innerHTML=hourSum(di);
     const bl=document.getElementById('blocklist');if(bl)bl.innerHTML=blockRows(studyBlocks(di));
@@ -638,7 +679,7 @@ document.addEventListener('submit',async e=>{
       const h0=Math.floor(a/60),h1=Math.ceil(z/60);
       for(let h=h0;h<h1;h++){const x=resolveHour(di,h);if(x&&x.text&&x.text.trim())clash.push(`${pad(h)}:00 ${HT[x.type]?HT[x.type][0]+': ':''}${esc(x.text)}`)}
       if(clash.length){blockMsg={ok:false,html:`That time is already taken (${clash.join(', ')}). Pick one of the free times below.`};render('bk-title');return}
-      try{await api('block.add',{date:di,from:hm(a),to:hm(z),title})}
+      try{await api('block.add',{date:di,from:hm(a),to:hm(z),title});gcalLater(di)}
       catch(err){if(err.status===409||err.status===400){blockMsg={ok:false,html:esc(err.message)};render('bk-title');return}throw err}
       const day=state.hours[di]||(state.hours[di]={});
       for(let h=h0;h<h1;h++){
@@ -689,6 +730,10 @@ mq.addEventListener&&mq.addEventListener('change',paintThemeBtn);
 new MutationObserver(paintThemeBtn).observe(root,{attributes:true,attributeFilter:['data-theme']});
 paintThemeBtn();
 
+// Coming back from calendar.php (Google Calendar connect / disconnect)
+{const r=new URLSearchParams(location.search).get('gcal');
+ const M={connected:'Google Calendar is connected. Your hours are on their way to the "Splanner" calendar.',disconnected:'Google Calendar is disconnected. You can delete the "Splanner" calendar in Google if you don\'t need it.',cancelled:'Google Calendar was not connected.','no-calendar':'Please tick the calendar box on Google\'s page so the planner can add your hours.','not-set-up':'Google Calendar is not set up on this site yet.',error:"Couldn't connect Google Calendar. Please try again."};
+ if(r){if(M[r])setTimeout(()=>toast(M[r]),300);history.replaceState(null,'',location.pathname)}}
 document.getElementById('coil').innerHTML='<span></span>'.repeat(90);
 document.getElementById('todayChip').textContent=`${WDL[wdi(TODAY)]}, ${TODAY.getDate()} ${MON[TODAY.getMonth()]}`;
 reload();
