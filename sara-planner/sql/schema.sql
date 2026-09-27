@@ -20,6 +20,18 @@ CREATE TABLE IF NOT EXISTS settings (
   FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
 ) ENGINE=InnoDB;
 
+-- Per-month changes: income for that month and/or a manual savings target
+-- (NULL = use the normal value). month is 0 = January ... 11 = December.
+CREATE TABLE IF NOT EXISTS month_money (
+  user_id     INT UNSIGNED NOT NULL,
+  year        SMALLINT UNSIGNED NOT NULL,
+  month       TINYINT UNSIGNED NOT NULL,
+  income      DECIMAL(10,2) NULL,
+  save_target DECIMAL(10,2) NULL,
+  PRIMARY KEY (user_id, year, month),
+  FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+) ENGINE=InnoDB;
+
 CREATE TABLE IF NOT EXISTS expenses (
   id          INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
   user_id     INT UNSIGNED NOT NULL,

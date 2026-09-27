@@ -36,7 +36,26 @@ function db(): PDO
         $dsn = sprintf('mysql:host=%s;port=%d;dbname=%s;charset=utf8mb4', DB_HOST, DB_PORT, DB_NAME);
         $pdo = new PDO($dsn, DB_USER, DB_PASS, $opts);
     }
+    upgrade_schema($pdo);
     return $pdo;
+}
+
+/** Add tables that came after the first version, so older databases keep working without a re-import. */
+function upgrade_schema(PDO $pdo): void
+{
+    if (DB_DRIVER === 'sqlite') {
+        $pdo->exec('CREATE TABLE IF NOT EXISTS month_money (
+            user_id INTEGER NOT NULL, year INTEGER NOT NULL, month TINYINTEGER NOT NULL,
+            income DECIMAL(10,2) NULL, save_target DECIMAL(10,2) NULL,
+            PRIMARY KEY (user_id, year, month),
+            FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE)');
+    } else {
+        $pdo->exec('CREATE TABLE IF NOT EXISTS month_money (
+            user_id INT UNSIGNED NOT NULL, year SMALLINT UNSIGNED NOT NULL, month TINYINT UNSIGNED NOT NULL,
+            income DECIMAL(10,2) NULL, save_target DECIMAL(10,2) NULL,
+            PRIMARY KEY (user_id, year, month),
+            FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE) ENGINE=InnoDB');
+    }
 }
 
 /** Run a prepared statement: q('SELECT * FROM x WHERE id = ?', [$id]) */
