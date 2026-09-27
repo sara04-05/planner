@@ -82,6 +82,13 @@ function upgrade_schema(PDO $pdo): void
             if (!in_array('end_min', $cols, true)) {
                 $pdo->exec("ALTER TABLE $table ADD COLUMN end_min TINYINT NOT NULL DEFAULT 60");
             }
+            // start_min can be negative (an hour that starts early, e.g. 18:30 in the 19:00 row)
+            if (DB_DRIVER !== 'sqlite') {
+                $type = $pdo->query("SHOW COLUMNS FROM $table LIKE 'start_min'")->fetch()['Type'] ?? '';
+                if (stripos($type, 'unsigned') !== false) {
+                    $pdo->exec("ALTER TABLE $table MODIFY start_min TINYINT NOT NULL DEFAULT 0");
+                }
+            }
         } catch (PDOException $e) {
             error_log("Could not add minutes to $table: " . $e->getMessage());
         }

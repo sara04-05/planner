@@ -115,6 +115,22 @@ function shown_hour(int $uid, string $date, int $wd, int $h): array
     return [null, null];
 }
 
+/** Minutes the hour before leaves free at its end, as a negative start (lecture until 18:30 -> -30), or 0. */
+function gap_before(int $uid, string $date, int $wd, int $h): int
+{
+    if ($h === 0) return 0;
+    [$p] = shown_hour($uid, $date, $wd, $h - 1);
+    return $p && trim($p['text']) !== '' && (int)$p['end_min'] < 60 ? (int)$p['end_min'] - 60 : 0;
+}
+
+/** Where the next hour's entry starts if it starts early inside this hour, else 60. */
+function gap_after(int $uid, string $date, int $wd, int $h): int
+{
+    if ($h === 23) return 60;
+    [$n] = shown_hour($uid, $date, $wd, $h + 1);
+    return $n && trim($n['text']) !== '' && (int)$n['start_min'] < 0 ? 60 + (int)$n['start_min'] : 60;
+}
+
 /** One hour as the page wants it: minutes are only sent when they aren't the whole hour. */
 function hour_out(array $r): array
 {
@@ -325,12 +341,15 @@ try {
         $wd   = weekday_of($date);
         $day  = day_hour($uid, $date, $h);
         $week = $day ? null : week_hour($uid, $wd, $h);
-        $cur  = $day ?? $week ?? ['text' => '', 'type' => 'personal', 'start_min' => 0, 'end_min' => 60];
+        $cur  = $day ?? $week ?? ['text' => '', 'type' => 'personal', 'start_min' => gap_before($uid, $date, $wd, $h), 'end_min' => gap_after($uid, $date, $wd, $h)];
 
         if (array_key_exists('type', $in)) {
             $cur['type'] = in_array($in['type'], HOUR_TYPES, true) ? $in['type'] : 'personal';
         }
-        if (array_key_exists('s', $in)) $cur['start_min'] = int_in($in, 's', 0, 59);
+        if (array_key_exists('s', $in)) {
+            $cur['start_min'] = int_in($in, 's', -59, 59);
+            if ($cur['start_min'] < gap_before($uid, $date, $wd, $h)) fail(400, 'That overlaps the hour before.');
+        }
         if (array_key_exists('e', $in)) $cur['end_min']   = int_in($in, 'e', 1, 60);
         if ((int)$cur['end_min'] <= (int)$cur['start_min']) fail(400, 'The end time has to be after the start time.');
         $clear = false;
@@ -388,6 +407,9 @@ try {
             $prev = $x;
         }
 
+        $ga = gap_after($uid, $date, $wd, $last);   // the next hour's entry may start early, inside $last
+        if ($ga < 60 && $end > $last * 60 + $ga) fail(409, 'The next entry starts before that. Pick an earlier end.');
+
         db()->beginTransaction();
         for ($k = $h + 1; $k <= $last; $k++) {
             if (isset($old[$k])) continue;
@@ -440,6 +462,12 @@ try {
         $wd = weekday_of($date);
         $h0 = intdiv($from, 60);
         $h1 = intdiv($to + 59, 60);       // first hour not touched
+        // Starting in the free end of a used hour (after a lecture until 18:30): use the next hour's row
+        $first = day_hour($uid, $date, $h0) ?? week_hour($uid, $wd, $h0);
+        if ($first && trim($first['text']) !== '' && (int)$first['end_min'] <= $from % 60 && $to > ($h0 + 1) * 60) $h0++;
+        if ($h1 < 24 && gap_after($uid, $date, $wd, $h1 - 1) < 60 && $to > ($h1 - 1) * 60 + gap_after($uid, $date, $wd, $h1 - 1)) {
+            fail(409, 'The next entry starts before that. Pick an earlier end.');
+        }
 
         db()->beginTransaction();
         for ($h = $h0; $h < $h1; $h++) {
@@ -450,7 +478,7 @@ try {
             }
         }
         for ($h = $h0; $h < $h1; $h++) {
-            $s = $h === $h0 ? $from % 60 : 0;
+            $s = $h === $h0 ? $from - $h * 60 : 0;
             $e = $h === $h1 - 1 ? $to - $h * 60 : 60;
             put_day_hour($uid, $date, $h, $title, 'study', $s, $e);
         }
