@@ -186,9 +186,19 @@ function bootstrap(int $uid): array
         if (isset($subjects[$sid])) $subjects[$sid]['chapters'][] = $c;
     }
 
+    // Per-month changes, keyed "year-month" (month 0 = January)
+    $months = new stdClass();
+    foreach (q('SELECT year, month, income, save_target FROM month_money WHERE user_id = ?', [$uid]) as $r) {
+        $months->{$r['year'] . '-' . $r['month']} = [
+            'income' => $r['income'] === null ? null : (float)$r['income'],
+            'save'   => $r['save_target'] === null ? null : (float)$r['save_target'],
+        ];
+    }
+
     return [
         'user'      => ['name' => $user['name'] ?? ''],
         'settings'  => ['income' => (float)$set['income'], 'goal' => (float)$set['goal']],
+        'months'    => $months,
         'note'      => $set['note'],
         'exps'      => $exps,
         'tasks'     => $tasks,
@@ -223,6 +233,28 @@ try {
             q('UPDATE settings SET note = ? WHERE user_id = ?', [mb_substr((string)$in['note'], 0, 500), $uid]);
         }
         ok();
+
+    case 'month.save': {
+        // Change one month's income or savings target. An empty value (null) goes back to the normal one.
+        $year  = int_in($in, 'year', 2000, 2100);
+        $month = int_in($in, 'month', 0, 11);
+        $cols  = ['income' => 'income', 'save' => 'save_target'];
+        if (!q('SELECT 1 FROM month_money WHERE user_id = ? AND year = ? AND month = ?', [$uid, $year, $month])->fetch()) {
+            q('INSERT INTO month_money (user_id, year, month) VALUES (?, ?, ?)', [$uid, $year, $month]);
+        }
+        foreach ($cols as $k => $col) {
+            if (!array_key_exists($k, $in)) continue;
+            $v = $in[$k];
+            if ($v !== null) {
+                if (!is_numeric($v) || (float)$v < 0 || (float)$v > 99999999) fail(400, 'That amount is not valid.');
+                $v = round((float)$v, 2);
+            }
+            q("UPDATE month_money SET $col = ? WHERE user_id = ? AND year = ? AND month = ?", [$v, $uid, $year, $month]);
+        }
+        q('DELETE FROM month_money WHERE user_id = ? AND year = ? AND month = ? AND income IS NULL AND save_target IS NULL',
+            [$uid, $year, $month]);
+        ok();
+    }
 
     case 'expense.add':
         $amount = round((float)($in['amount'] ?? 0), 2);

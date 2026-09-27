@@ -15,6 +15,18 @@ CREATE TABLE IF NOT EXISTS settings (
   FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
 );
 
+-- Per-month changes: income for that month and/or a manual savings target
+-- (NULL = use the normal value). month is 0 = January ... 11 = December.
+CREATE TABLE IF NOT EXISTS month_money (
+  user_id     INTEGER NOT NULL,
+  year        INTEGER NOT NULL,
+  month       TINYINTEGER NOT NULL,
+  income      DECIMAL(10,2) NULL,
+  save_target DECIMAL(10,2) NULL,
+  PRIMARY KEY (user_id, year, month),
+  FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+);
+
 CREATE TABLE IF NOT EXISTS expenses (
   id          INTEGER PRIMARY KEY AUTOINCREMENT,
   user_id     INTEGER NOT NULL,
