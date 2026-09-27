@@ -58,6 +58,8 @@ CREATE TABLE IF NOT EXISTS hours (
   hour    TINYINTEGER NOT NULL,
   text    VARCHAR(200) NOT NULL DEFAULT '',
   type    VARCHAR(10)  NOT NULL DEFAULT 'personal',
+  start_min TINYINTEGER NOT NULL DEFAULT 0,
+  end_min   TINYINTEGER NOT NULL DEFAULT 60,
   PRIMARY KEY (user_id, date, hour),
   FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
 );
@@ -69,6 +71,8 @@ CREATE TABLE IF NOT EXISTS weekly_hours (
   hour    TINYINTEGER NOT NULL,
   text    VARCHAR(200) NOT NULL DEFAULT '',
   type    VARCHAR(10)  NOT NULL DEFAULT 'personal',
+  start_min TINYINTEGER NOT NULL DEFAULT 0,
+  end_min   TINYINTEGER NOT NULL DEFAULT 60,
   PRIMARY KEY (user_id, weekday, hour),
   FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
 );

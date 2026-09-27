@@ -70,6 +70,23 @@ function upgrade_schema(PDO $pdo): void
         error_log('Could not add chapters.source: ' . $e->getMessage());
     }
 
+    // Minutes inside an hour (e.g. 08:15–08:45). 0 and 60 mean the whole hour, so old rows stay the same.
+    foreach (['hours', 'weekly_hours'] as $table) {
+        try {
+            $cols = DB_DRIVER === 'sqlite'
+                ? array_column($pdo->query("PRAGMA table_info($table)")->fetchAll(), 'name')
+                : array_column($pdo->query("SHOW COLUMNS FROM $table")->fetchAll(), 'Field');
+            if (!in_array('start_min', $cols, true)) {
+                $pdo->exec("ALTER TABLE $table ADD COLUMN start_min TINYINT NOT NULL DEFAULT 0");
+            }
+            if (!in_array('end_min', $cols, true)) {
+                $pdo->exec("ALTER TABLE $table ADD COLUMN end_min TINYINT NOT NULL DEFAULT 60");
+            }
+        } catch (PDOException $e) {
+            error_log("Could not add minutes to $table: " . $e->getMessage());
+        }
+    }
+
     // When each user last logged in (shown on admin.php). Same safety net as above.
     try {
         $cols = DB_DRIVER === 'sqlite'

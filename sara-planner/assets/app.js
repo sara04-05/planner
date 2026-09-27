@@ -1,6 +1,8 @@
 (function(){
 const TODAY=new Date();TODAY.setHours(0,0,0,0);
 const pad=n=>String(n).padStart(2,'0');
+const hm=m=>`${pad(Math.floor(m/60))}:${pad(m%60)}`;                 // 525 -> "08:45"
+const durTxt=m=>m%60?(m>=60?`${Math.floor(m/60)}h ${m%60}m`:`${m} min`):`${m/60}h`;
 const iso=d=>`${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())}`;
 const parse=s=>{const[y,m,d]=s.split('-').map(Number);return new Date(y,m-1,d)};
 const addDays=(d,n)=>new Date(d.getFullYear(),d.getMonth(),d.getDate()+n);
@@ -149,8 +151,9 @@ function studyBlocks(di){
   for(let h=0;h<24;h++){
     const e=resolveHour(di,h),txt=e&&e.text?e.text.trim():'';
     if(e&&e.type==='study'&&txt){
-      if(cur&&cur.title===txt&&cur.end===h)cur.end=h+1;
-      else{cur={date:di,start:h,end:h+1,title:txt,rep:e.rep};out.push(cur)}
+      const s=h*60+hS(e),z=h*60+hE(e);
+      if(cur&&cur.title===txt&&cur.end===h&&cur.to===s){cur.end=h+1;cur.to=z}
+      else{cur={date:di,start:h,end:h+1,from:s,to:z,title:txt,rep:e.rep};out.push(cur)}
     }else cur=null;
   }
   out.forEach(b=>{b.key=`${di}|${b.start}|${b.title}`;b.done=!!state.blockDone[b.key]});
@@ -158,7 +161,7 @@ function studyBlocks(di){
 }
 function blockRows(list){
   if(!list.length)return `<p class="empty">No study blocks yet. Mark an hour as Study in Hour by hour, or add a block below.</p>`;
-  return list.map(b=>`<div class="row ${b.done?'done':''}"><span class="time">${pad(b.start)}–${pad(b.end)}</span><span class="bar-mark" style="background:var(--c-${subjColor(b.title)})"></span><div class="grow"><div class="t">${esc(b.title)}</div><div class="s">${b.end-b.start}h${b.rep?` · ↻ every ${WDL[wdi(parse(b.date))]}`:''}</div></div><input type="checkbox" data-chk="block" data-key="${esc(b.key)}" ${b.done?'checked':''} aria-label="Done: ${esc(b.title)}"><button class="x" data-act="del-block" data-date="${b.date}" data-start="${b.start}" data-end="${b.end}" data-confirm aria-label="Delete ${esc(b.title)}">×</button></div>`).join('');
+  return list.map(b=>`<div class="row ${b.done?'done':''}"><span class="time">${hm(b.from)}–${hm(b.to)}</span><span class="bar-mark" style="background:var(--c-${subjColor(b.title)})"></span><div class="grow"><div class="t">${esc(b.title)}</div><div class="s">${durTxt(b.to-b.from)}${b.rep?` · ↻ every ${WDL[wdi(parse(b.date))]}`:''}</div></div><input type="checkbox" data-chk="block" data-key="${esc(b.key)}" ${b.done?'checked':''} aria-label="Done: ${esc(b.title)}"><button class="x" data-act="del-block" data-date="${b.date}" data-start="${b.start}" data-end="${b.end}" data-confirm aria-label="Delete ${esc(b.title)}">×</button></div>`).join('');
 }
 function freeRanges(di){
   const r=[];let st=null;const from=di===TI?new Date().getHours():0;
@@ -173,20 +176,28 @@ function freeChips(di){
   const r=freeRanges(di);
   return `<span>Free ${di===TI?'today':'on '+short(parse(di))}:</span>`+(r.length?r.map(([a,z])=>`<button type="button" data-act="pick-free" data-from="${a}" data-to="${Math.min(z,a+2)}" title="Use ${pad(a)}:00–${pad(Math.min(z,a+2))}:00">${pad(a)}–${pad(z)}</button>`).join(''):'<span>no free hours left</span>');
 }
+/** Hour + minute dropdowns (always 24-hour, whatever the browser's language). */
+function timePick(name,h,h0,h1,lbl){
+  let a='',b='';
+  for(let i=h0;i<=h1;i++)a+=`<option value="${i}" ${i===h?'selected':''}>${pad(i)}</option>`;
+  for(let m=0;m<60;m+=5)b+=`<option value="${m}" ${m===0?'selected':''}>${pad(m)}</option>`;
+  return `<select id="bk-${name}" name="${name}" aria-label="${lbl} hour">${a}</select><b>:</b><select name="${name}_m" aria-label="${lbl} minutes">${b}</select>`;
+}
 function blockForm(di,showDate){
   const r=freeRanges(di),a=r.length?r[0][0]:9,z=r.length?Math.min(r[0][1],a+1):10;
-  const hs=(from,to,sel,lbl)=>{let o='';for(let h=from;h<=to;h++)o+=`<option value="${h}" ${h===sel?'selected':''}>${pad(h)}:00</option>`;return o};
   const msg=blockMsg?`<p class="formmsg ${blockMsg.ok?'ok':'err'}" role="status">${blockMsg.html}</p>`:'';
   return `<form class="blockform" data-form="block" autocomplete="off">
     <input id="bk-title" name="title" placeholder="Add extra study time, e.g. Calculus: series practice" required aria-label="What will you study?">
     ${showDate?`<input id="bk-date" name="date" type="date" value="${di}" required aria-label="Date">`:`<input type="hidden" name="date" value="${di}">`}
-    <select id="bk-from" name="from" aria-label="Start time">${hs(0,23,a,'from')}</select><span class="bk-to">to</span>
-    <select id="bk-to" name="to" aria-label="End time">${hs(1,24,z,'to')}</select>
+    <span class="bk-t">${timePick('from',a,0,23,'Start')}</span><span class="bk-to">to</span>
+    <span class="bk-t">${timePick('to',z,1,24,'End')}</span>
     <button class="btn primary">Add block</button></form>${msg}
     <div class="freeh" id="freeh">${freeChips(di)}</div>`;
 }
 
 /* ---------- hour by hour ---------- */
+// An hour can be only partly used: s = start minute (default 0), e = end minute (default 60)
+const hS=e=>e&&e.s?e.s:0,hE=e=>e&&e.e!=null?e.e:60;
 function resolveHour(di,h){
   const day=state.hours[di]||{},wk=state.weekly[wdi(parse(di))]||{};
   if(day[h])return {...day[h],rep:false};
@@ -206,11 +217,25 @@ function toggleRepeat(di,h){
 function hourRow(di,h){
   const e=resolveHour(di,h),ty=e&&HT[e.type]?e.type:'';
   const now=di===TI&&new Date().getHours()===h,hh=pad(h)+':00',dn=WDL[wdi(parse(di))];
-  return `<div class="hr ${now?'now':''}" id="hr-${h}" style="${ty?`--hc:var(--c-${HT[ty][1]})`:''}"><span class="hl">${hh}</span>
+  return `<div class="hr ${now?'now':''}" id="hr-${h}" style="${ty?`--hc:var(--c-${HT[ty][1]})`:''}"><button type="button" class="hl" data-act="hour-mins" data-date="${di}" data-h="${h}">${hourLabel(e,h)}</button>
     <select data-hf="type" data-date="${di}" data-h="${h}" aria-label="Type for ${hh}">${ty?'':'<option value="" selected>Type</option>'}${Object.entries(HT).map(([k,v])=>`<option value="${k}" ${k===ty?'selected':''}>${v[0]}</option>`).join('')}</select>
     <input data-hf="text" data-date="${di}" data-h="${h}" value="${e?esc(e.text):''}" placeholder="${now?'Now':'Free'}" aria-label="Plan for ${hh}">
     <button class="rep" data-act="hour-repeat" data-date="${di}" data-h="${h}">↻</button>
   </div>`;
+}
+function hourLabel(e,h){
+  const s=hS(e),z=hE(e);
+  return hm(h*60+s)+(z<60?`<small>–${hm(h*60+z)}</small>`:'');
+}
+/** The little "starts / ends" picker under an hour, for times like 08:15–08:45. */
+function minsEditor(di,h){
+  const e=resolveHour(di,h),s=hS(e),z=hE(e);
+  let a='',b='';
+  for(let m=0;m<60;m+=5)a+=`<option value="${m}" ${m===s?'selected':''}>${hm(h*60+m)}</option>`;
+  for(let m=5;m<=60;m+=5)b+=`<option value="${m}" ${m===z?'selected':''}>${hm(h*60+m)}</option>`;
+  if(s%5)a+=`<option value="${s}" selected>${hm(h*60+s)}</option>`;
+  if(z%5)b+=`<option value="${z}" selected>${hm(h*60+z)}</option>`;
+  return `<div class="hmin"><label>Starts <select data-hm="s" data-date="${di}" data-h="${h}">${a}</select></label><label>Ends <select data-hm="e" data-date="${di}" data-h="${h}">${b}</select></label></div>`;
 }
 /** Update one hour row in place (no re-drawing, so focus and open dropdowns are never lost). */
 function paintHourRow(row){
@@ -220,6 +245,11 @@ function paintHourRow(row){
   const ph=sel.querySelector('option[value=""]');
   if(ty){if(ph)ph.remove();if(sel.value!==ty)sel.value=ty}
   else if(!ph){sel.insertAdjacentHTML('afterbegin','<option value="">Type</option>');sel.value=''}
+  const hl=row.querySelector('.hl');
+  hl.innerHTML=hourLabel(e,h);
+  hl.title=e?'Set the minutes (e.g. 08:15–08:45)':'Write something first, then click here to set the minutes';
+  hl.setAttribute('aria-label',`${hl.textContent}. ${hl.title}`);
+  const ed=row.querySelector('.hmin');if(ed&&!e)ed.remove();
   const rep=row.querySelector('.rep');
   rep.style.visibility=e?'visible':'hidden';rep.tabIndex=e?0:-1;
   rep.classList.toggle('on',!!(e&&e.rep));
@@ -235,7 +265,7 @@ function hourSum(di){
 function hourSection(d){
   const di=iso(d),rows=(a,b)=>{let o='';for(let h=a;h<=b;h++)o+=hourRow(di,h);return o};
   return `<section style="margin-top:34px"><div class="sec-h" style="flex-wrap:wrap"><h2>Hour by hour</h2><div class="hsum" id="hsum">${hourSum(di)}</div></div>
-    <p style="font-size:13px;color:var(--muted);margin-bottom:12px">Write your uni, work and everything else for each hour, and pick a type to colour it. Click ↻ to repeat an hour every ${WDL[wdi(d)]}, so your weekly timetable fills itself in.</p>
+    <p style="font-size:13px;color:var(--muted);margin-bottom:12px">Write your uni, work and everything else for each hour, and pick a type to colour it. Click a time to set minutes, like 08:15–08:45. Click ↻ to repeat an hour every ${WDL[wdi(d)]}, so your weekly timetable fills itself in.</p>
     <div class="hours"><div><p class="hcol-h">Night and morning · 00–11</p>${rows(0,11)}</div><div><p class="hcol-h">Afternoon and evening · 12–23</p>${rows(12,23)}</div></div></section>`;
 }
 
@@ -301,7 +331,7 @@ V.week=()=>{
   const def=(TODAY>=ws&&TODAY<=we)?TI:iso(ws);
   const cards=days.map(d=>{
     const di=iso(d),ts=state.tasks.filter(t=>t.due===di),bs=studyBlocks(di),sp=sum(state.exps.filter(e=>e.date===di));
-    const items=[...bs.map(b=>`<li class="${b.done?'dn':''}"><span class="dot" style="background:var(--c-${subjColor(b.title)})"></span>${pad(b.start)}–${pad(b.end)} ${esc(b.title)}</li>`),...ts.map(t=>`<li class="${t.done?'dn':''}"><span class="prio ${t.priority}" style="width:8px;height:8px;margin-top:5px"></span>${esc(t.title)}</li>`)];
+    const items=[...bs.map(b=>`<li class="${b.done?'dn':''}"><span class="dot" style="background:var(--c-${subjColor(b.title)})"></span>${hm(b.from)}–${hm(b.to)} ${esc(b.title)}</li>`),...ts.map(t=>`<li class="${t.done?'dn':''}"><span class="prio ${t.priority}" style="width:8px;height:8px;margin-top:5px"></span>${esc(t.title)}</li>`)];
     return `<div class="wd ${di===TI?'is-today':''}"><button class="wd-h" data-act="goto" data-date="${di}"><span>${WD[wdi(d)]}</span><b>${d.getDate()}</b></button><ul>${items.slice(0,4).join('')||'<li style="color:var(--muted)">Free</li>'}${items.length>4?`<li style="color:var(--muted)">+${items.length-4} more</li>`:''}</ul><div class="foot"><span>Spent</span><span class="amt">${eur(sp)}</span></div></div>`;
   }).join('');
   const daily=allow/7;
@@ -485,7 +515,13 @@ document.addEventListener('click',e=>{
       srcOpen.add(c.id);render('src-'+c.id);return}
     case 'del-topic':{const c=findC(b.dataset.sid,b.dataset.cid);if(c)c.topics=c.topics.filter(t=>t.id!==b.dataset.tid);sync('topic.delete',{id:b.dataset.tid});break}
     case 'del-upcoming':state.upcoming=state.upcoming.filter(u=>u.id!==b.dataset.id);sync('upcoming.delete',{id:b.dataset.id});break;
-    case 'pick-free':{const f=document.querySelector('form[data-form=block]');if(f){f.elements.from.value=b.dataset.from;f.elements.to.value=b.dataset.to;f.elements.title.focus()}return}
+    case 'pick-free':{const f=document.querySelector('form[data-form=block]');if(f){f.elements.from.value=b.dataset.from;f.elements.to.value=b.dataset.to;f.elements.from_m.value=f.elements.to_m.value='0';f.elements.title.focus()}return}
+    case 'hour-mins':{
+      const row=b.closest('.hr'),ed=row.querySelector('.hmin');
+      if(ed){ed.remove();return}
+      if(!resolveHour(b.dataset.date,+b.dataset.h)){row.querySelector('[data-hf=text]').focus();return}
+      row.insertAdjacentHTML('beforeend',minsEditor(b.dataset.date,+b.dataset.h));
+      row.querySelector('.hmin select').focus();return}
     case 'del-block':{
       const di=b.dataset.date,wd=wdi(parse(di)),wk=state.weekly[wd]||(state.weekly[wd]={}),day=state.hours[di]||{};
       for(let h=+b.dataset.start;h<+b.dataset.end;h++){if(day[h])delete day[h];else delete wk[h]}
@@ -511,6 +547,17 @@ document.addEventListener('change',e=>{
   if(!state)return;
   const t=e.target;
   if(t.id==='bk-date'&&t.value){const fh=document.getElementById('freeh');if(fh)fh.innerHTML=freeChips(t.value);return}
+  if(t.dataset.hm){
+    const di=t.dataset.date,h=+t.dataset.h,e=resolveHour(di,h);if(!e)return;
+    const v=+t.value,s=t.dataset.hm==='s'?v:hS(e),z=t.dataset.hm==='e'?v:hE(e);
+    const row=t.closest('.hr');
+    if(z<=s){toast('The end time has to be after the start time.');t.value=String(t.dataset.hm==='s'?hS(e):hE(e));return}
+    setHour(di,h,{[t.dataset.hm]:v});
+    sync('hour.save',{date:di,hour:h,[t.dataset.hm]:v});
+    if(row)paintHourRow(row);
+    const bl=document.getElementById('blocklist');if(bl)bl.innerHTML=blockRows(studyBlocks(di));
+    return;
+  }
   if(t.dataset.hf){
     const di=t.dataset.date,h=+t.dataset.h,field=t.dataset.hf;
     setHour(di,h,{[field]:t.value});
@@ -585,16 +632,22 @@ document.addEventListener('submit',async e=>{
       state.tasks.push({id:r.id,...item,done:false});
       render('t-title');
     } else if(f.dataset.form==='block'){
-      const di=d.date||TI,a=+d.from,z=+d.to,title=d.title.trim();if(!title)return;
+      const di=d.date||TI,a=+d.from*60+ +d.from_m,z=Math.min(1440,+d.to*60+ +d.to_m),title=d.title.trim();if(!title)return;
       if(z<=a){blockMsg={ok:false,html:'The end time has to be after the start time.'};render('bk-title');return}
       const clash=[];
-      for(let h=a;h<z;h++){const x=resolveHour(di,h);if(x&&x.text&&x.text.trim())clash.push(`${pad(h)}:00 ${HT[x.type]?HT[x.type][0]+': ':''}${esc(x.text)}`)}
+      const h0=Math.floor(a/60),h1=Math.ceil(z/60);
+      for(let h=h0;h<h1;h++){const x=resolveHour(di,h);if(x&&x.text&&x.text.trim())clash.push(`${pad(h)}:00 ${HT[x.type]?HT[x.type][0]+': ':''}${esc(x.text)}`)}
       if(clash.length){blockMsg={ok:false,html:`That time is already taken (${clash.join(', ')}). Pick one of the free times below.`};render('bk-title');return}
-      try{await api('block.add',{date:di,from:a,to:z,title})}
+      try{await api('block.add',{date:di,from:hm(a),to:hm(z),title})}
       catch(err){if(err.status===409||err.status===400){blockMsg={ok:false,html:esc(err.message)};render('bk-title');return}throw err}
       const day=state.hours[di]||(state.hours[di]={});
-      for(let h=a;h<z;h++)day[h]={text:title,type:'study'};
-      blockMsg={ok:true,html:`Added ${esc(title)}, ${pad(a)}:00–${pad(z)}:00 on ${short(parse(di))}. It's in Hour by hour too.`};
+      for(let h=h0;h<h1;h++){
+        const x={text:title,type:'study'};
+        if(h===h0&&a%60)x.s=a%60;
+        if(h===h1-1&&z-h*60<60)x.e=z-h*60;
+        day[h]=x;
+      }
+      blockMsg={ok:true,html:`Added ${esc(title)}, ${hm(a)}–${hm(z)} on ${short(parse(di))}. It's in Hour by hour too.`};
       render('bk-title');
     } else if(f.dataset.form==='subject'){
       if(!d.name.trim())return;

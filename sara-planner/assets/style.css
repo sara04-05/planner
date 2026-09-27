@@ -242,7 +242,12 @@ input[type=checkbox]{accent-color:var(--accent);width:18px;height:18px;cursor:po
 .hours{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:0 28px}
 .hcol-h{font-size:11px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.07em;padding:0 0 6px}
 .hr{display:grid;grid-template-columns:48px 100px minmax(0,1fr) 30px;gap:6px;align-items:center;padding:3px 0 3px 10px;border-left:4px solid var(--hc,var(--line));border-bottom:1px dashed var(--line);min-height:44px}
-.hr .hl{font-size:12px;font-weight:700;color:var(--muted);font-variant-numeric:tabular-nums}
+.hr .hl{font-size:12px;font-weight:700;color:var(--muted);font-variant-numeric:tabular-nums;background:none;border:0;padding:4px 0;text-align:left;cursor:pointer;border-radius:6px;line-height:1.25}
+.hr .hl:hover{color:var(--ink)}
+.hr .hl small{display:block;font-size:10px;font-weight:600;opacity:.8}
+.hmin{grid-column:1/-1;display:flex;flex-wrap:wrap;gap:6px 14px;padding:2px 0 6px;font-size:12px;font-weight:600;color:var(--muted)}
+.hmin label{display:flex;align-items:center;gap:6px}
+.hr .hmin select{width:auto;border-color:var(--line);background:var(--paper);color:var(--ink)}
 .hr select,.hr input{background:transparent;border:1px solid transparent;border-radius:8px;padding:6px 8px;min-width:0;width:100%}
 .hr select{font-size:12px;font-weight:700;color:var(--hc,var(--muted));cursor:pointer}
 .hr select option{color:var(--ink);background:var(--paper)}
@@ -260,7 +265,10 @@ input[type=checkbox]{accent-color:var(--accent);width:18px;height:18px;cursor:po
 .blockform{display:flex;flex-wrap:wrap;gap:8px;margin:14px 0 6px}
 .blockform input,.blockform select{background:var(--paper);border:1px solid var(--line);border-radius:10px;padding:9px 11px;min-width:0}
 .blockform input[name=title]{flex:1 1 100%}
-.blockform input[name=date],.blockform select{flex:1 1 110px}
+.blockform input[name=date]{flex:1 1 110px}
+.blockform .bk-t{flex:1 1 130px;display:flex;align-items:center;gap:4px}
+.blockform .bk-t select{flex:1 1 0}
+.blockform .bk-t b{color:var(--muted)}
 .blockform .btn{flex:0 0 auto}
 .blockform input[name=date]{flex:1 1 100%}
 .blockform .bk-to{align-self:center;font-size:13px;font-weight:600;color:var(--muted)}
