@@ -10,7 +10,8 @@ CREATE TABLE IF NOT EXISTS users (
   email         VARCHAR(190) NOT NULL UNIQUE,
   password_hash VARCHAR(255) NOT NULL,
   created_at    TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-  last_login    TIMESTAMP NULL
+  last_login    TIMESTAMP NULL,
+  email_verified TINYINT(1) NOT NULL DEFAULT 1
 ) ENGINE=InnoDB;
 
 CREATE TABLE IF NOT EXISTS settings (
@@ -138,4 +139,36 @@ CREATE TABLE IF NOT EXISTS topics (
   title      VARCHAR(200) NOT NULL,
   done       TINYINT(1) NOT NULL DEFAULT 0,
   FOREIGN KEY (chapter_id) REFERENCES chapters(id) ON DELETE CASCADE
+) ENGINE=InnoDB;
+
+-- Google Calendar connection (one per user) and the events the planner put there
+CREATE TABLE IF NOT EXISTS google_accounts (
+  user_id       INT UNSIGNED PRIMARY KEY,
+  google_email  VARCHAR(190) NOT NULL DEFAULT '',
+  refresh_token TEXT NOT NULL,
+  access_token  TEXT NULL,
+  expires_at    INT UNSIGNED NOT NULL DEFAULT 0,
+  calendar_id   VARCHAR(255) NULL,
+  synced_on     DATE NULL,
+  FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+) ENGINE=InnoDB;
+
+CREATE TABLE IF NOT EXISTS gcal_events (
+  user_id  INT UNSIGNED NOT NULL,
+  date     DATE NOT NULL,
+  event_id VARCHAR(255) NOT NULL,
+  sig      CHAR(40) NOT NULL,
+  PRIMARY KEY (user_id, event_id),
+  INDEX idx_gcal_user_date (user_id, date),
+  FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+) ENGINE=InnoDB;
+
+-- The code emailed to confirm a new account's email
+CREATE TABLE IF NOT EXISTS email_codes (
+  user_id    INT UNSIGNED PRIMARY KEY,
+  code_hash  VARCHAR(255) NOT NULL,
+  expires_at INT UNSIGNED NOT NULL,
+  sent_at    INT UNSIGNED NOT NULL,
+  tries      TINYINT UNSIGNED NOT NULL DEFAULT 0,
+  FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
 ) ENGINE=InnoDB;

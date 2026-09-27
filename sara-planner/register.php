@@ -2,6 +2,7 @@
 declare(strict_types=1);
 require __DIR__ . '/db.php';
 require __DIR__ . '/layout.php';
+require __DIR__ . '/mail.php';
 
 if (current_user_id()) {
     header('Location: index.php');
@@ -29,11 +30,20 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     if (!$errors) {
         $pdo = db();
         $pdo->beginTransaction();
-        q('INSERT INTO users (name, email, password_hash) VALUES (?, ?, ?)', [$name, $email, password_hash($pass, PASSWORD_DEFAULT)]);
+        if (mail_configured()) {   // the account opens once the emailed code is typed in (verify.php)
+            q('INSERT INTO users (name, email, password_hash, email_verified) VALUES (?, ?, ?, 0)', [$name, $email, password_hash($pass, PASSWORD_DEFAULT)]);
+        } else {
+            q('INSERT INTO users (name, email, password_hash) VALUES (?, ?, ?)', [$name, $email, password_hash($pass, PASSWORD_DEFAULT)]);
+        }
         $uid = (int)$pdo->lastInsertId();
         create_user_defaults($uid);
         $pdo->commit();
         login_user($uid);
+        if (mail_configured()) {
+            $_SESSION['verify_msg'] = send_verify_code($uid, $email, $name);
+            header('Location: verify.php');
+            exit;
+        }
         header('Location: index.php');
         exit;
     }
@@ -41,7 +51,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
 auth_top('Create an account'); ?>
     <h1>Create your planner</h1>
-    <p class="auth-sub">Your planner is private. Only you can see what you add.</p>
+    <p class="auth-sub">Your planner is private. Only you can see what you add.<?= mail_configured() ? ' We\'ll email you a code to check your email is right.' : '' ?></p>
     <?php if ($errors): ?>
       <div class="formmsg err" role="alert"><?= implode('<br>', array_map('h', $errors)) ?></div>
     <?php endif; ?>

@@ -12,10 +12,14 @@ sara-planner/
 ├── register.php       Create an account
 ├── logout.php         Log out
 ├── admin.php          List of every account (only for the site owner)
+├── verify.php         "Check your email" page: type the emailed code, or fix a wrong email
+├── calendar.php       Connect / disconnect Google Calendar
 ├── api.php            Saves and loads all data (the JavaScript talks to this)
 ├── db.php             Database connection, sessions, security helpers
 ├── config.php         Your database settings  ← edit this
 ├── layout.php         Shared layout for the login/sign-up pages
+├── gcal.php           Sends the Hour by hour plan to Google Calendar
+├── mail.php           Sends emails through Gmail (the sign-up codes)
 ├── assets/
 │   ├── style.css      All the design (notebook look, dark mode)
 │   └── app.js         Everything interactive on the page
@@ -80,6 +84,42 @@ This page reads the database that the site you're on uses. On your laptop (`loca
 accounts made on your laptop; on the live site it shows everyone who signed up there.
 Only the emails in `ADMIN_EMAILS` can open it; everyone else gets "Not allowed".
 
+## Send your hours to Google Calendar
+
+With this on, a **Show in Google Calendar** button appears above *Hour by hour* on the Day page.
+After you click it and allow access, everything you plan hour by hour shows up in a calendar called
+**Splanner** in your Google account. Changes are sent a couple of seconds after you type them, and your
+weekly (↻) hours are filled in for the next two weeks. The planner can only touch that one calendar,
+never your other calendars.
+
+To turn it on (once, as the site owner):
+
+1. Go to https://console.cloud.google.com, create a project (any name, e.g. "Splanner").
+2. **APIs & Services → Library**: search for **Google Calendar API** and click **Enable**.
+3. **APIs & Services → OAuth consent screen** (called *Google Auth Platform* in newer consoles):
+   choose **External**, fill in the app name and your email. Under **Audience / Test users** add the Gmail
+   addresses that will use it (while the app is in "Testing", only those can connect).
+4. **Credentials → Create credentials → OAuth client ID**, type **Web application**. Under
+   **Authorized redirect URIs** add the address of `calendar.php` on your site, for example
+   `http://localhost/sara-planner/calendar.php` and, once it's online, `https://your-site.com/calendar.php`.
+5. Copy the **Client ID** and **Client secret** into `GOOGLE_CLIENT_ID` and `GOOGLE_CLIENT_SECRET` in `config.php`.
+
+If Google says *redirect_uri_mismatch*, the address in step 4 must match exactly (http vs https, folder name).
+You can also set it by hand in `GOOGLE_REDIRECT_URI`.
+
+## Check that new users typed their email right (Gmail)
+
+With this on, a new account gets a 6-digit code by email and has to type it in before the planner opens.
+If the email was mistyped, the code never arrives, and the person can fix the email on the same page
+and get a new code. Accounts made before you turned this on are not asked.
+
+1. Use a Gmail account for the site (a new one like `splanner.app@gmail.com` is a good idea).
+2. Turn on **2-Step Verification** for it: https://myaccount.google.com/security
+3. Create an **app password**: https://myaccount.google.com/apppasswords (name it "Splanner"). Google shows 16 letters.
+4. In `config.php` put the Gmail address in `GMAIL_USER` and the 16 letters in `GMAIL_APP_PASSWORD`.
+
+Leave both empty and sign-up works like before, without the code.
+
 ## Security that's already built in
 
 - Passwords are hashed with `password_hash()`, and checked with `password_verify()`.
@@ -92,7 +132,7 @@ Only the emails in `ADMIN_EMAILS` can open it; everyone else gets "Not allowed".
 
 ## Ideas for later
 
-- "Forgot password" emails (needs an email service, for example PHPMailer with SMTP).
+- "Forgot password" emails (the Gmail sending in `mail.php` can be reused for this).
 - Limiting login attempts per IP address.
 - Editing a subject's name or exam date after creating it.
 - Exporting expenses to CSV.

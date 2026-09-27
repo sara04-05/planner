@@ -5,7 +5,8 @@ CREATE TABLE IF NOT EXISTS users (
   email         VARCHAR(190) NOT NULL UNIQUE,
   password_hash VARCHAR(255) NOT NULL,
   created_at    TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-  last_login    TIMESTAMP NULL
+  last_login    TIMESTAMP NULL,
+  email_verified TINYINT(1) NOT NULL DEFAULT 1
 );
 
 CREATE TABLE IF NOT EXISTS settings (
@@ -133,5 +134,37 @@ CREATE TABLE IF NOT EXISTS topics (
   FOREIGN KEY (chapter_id) REFERENCES chapters(id) ON DELETE CASCADE
 );
 
+-- Google Calendar connection (one per user) and the events the planner put there
+CREATE TABLE IF NOT EXISTS google_accounts (
+  user_id       INTEGER PRIMARY KEY,
+  google_email  VARCHAR(190) NOT NULL DEFAULT '',
+  refresh_token TEXT NOT NULL,
+  access_token  TEXT NULL,
+  expires_at    INTEGER NOT NULL DEFAULT 0,
+  calendar_id   VARCHAR(255) NULL,
+  synced_on     DATE NULL,
+  FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+);
+
+CREATE TABLE IF NOT EXISTS gcal_events (
+  user_id  INTEGER NOT NULL,
+  date     DATE NOT NULL,
+  event_id VARCHAR(255) NOT NULL,
+  sig      CHAR(40) NOT NULL,
+  PRIMARY KEY (user_id, event_id),
+  FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+);
+
+-- The code emailed to confirm a new account's email
+CREATE TABLE IF NOT EXISTS email_codes (
+  user_id    INTEGER PRIMARY KEY,
+  code_hash  VARCHAR(255) NOT NULL,
+  expires_at INTEGER NOT NULL,
+  sent_at    INTEGER NOT NULL,
+  tries      TINYINTEGER NOT NULL DEFAULT 0,
+  FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+);
+
 CREATE INDEX IF NOT EXISTS idx_exp_user_date ON expenses(user_id,date);
 CREATE INDEX IF NOT EXISTS idx_task_user_due ON tasks(user_id,due);
+CREATE INDEX IF NOT EXISTS idx_gcal_user_date ON gcal_events(user_id,date);

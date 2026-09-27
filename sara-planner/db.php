@@ -98,6 +98,23 @@ function upgrade_schema(PDO $pdo): void
     } catch (PDOException $e) {
         error_log('Could not add users.last_login: ' . $e->getMessage());
     }
+
+    // Google Calendar and email codes: same tables as in the schema file. Existing accounts count as confirmed (DEFAULT 1).
+    try {
+        $sql = file_get_contents(__DIR__ . (DB_DRIVER === 'sqlite' ? '/sql/schema-sqlite.sql' : '/sql/schema.sql'));
+        foreach (['google_accounts', 'gcal_events', 'email_codes'] as $t) {
+            if (preg_match("/CREATE TABLE IF NOT EXISTS $t \\(.*?\\n\\)[^;]*;/s", $sql, $m)) $pdo->exec($m[0]);
+        }
+        if (DB_DRIVER === 'sqlite') $pdo->exec('CREATE INDEX IF NOT EXISTS idx_gcal_user_date ON gcal_events(user_id,date)');
+        $cols = DB_DRIVER === 'sqlite'
+            ? array_column($pdo->query('PRAGMA table_info(users)')->fetchAll(), 'name')
+            : array_column($pdo->query('SHOW COLUMNS FROM users')->fetchAll(), 'Field');
+        if (!in_array('email_verified', $cols, true)) {
+            $pdo->exec('ALTER TABLE users ADD COLUMN email_verified TINYINT NOT NULL DEFAULT 1');
+        }
+    } catch (PDOException $e) {
+        error_log('Could not add the Google / email tables: ' . $e->getMessage());
+    }
 }
 
 /** Run a prepared statement: q('SELECT * FROM x WHERE id = ?', [$id]) */
@@ -126,15 +143,30 @@ function current_user_id(): ?int
     return isset($_SESSION['uid']) ? (int)$_SESSION['uid'] : null;
 }
 
-/** Send visitors who aren't logged in to the login page. */
-function require_login(): int
+/** Send visitors who aren't logged in to the login page, and new accounts that haven't confirmed their email to verify.php. */
+function require_login(bool $allowUnverified = false): int
 {
     $id = current_user_id();
     if (!$id) {
         header('Location: welcome.php');
         exit;
     }
+    if (!$allowUnverified && !is_verified($id)) {
+        header('Location: verify.php');
+        exit;
+    }
     return $id;
+}
+
+/** Has this account confirmed its email? (Accounts from before the email check always have.) */
+function is_verified(int $uid): bool
+{
+    try {
+        $row = q('SELECT email_verified FROM users WHERE id = ?', [$uid])->fetch();
+    } catch (PDOException $e) {   // column couldn't be added on this host
+        return true;
+    }
+    return !$row || (int)$row['email_verified'] === 1;
 }
 
 /** Escape text for HTML. */

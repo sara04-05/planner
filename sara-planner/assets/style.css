@@ -259,6 +259,10 @@ input[type=checkbox]{accent-color:var(--accent);width:18px;height:18px;cursor:po
 .rep.on{opacity:1;color:var(--accent)}
 .rep:hover{opacity:1;background:var(--paper-2)}
 .hsum{display:flex;gap:6px;flex-wrap:wrap}
+.gcal{display:flex;align-items:center;gap:8px 14px;flex-wrap:wrap;font-size:13px;color:var(--muted);background:var(--paper-2);border:1px solid var(--line);border-radius:12px;padding:8px 12px;margin:-4px 0 12px}
+.gcal>span{display:inline-flex;align-items:center;gap:6px;flex:1 1 220px}
+.gcal svg{width:16px;height:16px;flex-shrink:0}
+.gcal.on>span{color:var(--ink)} .gcal.on svg{color:var(--good)}
 .hsum span{font-size:12px;font-weight:700;padding:3px 9px;border-radius:999px;background:color-mix(in srgb,var(--hc) 18%,transparent);display:inline-flex;gap:6px;align-items:center}
 .hsum span i{width:8px;height:8px;border-radius:50%;background:var(--hc)}
 /* study block form */
