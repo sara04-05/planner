@@ -289,7 +289,7 @@ input[type=checkbox]{accent-color:var(--accent);width:18px;height:18px;cursor:po
 .mini input{flex:1;min-width:0;background:transparent;border:1px dashed var(--line);border-radius:8px;padding:6px 9px;font-size:13px}
 .mini input:focus{border-style:solid;background:var(--paper)}
 .x.sm{font-size:15px;padding:0 5px}
-.srcbtn{border:0;background:transparent;cursor:pointer;font-size:14px;padding:0 3px;opacity:.35;filter:grayscale(1)}
+.srcbtn{border:0;background:transparent;cursor:pointer;font-size:14px;padding:0 3px;opacity:.6;filter:grayscale(1)}
 .srcbtn:hover,.srcbtn:focus-visible,.srcbtn.on{opacity:1;filter:none}
 .ch textarea.src{display:block;width:calc(100% - 28px);margin:6px 0 0 28px;background:transparent;border:1px dashed var(--line);border-radius:8px;padding:6px 9px;font-size:13px;color:var(--muted);resize:vertical;white-space:pre-wrap;tab-size:4}
 .ch textarea.src:focus{border-style:solid;background:var(--paper);color:var(--ink)}
