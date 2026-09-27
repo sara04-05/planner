@@ -69,6 +69,18 @@ function upgrade_schema(PDO $pdo): void
     } catch (PDOException $e) {
         error_log('Could not add chapters.source: ' . $e->getMessage());
     }
+
+    // When each user last logged in (shown on admin.php). Same safety net as above.
+    try {
+        $cols = DB_DRIVER === 'sqlite'
+            ? array_column($pdo->query('PRAGMA table_info(users)')->fetchAll(), 'name')
+            : array_column($pdo->query('SHOW COLUMNS FROM users')->fetchAll(), 'Field');
+        if (!in_array('last_login', $cols, true)) {
+            $pdo->exec('ALTER TABLE users ADD COLUMN last_login TIMESTAMP NULL');
+        }
+    } catch (PDOException $e) {
+        error_log('Could not add users.last_login: ' . $e->getMessage());
+    }
 }
 
 /** Run a prepared statement: q('SELECT * FROM x WHERE id = ?', [$id]) */
@@ -120,6 +132,20 @@ function login_user(int $id): void
     session_regenerate_id(true);
     $_SESSION['uid'] = $id;
     unset($_SESSION['csrf']);
+    try {
+        q('UPDATE users SET last_login = CURRENT_TIMESTAMP WHERE id = ?', [$id]);
+    } catch (PDOException $e) {
+        error_log('Could not save last_login: ' . $e->getMessage());
+    }
+}
+
+/** Is this user allowed to open admin.php? (ADMIN_EMAILS is set in config.php) */
+function is_admin(int $uid): bool
+{
+    $admins = defined('ADMIN_EMAILS') ? array_map('strtolower', ADMIN_EMAILS) : [];
+    if (!$admins) return false;
+    $row = q('SELECT email FROM users WHERE id = ?', [$uid])->fetch();
+    return $row && in_array(strtolower($row['email']), $admins, true);
 }
 
 /** Create the rows every new user starts with. */

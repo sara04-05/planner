@@ -18,5 +18,9 @@ const DB_PASS = '';          // XAMPP's root user has no password by default
 // SQLite
 const SQLITE_PATH = __DIR__ . '/data/planner.sqlite';
 
+// Emails of the accounts that may open admin.php (the list of all users).
+// Put the email you log in to the website with, e.g. ['you@example.com'].
+const ADMIN_EMAILS = [];
+
 // Your time zone, so "today" is right
 date_default_timezone_set('Europe/Belgrade');
