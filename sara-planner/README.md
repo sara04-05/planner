@@ -11,6 +11,7 @@ sara-planner/
 ├── login.php          Log in
 ├── register.php       Create an account
 ├── logout.php         Log out
+├── admin.php          List of every account (only for the site owner)
 ├── api.php            Saves and loads all data (the JavaScript talks to this)
 ├── db.php             Database connection, sessions, security helpers
 ├── config.php         Your database settings  ← edit this
@@ -68,6 +69,16 @@ You need a host with **PHP 8.1 or newer** and **MySQL/MariaDB**. Most shared hos
 3. Put your host's details into `config.php`.
 4. Upload all the files (with FTP or the host's file manager) into the site's `public_html` / `htdocs` folder.
 5. Turn on **HTTPS** (most hosts offer a free certificate). Logins should always go over HTTPS.
+
+## See everyone who signed up
+
+1. In `config.php` put the email you log in with: `const ADMIN_EMAILS = ['you@example.com'];`
+2. Log in and click **Users** at the top of your planner (or open `admin.php`).
+   You'll see each account's name, email, sign-up date and last login.
+
+This page reads the database that the site you're on uses. On your laptop (`localhost`) it only shows
+accounts made on your laptop; on the live site it shows everyone who signed up there.
+Only the emails in `ADMIN_EMAILS` can open it; everyone else gets "Not allowed".
 
 ## Security that's already built in
 

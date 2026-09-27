@@ -360,3 +360,9 @@ form.inline{display:inline;margin:0}
 .cellin.edited{border-color:var(--accent);background:var(--accent-soft)}
 .tag-edited{display:inline-block;font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.05em;color:var(--accent);margin-left:4px}
 .hint{font-size:12px;color:var(--muted);margin-top:8px}
+
+/* admin: list of users */
+.auth-card.wide{max-width:820px}
+.admin-count{font-weight:700;color:var(--ink)}
+.admin-top{display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:6px}
+.tbl td.email{word-break:break-all}
