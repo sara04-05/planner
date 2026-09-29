@@ -55,6 +55,6 @@ if (!$user) {            // account was deleted
   </div>
 </div>
 <div class="toast" id="toast" role="status" hidden></div>
-<script src="assets/app.js?v=8"></script>
+<script src="assets/app.js?v=9"></script>
 </body>
 </html>
