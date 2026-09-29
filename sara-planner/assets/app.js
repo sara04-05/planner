@@ -236,7 +236,10 @@ function minsEditor(di,h){
   for(let m=5;m<=60;m+=5)b+=`<option value="${m}" ${m===z?'selected':''}>${hm(h*60+m)}</option>`;
   if(s%5)a+=`<option value="${s}" selected>${hm(h*60+s)}</option>`;
   if(z%5)b+=`<option value="${z}" selected>${hm(h*60+z)}</option>`;
-  return `<div class="hmin"><label>Starts <select data-hm="s" data-date="${di}" data-h="${h}">${a}</select></label><label>Ends <select data-hm="e" data-date="${di}" data-h="${h}">${b}</select></label></div>`;
+  const same=(x,y)=>x&&y&&x.text===y.text&&x.type===y.type;
+  let n=1;while(n<3&&h+n<24&&same(resolveHour(di,h+n),e)&&hS(resolveHour(di,h+n))===0&&hE(resolveHour(di,h+n))===60)n++;
+  const c=[1,2,3].map(k=>`<option value="${k}" ${k===n?'selected':''}>${k} hour${k>1?'s':''}</option>`).join('');
+  return `<div class="hmin"><label>Lasts <select data-hm="len" data-date="${di}" data-h="${h}">${c}</select></label><label>Starts <select data-hm="s" data-date="${di}" data-h="${h}">${a}</select></label><label>Ends <select data-hm="e" data-date="${di}" data-h="${h}">${b}</select></label></div>`;
 }
 /** Update one hour row in place (no re-drawing, so focus and open dropdowns are never lost). */
 function paintHourRow(row){
@@ -588,6 +591,31 @@ document.addEventListener('change',e=>{
   if(!state)return;
   const t=e.target;
   if(t.id==='bk-date'&&t.value){const fh=document.getElementById('freeh');if(fh)fh.innerHTML=freeChips(t.value);return}
+  if(t.dataset.hm==='len'){
+    const di=t.dataset.date,h=+t.dataset.h,e=resolveHour(di,h);if(!e)return;
+    const n=+t.value,skipped=[];
+    for(let k=1;k<=3;k++){
+      const x=h+k;if(x>23)break;
+      const cur=resolveHour(di,x),same=cur&&cur.text===e.text&&cur.type===e.type;
+      if(k<n){
+        if(same&&hS(cur)===0&&hE(cur)===60)continue;
+        if(cur&&!same){skipped.push(pad(x)+':00');continue}
+        setHour(di,x,{text:e.text,type:e.type,s:0,e:60});
+        hourSync('hour.save',{date:di,hour:x,text:e.text,type:e.type,s:0,e:60});
+        if(e.rep){toggleRepeat(di,x);hourSync('hour.repeat',{date:di,hour:x})}
+      }else if(same){
+        setHour(di,x,{text:''});
+        hourSync('hour.save',{date:di,hour:x,text:''});
+      }
+    }
+    if(h+n>24)skipped.push('after 23:00');
+    if(skipped.length)toast('Some hours were not filled because they are taken or past midnight: '+skipped.join(', ')+'.');
+    paintHourRows();
+    const sm=document.getElementById('hsum');if(sm)sm.innerHTML=hourSum(di);
+    const bl=document.getElementById('blocklist');if(bl)bl.innerHTML=blockRows(studyBlocks(di));
+    const fh=document.getElementById('freeh');if(fh)fh.innerHTML=freeChips(di);
+    return;
+  }
   if(t.dataset.hm){
     const di=t.dataset.date,h=+t.dataset.h,e=resolveHour(di,h);if(!e)return;
     const v=+t.value,s=t.dataset.hm==='s'?v:hS(e),z=t.dataset.hm==='e'?v:hE(e);
