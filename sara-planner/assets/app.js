@@ -311,6 +311,13 @@ const hourSync=(action,data)=>sync(action,data).then(()=>gcalLater(data.date));
 
 /* ---------- subjects ---------- */
 const srcOpen=new Set(); // chapters whose "where to find it" box is open while still empty
+let editKey=null;         // the chapter ("ch:id") or topic ("tp:id") whose name is being edited
+const EDIT_ICON='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 20h9"/><path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4z"/></svg>';
+/** The name of a chapter or topic, or a box to fix it in while it is being edited. */
+function nameOrEdit(kind,id,text,a,max){
+  if(editKey===kind+':'+id)return `<input class="edit" id="ed-${kind}-${id}" data-edit="${kind}" ${a} ${kind==='tp'?`data-tid="${id}"`:''} value="${esc(text)}" maxlength="${max}" aria-label="New name for ${esc(text)}">`;
+  return `<span class="grow">${esc(text)}</span><button class="x sm ed" data-act="edit" data-key="${kind}:${id}" title="Edit" aria-label="Edit ${esc(text)}">${EDIT_ICON}</button>`;
+}
 const findS=id=>state.subjects.find(s=>s.id===id);
 const findC=(sid,cid)=>{const s=findS(sid);return s?s.chapters.find(c=>c.id===cid):null};
 const chDone=c=>c.topics.length?c.topics.every(t=>t.done):c.done;
@@ -322,9 +329,9 @@ function subjectsSection(){
     let exam='<span class="pill muted">No exam date</span>';
     if(s.exam){const ed=parse(s.exam),n=dayDiff(ed,TODAY);exam=n<0?`<span class="pill muted">Exam was ${short(ed)}</span>`:`<span class="pill ${n<=7?'bad':n<=21?'warn':''}">Exam ${short(ed)} · ${n} day${n===1?'':'s'}</span>`}
     const chs=s.chapters.map(c=>{const d=chDone(c),tn=c.topics.filter(t=>t.done).length,a=`data-sid="${s.id}" data-cid="${c.id}"`;
-      return `<div class="ch ${d?'done':''}"><div class="ch-h"><input type="checkbox" data-chk="ch" ${a} ${d?'checked':''} aria-label="Learned: ${esc(c.title)}"><span class="grow">${esc(c.title)}</span>${c.topics.length?`<span class="cnt">${tn}/${c.topics.length}</span>`:''}<button class="srcbtn ${c.src?'on':''}" data-act="src" ${a} title="Where to find this chapter (book, author, literature)" aria-label="Where to find ${esc(c.title)}" aria-expanded="${srcOpen.has(c.id)||!!c.src}">📖</button><button class="x sm" data-act="del-ch" ${a} data-confirm aria-label="Delete ${esc(c.title)}">×</button></div>
+      return `<div class="ch ${d?'done':''}"><div class="ch-h"><input type="checkbox" data-chk="ch" ${a} ${d?'checked':''} aria-label="Learned: ${esc(c.title)}">${nameOrEdit('ch',c.id,c.title,a,150)}${c.topics.length?`<span class="cnt">${tn}/${c.topics.length}</span>`:''}<button class="srcbtn ${c.src?'on':''}" data-act="src" ${a} title="Where to find this chapter (book, author, literature)" aria-label="Where to find ${esc(c.title)}" aria-expanded="${srcOpen.has(c.id)||!!c.src}">📖</button><button class="x sm" data-act="del-ch" ${a} data-confirm aria-label="Delete ${esc(c.title)}">×</button></div>
       ${c.src||srcOpen.has(c.id)?`<textarea class="src" id="src-${c.id}" data-src ${a} rows="2" placeholder="Where to find it, e.g.&#10;Book: Java e pesëmbëdhjetë, by …&#10;Literatura: Manuali i BASIC për 8051" aria-label="Where to find ${esc(c.title)}">${esc(c.src||'')}</textarea>`:''}
-      ${c.topics.length?`<ul class="topics">${c.topics.map(t=>`<li class="${t.done?'dn':''}"><input type="checkbox" data-chk="topic" ${a} data-tid="${t.id}" ${t.done?'checked':''} aria-label="Learned: ${esc(t.t)}"><span>${esc(t.t)}</span><button class="x sm" data-act="del-topic" ${a} data-tid="${t.id}" aria-label="Delete ${esc(t.t)}">×</button></li>`).join('')}</ul>`:''}
+      ${c.topics.length?`<ul class="topics">${c.topics.map(t=>`<li class="${t.done?'dn':''}"><input type="checkbox" data-chk="topic" ${a} data-tid="${t.id}" ${t.done?'checked':''} aria-label="Learned: ${esc(t.t)}">${nameOrEdit('tp',t.id,t.t,a,200)}<button class="x sm" data-act="del-topic" ${a} data-tid="${t.id}" aria-label="Delete ${esc(t.t)}">×</button></li>`).join('')}</ul>`:''}
       <form class="mini" data-form="topic" ${a} autocomplete="off" style="margin-left:28px"><input id="tp-${c.id}" name="t" placeholder="+ Add something to learn" aria-label="Add something to learn in ${esc(c.title)}"></form></div>`}).join('');
     return `<div class="subj" style="--sc:var(--c-${s.c})"><div class="subj-h"><div><h3>${esc(s.name)}</h3><div style="margin-top:6px">${exam}</div></div><button class="x" data-act="del-subj" data-id="${s.id}" data-confirm aria-label="Delete ${esc(s.name)}">×</button></div>
       <div class="meter"><span style="width:${pct.toFixed(1)}%;background:var(--sc)"></span></div>
@@ -520,15 +527,35 @@ V.money=()=>{
 const view=document.getElementById('view');
 /** Grow a "where to find it" box to fit its text. */
 function fitSrc(t){t.style.height='auto';t.style.height=t.scrollHeight+2+'px'}
+let drawing=false; // true while the page is re-drawn: boxes removed then fire change/focusout, which must be ignored
 function render(focusId){
   if(!state)return;
+  drawing=true;
   document.querySelectorAll('.tab').forEach(t=>t.setAttribute('aria-selected',t.dataset.tab===state.tab));
+  // Keep text typed in other "+ Add …" boxes that hasn't been added yet, so re-drawing doesn't wipe it
+  const drafts=[...view.querySelectorAll('form.mini input[id]:not([type=date])')].filter(i=>i.value.trim()).map(i=>[i.id,i.value]);
   view.innerHTML=V[state.tab]();
+  drafts.forEach(([id,v])=>{const el=document.getElementById(id);if(el&&!el.value)el.value=v});
+  drawing=false;
   paintHourRows();
   document.querySelectorAll('textarea[data-src]').forEach(fitSrc);
   blockMsg=null;
   save();
-  if(focusId){const el=document.getElementById(focusId);if(el)el.focus()}
+  if(focusId){const el=document.getElementById(focusId);if(el){el.focus();if(el.dataset.edit)el.select()}}
+}
+/** Save (or, with keep=false, drop) the new name typed into an edit box. */
+function finishEdit(el,keep){
+  const kind=el.dataset.edit,id=kind==='tp'?el.dataset.tid:el.dataset.cid;
+  if(editKey!==kind+':'+id)return;   // already saved
+  editKey=null;
+  const v=el.value.trim(),c=findC(el.dataset.sid,el.dataset.cid);
+  if(keep&&v&&c){
+    if(kind==='ch'&&v!==c.title){c.title=v;sync('chapter.rename',{id,title:v})}
+    const t=kind==='tp'&&c.topics.find(x=>x.id===id);
+    if(t&&v!==t.t){t.t=v;sync('topic.rename',{id,title:v})}
+  }
+  const next=document.activeElement&&document.activeElement!==el&&document.activeElement.id;
+  render(next||'tp-'+el.dataset.cid);
 }
 function setMonth(y,m,f,v){
   const k=`${y}-${m}`,o=state.months[k]||(state.months[k]={income:null,save:null});
@@ -553,6 +580,9 @@ document.addEventListener('click',e=>{
       if(c.src||srcOpen.has(c.id)){const el=document.getElementById('src-'+c.id);if(el&&document.activeElement!==el){el.focus();return}}
       if(!c.src&&srcOpen.has(c.id)){srcOpen.delete(c.id);break}
       srcOpen.add(c.id);render('src-'+c.id);return}
+    case 'edit':{
+      const cur=document.querySelector('input[data-edit]');if(cur)finishEdit(cur,true);
+      editKey=b.dataset.key;const[k,id]=editKey.split(':');render(`ed-${k}-${id}`);return}
     case 'del-topic':{const c=findC(b.dataset.sid,b.dataset.cid);if(c)c.topics=c.topics.filter(t=>t.id!==b.dataset.tid);sync('topic.delete',{id:b.dataset.tid});break}
     case 'del-upcoming':state.upcoming=state.upcoming.filter(u=>u.id!==b.dataset.id);sync('upcoming.delete',{id:b.dataset.id});break;
     case 'pick-free':{const f=document.querySelector('form[data-form=block]');if(f){f.elements.from.value=b.dataset.from;f.elements.to.value=b.dataset.to;f.elements.from_m.value=f.elements.to_m.value='0';f.elements.title.focus()}return}
@@ -617,6 +647,13 @@ document.addEventListener('change',e=>{
     const rp=document.getElementById('revpanel');if(rp)rp.innerHTML=revisedPanel();
     return;
   }
+  if(drawing||t.dataset.edit)return;   // saved when the box is left (focusout below)
+  const af=t.closest('form[data-form=chapter],form[data-form=topic]');
+  if(af){
+    // Typed a chapter or topic and moved on without pressing Add / Enter: add it anyway
+    if(t.value.trim()&&!af.dataset.busy){af.dataset.auto='1';af.requestSubmit()}
+    return;
+  }
   if(t.hasAttribute('data-src')){
     // Where to find a chapter. Saved without re-drawing so focus is kept.
     const c=findC(t.dataset.sid,t.dataset.cid);if(!c)return;
@@ -651,6 +688,13 @@ document.addEventListener('input',e=>{
     noteTimer=setTimeout(()=>sync('settings.save',{note:state.note}),600);
   }
 });
+// Leaving an edit box saves it. Waits a moment so a click on another button still lands.
+document.addEventListener('focusout',e=>{const t=e.target;if(!drawing&&t.dataset&&t.dataset.edit)setTimeout(()=>finishEdit(t,true),0)});
+document.addEventListener('keydown',e=>{
+  const t=e.target;if(!t.dataset||!t.dataset.edit)return;
+  if(e.key==='Enter'){e.preventDefault();finishEdit(t,true)}
+  else if(e.key==='Escape'){e.preventDefault();finishEdit(t,false)}
+});
 document.addEventListener('submit',async e=>{
   const f=e.target;
   if(!f.dataset.form)return;           // normal forms (like Log out) submit as usual
@@ -658,6 +702,11 @@ document.addEventListener('submit',async e=>{
   if(!state||f.dataset.busy)return;
   const d=Object.fromEntries(new FormData(f));
   const btn=f.querySelector('button');
+  const auto=!!f.dataset.auto;delete f.dataset.auto;
+  // Added by leaving the box: after saving, keep the cursor where you clicked next
+  // Empty the box that was just added, even if the page was re-drawn while saving
+  const added=v=>{f.reset();const el=f.querySelector('input[id]'),live=el&&document.getElementById(el.id);if(live&&live.value.trim()===v)live.value=''};
+  const focusNext=id=>{const a=document.activeElement;return auto&&a&&a.id&&a!==document.body?a.id:id};
   f.dataset.busy='1';if(btn)btn.disabled=true;
   try{
     if(f.dataset.form==='exp'){
@@ -699,17 +748,17 @@ document.addEventListener('submit',async e=>{
       const s=findS(f.dataset.sid);if(!s||!d.title.trim())return;
       const r=await api('chapter.add',{subject_id:s.id,title:d.title.trim()});
       s.chapters.push({id:r.id,title:d.title.trim(),done:false,src:'',topics:[]});
-      render('ch-'+s.id);
+      added(d.title.trim());render(focusNext('ch-'+s.id));
     } else if(f.dataset.form==='topic'){
       const c=findC(f.dataset.sid,f.dataset.cid);if(!c||!d.t.trim())return;
       const r=await api('topic.add',{chapter_id:c.id,title:d.t.trim()});
       c.topics.push({id:r.id,t:d.t.trim(),done:false});
-      render('tp-'+c.id);
+      added(d.t.trim());render(focusNext('tp-'+c.id));
     } else if(f.dataset.form==='upcoming'){
       if(!d.t.trim()||!d.date)return;
       const r=await api('upcoming.add',{title:d.t.trim(),date:d.date});
       state.upcoming.push({id:r.id,t:d.t.trim(),date:d.date});
-      render('up-title');
+      f.reset();render('up-title');
     }
   }catch(err){
     toast(err.message);

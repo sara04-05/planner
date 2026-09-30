@@ -489,6 +489,13 @@ try {
         ok();
     }
 
+    case 'chapter.rename': {
+        $id = id_in($in);
+        own_chapter($uid, $id);
+        q('UPDATE chapters SET title = ? WHERE id = ?', [str_in($in, 'title', 150), $id]);
+        ok();
+    }
+
     case 'chapter.source': {
         // Where to find this chapter: book, author, literature (free text, can be several lines)
         $id = id_in($in);
@@ -510,6 +517,13 @@ try {
         own_chapter($uid, $cid);
         q('INSERT INTO topics (chapter_id, title) VALUES (?, ?)', [$cid, str_in($in, 'title', 200)]);
         ok(['id' => db()->lastInsertId()]);
+    }
+
+    case 'topic.rename': {
+        $id = id_in($in);
+        own_topic($uid, $id);
+        q('UPDATE topics SET title = ? WHERE id = ?', [str_in($in, 'title', 200), $id]);
+        ok();
     }
 
     case 'topic.toggle': {
