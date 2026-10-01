@@ -21,8 +21,8 @@ const esc=s=>String(s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;'
 const uid=()=>Math.random().toString(36).slice(2,10);
 const dayDiff=(a,b)=>Math.round((a-b)/864e5);
 const short=d=>`${WD[wdi(d)]} ${d.getDate()} ${M3[d.getMonth()]}`;
-const CATS=[['Food','food'],['Coffee','coffee'],['Transport','transport'],['Groceries','groceries'],['School','school'],['Phone','phone'],['Fun','fun'],['Other','other']];
-const cv=c=>`var(--c-${(CATS.find(x=>x[0]===c)||CATS[7])[1]})`;
+const CATS=[['Food','food'],['Coffee','coffee'],['Transport','transport'],['Groceries','groceries'],['School','school'],['Phone','phone'],['Fun','fun'],['Clothes','clothes'],['Gifts','gifts'],['Work','work'],['Other','other']];
+const cv=c=>`var(--c-${(CATS.find(x=>x[0]===c)||CATS[CATS.length-1])[1]})`;
 const isoWeek=d=>{const t=new Date(Date.UTC(d.getFullYear(),d.getMonth(),d.getDate()));const day=t.getUTCDay()||7;t.setUTCDate(t.getUTCDate()+4-day);const y0=new Date(Date.UTC(t.getUTCFullYear(),0,1));return Math.ceil(((t-y0)/864e5+1)/7)};
 
 /* ---------- talking to the server (api.php) ---------- */
