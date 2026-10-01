@@ -281,7 +281,10 @@ function minsEditor(di,h){
   const ends=[];for(let m=Math.floor(t0/5)*5+5;m<=1440;m+=5)ends.push(m);
   if(!ends.includes(z))ends.push(z),ends.sort((x,y)=>x-y);
   for(const m of ends)b+=`<option value="${m}" ${m===z?'selected':''}>${hm(m)} · ${durTxt(m-t0)}</option>`;
-  return `<div class="hmin"><label>Starts <select data-hm="s" data-date="${di}" data-h="${h}">${a}</select></label><label>Ends <select data-hm="e" data-date="${di}" data-h="${h}">${b}</select></label></div>`;
+  // "Lasts 1/2/3 hours" is a shortcut for the end time: it fills the following hours with the same entry
+  const c=[1,2,3].filter(k=>t0+k*60<=1440).map(k=>`<option value="${k}" ${z-t0===k*60?'selected':''}>${k} hour${k>1?'s':''}</option>`).join('');
+  const lasts=`<label>Lasts <select data-hm="len" data-date="${di}" data-h="${h}">${[1,2,3].some(k=>z-t0===k*60)?'':'<option value="" selected disabled>–</option>'}${c}</select></label>`;
+  return `<div class="hmin">${lasts}<label>Starts <select data-hm="s" data-date="${di}" data-h="${h}">${a}</select></label><label>Ends <select data-hm="e" data-date="${di}" data-h="${h}">${b}</select></label></div>`;
 }
 /** Update one hour row in place (no re-drawing, so focus and open dropdowns are never lost). */
 function paintHourRow(row){
@@ -674,8 +677,8 @@ document.addEventListener('change',e=>{
       if(h*60+v>=spanEnd(di,h)){toast('The start has to be before the end.');t.value=String(hS(e));return}
       setHour(di,h,{s:v});hourSync('hour.save',{date:di,hour:h,s:v});
     }else{
-      const end=+t.value,err=setSpan(di,h,end);
-      if(err){toast(err);t.value=String(spanEnd(di,h));return}
+      const end=t.dataset.hm==='len'?h*60+hS(e)+ +t.value*60:+t.value,err=setSpan(di,h,end);
+      if(err){toast(err);const ed=row.querySelector('.hmin');if(ed)ed.outerHTML=minsEditor(di,h);return}
       hourSync('hour.span',{date:di,hour:h,end});
     }
     paintHourRows();
