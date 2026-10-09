@@ -337,7 +337,7 @@ try {
         if (array_key_exists('type', $in)) {
             $cur['type'] = in_array($in['type'], HOUR_TYPES, true) ? $in['type'] : 'personal';
         }
-        if (array_key_exists('s', $in)) $cur['start_min'] = int_in($in, 's', 0, 59);
+        if (array_key_exists('s', $in)) $cur['start_min'] = int_in($in, 's', -59, 59); // below 0 = starts in the hour before
         if (array_key_exists('e', $in)) $cur['end_min']   = int_in($in, 'e', 1, 60);
         if ((int)$cur['end_min'] <= (int)$cur['start_min']) fail(400, 'The end time has to be after the start time.');
         $clear = false;

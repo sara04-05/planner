@@ -197,8 +197,17 @@ function blockForm(di,showDate){
 }
 
 /* ---------- hour by hour ---------- */
-// An hour can be only partly used: s = start minute (default 0), e = end minute (default 60)
+// An hour can be only partly used: s = start minute (default 0), e = end minute (default 60).
+// s can be negative: -30 on 15:00 means it starts at 14:30, right where a 14:00–14:30 hour ended.
 const hS=e=>e&&e.s?e.s:0,hE=e=>e&&e.e!=null?e.e:60;
+/** Where an hour starts when it simply follows the one before: 14:30 after a 14:00–14:30 hour (as minutes from h:00). */
+function prevGap(di,h){
+  const p=h>0?resolveHour(di,h-1):null;
+  return p&&p.text&&p.text.trim()&&hE(p)<60?hE(p)-60:0;
+}
+const rowStart=(di,h,e)=>e?hS(e):prevGap(di,h);
+/** The latest an hour may end so it doesn't run into the next one (60 = h+1:00). A next hour that starts right where this one ends just moves along with it. */
+function nextStart(di,h){const n=h<23?resolveHour(di,h+1):null;return n&&hS(n)<0&&hS(n)!==hE(resolveHour(di,h))-60?60+hS(n):60}
 function resolveHour(di,h){
   const day=state.hours[di]||{},wk=state.weekly[wdi(parse(di))]||{};
   if(day[h])return {...day[h],rep:false};
@@ -218,22 +227,22 @@ function toggleRepeat(di,h){
 function hourRow(di,h){
   const e=resolveHour(di,h),ty=e&&HT[e.type]?e.type:'';
   const now=di===TI&&new Date().getHours()===h,hh=pad(h)+':00',dn=WDL[wdi(parse(di))];
-  return `<div class="hr ${now?'now':''}" id="hr-${h}" style="${ty?`--hc:var(--c-${HT[ty][1]})`:''}"><button type="button" class="hl" data-act="hour-mins" data-date="${di}" data-h="${h}">${hourLabel(e,h)}</button>
+  return `<div class="hr ${now?'now':''}" id="hr-${h}" style="${ty?`--hc:var(--c-${HT[ty][1]})`:''}"><button type="button" class="hl" data-act="hour-mins" data-date="${di}" data-h="${h}">${hourLabel(di,h)}</button>
     <select data-hf="type" data-date="${di}" data-h="${h}" aria-label="Type for ${hh}">${ty?'':'<option value="" selected>Type</option>'}${Object.entries(HT).map(([k,v])=>`<option value="${k}" ${k===ty?'selected':''}>${v[0]}</option>`).join('')}</select>
     <input data-hf="text" data-date="${di}" data-h="${h}" value="${e?esc(e.text):''}" placeholder="${now?'Now':'Free'}" aria-label="Plan for ${hh}">
     <button class="rep" data-act="hour-repeat" data-date="${di}" data-h="${h}">↻</button>
   </div>`;
 }
-function hourLabel(e,h){
-  const s=hS(e),z=hE(e);
-  return hm(h*60+s)+(z<60?`<small>–${hm(h*60+z)}</small>`:'');
+function hourLabel(di,h){
+  const e=resolveHour(di,h),s=rowStart(di,h,e),z=hE(e);
+  return hm(h*60+s)+(z<60||s<0?`<small>–${hm(h*60+z)}</small>`:'');
 }
 /** The little "starts / ends" picker under an hour, for times like 08:15–08:45. */
 function minsEditor(di,h){
-  const e=resolveHour(di,h),s=hS(e),z=hE(e);
+  const e=resolveHour(di,h),s=hS(e),z=hE(e),s0=Math.min(prevGap(di,h),s),z1=Math.max(nextStart(di,h),z);
   let a='',b='';
-  for(let m=0;m<60;m+=5)a+=`<option value="${m}" ${m===s?'selected':''}>${hm(h*60+m)}</option>`;
-  for(let m=5;m<=60;m+=5)b+=`<option value="${m}" ${m===z?'selected':''}>${hm(h*60+m)}</option>`;
+  for(let m=s0;m<60;m+=5)a+=`<option value="${m}" ${m===s?'selected':''}>${hm(h*60+m)}</option>`;
+  for(let m=5;m<=z1;m+=5)b+=`<option value="${m}" ${m===z?'selected':''}>${hm(h*60+m)}</option>`;
   if(s%5)a+=`<option value="${s}" selected>${hm(h*60+s)}</option>`;
   if(z%5)b+=`<option value="${z}" selected>${hm(h*60+z)}</option>`;
   return `<div class="hmin"><label>Starts <select data-hm="s" data-date="${di}" data-h="${h}">${a}</select></label><label>Ends <select data-hm="e" data-date="${di}" data-h="${h}">${b}</select></label></div>`;
@@ -247,7 +256,7 @@ function paintHourRow(row){
   if(ty){if(ph)ph.remove();if(sel.value!==ty)sel.value=ty}
   else if(!ph){sel.insertAdjacentHTML('afterbegin','<option value="">Type</option>');sel.value=''}
   const hl=row.querySelector('.hl');
-  hl.innerHTML=hourLabel(e,h);
+  hl.innerHTML=hourLabel(di,h);
   hl.title=e?'Set the minutes (e.g. 08:15–08:45)':'Write something first, then click here to set the minutes';
   hl.setAttribute('aria-label',`${hl.textContent}. ${hl.title}`);
   const ed=row.querySelector('.hmin');if(ed&&!e)ed.remove();
@@ -622,18 +631,29 @@ document.addEventListener('change',e=>{
     const di=t.dataset.date,h=+t.dataset.h,e=resolveHour(di,h);if(!e)return;
     const v=+t.value,s=t.dataset.hm==='s'?v:hS(e),z=t.dataset.hm==='e'?v:hE(e);
     const row=t.closest('.hr');
-    if(z<=s){toast('The end time has to be after the start time.');t.value=String(t.dataset.hm==='s'?hS(e):hE(e));return}
+    const undo=()=>{t.value=String(t.dataset.hm==='s'?hS(e):hE(e))};
+    if(z<=s){toast('The end time has to be after the start time.');undo();return}
+    if(s<prevGap(di,h)){toast(`The hour before ends at ${hm(h*60+prevGap(di,h))}. Start at that time or later.`);undo();return}
+    const n=h<23?resolveHour(di,h+1):null,oldZ=hE(e);
+    // The next hour started right where this one ended, so it keeps following it
+    const follow=t.dataset.hm==='e'&&n&&hS(n)<0&&hS(n)===oldZ-60;
+    if(z>nextStart(di,h)){toast(`The next hour starts at ${hm(h*60+nextStart(di,h))}. End at that time or earlier.`);undo();return}
     setHour(di,h,{[t.dataset.hm]:v});
     hourSync('hour.save',{date:di,hour:h,[t.dataset.hm]:v});
+    if(follow){const ns=z===60?0:z-60;setHour(di,h+1,{s:ns});hourSync('hour.save',{date:di,hour:h+1,s:ns})}
     if(row)paintHourRow(row);
+    const nr=document.getElementById('hr-'+(h+1));if(nr)paintHourRow(nr);
     const bl=document.getElementById('blocklist');if(bl)bl.innerHTML=blockRows(studyBlocks(di));
     return;
   }
   if(t.dataset.hf){
-    const di=t.dataset.date,h=+t.dataset.h,field=t.dataset.hf;
-    setHour(di,h,{[field]:t.value});
-    hourSync('hour.save',{date:di,hour:h,[field]:t.value});
+    const di=t.dataset.date,h=+t.dataset.h,field=t.dataset.hf,patch={[field]:t.value};
+    // A new entry starts where the hour before ended (14:30, not 15:00)
+    if(!resolveHour(di,h)&&prevGap(di,h)<0)patch.s=prevGap(di,h);
+    setHour(di,h,patch);
+    hourSync('hour.save',{date:di,hour:h,...patch});
     const row=t.closest('.hr');if(row)paintHourRow(row);
+    const nr=document.getElementById('hr-'+(h+1));if(nr)paintHourRow(nr);
     const sm=document.getElementById('hsum');if(sm)sm.innerHTML=hourSum(di);
     const bl=document.getElementById('blocklist');if(bl)bl.innerHTML=blockRows(studyBlocks(di));
     const fh=document.getElementById('freeh');if(fh)fh.innerHTML=freeChips(di);
