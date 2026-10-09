@@ -368,7 +368,7 @@ function importHelp(){
       ${tbl(['Time',WDL[0],WDL[1],WDL[2]],[['08:00–09:30','Lecture','','Gym'],['10:00–11:30','','Study','']])}
       <p class="ex-h">PDF, Word or text: one line per activity</p>
       <pre class="ex-txt">${sq?'E Hënë\nora 8 Mëngjes\n8:15–9:45 Ligjërata\nnga 10 deri në 12 Mësim\n3 pasdite Palestër':'Monday\n08:00 Breakfast\n8:15–9:45 Lecture\n10:00 to 12:00 Study\n3 pm Gym'}</pre>
-      <p class="dlg-s">A time on its own (08:00) lasts until the next activity. A range (08:15–09:45) sets both ends. Days can be columns or headings like <b>Monday</b> or <b>E Hënë</b>.</p>
+      <p class="dlg-s">A time on its own (08:00) lasts until the next activity. A range (08:15–09:45) sets both ends. Days can be columns or headings like <b translate="no">Monday</b> or <b translate="no">E Hënë</b>.</p>
       <p class="dlg-s">Times can be written in English or Albanian, for example 8:30, 8 am, ora 8, 8 e gjysmë or 3 pasdite.</p>
     </div>
     <div class="dlg-b"><button class="btn ghost" data-act="imp-example">Download an example</button><button class="btn primary" data-act="imp-close">Got it</button></div>`);
