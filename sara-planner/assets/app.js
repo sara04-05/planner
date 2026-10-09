@@ -410,7 +410,7 @@ function toolBar(di){
   if(on)return `<div class="gcal on"><span>${GCAL_ICON}<span id="gcalMsg">${gcalMsg||`In Google Calendar${g.email?` (${esc(g.email)})`:''}, in the calendar called <b>Splanner</b>`}</span></span>
     <button class="linkbtn" data-act="gcal-sync">Sync now</button>
     <form method="post" action="calendar.php" class="inline"><input type="hidden" name="csrf" value="${esc(CSRF)}"><button class="linkbtn" title="Stop sending hours to Google. What's already there stays until you delete the Splanner calendar.">Disconnect</button></form><span class="tb-gap"></span>${imp}</div>`;
-  const cal=g&&g.configured?`<a class="btn" href="calendar.php?start=1">${GCAL_ICON}Show in Google Calendar</a>`:'';
+  const cal=`<a class="btn" href="calendar.php?start=1">${GCAL_ICON}Show in Google Calendar</a>`;
   return `<div class="gcal"><span>${cal?'Bring in a planner you already have, or show these hours in Google Calendar.':'Already have your day planned in Excel, a PDF or Word? Bring it in.'}</span>${imp}${cal}</div>`;
 }
 const GCAL_ICON='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/></svg>';
