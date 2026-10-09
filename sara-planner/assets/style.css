@@ -413,27 +413,35 @@ table.ex tr:last-child td{border-bottom:0}
 .wd[data-act]{cursor:pointer}
 .wd[data-act]:hover{border-color:var(--accent)}
 
-/* Year table on phones: each month becomes a small card (label above each number) */
+/* Year table on phones: each month becomes a card (name + status on top, then the numbers) */
 @media (max-width:760px){
   .ytbl{min-width:0}
   .ytbl thead{display:none}
   .ytbl,.ytbl tbody,.ytbl tfoot{display:block}
-  .ytbl tr{display:grid;grid-template-columns:repeat(3,1fr);gap:4px 8px;padding:10px 4px;border-bottom:1px dashed var(--line)}
-  .ytbl td{display:block;border:0!important;padding:2px 4px!important;text-align:left!important;font-size:14px!important;min-width:0;background:none!important}
-  .ytbl tr.now{background:var(--accent-soft);border-radius:10px}
-  .ytbl td[data-l]::before{content:attr(data-l);display:block;font-size:10px;text-transform:uppercase;letter-spacing:.07em;color:var(--muted);font-weight:700;margin-bottom:2px}
-  .ytbl td.mn{grid-column:1 / -1;order:-2;font-weight:700;font-size:16px!important}
-  .ytbl td.st{grid-column:1 / -1;order:-1}
-  .ytbl td[data-l="I saved"]{grid-column:1 / -1}
-  .ytbl td[data-l="Income"] .cellin,.ytbl td[data-l="I saved"] .cellin{width:90px!important;text-align:left!important}
-  .ytbl tfoot tr{border-top:2px solid var(--ink);border-bottom:0}
-  .ytbl tfoot td[data-l="I saved"]{grid-column:auto}
-  .ytbl td[data-l="Income"]{white-space:nowrap}
-  .ytbl td[data-l="Income"] .cellin{width:80px!important}
-  .ytbl tr.off{grid-template-columns:1fr auto;align-items:center}
-  .ytbl tr.off td[data-l]:not([data-l="Income"]){display:none}
-  .ytbl tr.off td.mn{grid-column:1;order:0;font-size:15px!important}
-  .ytbl tr.off td.st{display:none}
-  .ytbl tr.off td[data-l="Income"]{grid-column:2;order:1;display:flex;align-items:center;gap:4px}
-  .ytbl tr.off td[data-l="Income"]::before{margin:0 4px 0 0}
+  .ytbl tbody{display:grid;gap:10px}
+  .ytbl tr{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));grid-template-areas:"mn mn mn" "st st st" "sp inc lo" "tg sv sv";gap:12px 10px;align-items:start;padding:14px;background:var(--paper-2);border:1px solid var(--line);border-radius:16px}
+  .ytbl td{display:block;border:0!important;padding:0!important;text-align:left!important;font-size:15px!important;font-weight:600;min-width:0;background:none!important}
+  .ytbl tr.now{background:var(--accent-soft);border-color:var(--accent)}
+  .ytbl tr.fut{opacity:.7}
+  .ytbl td[data-l]::before{content:attr(data-l);display:block;font-size:10px;text-transform:uppercase;letter-spacing:.08em;color:var(--muted);font-weight:700;margin-bottom:4px}
+  .ytbl td.mn{grid-area:mn;font-family:var(--display);font-weight:700;font-size:18px!important;align-self:center}
+  .ytbl td.st{grid-area:st;justify-self:start;font-size:12px!important;margin-top:-6px}
+  .ytbl td[data-l="Spent"]{grid-area:sp}
+  .ytbl td[data-l="Income"]{grid-area:inc}
+  .ytbl td[data-l="Left over"]{grid-area:lo}
+  .ytbl td[data-l="Target"]{grid-area:tg}
+  .ytbl td[data-l="I saved"]{grid-area:sv}
+  .ytbl td[data-l="Income"],.ytbl td[data-l="I saved"]{display:flex;flex-wrap:wrap;align-items:center;gap:6px}
+  .ytbl td[data-l]::before{flex:0 0 100%;margin-bottom:0}
+  .ytbl td .cellin,.ytbl .r .cellin{flex:1 1 0;width:auto!important;min-width:0;max-width:110px;text-align:left!important;background:var(--paper);border:1px solid var(--line);border-radius:10px;padding:8px 10px;font-weight:600}
+  .ytbl td .cellin:focus{border-color:var(--accent);outline:0}
+  .ytbl td input[type=checkbox]{width:22px;height:22px;margin:0;accent-color:var(--accent)}
+  .ytbl tfoot tr{margin-top:14px;background:transparent;border:0;border-top:2px solid var(--ink);border-radius:0;padding:14px 4px 4px;grid-template-areas:"mn mn mn" "sp inc lo" "tg sv sv";row-gap:12px}
+  .ytbl tfoot td.st{display:none}
+  .ytbl tr.off{grid-template-columns:minmax(0,1fr) auto;grid-template-areas:"mn inc";align-items:center;padding:10px 14px;opacity:.75}
+  .ytbl tr.off td[data-l]:not([data-l="Income"]),.ytbl tr.off td.st{display:none}
+  .ytbl tr.off td.mn{font-size:16px!important}
+  .ytbl tr.off td[data-l="Income"]{flex-wrap:nowrap}
+  .ytbl tr.off td[data-l="Income"]::before{flex:0 0 auto;margin:0 2px 0 0}
+  .ytbl tr.off td .cellin{max-width:90px;flex:0 1 90px}
 }
