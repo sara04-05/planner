@@ -468,6 +468,87 @@ try {
         ok();
     }
 
+    case 'hours.import': {
+        // Entries read from a planner file the user uploaded (the file itself is read in the browser).
+        // Each entry: {date, from, to, text, type}, times in minutes since midnight. They replace
+        // whatever is written in the hours they cover. repeat = put them in the weekly timetable instead.
+        $list = $in['entries'] ?? null;
+        if (!is_array($list) || !$list) fail(400, 'Nothing to import.');
+        if (count($list) > 500) fail(400, 'That file has too many entries. Import a week at a time.');
+        $repeat = !empty($in['repeat']);
+        $byDate = [];
+        foreach ($list as $e) {
+            if (!is_array($e)) fail(400, 'Nothing to import.');
+            $date = date_in($e, 'date');
+            $from = int_in($e, 'from', 0, 1439);
+            $to   = int_in($e, 'to', 1, 1440);
+            if ($to <= $from) fail(400, 'The end time has to be after the start time.');
+            $text = mb_substr(trim((string)($e['text'] ?? '')), 0, 200);
+            if ($text === '') continue;
+            $type = in_array($e['type'] ?? '', HOUR_TYPES, true) ? $e['type'] : 'personal';
+            $byDate[$date][] = ['from' => $from, 'to' => $to, 'text' => $text, 'type' => $type];
+        }
+        if ($repeat) {   // one weekday can only hold one timetable
+            $seen = [];
+            foreach (array_keys($byDate) as $d) {
+                if (isset($seen[weekday_of($d)])) fail(400, 'Repeat every week only works for one week at a time.');
+                $seen[weekday_of($d)] = true;
+            }
+        }
+
+        db()->beginTransaction();
+        foreach ($byDate as $date => $entries) {
+            usort($entries, fn($a, $b) => $a['from'] <=> $b['from']);
+            $wd = weekday_of($date);
+            // Lay the entries out in hour rows, the same way the hour editor stores them:
+            // 17:15–19:45 fills rows 17 (from :15), 18 and 19 (until :45). An entry that starts in the
+            // free end of the row before (after a lecture until 18:30) starts early in the next row (s = -30).
+            $rows = [];
+            $prevTo = 0;
+            foreach ($entries as $e) {
+                if ($e['from'] < $prevTo) { db()->rollBack(); fail(400, 'Two entries in the file overlap.'); }
+                $h0 = intdiv($e['from'], 60);
+                $row = isset($rows[$h0]) ? $h0 + 1 : $h0;
+                if ($row * 60 >= $e['to'] || $row > 23) { db()->rollBack(); fail(400, 'Two entries share one hour. Reload the page and try again.'); }
+                $last = intdiv($e['to'] + 59, 60) - 1;
+                for ($k = $row; $k <= $last; $k++) {
+                    $rows[$k] = [
+                        'text' => $e['text'], 'type' => $e['type'],
+                        's' => $k === $row ? $e['from'] - $k * 60 : 0,
+                        'e' => $k === $last ? $e['to'] - $k * 60 : 60,
+                    ];
+                }
+                $prevTo = $e['to'];
+            }
+            foreach ($rows as $k => $r) {
+                if ($repeat) {
+                    q('DELETE FROM hours WHERE user_id = ? AND date = ? AND hour = ?', [$uid, $date, $k]);
+                    put_week_hour($uid, $wd, $k, $r['text'], $r['type'], $r['s'], $r['e']);
+                } else {
+                    put_day_hour($uid, $date, $k, $r['text'], $r['type'], $r['s'], $r['e']);
+                }
+            }
+            // Entries already there just before or after the imported ones: trim them so nothing overlaps
+            foreach ($rows as $k => $r) {
+                if ($r['s'] < 0 && $k > 0 && !isset($rows[$k - 1])) {
+                    [$p, $where] = shown_hour($uid, $date, $wd, $k - 1);
+                    if ($p && (int)$p['end_min'] > 60 + $r['s'] && (int)$p['start_min'] < 60 + $r['s']) {
+                        put_day_hour($uid, $date, $k - 1, $p['text'], $p['type'], (int)$p['start_min'], 60 + $r['s']);
+                    }
+                }
+                if ($k < 23 && !isset($rows[$k + 1])) {
+                    [$n] = shown_hour($uid, $date, $wd, $k + 1);
+                    if ($n && (int)$n['start_min'] < 0 && 60 + (int)$n['start_min'] < $r['e']) {
+                        $s = $r['e'] < 60 ? $r['e'] - 60 : 0;
+                        if ($s < (int)$n['end_min']) put_day_hour($uid, $date, $k + 1, $n['text'], $n['type'], $s, (int)$n['end_min']);
+                    }
+                }
+            }
+        }
+        db()->commit();
+        ok(['dates' => array_keys($byDate)]);
+    }
+
     case 'block.add': {
         $date  = date_in($in, 'date');
         $from  = time_in($in, 'from');   // minutes since midnight
