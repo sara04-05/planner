@@ -620,7 +620,7 @@ V.year=()=>{
     const inc=`€ <input class="cellin num${o.incCustom?' edited':''}" id="yi-${o.m}" type="number" min="0" step="10" value="${o.income}" placeholder="${income}" data-mf="income" data-y="${y}" data-m="${o.m}" aria-label="Income for ${MON[o.m]}" title="Clear to use your usual income">`;
     const conf=!o.active||o.status==='future'?'–':`<input type="checkbox" data-chk="msaved" data-y="${y}" data-m="${o.m}" ${o.actual!=null&&o.actual>=o.target-0.005?'checked':''} aria-label="I saved ${eur(o.target)} in ${MON[o.m]}" title="Tick if you saved the target"> € <input class="cellin num${o.actual!=null?' edited':''}" type="number" min="0" step="1" value="${o.actual==null?'':o.actual}" placeholder="${+o.target.toFixed(2)}" data-mf="actual" data-y="${y}" data-m="${o.m}" aria-label="Amount saved in ${MON[o.m]}" title="Type what you really saved. Clear to undo.">`;
     const tgt=!o.active?'–':`${eur(o.target)}${o.custom?' <span class="tag-edited" title="You changed this in the Month tab">edited</span>':''}`;
-    return `<tr class="${o.status==='now'?'now':o.status==='future'?'fut':''}"><td>${MON[o.m]}</td><td class="r">${o.status==='future'?'–':eur(o.spent)}</td><td class="r">${inc}</td><td class="r">${o.saved===null?'–':eur(o.saved)}</td><td class="r">${tgt}</td><td class="r">${conf}</td><td>${st}</td></tr>`;
+    return `<tr class="${o.status==='now'?'now':o.status==='future'?'fut':''}${o.active?'':' off'}"><td class="mn">${MON[o.m]}</td><td class="r" data-l="Spent">${o.status==='future'?'–':eur(o.spent)}</td><td class="r" data-l="Income">${inc}</td><td class="r" data-l="Left over">${o.saved===null?'–':eur(o.saved)}</td><td class="r" data-l="Target">${tgt}</td><td class="r" data-l="I saved">${conf}</td><td class="st">${st}</td></tr>`;
   }).join('');
   const pct=goal>0?Math.max(0,Math.min(100,p.savedDone/goal*100)):0;
   const yList=expIn(new Date(y,0,1),new Date(y,11,31));
@@ -638,8 +638,8 @@ V.year=()=>{
     <div class="legend"><span><i style="background:var(--accent)"></i>Within budget</span><span><i style="background:var(--bad)"></i>Over budget</span><span><i style="background:var(--line)"></i>Upcoming</span></div>
   </section></div>
   <section style="margin-top:28px"><div class="sec-h"><h2>Year expenses</h2><span class="meta">Spending adds up from your daily expenses · click an income to change it for that month</span></div>
-    <div class="tbl-wrap"><table class="tbl"><thead><tr><th>Month</th><th class="r">Spent</th><th class="r">Income</th><th class="r">Left over</th><th class="r">Target</th><th class="r">I saved</th><th>Status</th></tr></thead><tbody>${rows}</tbody>
-    <tfoot><tr><td>Total ${y}</td><td class="r">${eur(totSpent)}</td><td class="r">${eur(totInc)}</td><td class="r">${eur(totSaved)}</td><td class="r">${eur(goal)}</td><td class="r">${eur(p.savedDone)}</td><td></td></tr></tfoot></table></div>
+    <div class="tbl-wrap"><table class="tbl ytbl"><thead><tr><th>Month</th><th class="r">Spent</th><th class="r">Income</th><th class="r">Left over</th><th class="r">Target</th><th class="r">I saved</th><th>Status</th></tr></thead><tbody>${rows}</tbody>
+    <tfoot><tr><td class="mn">Total ${y}</td><td class="r" data-l="Spent">${eur(totSpent)}</td><td class="r" data-l="Income">${eur(totInc)}</td><td class="r" data-l="Left over">${eur(totSaved)}</td><td class="r" data-l="Target">${eur(goal)}</td><td class="r" data-l="I saved">${eur(p.savedDone)}</td><td class="st"></td></tr></tfoot></table></div>
   </section>
   <section style="margin-top:28px;max-width:640px"><div class="sec-h"><h2>Where the money went</h2><span class="meta">${yList.length} expenses</span></div>${catBars(yList)}</section>
   ${income===0?'<div class="onboard" style="margin-top:24px"><span>Enter your monthly income and savings goal above. The planner then works out how much to save each month and your daily spending allowance.</span></div>':''}`;

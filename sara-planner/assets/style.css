@@ -411,3 +411,28 @@ table.ex tr:last-child td{border-bottom:0}
 
 .wd[data-act]{cursor:pointer}
 .wd[data-act]:hover{border-color:var(--accent)}
+
+/* Year table on phones: each month becomes a small card (label above each number) */
+@media (max-width:760px){
+  .ytbl{min-width:0}
+  .ytbl thead{display:none}
+  .ytbl,.ytbl tbody,.ytbl tfoot{display:block}
+  .ytbl tr{display:grid;grid-template-columns:repeat(3,1fr);gap:4px 8px;padding:10px 4px;border-bottom:1px dashed var(--line)}
+  .ytbl td{display:block;border:0!important;padding:2px 4px!important;text-align:left!important;font-size:14px!important;min-width:0;background:none!important}
+  .ytbl tr.now{background:var(--accent-soft);border-radius:10px}
+  .ytbl td[data-l]::before{content:attr(data-l);display:block;font-size:10px;text-transform:uppercase;letter-spacing:.07em;color:var(--muted);font-weight:700;margin-bottom:2px}
+  .ytbl td.mn{grid-column:1 / -1;order:-2;font-weight:700;font-size:16px!important}
+  .ytbl td.st{grid-column:1 / -1;order:-1}
+  .ytbl td[data-l="I saved"]{grid-column:1 / -1}
+  .ytbl td[data-l="Income"] .cellin,.ytbl td[data-l="I saved"] .cellin{width:90px!important;text-align:left!important}
+  .ytbl tfoot tr{border-top:2px solid var(--ink);border-bottom:0}
+  .ytbl tfoot td[data-l="I saved"]{grid-column:auto}
+  .ytbl td[data-l="Income"]{white-space:nowrap}
+  .ytbl td[data-l="Income"] .cellin{width:80px!important}
+  .ytbl tr.off{grid-template-columns:1fr auto;align-items:center}
+  .ytbl tr.off td[data-l]:not([data-l="Income"]){display:none}
+  .ytbl tr.off td.mn{grid-column:1;order:0;font-size:15px!important}
+  .ytbl tr.off td.st{display:none}
+  .ytbl tr.off td[data-l="Income"]{grid-column:2;order:1;display:flex;align-items:center;gap:4px}
+  .ytbl tr.off td[data-l="Income"]::before{margin:0 4px 0 0}
+}
