@@ -25,7 +25,10 @@ try {
 
 function when(?string $ts): string
 {
-    return $ts ? date('j M Y, H:i', strtotime($ts)) : '—';
+    if (!$ts) return '—';
+    // SQLite stamps times in UTC; MySQL is already switched to the site's time zone in db.php
+    $d = new DateTime($ts, new DateTimeZone(DB_DRIVER === 'sqlite' ? 'UTC' : date_default_timezone_get()));
+    return $d->setTimezone(new DateTimeZone(date_default_timezone_get()))->format('j M Y, H:i');
 }
 
 auth_top('Users', 'wide'); ?>

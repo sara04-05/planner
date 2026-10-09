@@ -35,6 +35,8 @@ if (!is_file(__DIR__ . '/config.php')) {
     show_site_error('config.php is missing. Upload your own config.php (with your database login) next to db.php.', __FILE__, __LINE__);
     exit;
 }
+// Kosovo / Prishtina time unless config.php says otherwise (hosts usually run on UTC)
+date_default_timezone_set('Europe/Belgrade');
 require __DIR__ . '/config.php';
 
 // Safer session cookies
@@ -69,6 +71,8 @@ function db(): PDO
         $dsn = sprintf('mysql:host=%s;port=%d;dbname=%s;charset=utf8mb4', DB_HOST, DB_PORT, DB_NAME);
         // Give up after 10 seconds instead of hanging when the database server can't be reached
         $pdo = new PDO($dsn, DB_USER, DB_PASS, $opts + [PDO::ATTR_TIMEOUT => 10]);
+        // Make the database's clock (sign-up and last-login times) match the site's time zone
+        $pdo->exec("SET time_zone = '" . (new DateTime('now'))->format('P') . "'");
     }
     // Checking for missing tables/columns takes about ten database round trips, so it runs only
     // once per version of this file (remembered in data/), not on every page and every save.
