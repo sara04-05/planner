@@ -21,8 +21,8 @@ const esc=s=>String(s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;'
 const uid=()=>Math.random().toString(36).slice(2,10);
 const dayDiff=(a,b)=>Math.round((a-b)/864e5);
 const short=d=>`${WD[wdi(d)]} ${d.getDate()} ${M3[d.getMonth()]}`;
-const CATS=[['Food','food'],['Coffee','coffee'],['Transport','transport'],['Groceries','groceries'],['School','school'],['Phone','phone'],['Fun','fun'],['Other','other']];
-const cv=c=>`var(--c-${(CATS.find(x=>x[0]===c)||CATS[7])[1]})`;
+const CATS=[['Food','food'],['Coffee','coffee'],['Transport','transport'],['Groceries','groceries'],['School','school'],['Phone','phone'],['Fun','fun'],['Clothes','clothes'],['Gifts','gifts'],['Work','work'],['Other','other']];
+const cv=c=>`var(--c-${(CATS.find(x=>x[0]===c)||CATS[CATS.length-1])[1]})`;
 const isoWeek=d=>{const t=new Date(Date.UTC(d.getFullYear(),d.getMonth(),d.getDate()));const day=t.getUTCDay()||7;t.setUTCDate(t.getUTCDate()+4-day);const y0=new Date(Date.UTC(t.getUTCFullYear(),0,1));return Math.ceil(((t-y0)/864e5+1)/7)};
 
 /* ---------- talking to the server (api.php) ---------- */
@@ -197,17 +197,14 @@ function blockForm(di,showDate){
 }
 
 /* ---------- hour by hour ---------- */
-// An hour can be only partly used: s = start minute (default 0), e = end minute (default 60).
-// s can be negative: -30 on 15:00 means it starts at 14:30, right where a 14:00–14:30 hour ended.
+// An hour can be only partly used: s = start minute (default 0), e = end minute (default 60)
+// s can be negative: the hour starts early, in the gap the hour before left (lecture until 18:30 -> next thing from 18:30)
 const hS=e=>e&&e.s?e.s:0,hE=e=>e&&e.e!=null?e.e:60;
-/** Where an hour starts when it simply follows the one before: 14:30 after a 14:00–14:30 hour (as minutes from h:00). */
-function prevGap(di,h){
-  const p=h>0?resolveHour(di,h-1):null;
-  return p&&p.text&&p.text.trim()&&hE(p)<60?hE(p)-60:0;
-}
-const rowStart=(di,h,e)=>e?hS(e):prevGap(di,h);
-/** The latest an hour may end so it doesn't run into the next one (60 = h+1:00). A next hour that starts right where this one ends just moves along with it. */
-function nextStart(di,h){const n=h<23?resolveHour(di,h+1):null;return n&&hS(n)<0&&hS(n)!==hE(resolveHour(di,h))-60?60+hS(n):60}
+const used=e=>!!(e&&e.text&&e.text.trim());
+/** Minutes free at the end of the hour before (as a negative start), or 0. */
+function gapBefore(di,h){const p=h>0?resolveHour(di,h-1):null;return used(p)&&hE(p)<60?hE(p)-60:0}
+/** Where the next hour's entry starts, if it starts early inside this hour, else 60. */
+function gapAfter(di,h){const n=h<23?resolveHour(di,h+1):null;return used(n)&&hS(n)<0?60+hS(n):60}
 function resolveHour(di,h){
   const day=state.hours[di]||{},wk=state.weekly[wdi(parse(di))]||{};
   if(day[h])return {...day[h],rep:false};
@@ -217,7 +214,9 @@ function resolveHour(di,h){
 function setHour(di,h,patch){
   const day=state.hours[di]||(state.hours[di]={}),wd=wdi(parse(di)),wk=state.weekly[wd]||(state.weekly[wd]={});
   const src=day[h]?day:wk[h]?wk:day;
-  const next={...(src[h]||{text:'',type:'personal'}),...patch};
+  let base=src[h];
+  if(!base){base={text:'',type:'personal'};const g=gapBefore(di,h),a=gapAfter(di,h);if(g)base.s=g;if(a<60)base.e=a}
+  const next={...base,...patch};
   if('text' in patch&&!next.text.trim())delete src[h];else src[h]=next;
 }
 function toggleRepeat(di,h){
@@ -233,19 +232,59 @@ function hourRow(di,h){
     <button class="rep" data-act="hour-repeat" data-date="${di}" data-h="${h}">↻</button>
   </div>`;
 }
+/** Hours after h that carry the same entry on (a 17:15–19:45 lecture fills 17, 18 and 19). */
+function spanHours(di,h){
+  const e=resolveHour(di,h),out=[];if(!e)return out;
+  for(let k=h+1,prev=e;k<24&&hE(prev)===60;k++){
+    const x=resolveHour(di,k);
+    if(!x||x.text!==e.text||x.type!==e.type||hS(x))break;
+    out.push(k);prev=x;
+  }
+  return out;
+}
+function spanEnd(di,h){const c=spanHours(di,h),l=c.length?c[c.length-1]:h;return l*60+hE(resolveHour(di,l))}
+const isCont=(di,h)=>h>0&&spanHours(di,h-1).includes(h);
+/** Make the entry at h run until `end` (minutes since midnight): fills the next hours, or frees them. */
+function setSpan(di,h,end){
+  const e=resolveHour(di,h),old=spanHours(di,h),last=Math.ceil(end/60)-1;
+  const day=state.hours[di]||(state.hours[di]={}),wd=wdi(parse(di)),wk=state.weekly[wd]||(state.weekly[wd]={});
+  const src=day[h]?day:wk;
+  const nx=resolveHour(di,last+1);
+  if(used(nx)&&hS(nx)<0&&end>(last+1)*60+hS(nx))return `${esc(nx.text)} starts at ${hm((last+1)*60+hS(nx))}. Pick an earlier end.`;
+  for(let k=h+1;k<=last;k++){
+    if(old.includes(k))continue;
+    const x=resolveHour(di,k);
+    if(x&&x.text&&x.text.trim())return `${pad(k)}:00 is already taken (${x.text}). Clear it first or pick an earlier end.`;
+  }
+  old.filter(k=>k>last).forEach(k=>{if(day[k])delete day[k];else delete wk[k]});
+  for(let k=h;k<=last;k++){
+    const x=k===h?{...src[h]}:{text:e.text,type:e.type};
+    if(k===last&&end-k*60<60)x.e=end-k*60;else delete x.e;
+    (k===h?src:day[k]?day:wk[k]?wk:src)[k]=x;
+  }
+  return null;
+}
 function hourLabel(di,h){
-  const e=resolveHour(di,h),s=rowStart(di,h,e),z=hE(e);
-  return hm(h*60+s)+(z<60||s<0?`<small>–${hm(h*60+z)}</small>`:'');
+  const e=resolveHour(di,h);
+  if(!e)return hm(h*60+gapBefore(di,h));
+  if(isCont(di,h))return hm(h*60)+(e&&hE(e)<60?`<small>–${hm(h*60+hE(e))}</small>`:'');
+  const s=hS(e),z=spanEnd(di,h);
+  return hm(h*60+s)+(z!==h*60+60||s?`<small>–${hm(z)}</small>`:'');
 }
 /** The little "starts / ends" picker under an hour, for times like 08:15–08:45. */
 function minsEditor(di,h){
-  const e=resolveHour(di,h),s=hS(e),z=hE(e),s0=Math.min(prevGap(di,h),s),z1=Math.max(nextStart(di,h),z);
+  // Ends can go past this hour (up to midnight), e.g. 17:15 until 19:45
+  const e=resolveHour(di,h),s=hS(e),t0=h*60+s,z=spanEnd(di,h);
   let a='',b='';
-  for(let m=s0;m<60;m+=5)a+=`<option value="${m}" ${m===s?'selected':''}>${hm(h*60+m)}</option>`;
-  for(let m=5;m<=z1;m+=5)b+=`<option value="${m}" ${m===z?'selected':''}>${hm(h*60+m)}</option>`;
-  if(s%5)a+=`<option value="${s}" selected>${hm(h*60+s)}</option>`;
-  if(z%5)b+=`<option value="${z}" selected>${hm(h*60+z)}</option>`;
-  return `<div class="hmin"><label>Starts <select data-hm="s" data-date="${di}" data-h="${h}">${a}</select></label><label>Ends <select data-hm="e" data-date="${di}" data-h="${h}">${b}</select></label></div>`;
+  const starts=new Set([gapBefore(di,h),s]);for(let m=Math.ceil(gapBefore(di,h)/5)*5;m<60;m+=5)starts.add(m);
+  for(const m of [...starts].sort((x,y)=>x-y))a+=`<option value="${m}" ${m===s?'selected':''}>${hm(h*60+m)}</option>`;
+  const ends=[];for(let m=Math.floor(t0/5)*5+5;m<=1440;m+=5)ends.push(m);
+  if(!ends.includes(z))ends.push(z),ends.sort((x,y)=>x-y);
+  for(const m of ends)b+=`<option value="${m}" ${m===z?'selected':''}>${hm(m)} · ${durTxt(m-t0)}</option>`;
+  // "Lasts 1/2/3 hours" is a shortcut for the end time: it fills the following hours with the same entry
+  const c=[1,2,3].filter(k=>t0+k*60<=1440).map(k=>`<option value="${k}" ${z-t0===k*60?'selected':''}>${k} hour${k>1?'s':''}</option>`).join('');
+  const lasts=`<label>Lasts <select data-hm="len" data-date="${di}" data-h="${h}">${[1,2,3].some(k=>z-t0===k*60)?'':'<option value="" selected disabled>–</option>'}${c}</select></label>`;
+  return `<div class="hmin">${lasts}<label>Starts <select data-hm="s" data-date="${di}" data-h="${h}">${a}</select></label><label>Ends <select data-hm="e" data-date="${di}" data-h="${h}">${b}</select></label></div>`;
 }
 /** Update one hour row in place (no re-drawing, so focus and open dropdowns are never lost). */
 function paintHourRow(row){
@@ -257,6 +296,8 @@ function paintHourRow(row){
   else if(!ph){sel.insertAdjacentHTML('afterbegin','<option value="">Type</option>');sel.value=''}
   const hl=row.querySelector('.hl');
   hl.innerHTML=hourLabel(di,h);
+  const inp=row.querySelector('[data-hf=text]');if(document.activeElement!==inp)inp.value=e?e.text:'';
+  const g=gapBefore(di,h);inp.placeholder=g?`Free from ${hm(h*60+g)}`:di===TI&&new Date().getHours()===h?'Now':'Free';
   hl.title=e?'Set the minutes (e.g. 08:15–08:45)':'Write something first, then click here to set the minutes';
   hl.setAttribute('aria-label',`${hl.textContent}. ${hl.title}`);
   const ed=row.querySelector('.hmin');if(ed&&!e)ed.remove();
@@ -275,7 +316,7 @@ function hourSum(di){
 function hourSection(d){
   const di=iso(d),rows=(a,b)=>{let o='';for(let h=a;h<=b;h++)o+=hourRow(di,h);return o};
   return `<section style="margin-top:34px"><div class="sec-h" style="flex-wrap:wrap"><h2>Hour by hour</h2><div class="hsum" id="hsum">${hourSum(di)}</div></div>${gcalBar()}
-    <p style="font-size:13px;color:var(--muted);margin-bottom:12px">Write your uni, work and everything else for each hour, and pick a type to colour it. Click a time to set minutes, like 08:15–08:45. Click ↻ to repeat an hour every ${WDL[wdi(d)]}, so your weekly timetable fills itself in.</p>
+    <p style="font-size:13px;color:var(--muted);margin-bottom:12px">Write your uni, work and everything else for each hour, and pick a type to colour it. Click a time to set when it starts and ends, like 17:15–19:45. Click ↻ to repeat an hour every ${WDL[wdi(d)]}, so your weekly timetable fills itself in.</p>
     <div class="hours"><div><p class="hcol-h">Night and morning · 00–11</p>${rows(0,11)}</div><div><p class="hcol-h">Afternoon and evening · 12–23</p>${rows(12,23)}</div></div></section>`;
 }
 
@@ -596,10 +637,12 @@ document.addEventListener('click',e=>{
     case 'del-upcoming':state.upcoming=state.upcoming.filter(u=>u.id!==b.dataset.id);sync('upcoming.delete',{id:b.dataset.id});break;
     case 'pick-free':{const f=document.querySelector('form[data-form=block]');if(f){f.elements.from.value=b.dataset.from;f.elements.to.value=b.dataset.to;f.elements.from_m.value=f.elements.to_m.value='0';f.elements.title.focus()}return}
     case 'hour-mins':{
-      const row=b.closest('.hr'),ed=row.querySelector('.hmin');
+      const di=b.dataset.date;let h=+b.dataset.h;
+      if(!resolveHour(di,h)){b.closest('.hr').querySelector('[data-hf=text]').focus();return}
+      while(isCont(di,h))h--;            // a later hour of a longer entry: edit it where it starts
+      const row=document.getElementById('hr-'+h),ed=row.querySelector('.hmin');
       if(ed){ed.remove();return}
-      if(!resolveHour(b.dataset.date,+b.dataset.h)){row.querySelector('[data-hf=text]').focus();return}
-      row.insertAdjacentHTML('beforeend',minsEditor(b.dataset.date,+b.dataset.h));
+      row.insertAdjacentHTML('beforeend',minsEditor(di,h));
       row.querySelector('.hmin select').focus();return}
     case 'del-block':{
       const di=b.dataset.date,wd=wdi(parse(di)),wk=state.weekly[wd]||(state.weekly[wd]={}),day=state.hours[di]||{};
@@ -628,28 +671,34 @@ document.addEventListener('change',e=>{
   const t=e.target;
   if(t.id==='bk-date'&&t.value){const fh=document.getElementById('freeh');if(fh)fh.innerHTML=freeChips(t.value);return}
   if(t.dataset.hm){
-    const di=t.dataset.date,h=+t.dataset.h,e=resolveHour(di,h);if(!e)return;
-    const v=+t.value,s=t.dataset.hm==='s'?v:hS(e),z=t.dataset.hm==='e'?v:hE(e);
-    const row=t.closest('.hr');
-    const undo=()=>{t.value=String(t.dataset.hm==='s'?hS(e):hE(e))};
-    if(z<=s){toast('The end time has to be after the start time.');undo();return}
-    if(s<prevGap(di,h)){toast(`The hour before ends at ${hm(h*60+prevGap(di,h))}. Start at that time or later.`);undo();return}
-    const n=h<23?resolveHour(di,h+1):null,oldZ=hE(e);
-    // The next hour started right where this one ended, so it keeps following it
-    const follow=t.dataset.hm==='e'&&n&&hS(n)<0&&hS(n)===oldZ-60;
-    if(z>nextStart(di,h)){toast(`The next hour starts at ${hm(h*60+nextStart(di,h))}. End at that time or earlier.`);undo();return}
-    setHour(di,h,{[t.dataset.hm]:v});
-    hourSync('hour.save',{date:di,hour:h,[t.dataset.hm]:v});
-    if(follow){const ns=z===60?0:z-60;setHour(di,h+1,{s:ns});hourSync('hour.save',{date:di,hour:h+1,s:ns})}
-    if(row)paintHourRow(row);
-    const nr=document.getElementById('hr-'+(h+1));if(nr)paintHourRow(nr);
+    const di=t.dataset.date,h=+t.dataset.h,e=resolveHour(di,h),row=t.closest('.hr');if(!e)return;
+    if(t.dataset.hm==='s'){
+      const v=+t.value;
+      if(h*60+v>=spanEnd(di,h)){toast('The start has to be before the end.');t.value=String(hS(e));return}
+      setHour(di,h,{s:v});hourSync('hour.save',{date:di,hour:h,s:v});
+    }else{
+      const end=t.dataset.hm==='len'?h*60+hS(e)+ +t.value*60:+t.value,oldEnd=spanEnd(di,h);
+      // The next entry started right where this one ended (14:30 after 14:00–14:30), so it keeps following it
+      const fh=Math.floor(oldEnd/60)+1,f=oldEnd%60&&fh<24?resolveHour(di,fh):null;
+      const follow=used(f)&&fh*60+hS(f)===oldEnd&&end>(fh-1)*60&&end<=fh*60,ns=end-fh*60;
+      if(follow)setHour(di,fh,{s:ns});
+      const err=setSpan(di,h,end);
+      if(err){if(follow)setHour(di,fh,{s:hS(f)});toast(err);const ed=row.querySelector('.hmin');if(ed)ed.outerHTML=minsEditor(di,h);return}
+      // Save in an order the server accepts: move the next entry out of the way before growing, after shrinking
+      const span=()=>hourSync('hour.span',{date:di,hour:h,end}),move=()=>hourSync('hour.save',{date:di,hour:fh,s:ns});
+      if(!follow)span();else if(end>oldEnd)move().then(span);else span().then(move);
+    }
+    paintHourRows();
+    const ed=row.querySelector('.hmin');if(ed){ed.outerHTML=minsEditor(di,h);row.querySelector(`[data-hm=${t.dataset.hm}]`).focus()}
+    const sm=document.getElementById('hsum');if(sm)sm.innerHTML=hourSum(di);
     const bl=document.getElementById('blocklist');if(bl)bl.innerHTML=blockRows(studyBlocks(di));
+    const fh=document.getElementById('freeh');if(fh)fh.innerHTML=freeChips(di);
     return;
   }
   if(t.dataset.hf){
     const di=t.dataset.date,h=+t.dataset.h,field=t.dataset.hf,patch={[field]:t.value};
     // A new entry starts where the hour before ended (14:30, not 15:00)
-    if(!resolveHour(di,h)&&prevGap(di,h)<0)patch.s=prevGap(di,h);
+    if(!resolveHour(di,h)&&gapBefore(di,h)<0)patch.s=gapBefore(di,h);
     setHour(di,h,patch);
     hourSync('hour.save',{date:di,hour:h,...patch});
     const row=t.closest('.hr');if(row)paintHourRow(row);
@@ -745,7 +794,10 @@ document.addEventListener('submit',async e=>{
       const di=d.date||TI,a=+d.from*60+ +d.from_m,z=Math.min(1440,+d.to*60+ +d.to_m),title=d.title.trim();if(!title)return;
       if(z<=a){blockMsg={ok:false,html:'The end time has to be after the start time.'};render('bk-title');return}
       const clash=[];
-      const h0=Math.floor(a/60),h1=Math.ceil(z/60);
+      let h0=Math.floor(a/60);const h1=Math.ceil(z/60);
+      // Starts in the free end of a used hour (e.g. 18:30 after a lecture until 18:30): keep it in the next hour's row
+      {const x=resolveHour(di,h0);if(used(x)&&hE(x)<=a%60&&z>(h0+1)*60)h0++}
+      {const n=resolveHour(di,h1);if(used(n)&&hS(n)<0&&z>h1*60+hS(n)){blockMsg={ok:false,html:`${esc(n.text)} starts at ${hm(h1*60+hS(n))}. Pick an earlier end.`};render('bk-title');return}}
       for(let h=h0;h<h1;h++){const x=resolveHour(di,h);if(x&&x.text&&x.text.trim())clash.push(`${pad(h)}:00 ${HT[x.type]?HT[x.type][0]+': ':''}${esc(x.text)}`)}
       if(clash.length){blockMsg={ok:false,html:`That time is already taken (${clash.join(', ')}). Pick one of the free times below.`};render('bk-title');return}
       try{await api('block.add',{date:di,from:hm(a),to:hm(z),title});gcalLater(di)}
@@ -753,7 +805,7 @@ document.addEventListener('submit',async e=>{
       const day=state.hours[di]||(state.hours[di]={});
       for(let h=h0;h<h1;h++){
         const x={text:title,type:'study'};
-        if(h===h0&&a%60)x.s=a%60;
+        if(h===h0&&a!==h*60)x.s=a-h*60;
         if(h===h1-1&&z-h*60<60)x.e=z-h*60;
         day[h]=x;
       }
