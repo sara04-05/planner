@@ -134,7 +134,7 @@ function barChart(items,limit,{vals=true,limitLabel='limit'}={}){
   return `<div class="chart"><div class="plot${vals?' show-vals':''}" style="${cols}">
     ${items.map(i=>`<div class="b ${i.cls||''}" style="height:${Math.max(1.5,i.v/max*100).toFixed(1)}%" title="${i.label}: ${eur(i.v)}">${i.v?`<span>${eur0(i.v)}</span>`:''}</div>`).join('')}
     ${limit?`<div class="lim" style="bottom:${(limit/max*100).toFixed(1)}%"><em>${limitLabel} ${eur0(limit)}</em></div>`:''}
-  </div><div class="xl" style="${cols}">${items.map(i=>`<span class="${i.today?'today':''}">${i.label}</span>`).join('')}</div></div>`;
+  </div><div class="xl" style="${cols}">${items.map(i=>`<span class="${i.today?'today':''}">${items.length>7?String(i.label).slice(0,3):i.label}</span>`).join('')}</div></div>`;
 }
 const statusPill=(spent,allow)=>{if(!allow)return '';const r=spent/allow;return r>1?`<span class="pill bad">${eur(spent-allow)} over</span>`:r>.85?`<span class="pill warn">${eur(allow-spent)} left</span>`:`<span class="pill good">${eur(allow-spent)} left</span>`};
 const meterCls=(spent,allow)=>spent>allow?'bad':spent>allow*.85?'warn':'good';
@@ -564,7 +564,7 @@ V.year=()=>{
     const tgt=`${eur(o.target)}${o.custom?' <span class="tag-edited" title="You changed this in the Month tab">edited</span>':''}`;
     return `<tr class="${o.status==='now'?'now':o.status==='future'?'fut':''}"><td>${MON[o.m]}</td><td class="r">${o.status==='future'?'–':eur(o.spent)}</td><td class="r">${inc}</td><td class="r">${o.saved===null?'–':eur(o.saved)}</td><td class="r">${tgt}</td><td>${st}</td></tr>`;
   }).join('');
-  const pct=Math.max(0,Math.min(100,p.savedDone/goal*100));
+  const pct=goal?Math.max(0,Math.min(100,p.savedDone/goal*100)):0;
   const yList=expIn(new Date(y,0,1),new Date(y,11,31));
   return hdr('Year overview',`${y}`,navBtns())+
   `<div class="cols"><section class="panel"><div class="sec-h"><h2>Savings plan</h2><span class="meta">${p.left} month${p.left===1?'':'s'} left</span></div>
