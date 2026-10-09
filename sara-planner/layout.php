@@ -23,10 +23,12 @@ function auth_top(string $title, string $cardClass = ''): void
   <link rel="stylesheet" href="assets/style.css?v=<?= filemtime(__DIR__ . '/assets/style.css') ?>">
   <link rel="icon" href="assets/logo.svg" type="image/svg+xml">
   <script>try{var t=localStorage.getItem('sara-theme');if(t)document.documentElement.setAttribute('data-theme',t)}catch(e){}</script>
+<script src="assets/lang.js?v=<?= filemtime(__DIR__ . '/assets/lang.js') ?>"></script>
 </head>
 <body>
 <main class="auth">
   <div class="auth-card<?= $cardClass ? ' ' . h($cardClass) : '' ?>">
+    <div class="auth-lang"><button class="linkbtn langsw" data-lang-btn>Shqip</button></div>
     <?= logo_html('welcome.php') ?>
 <?php }
 

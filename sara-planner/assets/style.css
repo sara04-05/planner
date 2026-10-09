@@ -383,7 +383,16 @@ form.inline{display:inline;margin:0}
 .admin-top{display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:6px}
 .tbl td.email{word-break:break-all}
 /* import a planner file */
-.gcal.imp label.btn{cursor:pointer}
+.gcal label.btn{cursor:pointer}
+.gcal .tb-gap{flex:1 1 0}
+.ex-wrap{padding:4px 14px 10px}
+.ex-h{font-size:13px;font-weight:700;margin:12px 0 6px}
+table.ex{width:auto;border:1px solid var(--line);border-radius:8px;border-collapse:separate;border-spacing:0;overflow:hidden;font-size:13px}
+table.ex th,table.ex td{padding:5px 10px;border-bottom:1px solid var(--line);text-align:left;white-space:nowrap}
+table.ex th{background:var(--paper-2);font-weight:700}
+table.ex tr:last-child td{border-bottom:0}
+.ex-txt{font:13px/1.6 ui-monospace,Menlo,Consolas,monospace;background:var(--paper-2);border:1px solid var(--line);border-radius:8px;padding:8px 12px;margin-bottom:10px;white-space:pre-wrap}
+.langsw{font-size:13px}
 .dlg{border:1px solid var(--line);border-radius:16px;background:var(--paper);color:var(--ink);padding:22px 24px;width:min(560px,calc(100vw - 32px));max-height:calc(100vh - 48px)}
 .dlg::backdrop{background:rgba(20,17,27,.45)}
 .dlg h3{font-size:18px;font-weight:700;margin-bottom:6px}
@@ -398,3 +407,4 @@ form.inline{display:inline;margin:0}
 .dlg-rep{display:flex;flex-wrap:wrap;gap:6px 14px;align-items:center;font-size:13px;color:var(--muted);margin-bottom:14px}
 .dlg-rep label{display:inline-flex;gap:6px;align-items:center;color:var(--ink);cursor:pointer}
 .dlg-b{display:flex;justify-content:flex-end;gap:8px}
+.auth-lang{display:flex;justify-content:flex-end;margin:-8px -6px 0 0}

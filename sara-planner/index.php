@@ -24,6 +24,7 @@ if (!$user) {            // account was deleted
   <link rel="stylesheet" href="assets/style.css?v=<?= filemtime(__DIR__ . '/assets/style.css') ?>">
   <link rel="icon" href="assets/logo.svg" type="image/svg+xml">
   <script>try{var t=localStorage.getItem('sara-theme');if(t)document.documentElement.setAttribute('data-theme',t)}catch(e){}</script>
+<script src="assets/lang.js?v=<?= filemtime(__DIR__ . '/assets/lang.js') ?>"></script>
 </head>
 <body>
 <div class="app">
@@ -32,6 +33,7 @@ if (!$user) {            // account was deleted
     <div class="top-r">
       <span class="chip-date" id="todayChip"></span>
       <?php if (is_admin($uid)): ?><a class="btn" href="admin.php">Users</a><?php endif; ?>
+      <button class="btn" data-lang-btn>Shqip</button>
       <button class="btn" id="themeBtn" data-act="theme" aria-label="Switch theme"></button>
       <form method="post" action="logout.php" class="inline">
         <input type="hidden" name="csrf" value="<?= h(csrf_token()) ?>">
