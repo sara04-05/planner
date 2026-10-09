@@ -67,9 +67,17 @@ function db(): PDO
         }
     } else {
         $dsn = sprintf('mysql:host=%s;port=%d;dbname=%s;charset=utf8mb4', DB_HOST, DB_PORT, DB_NAME);
-        $pdo = new PDO($dsn, DB_USER, DB_PASS, $opts);
+        // Give up after 10 seconds instead of hanging when the database server can't be reached
+        $pdo = new PDO($dsn, DB_USER, DB_PASS, $opts + [PDO::ATTR_TIMEOUT => 10]);
     }
-    upgrade_schema($pdo);
+    // Checking for missing tables/columns takes about ten database round trips, so it runs only
+    // once per version of this file (remembered in data/), not on every page and every save.
+    $mark = __DIR__ . '/data/schema-' . md5_file(__FILE__) . '.ok';
+    if (!is_file($mark)) {
+        @mkdir(dirname($mark));
+        upgrade_schema($pdo);
+        @file_put_contents($mark, date('c'));
+    }
     return $pdo;
 }
 
