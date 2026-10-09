@@ -63,7 +63,7 @@ async function reload(){
     const p=loadPrefs();
     state={tab:'day',taskFilter:'open',expPeriod:'month',...p,...data,showAll:false};
     render();
-    if(state.google&&state.google.connected&&state.google.needsSync&&!gcalBusy)gcalRun(true);
+    if(GCAL_ON&&state.google&&state.google.connected&&state.google.needsSync&&!gcalBusy)gcalRun(true);
   }catch(err){
     view.innerHTML=`<p class="empty">Couldn't load your planner: ${esc(err.message)} <button class="linkbtn" onclick="location.reload()">Try again</button></p>`;
   }
@@ -401,12 +401,15 @@ async function importSave(btn){
 
 /* ---------- Google Calendar ---------- */
 // Changed days wait a moment, so typing several hours sends one update instead of many
+/** Google Calendar is switched off for now: set to true once the Google API is set up again. */
+const GCAL_ON=false;
 let gcalTimer=null,gcalBusy=false,gcalFull=false,gcalMsg='';
 const gcalDates=new Set();
 /** One line above the hours: import a planner file, and Google Calendar (when the site has it set up). */
 function toolBar(di){
   const g=state.google,on=g&&g.configured&&g.connected;
   const imp=`<label class="btn" title="Excel, CSV, PDF or Word (.docx)">${IMPORT_ICON}Import a planner<input type="file" id="impFile" data-date="${di}" accept=".xlsx,.xls,.xlsm,.ods,.csv,.pdf,.docx,.doc,.txt" hidden></label><button type="button" class="linkbtn" data-act="imp-help">What should my file look like?</button>`;
+  if(!GCAL_ON)return `<div class="gcal"><span>Already have your day planned in Excel, a PDF or Word? Bring it in.</span>${imp}</div>`;
   if(on)return `<div class="gcal on"><span>${GCAL_ICON}<span id="gcalMsg">${gcalMsg||`In Google Calendar${g.email?` (${esc(g.email)})`:''}, in the calendar called <b>Splanner</b>`}</span></span>
     <button class="linkbtn" data-act="gcal-sync">Sync now</button>
     <form method="post" action="calendar.php" class="inline"><input type="hidden" name="csrf" value="${esc(CSRF)}"><button class="linkbtn" title="Stop sending hours to Google. What's already there stays until you delete the Splanner calendar.">Disconnect</button></form><span class="tb-gap"></span>${imp}</div>`;
@@ -417,7 +420,7 @@ const GCAL_ICON='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stro
 function gcalStatus(msg){gcalMsg=msg;const el=document.getElementById('gcalMsg');if(el)el.innerHTML=msg}
 /** After an hour is saved, send that day (and the same weekday in the next two weeks) to Google. */
 function gcalLater(di){
-  if(!state.google||!state.google.connected)return;
+  if(!GCAL_ON||!state.google||!state.google.connected)return;
   if(di)gcalDates.add(di);
   clearTimeout(gcalTimer);gcalTimer=setTimeout(()=>gcalRun(false),2500);
 }
