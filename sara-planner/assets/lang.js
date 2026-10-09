@@ -66,7 +66,7 @@ const T={
 'Time':'Ora','Start':'Fillon','End':'Mbaron','Activity':'Aktiviteti','Breakfast':'Mëngjes','Lecture':'Ligjërata','Gym':'Palestër','Lunch':'Drekë','Study':'Studim','Work shift':'Ndërrimi në punë',
 'A time on its own (08:00) lasts until the next activity. A range (08:15–09:45) sets both ends. Days can be columns or headings like':'Një orë e vetme (08:00) zgjat deri te aktiviteti tjetër. Një interval (08:15–09:45) cakton fillimin dhe mbarimin. Ditët mund të jenë kolona ose tituj si',
 'Times can be written in English or Albanian, for example 8:30, 8 am, ora 8, 8 e gjysmë or 3 pasdite.':'Orët mund të shkruhen shqip ose anglisht, p.sh. 8:30, 8 am, ora 8, 8 e gjysmë ose 3 pasdite.',
-'Got it':'Në rregull','Download an example':'Shkarko një shembull',
+'Got it':'Në rregull','Download an example as:':'Shkarko një shembull si:',"Couldn't load the file writer. Check your internet connection and try again.":'Shkruesi i skedarit nuk u ngarkua. Kontrollo internetin dhe provo përsëri.',"Couldn't create the example":'Shembulli nuk u krijua','Please try another format.':'Provo një format tjetër.',
 'Bring in a planner you already have, or show these hours in Google Calendar.':'Sill një planer që e ke tashmë, ose shfaqi këto orë në Google Calendar.',
 'Already have your day planned in Excel, a PDF or Word? Bring it in.':'E ke ditën të planifikuar në Excel, PDF ose Word? Sille këtu.',
 // google calendar
