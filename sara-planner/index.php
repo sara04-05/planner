@@ -55,6 +55,7 @@ if (!$user) {            // account was deleted
   </div>
 </div>
 <div class="toast" id="toast" role="status" hidden></div>
+<script src="assets/import.js?v=<?= filemtime(__DIR__ . '/assets/import.js') ?>"></script>
 <script src="assets/app.js?v=<?= filemtime(__DIR__ . '/assets/app.js') ?>"></script>
 </body>
 </html>

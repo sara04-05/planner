@@ -316,8 +316,54 @@ function hourSum(di){
 function hourSection(d){
   const di=iso(d),rows=(a,b)=>{let o='';for(let h=a;h<=b;h++)o+=hourRow(di,h);return o};
   return `<section style="margin-top:34px"><div class="sec-h" style="flex-wrap:wrap"><h2>Hour by hour</h2><div class="hsum" id="hsum">${hourSum(di)}</div></div>${gcalBar()}
+    <div class="gcal imp"><span>Already have your day planned in Excel, a PDF or Word? Bring it in and the hours fill themselves.</span><label class="btn" title="Excel, CSV, PDF or Word (.docx)">${IMPORT_ICON}Import a planner<input type="file" id="impFile" data-date="${di}" accept=".xlsx,.xls,.xlsm,.ods,.csv,.pdf,.docx,.doc,.txt" hidden></label></div>
     <p style="font-size:13px;color:var(--muted);margin-bottom:12px">Write your uni, work and everything else for each hour, and pick a type to colour it. Click a time to set when it starts and ends, like 17:15–19:45. Click ↻ to repeat an hour every ${WDL[wdi(d)]}, so your weekly timetable fills itself in.</p>
     <div class="hours"><div><p class="hcol-h">Night and morning · 00–11</p>${rows(0,11)}</div><div><p class="hcol-h">Afternoon and evening · 12–23</p>${rows(12,23)}</div></div></section>`;
+}
+
+/* ---------- import a planner file (Excel, PDF, Word) ---------- */
+const IMPORT_ICON='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v12M7 10l5 5 5-5M5 21h14"/></svg>';
+let impList=null;
+function impDialog(html){
+  let d=document.getElementById('impDlg');
+  if(!d){d=document.createElement('dialog');d.id='impDlg';d.className='dlg';document.body.appendChild(d)}
+  d.innerHTML=html;if(!d.open)d.showModal();
+  const f=d.querySelector('.btn.primary,.btn');if(f)f.focus();
+  return d;
+}
+const impClose=()=>{const d=document.getElementById('impDlg');if(d&&d.open)d.close();impList=null};
+/** Read the picked file, find the hours in it, and show what will be filled in before saving anything. */
+async function importFile(file,di){
+  impDialog(`<h3>Reading ${esc(file.name)}…</h3><p class="dlg-s">This takes a moment for big files.</p>`);
+  const d=parse(di),ws=weekStart(d),days=[...Array(7).keys()].map(k=>iso(addDays(ws,k)));
+  let list;
+  try{list=SplannerImport.parseRows(await SplannerImport.extractRows(file),di,days)}
+  catch(err){impDialog(`<h3>Couldn't read that file</h3><p class="dlg-s">${esc(err.message||'Please try another file.')}</p><div class="dlg-b"><button class="btn primary" data-act="imp-close">OK</button></div>`);return}
+  if(!list.length){
+    impDialog(`<h3>Please specify the hours</h3><p class="dlg-s">We couldn't find any times in <b>${esc(file.name)}</b>. Write the hours next to each activity, like <b>08:00 Breakfast</b> or <b>09:15–10:45 Lecture</b>, then try again.</p><div class="dlg-b"><button class="btn primary" data-act="imp-close">OK</button></div>`);
+    return;
+  }
+  impList=list;
+  const dates=[...new Set(list.map(e=>e.date))],multi=dates.length>1;
+  const rows=list.map((e,i)=>`<tr><td class="num">${multi?`<b>${WD[wdi(parse(e.date))]}</b> `:''}${hm(e.from)}–${hm(e.to)}</td><td>${esc(e.text)}</td><td><select data-imp="${i}" aria-label="Type for ${esc(e.text)}">${Object.entries(HT).map(([k,v])=>`<option value="${k}" ${k===e.type?'selected':''}>${v[0]}</option>`).join('')}</select></td></tr>`).join('');
+  const where=multi?`the week of ${short(ws)}`:short(parse(dates[0]));
+  impDialog(`<h3>Found ${list.length} ${list.length===1?'entry':'entries'} for ${where}</h3>
+    <p class="dlg-s">Check the types, then fill your planner. Anything already written at these times will be replaced.</p>
+    <div class="dlg-list"><table>${rows}</table></div>
+    <label class="dlg-rep"><input type="checkbox" id="impRep"> Repeat ${multi?'every week':'every '+WDL[wdi(parse(dates[0]))]} (↻)</label>
+    <div class="dlg-b"><button class="btn ghost" data-act="imp-close">Cancel</button><button class="btn primary" data-act="imp-save">Fill my planner</button></div>`);
+}
+async function importSave(btn){
+  if(!impList)return;
+  btn.disabled=true;
+  const rep=document.getElementById('impRep'),list=impList;
+  try{
+    const r=await api('hours.import',{entries:list,repeat:!!(rep&&rep.checked)});
+    impClose();
+    await reload();
+    (r.dates||[]).forEach(gcalLater);
+    toast(`Filled in ${list.length} ${list.length===1?'entry':'entries'} from your file.`);
+  }catch(err){btn.disabled=false;toast(err.message)}
 }
 
 /* ---------- Google Calendar ---------- */
@@ -650,6 +696,8 @@ document.addEventListener('click',e=>{
       hourSync('hours.clear',{date:di,start:+b.dataset.start,end:+b.dataset.end});break}
     case 'hour-repeat':toggleRepeat(b.dataset.date,+b.dataset.h);hourSync('hour.repeat',{date:b.dataset.date,hour:+b.dataset.h});break;
     case 'gcal-sync':gcalRun(true);return;
+    case 'imp-close':impClose();return;
+    case 'imp-save':importSave(b);return;
     case 'msave-reset':setMonth(+b.dataset.y,+b.dataset.m,'save',null);break;
     case 'tab':state.tab=b.dataset.tab;state.showAll=false;window.scrollTo({top:0});break;
     case 'shift':shift(+b.dataset.n);break;
@@ -669,6 +717,8 @@ document.addEventListener('click',e=>{
 document.addEventListener('change',e=>{
   if(!state)return;
   const t=e.target;
+  if(t.id==='impFile'){const f=t.files&&t.files[0];t.value='';if(f)importFile(f,t.dataset.date);return}
+  if(t.dataset.imp!=null){if(impList&&impList[+t.dataset.imp])impList[+t.dataset.imp].type=t.value;return}
   if(t.id==='bk-date'&&t.value){const fh=document.getElementById('freeh');if(fh)fh.innerHTML=freeChips(t.value);return}
   if(t.dataset.hm){
     const di=t.dataset.date,h=+t.dataset.h,e=resolveHour(di,h),row=t.closest('.hr');if(!e)return;
