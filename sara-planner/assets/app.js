@@ -315,8 +315,7 @@ function hourSum(di){
 }
 function hourSection(d){
   const di=iso(d),rows=(a,b)=>{let o='';for(let h=a;h<=b;h++)o+=hourRow(di,h);return o};
-  return `<section style="margin-top:34px"><div class="sec-h" style="flex-wrap:wrap"><h2>Hour by hour</h2><div class="hsum" id="hsum">${hourSum(di)}</div></div>${gcalBar()}
-    <div class="gcal imp"><span>Already have your day planned in Excel, a PDF or Word? Bring it in and the hours fill themselves.</span><label class="btn" title="Excel, CSV, PDF or Word (.docx)">${IMPORT_ICON}Import a planner<input type="file" id="impFile" data-date="${di}" accept=".xlsx,.xls,.xlsm,.ods,.csv,.pdf,.docx,.doc,.txt" hidden></label></div>
+  return `<section style="margin-top:34px"><div class="sec-h" style="flex-wrap:wrap"><h2>Hour by hour</h2><div class="hsum" id="hsum">${hourSum(di)}</div></div>${toolBar(di)}
     <p style="font-size:13px;color:var(--muted);margin-bottom:12px">Write your uni, work and everything else for each hour, and pick a type to colour it. Click a time to set when it starts and ends, like 17:15–19:45. Click ↻ to repeat an hour every ${WDL[wdi(d)]}, so your weekly timetable fills itself in.</p>
     <div class="hours"><div><p class="hcol-h">Night and morning · 00–11</p>${rows(0,11)}</div><div><p class="hcol-h">Afternoon and evening · 12–23</p>${rows(12,23)}</div></div></section>`;
 }
@@ -340,7 +339,7 @@ async function importFile(file,di){
   try{list=SplannerImport.parseRows(await SplannerImport.extractRows(file),di,days)}
   catch(err){impDialog(`<h3>Couldn't read that file</h3><p class="dlg-s">${esc(err.message||'Please try another file.')}</p><div class="dlg-b"><button class="btn primary" data-act="imp-close">OK</button></div>`);return}
   if(!list.length){
-    impDialog(`<h3>Please specify the hours</h3><p class="dlg-s">We couldn't find any times in <b>${esc(file.name)}</b>. Write the hours next to each activity, like <b>08:00 Breakfast</b> or <b>09:15–10:45 Lecture</b>, then try again.</p><p class="dlg-s" lang="sq">Nuk gjetëm orë në këtë skedar. Shkruani orët pranë çdo aktiviteti, p.sh. <b>08:00 Mëngjes</b> ose <b>09:15–10:45 Ligjërata</b>, pastaj provoni përsëri.</p><div class="dlg-b"><button class="btn primary" data-act="imp-close">OK</button></div>`);
+    impDialog(`<h3>Please specify the hours</h3><p class="dlg-s">We couldn't find any times in <b>${esc(file.name)}</b>. Write the hours next to each activity, like <b>08:00 Breakfast</b> or <b>09:15–10:45 Lecture</b>, then try again.</p>${window.SPL_LANG==='sq'?'':`<p class="dlg-s" lang="sq">Nuk gjetëm orë në këtë skedar. Shkruani orët pranë çdo aktiviteti, p.sh. <b>08:00 Mëngjes</b> ose <b>09:15–10:45 Ligjërata</b>, pastaj provoni përsëri.</p>`}<div class="dlg-b"><button class="btn primary" data-act="imp-close">OK</button></div>`);
     return;
   }
   impList=list;impDays=days;
@@ -355,6 +354,33 @@ async function importFile(file,di){
     <div class="dlg-list"><table>${rows}</table></div>
     <div class="dlg-rep" role="radiogroup" aria-label="Which days to fill"><span>Fill:</span>${when}</div>
     <div class="dlg-b"><button class="btn ghost" data-act="imp-close">Cancel</button><button class="btn primary" data-act="imp-save">Fill my planner</button></div>`);
+}
+/** Examples of files the import understands. */
+function importHelp(){
+  const tbl=(head,rows)=>`<table class="ex"><tr>${head.map(h=>`<th>${h}</th>`).join('')}</tr>${rows.map(r=>`<tr>${r.map(c=>`<td>${c}</td>`).join('')}</tr>`).join('')}</table>`;
+  const sq=window.SPL_LANG==='sq';
+  impDialog(`<h3>How your file should look</h3>
+    <p class="dlg-s">Any of these works. Each activity needs a time next to it, in the same row or line.</p>
+    <div class="dlg-list ex-wrap">
+      <p class="ex-h">Excel or CSV: one row per activity</p>
+      ${tbl(['Start','End','Activity'],[['08:00','09:30','Lecture'],['10:00','','Gym'],['12:00','13:00','Lunch'],['14:15','16:45','Work shift']])}
+      <p class="ex-h">Excel or Word: a weekly timetable</p>
+      ${tbl(['Time',WDL[0],WDL[1],WDL[2]],[['08:00–09:30','Lecture','','Gym'],['10:00–11:30','','Study','']])}
+      <p class="ex-h">PDF, Word or text: one line per activity</p>
+      <pre class="ex-txt">${sq?'E Hënë\nora 8 Mëngjes\n8:15–9:45 Ligjërata\nnga 10 deri në 12 Mësim\n3 pasdite Palestër':'Monday\n08:00 Breakfast\n8:15–9:45 Lecture\n10:00 to 12:00 Study\n3 pm Gym'}</pre>
+      <p class="dlg-s">A time on its own (08:00) lasts until the next activity. A range (08:15–09:45) sets both ends. Days can be columns or headings like <b>Monday</b> or <b>E Hënë</b>.</p>
+      <p class="dlg-s">Times can be written in English or Albanian, for example 8:30, 8 am, ora 8, 8 e gjysmë or 3 pasdite.</p>
+    </div>
+    <div class="dlg-b"><button class="btn ghost" data-act="imp-example">Download an example</button><button class="btn primary" data-act="imp-close">Got it</button></div>`);
+}
+/** A small example planner as a CSV file (opens in Excel), in the page's language. */
+function importExample(){
+  const sq=window.SPL_LANG==='sq';
+  const rows=sq?[['Fillon','Mbaron','Aktiviteti'],['07:30','08:00','Mëngjes'],['08:15','09:45','Ligjërata'],['10:00','12:00','Mësim'],['12:00','13:00','Drekë'],['17:00','18:00','Palestër']]
+    :[['Start','End','Activity'],['07:30','08:00','Breakfast'],['08:15','09:45','Lecture'],['10:00','12:00','Study'],['12:00','13:00','Lunch'],['17:00','18:00','Gym']];
+  const csv='\ufeff'+rows.map(r=>r.join(',')).join('\r\n');
+  const a=document.createElement('a');a.href=URL.createObjectURL(new Blob([csv],{type:'text/csv'}));a.download=sq?'shembull-planeri.csv':'example-planner.csv';
+  document.body.appendChild(a);a.click();setTimeout(()=>{URL.revokeObjectURL(a.href);a.remove()},500);
 }
 async function importSave(btn){
   if(!impList)return;
@@ -377,12 +403,15 @@ async function importSave(btn){
 // Changed days wait a moment, so typing several hours sends one update instead of many
 let gcalTimer=null,gcalBusy=false,gcalFull=false,gcalMsg='';
 const gcalDates=new Set();
-function gcalBar(){
-  const g=state.google;if(!g||!g.configured)return '';
-  if(!g.connected)return `<div class="gcal"><span>Want these hours in your Google Calendar too?</span><a class="btn" href="calendar.php?start=1">${GCAL_ICON}Show in Google Calendar</a></div>`;
-  return `<div class="gcal on"><span>${GCAL_ICON}<span id="gcalMsg">${gcalMsg||`In Google Calendar${g.email?` (${esc(g.email)})`:''}, in the calendar called <b>Splanner</b>`}</span></span>
+/** One line above the hours: import a planner file, and Google Calendar (when the site has it set up). */
+function toolBar(di){
+  const g=state.google,on=g&&g.configured&&g.connected;
+  const imp=`<label class="btn" title="Excel, CSV, PDF or Word (.docx)">${IMPORT_ICON}Import a planner<input type="file" id="impFile" data-date="${di}" accept=".xlsx,.xls,.xlsm,.ods,.csv,.pdf,.docx,.doc,.txt" hidden></label><button type="button" class="linkbtn" data-act="imp-help">What should my file look like?</button>`;
+  if(on)return `<div class="gcal on"><span>${GCAL_ICON}<span id="gcalMsg">${gcalMsg||`In Google Calendar${g.email?` (${esc(g.email)})`:''}, in the calendar called <b>Splanner</b>`}</span></span>
     <button class="linkbtn" data-act="gcal-sync">Sync now</button>
-    <form method="post" action="calendar.php" class="inline"><input type="hidden" name="csrf" value="${esc(CSRF)}"><button class="linkbtn" title="Stop sending hours to Google. What's already there stays until you delete the Splanner calendar.">Disconnect</button></form></div>`;
+    <form method="post" action="calendar.php" class="inline"><input type="hidden" name="csrf" value="${esc(CSRF)}"><button class="linkbtn" title="Stop sending hours to Google. What's already there stays until you delete the Splanner calendar.">Disconnect</button></form><span class="tb-gap"></span>${imp}</div>`;
+  const cal=g&&g.configured?`<a class="btn" href="calendar.php?start=1">${GCAL_ICON}Show in Google Calendar</a>`:'';
+  return `<div class="gcal"><span>${cal?'Bring in a planner you already have, or show these hours in Google Calendar.':'Already have your day planned in Excel, a PDF or Word? Bring it in.'}</span>${imp}${cal}</div>`;
 }
 const GCAL_ICON='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/></svg>';
 function gcalStatus(msg){gcalMsg=msg;const el=document.getElementById('gcalMsg');if(el)el.innerHTML=msg}
@@ -705,6 +734,8 @@ document.addEventListener('click',e=>{
     case 'gcal-sync':gcalRun(true);return;
     case 'imp-close':impClose();return;
     case 'imp-save':importSave(b);return;
+    case 'imp-help':importHelp();return;
+    case 'imp-example':importExample();return;
     case 'msave-reset':setMonth(+b.dataset.y,+b.dataset.m,'save',null);break;
     case 'tab':state.tab=b.dataset.tab;state.showAll=false;window.scrollTo({top:0});break;
     case 'shift':shift(+b.dataset.n);break;

@@ -105,6 +105,7 @@ if (current_user_id()) {
       .demo-badge{position:static;display:inline-block;margin:0 0 10px 6px}
     }
   </style>
+<script src="assets/lang.js?v=<?= filemtime(__DIR__ . '/assets/lang.js') ?>"></script>
 </head>
 <body>
 <div class="land">
@@ -115,6 +116,7 @@ if (current_user_id()) {
       <a href="#features">Features</a>
       <a href="#safety">Is it safe?</a>
       <a href="#faq">FAQ</a>
+      <button class="linkbtn langsw" data-lang-btn>Shqip</button>
       <a class="btn ghost" href="login.php">Log in</a>
       <a class="btn primary" href="register.php">Create free account</a>
     </nav>
