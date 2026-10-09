@@ -98,6 +98,18 @@ function upgrade_schema(PDO $pdo): void
             FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE) ENGINE=InnoDB');
     }
 
+    // What the user confirmed they really saved in a month. Only adds the column.
+    try {
+        $cols = DB_DRIVER === 'sqlite'
+            ? array_column($pdo->query('PRAGMA table_info(month_money)')->fetchAll(), 'name')
+            : array_column($pdo->query('SHOW COLUMNS FROM month_money')->fetchAll(), 'Field');
+        if (!in_array('saved_actual', $cols, true)) {
+            $pdo->exec('ALTER TABLE month_money ADD COLUMN saved_actual DECIMAL(10,2) NULL');
+        }
+    } catch (PDOException $e) {
+        error_log('Could not add month_money.saved_actual: ' . $e->getMessage());
+    }
+
     // Where to find a chapter (book, author, literature). Only adds the column, existing rows are untouched.
     // If the host refuses the change, the site still opens; chapters just won't have a source box.
     try {
