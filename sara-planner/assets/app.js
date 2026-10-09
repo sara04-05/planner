@@ -379,7 +379,7 @@ const EX_FORMATS=[['xlsx','Excel (.xlsx)'],['docx','Word (.docx)'],['pptx','Powe
 const EX_LIBS={
   xlsx:['https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js'],
   docx:['https://cdn.jsdelivr.net/npm/docx@7.8.2/build/index.js'],
-  pptx:['https://cdnjs.cloudflare.com/ajax/libs/pptxgenjs/3.12.0/pptxgen.bundle.js'],
+  pptx:['https://cdn.jsdelivr.net/npm/pptxgenjs@3.12.0/dist/pptxgen.bundle.js'],
   pdf:['https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js'],
 };
 const exLoaded={};
