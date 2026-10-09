@@ -383,6 +383,7 @@ form.inline{display:inline;margin:0}
 .admin-count{font-weight:700;color:var(--ink)}
 .admin-top{display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:6px}
 .tbl td.email{word-break:break-all}
+@media (max-width:760px){.auth-card{min-width:0}.auth-card .tbl{min-width:0}.auth-card .tbl th,.auth-card .tbl td{padding:8px 6px;font-size:13px}}
 /* import a planner file */
 .gcal label.btn{cursor:pointer}
 .gcal .tb-gap{flex:1 1 0}
