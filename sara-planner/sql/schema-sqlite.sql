@@ -25,6 +25,7 @@ CREATE TABLE IF NOT EXISTS month_money (
   month       TINYINTEGER NOT NULL,
   income      DECIMAL(10,2) NULL,
   save_target DECIMAL(10,2) NULL,
+  saved_actual DECIMAL(10,2) NULL,  -- what the user confirmed they really saved (NULL = not confirmed yet)
   PRIMARY KEY (user_id, year, month),
   FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
 );

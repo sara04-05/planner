@@ -243,10 +243,11 @@ function bootstrap(int $uid): array
 
     // Per-month changes, keyed "year-month" (month 0 = January)
     $months = new stdClass();
-    foreach (q('SELECT year, month, income, save_target FROM month_money WHERE user_id = ?', [$uid]) as $r) {
+    foreach (q('SELECT year, month, income, save_target, saved_actual FROM month_money WHERE user_id = ?', [$uid]) as $r) {
         $months->{$r['year'] . '-' . $r['month']} = [
             'income' => $r['income'] === null ? null : (float)$r['income'],
             'save'   => $r['save_target'] === null ? null : (float)$r['save_target'],
+            'actual' => $r['saved_actual'] === null ? null : (float)$r['saved_actual'],
         ];
     }
 
@@ -306,7 +307,7 @@ try {
         // Change one month's income or savings target. An empty value (null) goes back to the normal one.
         $year  = int_in($in, 'year', 2000, 2100);
         $month = int_in($in, 'month', 0, 11);
-        $cols  = ['income' => 'income', 'save' => 'save_target'];
+        $cols  = ['income' => 'income', 'save' => 'save_target', 'actual' => 'saved_actual'];
         if (!q('SELECT 1 FROM month_money WHERE user_id = ? AND year = ? AND month = ?', [$uid, $year, $month])->fetch()) {
             q('INSERT INTO month_money (user_id, year, month) VALUES (?, ?, ?)', [$uid, $year, $month]);
         }
@@ -319,7 +320,7 @@ try {
             }
             q("UPDATE month_money SET $col = ? WHERE user_id = ? AND year = ? AND month = ?", [$v, $uid, $year, $month]);
         }
-        q('DELETE FROM month_money WHERE user_id = ? AND year = ? AND month = ? AND income IS NULL AND save_target IS NULL',
+        q('DELETE FROM month_money WHERE user_id = ? AND year = ? AND month = ? AND income IS NULL AND save_target IS NULL AND saved_actual IS NULL',
             [$uid, $year, $month]);
         ok();
     }

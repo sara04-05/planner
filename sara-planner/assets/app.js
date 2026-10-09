@@ -75,13 +75,20 @@ function expIn(a,b){const A=iso(a),B=iso(b);return state.exps.filter(e=>e.date>=
 const mOv=(y,m)=>(state.months&&state.months[`${y}-${m}`])||{};
 /** This month's income: the one you typed for that month, else your usual monthly income. */
 const incomeFor=(y,m)=>{const v=mOv(y,m).income;return v==null?state.settings.income:v};
-/** Savings target per month. A month you changed keeps your number; every other month
-    takes an even share of what is still left of the goal, so a short month is made up by the months after it. */
+const monthStatus=(y,m)=>{const ty=TODAY.getFullYear(),cm=TODAY.getMonth();return y<ty||(y===ty&&m<cm)?'past':(y===ty&&m===cm)?'now':'future'};
+/** Savings target per month. Only months with income count: the goal is shared evenly between them.
+    What you did not save in a month (target minus the amount you confirmed) moves on to the next month,
+    and anything saved extra lowers it. A finished month you have not confirmed counts as 0 saved. */
 function targets(y){
-  const goal=state.settings.goal,out=[];let planned=0;
+  const goal=state.settings.goal,out=[];
+  const act=[];for(let m=0;m<12;m++)if(incomeFor(y,m)>0)act.push(m);
+  const base=act.length?goal/act.length:0;let carry=0;
   for(let m=0;m<12;m++){
-    const own=mOv(y,m).save,t=own!=null?own:Math.max(0,(goal-planned)/(12-m));
-    out.push({t,custom:own!=null});planned+=t;
+    if(!act.includes(m)){out.push({t:0,active:false,custom:false,actual:null});continue}
+    const o=mOv(y,m),auto=base+carry,t=o.save!=null?o.save:Math.max(0,auto);
+    const eff=o.actual!=null?o.actual:(monthStatus(y,m)==='past'?0:t);
+    out.push({t,active:true,custom:o.save!=null,actual:o.actual!=null?o.actual:null});
+    carry=auto-eff;
   }
   return out;
 }
@@ -89,15 +96,14 @@ function plan(y){
   const {goal}=state.settings, ty=TODAY.getFullYear(), cm=TODAY.getMonth(), tg=targets(y);
   let savedDone=0; const months=[];
   for(let m=0;m<12;m++){
-    const income=incomeFor(y,m);
+    const income=incomeFor(y,m),status=monthStatus(y,m);
     const spent=sum(expIn(new Date(y,m,1),new Date(y,m,dim(y,m))));
-    const status=y<ty||(y===ty&&m<cm)?'past':(y===ty&&m===cm)?'now':'future';
-    const saved=status==='future'?null:income-spent;
-    if(status==='past')savedDone+=saved;
-    months.push({m,spent,income,saved,status,target:tg[m].t,custom:tg[m].custom,incCustom:mOv(y,m).income!=null});
+    const t=tg[m],saved=status==='future'||!t.active?null:income-spent;
+    if(status!=='future'&&t.actual!=null)savedDone+=t.actual;
+    months.push({m,spent,income,saved,status,active:t.active,actual:t.actual,target:t.t,custom:t.custom,incCustom:mOv(y,m).income!=null});
   }
-  const left=y===ty?12-cm:(y>ty?12:0);
-  const cur=months[y===ty?cm:y>ty?0:11];
+  const left=months.filter(o=>o.active&&o.status!=='past').length;
+  const cur=months.find(o=>o.active&&o.status!=='past')||months[y===ty?cm:y>ty?0:11];
   return {y,months,target:goal/12,savedDone,need:cur.target,cur,left,goal};
 }
 function allowanceFor(y,m){return Math.max(0,incomeFor(y,m)-targets(y)[m].t)}
@@ -593,7 +599,7 @@ V.month=()=>{
   <div class="stack"><section class="panel"><div class="sec-h"><h2>Money this month</h2>${isNow?statusPill(spent,allow):spent>allow?'<span class="pill bad">Over budget</span>':'<span class="pill good">Within budget</span>'}</div>
     <div class="meter ${meterCls(spent,allow)}" style="margin:6px 0 16px"><span style="width:${Math.min(100,spent/(allow||1)*100).toFixed(1)}%"></span></div>
     <dl class="kv"><dt>Income</dt><dd>${eur(income)}</dd><dt>Spent${isNow?' so far':''}</dt><dd>${eur(spent)}</dd><dt>Spending allowance</dt><dd>${eur(allow)}</dd><dt><label for="m-save">Savings target</label>${tg.custom?` <button class="linkbtn" data-act="msave-reset" data-y="${y}" data-m="${m}" title="Go back to the automatic amount">reset</button>`:''}</dt><dd>€ <input class="cellin num${tg.custom?' edited':''}" id="m-save" type="number" min="0" step="1" value="${+tg.t.toFixed(2)}" data-mf="save" data-y="${y}" data-m="${m}" aria-label="Savings target for ${MON[m]}"></dd><dt>${isNow?'Left to save':'Saved'}</dt><dd style="color:${saved>=tg.t?'var(--good)':'var(--bad)'}">${eur(saved)}</dd></dl>
-    <p class="hint">Couldn't save that much? Change the target. The difference is split evenly over the months after ${MON[m]}.</p>
+    <p class="hint">Tick or type what you really saved in the Year tab. Whatever is missing is added to next month's target.</p>
     <div style="margin-top:16px">${catBars(list)}</div>
     <div class="total-line"><span>Month total</span><span class="amt">${eur(spent)}</span></div>
   </section>
@@ -603,35 +609,37 @@ V.year=()=>{
   const y=cursor.getFullYear(),p=plan(y),{income,goal}=state.settings;
   const allowM=Math.max(0,income-goal/12),allowOf=o=>Math.max(0,o.income-o.target);
   const bars=p.months.map(o=>({label:M3[o.m].slice(0,1)+M3[o.m].slice(1,3),v:o.spent,today:o.status==='now',cls:o.status==='future'?'fut':o.status==='now'?'now':o.spent>allowOf(o)?'over':''}));
-  const done=p.months.filter(o=>o.status!=='future');
+  const done=p.months.filter(o=>o.status!=='future'&&o.active);
   const totSpent=sum(done.map(o=>({amount:o.spent}))),totInc=sum(done.map(o=>({amount:o.income}))),totSaved=totInc-totSpent;
   const rows=p.months.map(o=>{
     let st;
-    if(o.status==='future')st='<span class="pill muted">Upcoming</span>';
-    else if(o.status==='now')st='<span class="pill">In progress</span>';
-    else st=o.saved>=o.target-0.005?'<span class="pill good">On target</span>':`<span class="pill bad">Short ${eur(o.target-o.saved)}</span>`;
+    if(!o.active)st='<span class="pill muted">No income</span>';
+    else if(o.status==='future')st='<span class="pill muted">Upcoming</span>';
+    else if(o.actual==null)st=o.status==='past'?`<span class="pill bad">Confirm · ${eur(o.target)} to catch up</span>`:'<span class="pill">In progress</span>';
+    else st=o.actual>=o.target-0.005?'<span class="pill good">On target</span>':`<span class="pill bad">Short ${eur(o.target-o.actual)}</span>`;
     const inc=`€ <input class="cellin num${o.incCustom?' edited':''}" id="yi-${o.m}" type="number" min="0" step="10" value="${o.income}" placeholder="${income}" data-mf="income" data-y="${y}" data-m="${o.m}" aria-label="Income for ${MON[o.m]}" title="Clear to use your usual income">`;
-    const tgt=`${eur(o.target)}${o.custom?' <span class="tag-edited" title="You changed this in the Month tab">edited</span>':''}`;
-    return `<tr class="${o.status==='now'?'now':o.status==='future'?'fut':''}"><td>${MON[o.m]}</td><td class="r">${o.status==='future'?'–':eur(o.spent)}</td><td class="r">${inc}</td><td class="r">${o.saved===null?'–':eur(o.saved)}</td><td class="r">${tgt}</td><td>${st}</td></tr>`;
+    const conf=!o.active||o.status==='future'?'–':`<input type="checkbox" data-chk="msaved" data-y="${y}" data-m="${o.m}" ${o.actual!=null&&o.actual>=o.target-0.005?'checked':''} aria-label="I saved ${eur(o.target)} in ${MON[o.m]}" title="Tick if you saved the target"> € <input class="cellin num${o.actual!=null?' edited':''}" type="number" min="0" step="1" value="${o.actual==null?'':o.actual}" placeholder="${+o.target.toFixed(2)}" data-mf="actual" data-y="${y}" data-m="${o.m}" aria-label="Amount saved in ${MON[o.m]}" title="Type what you really saved. Clear to undo.">`;
+    const tgt=!o.active?'–':`${eur(o.target)}${o.custom?' <span class="tag-edited" title="You changed this in the Month tab">edited</span>':''}`;
+    return `<tr class="${o.status==='now'?'now':o.status==='future'?'fut':''}"><td>${MON[o.m]}</td><td class="r">${o.status==='future'?'–':eur(o.spent)}</td><td class="r">${inc}</td><td class="r">${o.saved===null?'–':eur(o.saved)}</td><td class="r">${tgt}</td><td class="r">${conf}</td><td>${st}</td></tr>`;
   }).join('');
-  const pct=Math.max(0,Math.min(100,p.savedDone/goal*100));
+  const pct=goal>0?Math.max(0,Math.min(100,p.savedDone/goal*100)):0;
   const yList=expIn(new Date(y,0,1),new Date(y,11,31));
   return hdr('Year overview',`${y}`,navBtns())+
   `<div class="cols"><section class="panel"><div class="sec-h"><h2>Savings plan</h2><span class="meta">${p.left} month${p.left===1?'':'s'} left</span></div>
     <div class="inputs"><label for="s-income">Usual monthly income<input class="field num" id="s-income" type="number" min="0" step="10" value="${income}" data-set="income"></label><label for="s-goal">Savings goal for ${y}<input class="field num" id="s-goal" type="number" min="0" step="50" value="${goal}" data-set="goal"></label></div>
-    <p class="eyebrow">${p.left&&p.left<12?'Save this month':'You need to save'}</p>
+    <p class="eyebrow">${p.left?(p.cur.status==='now'?'Save this month':'Next to save · '+MON[p.cur.m]):'Nothing left to save'}</p>
     <p class="save-big">${eur(p.need)}<span style="font-size:18px;color:var(--muted);font-weight:600"> / month</span></p>
-    <p style="font-size:14px;color:var(--muted);margin:10px 0 16px">to reach ${eur0(goal)} by December. That leaves <b style="color:var(--ink)">${eur(Math.max(0,p.cur.income-p.need))}</b> for spending in ${MON[p.cur.m]}. The even split would be ${eur(p.target)} a month.</p>
+    <p style="font-size:14px;color:var(--muted);margin:10px 0 16px">to reach ${eur0(goal)} by December. That leaves <b style="color:var(--ink)">${eur(Math.max(0,p.cur.income-p.need))}</b> for spending in ${MON[p.cur.m]} (${eur(Math.max(0,p.cur.income-p.need)/dim(y,p.cur.m))} a day). Months without income are skipped, and anything you did not save moves to the next month.</p>
     <div class="meter"><span style="width:${pct.toFixed(1)}%"></span></div>
-    <p style="font-size:13px;margin-top:6px"><b class="num">${eur(p.savedDone)}</b> <span style="color:var(--muted)">saved in finished months · ${pct.toFixed(0)}% of goal</span></p>
+    <p style="font-size:13px;margin-top:6px"><b class="num">${eur(p.savedDone)}</b> <span style="color:var(--muted)">saved so far (confirmed) · ${pct.toFixed(0)}% of goal</span></p>
   </section>
   <section class="panel"><div class="sec-h"><h2>Spending by month</h2><span class="meta">from your daily expenses</span></div>
     ${barChart(bars,allowM,{vals:false,limitLabel:'budget'})}
     <div class="legend"><span><i style="background:var(--accent)"></i>Within budget</span><span><i style="background:var(--bad)"></i>Over budget</span><span><i style="background:var(--line)"></i>Upcoming</span></div>
   </section></div>
   <section style="margin-top:28px"><div class="sec-h"><h2>Year expenses</h2><span class="meta">Spending adds up from your daily expenses · click an income to change it for that month</span></div>
-    <div class="tbl-wrap"><table class="tbl"><thead><tr><th>Month</th><th class="r">Spent</th><th class="r">Income</th><th class="r">Saved</th><th class="r">Target</th><th>Status</th></tr></thead><tbody>${rows}</tbody>
-    <tfoot><tr><td>Total ${y}</td><td class="r">${eur(totSpent)}</td><td class="r">${eur(totInc)}</td><td class="r">${eur(totSaved)}</td><td class="r">${eur(goal)}</td><td></td></tr></tfoot></table></div>
+    <div class="tbl-wrap"><table class="tbl"><thead><tr><th>Month</th><th class="r">Spent</th><th class="r">Income</th><th class="r">Left over</th><th class="r">Target</th><th class="r">I saved</th><th>Status</th></tr></thead><tbody>${rows}</tbody>
+    <tfoot><tr><td>Total ${y}</td><td class="r">${eur(totSpent)}</td><td class="r">${eur(totInc)}</td><td class="r">${eur(totSaved)}</td><td class="r">${eur(goal)}</td><td class="r">${eur(p.savedDone)}</td><td></td></tr></tfoot></table></div>
   </section>
   <section style="margin-top:28px;max-width:640px"><div class="sec-h"><h2>Where the money went</h2><span class="meta">${yList.length} expenses</span></div>${catBars(yList)}</section>
   ${income===0?'<div class="onboard" style="margin-top:24px"><span>Enter your monthly income and savings goal above. The planner then works out how much to save each month and your daily spending allowance.</span></div>':''}`;
@@ -871,6 +879,7 @@ document.addEventListener('change',e=>{
   if(t.dataset.chk){
     const k=t.dataset.chk,on=t.checked;
     if(k==='task'){const x=state.tasks.find(i=>i.id===t.dataset.id);if(x)x.done=on;sync('task.toggle',{id:t.dataset.id,done:on})}
+    if(k==='msaved'){const y=+t.dataset.y,m=+t.dataset.m;setMonth(y,m,'actual',on?Math.round(targets(y)[m].t*100)/100:null)}
     if(k==='block'){if(on)state.blockDone[t.dataset.key]=true;else delete state.blockDone[t.dataset.key];sync('block.done',{key:t.dataset.key,done:on})}
     if(k==='rev'){state.study[+t.dataset.i].rev=on;sync('study.save',{weekday:+t.dataset.i,revised:on})}
     if(k==='ch'){const c=findC(t.dataset.sid,t.dataset.cid);if(c){c.done=on;c.topics.forEach(x=>x.done=on)}sync('chapter.toggle',{id:t.dataset.cid,done:on})}
