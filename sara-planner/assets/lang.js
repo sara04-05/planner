@@ -28,7 +28,7 @@ const n=(k,one,many)=>+k===1?one:many;
 /* ---------- whole strings ---------- */
 const T={
 // header, tabs, general
-'Splanner':'Splanner','Dark mode':'Modaliteti i errët','Light mode':'Modaliteti i ndritshëm','Switch theme':'Ndrysho pamjen','Log out':'Dil','Users':'Përdoruesit',
+'Splanner':'Splanner','Dark':'Errët','Light':'Ndritshëm','Switch theme':'Ndrysho pamjen','Log out':'Dil','Users':'Përdoruesit',
 'Day':'Dita','Week':'Java','Month':'Muaji','Year':'Viti','Study':'Studim','Tasks':'Detyrat','Expenses':'Shpenzimet','Planner sections':'Pjesët e planerit',
 'Today':'Sot','Previous':'Para','Next':'Pas','Add':'Shto','Cancel':'Anulo','OK':'OK','Delete?':'Ta fshij?','Try again':'Provo përsëri','See all':'Shiko të gjitha','Show all':'Shfaq të gjitha',
 'Loading your planner…':'Po hapet planeri…','Set up money':'Vendos paratë','Done':'Kryer',
