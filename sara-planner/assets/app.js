@@ -677,9 +677,16 @@ document.addEventListener('change',e=>{
       if(h*60+v>=spanEnd(di,h)){toast('The start has to be before the end.');t.value=String(hS(e));return}
       setHour(di,h,{s:v});hourSync('hour.save',{date:di,hour:h,s:v});
     }else{
-      const end=t.dataset.hm==='len'?h*60+hS(e)+ +t.value*60:+t.value,err=setSpan(di,h,end);
-      if(err){toast(err);const ed=row.querySelector('.hmin');if(ed)ed.outerHTML=minsEditor(di,h);return}
-      hourSync('hour.span',{date:di,hour:h,end});
+      const end=t.dataset.hm==='len'?h*60+hS(e)+ +t.value*60:+t.value,oldEnd=spanEnd(di,h);
+      // The next entry started right where this one ended (14:30 after 14:00–14:30), so it keeps following it
+      const fh=Math.floor(oldEnd/60)+1,f=oldEnd%60&&fh<24?resolveHour(di,fh):null;
+      const follow=used(f)&&fh*60+hS(f)===oldEnd&&end>(fh-1)*60&&end<=fh*60,ns=end-fh*60;
+      if(follow)setHour(di,fh,{s:ns});
+      const err=setSpan(di,h,end);
+      if(err){if(follow)setHour(di,fh,{s:hS(f)});toast(err);const ed=row.querySelector('.hmin');if(ed)ed.outerHTML=minsEditor(di,h);return}
+      // Save in an order the server accepts: move the next entry out of the way before growing, after shrinking
+      const span=()=>hourSync('hour.span',{date:di,hour:h,end}),move=()=>hourSync('hour.save',{date:di,hour:fh,s:ns});
+      if(!follow)span();else if(end>oldEnd)move().then(span);else span().then(move);
     }
     paintHourRows();
     const ed=row.querySelector('.hmin');if(ed){ed.outerHTML=minsEditor(di,h);row.querySelector(`[data-hm=${t.dataset.hm}]`).focus()}
@@ -689,10 +696,13 @@ document.addEventListener('change',e=>{
     return;
   }
   if(t.dataset.hf){
-    const di=t.dataset.date,h=+t.dataset.h,field=t.dataset.hf;
-    setHour(di,h,{[field]:t.value});
-    hourSync('hour.save',{date:di,hour:h,[field]:t.value});
+    const di=t.dataset.date,h=+t.dataset.h,field=t.dataset.hf,patch={[field]:t.value};
+    // A new entry starts where the hour before ended (14:30, not 15:00)
+    if(!resolveHour(di,h)&&gapBefore(di,h)<0)patch.s=gapBefore(di,h);
+    setHour(di,h,patch);
+    hourSync('hour.save',{date:di,hour:h,...patch});
     const row=t.closest('.hr');if(row)paintHourRow(row);
+    const nr=document.getElementById('hr-'+(h+1));if(nr)paintHourRow(nr);
     const sm=document.getElementById('hsum');if(sm)sm.innerHTML=hourSum(di);
     const bl=document.getElementById('blocklist');if(bl)bl.innerHTML=blockRows(studyBlocks(di));
     const fh=document.getElementById('freeh');if(fh)fh.innerHTML=freeChips(di);
