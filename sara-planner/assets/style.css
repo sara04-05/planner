@@ -395,5 +395,6 @@ form.inline{display:inline;margin:0}
 .dlg-list tr:last-child td{border-bottom:0}
 .dlg-list td.num{white-space:nowrap;font-variant-numeric:tabular-nums;color:var(--muted)}
 .dlg-list select{background:var(--paper-2);border:1px solid var(--line);border-radius:8px;padding:4px 6px;color:var(--ink)}
-.dlg-rep{display:flex;gap:8px;align-items:center;font-size:13px;color:var(--muted);margin-bottom:14px}
+.dlg-rep{display:flex;flex-wrap:wrap;gap:6px 14px;align-items:center;font-size:13px;color:var(--muted);margin-bottom:14px}
+.dlg-rep label{display:inline-flex;gap:6px;align-items:center;color:var(--ink);cursor:pointer}
 .dlg-b{display:flex;justify-content:flex-end;gap:8px}
