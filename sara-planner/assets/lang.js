@@ -85,7 +85,7 @@ const T={
 'Money this month':'Paratë këtë muaj','Income':'Të ardhurat','Spending allowance':'Buxheti për shpenzime','Savings target':'Synimi për kursime','Left to save':'Mbetet për t\'u kursyer',
 "Couldn't save that much? Change the target.":'Nuk kursove aq? Ndrysho synimin.','Month total':'Gjithsej muaji',
 'Year overview':'Përmbledhja e vitit','Savings plan':'Plani i kursimeve','Usual monthly income':'Të ardhurat e zakonshme mujore','Save this month':'Kurse këtë muaj','/ month':'/ muaj',
-'Spending by month':'Shpenzimet sipas muajve','from your daily expenses':'nga shpenzimet ditore','Upcoming':'Në vazhdim','No income':'Pa të ardhura','Left over':'Mbetur','I saved':'Kurseva','Nothing left to save':'Asgjë më për t\'u kursyer','Year expenses':'Shpenzimet e vitit',
+'Spending by month':'Shpenzimet sipas muajve','from your daily expenses':'nga shpenzimet ditore','Upcoming':'Në vazhdim','No income':'Pa të ardhura','No income this month':'Pa të ardhura këtë muaj','Savings':'Kursimet','Left over':'Mbetur','I saved':'Kurseva','Nothing left to save':'Asgjë më për t\'u kursyer','Year expenses':'Shpenzimet e vitit',
 'Spending adds up from your daily expenses · click an income to change it for that month':'Shpenzimet mblidhen nga shpenzimet ditore · kliko të ardhurat për t\'i ndryshuar për atë muaj',
 'Saved':'Kursyer','Target':'Synimi','Status':'Gjendja','On target':'Në synim','In progress':'Në vazhdim','Where the money went':'Ku shkuan paratë',
 'Enter your monthly income and savings goal above. The planner then works out how much to save each month and your daily spending allowance.':'Shkruaj më lart të ardhurat mujore dhe synimin për kursime. Planeri llogarit sa të kursesh çdo muaj dhe buxhetin ditor për shpenzime.',
