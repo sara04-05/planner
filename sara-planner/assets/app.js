@@ -371,16 +371,66 @@ function importHelp(){
       <p class="dlg-s">A time on its own (08:00) lasts until the next activity. A range (08:15–09:45) sets both ends. Days can be columns or headings like <b>Monday</b> or <b>E Hënë</b>.</p>
       <p class="dlg-s">Times can be written in English or Albanian, for example 8:30, 8 am, ora 8, 8 e gjysmë or 3 pasdite.</p>
     </div>
-    <div class="dlg-b"><button class="btn ghost" data-act="imp-example">Download an example</button><button class="btn primary" data-act="imp-close">Got it</button></div>`);
+    <p class="dlg-s">Download an example as:</p>
+    <div class="dlg-rep">${EX_FORMATS.map(f=>`<button class="btn ghost" data-act="imp-example" data-fmt="${f[0]}">${f[1]}</button>`).join('')}</div>
+    <div class="dlg-b"><button class="btn primary" data-act="imp-close">Got it</button></div>`);
 }
-/** A small example planner as a CSV file (opens in Excel), in the page's language. */
-function importExample(){
+const EX_FORMATS=[['xlsx','Excel (.xlsx)'],['docx','Word (.docx)'],['pptx','PowerPoint (.pptx)'],['pdf','PDF (.pdf)'],['csv','CSV (.csv)']];
+const EX_LIBS={
+  xlsx:['https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js'],
+  docx:['https://cdn.jsdelivr.net/npm/docx@7.8.2/build/index.js'],
+  pptx:['https://cdn.jsdelivr.net/npm/pptxgenjs@3.12.0/dist/pptxgen.bundle.js'],
+  pdf:['https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js'],
+};
+const exLoaded={};
+function exLoad(src){
+  return exLoaded[src]||(exLoaded[src]=new Promise((ok,bad)=>{
+    const s=document.createElement('script');s.src=src;s.async=true;s.onload=ok;
+    s.onerror=()=>{delete exLoaded[src];bad(new Error("Couldn't load the file writer. Check your internet connection and try again."))};
+    document.head.appendChild(s);
+  }));
+}
+function exSave(blob,name){
+  const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download=name;
+  document.body.appendChild(a);a.click();setTimeout(()=>{URL.revokeObjectURL(a.href);a.remove()},500);
+}
+/** A small example planner in the chosen format (Excel, Word, PowerPoint, PDF or CSV), in the page's language. */
+async function importExample(fmt){
+  fmt=fmt||'xlsx';
   const sq=window.SPL_LANG==='sq';
   const rows=sq?[['Fillon','Mbaron','Aktiviteti'],['07:30','08:00','Mëngjes'],['08:15','09:45','Ligjërata'],['10:00','12:00','Mësim'],['12:00','13:00','Drekë'],['17:00','18:00','Palestër']]
     :[['Start','End','Activity'],['07:30','08:00','Breakfast'],['08:15','09:45','Lecture'],['10:00','12:00','Study'],['12:00','13:00','Lunch'],['17:00','18:00','Gym']];
-  const csv='\ufeff'+rows.map(r=>r.join(',')).join('\r\n');
-  const a=document.createElement('a');a.href=URL.createObjectURL(new Blob([csv],{type:'text/csv'}));a.download=sq?'shembull-planeri.csv':'example-planner.csv';
-  document.body.appendChild(a);a.click();setTimeout(()=>{URL.revokeObjectURL(a.href);a.remove()},500);
+  const base=sq?'shembull-planeri':'example-planner',title=sq?'Shembull planeri':'Example planner';
+  try{
+    if(fmt==='csv'){exSave(new Blob(['﻿'+rows.map(r=>r.join(',')).join('\r\n')],{type:'text/csv'}),base+'.csv');return}
+    await Promise.all(EX_LIBS[fmt].map(exLoad));
+    if(fmt==='xlsx'){
+      const ws=XLSX.utils.aoa_to_sheet(rows);ws['!cols']=[{wch:10},{wch:10},{wch:24}];
+      const wb=XLSX.utils.book_new();XLSX.utils.book_append_sheet(wb,ws,title);
+      XLSX.writeFile(wb,base+'.xlsx');
+    }else if(fmt==='docx'){
+      const D=window.docx,cell=(t,b)=>new D.TableCell({children:[new D.Paragraph({children:[new D.TextRun({text:t,bold:b})]})]});
+      const doc=new D.Document({sections:[{children:[
+        new D.Paragraph({text:title,heading:D.HeadingLevel.HEADING_1}),
+        new D.Table({width:{size:100,type:D.WidthType.PERCENTAGE},rows:rows.map((r,i)=>new D.TableRow({children:r.map(c=>cell(c,i===0))}))}),
+      ]}]});
+      exSave(await D.Packer.toBlob(doc),base+'.docx');
+    }else if(fmt==='pptx'){
+      const p=new window.PptxGenJS(),s=p.addSlide();
+      s.addText(title,{x:0.5,y:0.3,w:9,h:0.8,fontSize:28,bold:true});
+      s.addTable(rows.map((r,i)=>r.map(c=>({text:c,options:{bold:i===0}}))),{x:0.5,y:1.3,w:9,colW:[1.5,1.5,6],fontSize:16,border:{type:'solid',color:'BBBBBB',pt:1}});
+      await p.writeFile({fileName:base+'.pptx'});
+    }else if(fmt==='pdf'){
+      const doc=new window.jspdf.jsPDF();
+      doc.setFontSize(18);doc.text(title,15,20);doc.setFontSize(12);
+      rows.forEach((r,i)=>{
+        const y=35+i*9;
+        doc.setFont('helvetica',i===0?'bold':'normal');
+        doc.text(r[0],15,y);doc.text(r[1],45,y);doc.text(r[2],75,y);
+      });
+      doc.save(base+'.pdf');
+    }
+  }catch(err){impDialog(`<h3>Couldn't create the example</h3><p class="dlg-s">${esc(err.message||'Please try another format.')}</p><div class="dlg-b"><button class="btn primary" data-act="imp-close">OK</button></div>`)}
 }
 async function importSave(btn){
   if(!impList)return;
@@ -735,7 +785,7 @@ document.addEventListener('click',e=>{
     case 'imp-close':impClose();return;
     case 'imp-save':importSave(b);return;
     case 'imp-help':importHelp();return;
-    case 'imp-example':importExample();return;
+    case 'imp-example':importExample(b.dataset.fmt);return;
     case 'msave-reset':setMonth(+b.dataset.y,+b.dataset.m,'save',null);break;
     case 'tab':state.tab=b.dataset.tab;state.showAll=false;window.scrollTo({top:0});break;
     case 'shift':shift(+b.dataset.n);break;
@@ -932,7 +982,7 @@ const root=document.documentElement,mq=window.matchMedia('(prefers-color-scheme:
 const eff=()=>root.getAttribute('data-theme')||(mq.matches?'dark':'light');
 const SUN='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4"/></svg>';
 const MOON='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12.8A9 9 0 1 1 11.2 3a7 7 0 0 0 9.8 9.8z"/></svg>';
-function paintThemeBtn(){const d=eff()==='dark';document.getElementById('themeBtn').innerHTML=d?SUN+'Light mode':MOON+'Dark mode'}
+function paintThemeBtn(){const d=eff()==='dark';document.getElementById('themeBtn').innerHTML=d?SUN+'Light':MOON+'Dark'}
 function toggleTheme(){const n=eff()==='dark'?'light':'dark';root.setAttribute('data-theme',n);try{localStorage.setItem('sara-theme',n)}catch(e){}paintThemeBtn()}
 try{const t=localStorage.getItem('sara-theme');if(t==='dark'||t==='light')root.setAttribute('data-theme',t)}catch(e){}
 mq.addEventListener&&mq.addEventListener('change',paintThemeBtn);
