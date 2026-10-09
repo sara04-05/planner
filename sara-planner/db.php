@@ -2,6 +2,39 @@
 // Shared helpers: database connection, sessions, CSRF protection.
 declare(strict_types=1);
 
+// If something breaks, show a short note saying what and where, instead of the browser's blank "HTTP ERROR 500".
+function show_site_error(string $msg, string $file, int $line): void
+{
+    if (!headers_sent()) http_response_code(500);
+    $where = basename($file) . ' line ' . $line;
+    error_log("Splanner error: $msg in $where");
+    if (basename((string)($_SERVER['SCRIPT_NAME'] ?? '')) === 'api.php') {
+        echo json_encode(['error' => "Server error: $msg ($where)"]);
+        return;
+    }
+    if (preg_match('/SQLSTATE\[HY000\] \[\d+\]|Access denied for user|Unknown database|Connection refused|max_user_connections/i', $msg)) {
+        $msg = 'The site cannot connect to its database. Check DB_HOST, DB_NAME, DB_USER and DB_PASS in config.php, or try again in a few minutes. (' . $msg . ')';
+    }
+    echo '<!doctype html><meta charset="utf-8"><title>Splanner error</title>'
+        . '<div style="font:16px/1.5 system-ui,sans-serif;max-width:640px;margin:60px auto;padding:0 16px">'
+        . '<h1 style="font-size:22px">Something went wrong</h1>'
+        . '<p>' . htmlspecialchars($msg, ENT_QUOTES, 'UTF-8') . '</p>'
+        . '<p style="color:#777">' . htmlspecialchars($where, ENT_QUOTES, 'UTF-8') . '</p></div>';
+}
+set_exception_handler(function (Throwable $e): void {
+    show_site_error($e->getMessage(), $e->getFile(), $e->getLine());
+});
+register_shutdown_function(function (): void {
+    $e = error_get_last();
+    if ($e && in_array($e['type'], [E_ERROR, E_PARSE, E_CORE_ERROR, E_COMPILE_ERROR], true)) {
+        show_site_error($e['message'], $e['file'], $e['line']);
+    }
+});
+
+if (!is_file(__DIR__ . '/config.php')) {
+    show_site_error('config.php is missing. Upload your own config.php (with your database login) next to db.php.', __FILE__, __LINE__);
+    exit;
+}
 require __DIR__ . '/config.php';
 
 // Safer session cookies
