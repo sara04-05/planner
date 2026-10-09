@@ -323,15 +323,15 @@ function hourSection(d){
 
 /* ---------- import a planner file (Excel, PDF, Word) ---------- */
 const IMPORT_ICON='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v12M7 10l5 5 5-5M5 21h14"/></svg>';
-let impList=null;
+let impList=null,impDays=null;
 function impDialog(html){
   let d=document.getElementById('impDlg');
   if(!d){d=document.createElement('dialog');d.id='impDlg';d.className='dlg';document.body.appendChild(d)}
   d.innerHTML=html;if(!d.open)d.showModal();
-  const f=d.querySelector('.btn.primary,.btn');if(f)f.focus();
+  const f=d.querySelector('.btn.primary')||d.querySelector('.btn');if(f)f.focus();
   return d;
 }
-const impClose=()=>{const d=document.getElementById('impDlg');if(d&&d.open)d.close();impList=null};
+const impClose=()=>{const d=document.getElementById('impDlg');if(d&&d.open)d.close();impList=impDays=null};
 /** Read the picked file, find the hours in it, and show what will be filled in before saving anything. */
 async function importFile(file,di){
   impDialog(`<h3>Reading ${esc(file.name)}…</h3><p class="dlg-s">This takes a moment for big files.</p>`);
@@ -340,29 +340,36 @@ async function importFile(file,di){
   try{list=SplannerImport.parseRows(await SplannerImport.extractRows(file),di,days)}
   catch(err){impDialog(`<h3>Couldn't read that file</h3><p class="dlg-s">${esc(err.message||'Please try another file.')}</p><div class="dlg-b"><button class="btn primary" data-act="imp-close">OK</button></div>`);return}
   if(!list.length){
-    impDialog(`<h3>Please specify the hours</h3><p class="dlg-s">We couldn't find any times in <b>${esc(file.name)}</b>. Write the hours next to each activity, like <b>08:00 Breakfast</b> or <b>09:15–10:45 Lecture</b>, then try again.</p><div class="dlg-b"><button class="btn primary" data-act="imp-close">OK</button></div>`);
+    impDialog(`<h3>Please specify the hours</h3><p class="dlg-s">We couldn't find any times in <b>${esc(file.name)}</b>. Write the hours next to each activity, like <b>08:00 Breakfast</b> or <b>09:15–10:45 Lecture</b>, then try again.</p><p class="dlg-s" lang="sq">Nuk gjetëm orë në këtë skedar. Shkruani orët pranë çdo aktiviteti, p.sh. <b>08:00 Mëngjes</b> ose <b>09:15–10:45 Ligjërata</b>, pastaj provoni përsëri.</p><div class="dlg-b"><button class="btn primary" data-act="imp-close">OK</button></div>`);
     return;
   }
-  impList=list;
+  impList=list;impDays=days;
   const dates=[...new Set(list.map(e=>e.date))],multi=dates.length>1;
   const rows=list.map((e,i)=>`<tr><td class="num">${multi?`<b>${WD[wdi(parse(e.date))]}</b> `:''}${hm(e.from)}–${hm(e.to)}</td><td>${esc(e.text)}</td><td><select data-imp="${i}" aria-label="Type for ${esc(e.text)}">${Object.entries(HT).map(([k,v])=>`<option value="${k}" ${k===e.type?'selected':''}>${v[0]}</option>`).join('')}</select></td></tr>`).join('');
-  const where=multi?`the week of ${short(ws)}`:short(parse(dates[0]));
-  impDialog(`<h3>Found ${list.length} ${list.length===1?'entry':'entries'} for ${where}</h3>
+  // A plan for one day fills every day of the week (repeating with ↻) unless you pick otherwise
+  const opt=(v,label,on)=>`<label><input type="radio" name="impWhen" value="${v}" ${on?'checked':''}> ${label}</label>`;
+  const when=multi?opt('weekly','Every week (↻)',true)+opt('once',`Only the week of ${short(ws)}`)
+    :opt('every','Every day (↻)',true)+opt('weekdays','Monday to Friday (↻)')+opt('once',`Only ${short(parse(dates[0]))}`);
+  impDialog(`<h3>Found ${list.length} ${list.length===1?'entry':'entries'}${multi?` for ${dates.length} days`:''}</h3>
     <p class="dlg-s">Check the types, then fill your planner. Anything already written at these times will be replaced.</p>
     <div class="dlg-list"><table>${rows}</table></div>
-    <label class="dlg-rep"><input type="checkbox" id="impRep"> Repeat ${multi?'every week':'every '+WDL[wdi(parse(dates[0]))]} (↻)</label>
+    <div class="dlg-rep" role="radiogroup" aria-label="Which days to fill"><span>Fill:</span>${when}</div>
     <div class="dlg-b"><button class="btn ghost" data-act="imp-close">Cancel</button><button class="btn primary" data-act="imp-save">Fill my planner</button></div>`);
 }
 async function importSave(btn){
   if(!impList)return;
   btn.disabled=true;
-  const rep=document.getElementById('impRep'),list=impList;
+  const w=(document.querySelector('input[name=impWhen]:checked')||{}).value||'once',list=impList;
+  // every / weekdays: copy the day's plan to each of those days, saved in the weekly timetable so it repeats
+  const k=w==='every'?7:w==='weekdays'?5:0;
+  const entries=k?impDays.slice(0,k).flatMap(date=>list.map(e=>({...e,date}))):list;
+  const msg={every:'on every day',weekdays:'on Monday to Friday',weekly:'every week',once:''}[w];
   try{
-    const r=await api('hours.import',{entries:list,repeat:!!(rep&&rep.checked)});
+    const r=await api('hours.import',{entries,repeat:w!=='once'});
     impClose();
     await reload();
     (r.dates||[]).forEach(gcalLater);
-    toast(`Filled in ${list.length} ${list.length===1?'entry':'entries'} from your file.`);
+    toast(`Filled in ${list.length} ${list.length===1?'entry':'entries'} from your file${msg?' '+msg:''}.`);
   }catch(err){btn.disabled=false;toast(err.message)}
 }
 
