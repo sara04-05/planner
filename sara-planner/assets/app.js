@@ -107,8 +107,16 @@ function plan(y){
   return {y,months,target:goal/12,savedDone,need:cur.target,cur,left,goal};
 }
 function allowanceFor(y,m){return Math.max(0,incomeFor(y,m)-targets(y)[m].t)}
-const dailyAllow=d=>allowanceFor(d.getFullYear(),d.getMonth())/dim(d.getFullYear(),d.getMonth());
-function allowRange(a,b){let t=0;for(let d=new Date(a);d<=b;d=addDays(d,1))t+=dailyAllow(d);return t}
+/** Even split of the month's allowance, used for week/year totals. */
+const baseDaily=d=>allowanceFor(d.getFullYear(),d.getMonth())/dim(d.getFullYear(),d.getMonth());
+/** What you can spend on day d: the month's allowance minus everything spent on earlier days,
+    shared evenly over the days left (d included). Spend less and tomorrow's amount grows; overspend and it shrinks. */
+function dailyAllow(d){
+  const y=d.getFullYear(),m=d.getMonth(),n=dim(y,m);
+  const spentBefore=sum(expIn(new Date(y,m,1),new Date(y,m,d.getDate()-1)));
+  return Math.max(0,allowanceFor(y,m)-spentBefore)/(n-d.getDate()+1);
+}
+function allowRange(a,b){let t=0;for(let d=new Date(a);d<=b;d=addDays(d,1))t+=baseDaily(d);return t}
 
 /* ---------- shared pieces ---------- */
 const navBtns=()=>`<button class="btn" data-act="shift" data-n="-1" aria-label="Previous">‹</button><button class="btn" data-act="today">Today</button><button class="btn" data-act="shift" data-n="1" aria-label="Next">›</button>`;
@@ -585,11 +593,11 @@ V.week=()=>{
 V.month=()=>{
   const y=cursor.getFullYear(),m=cursor.getMonth(),first=new Date(y,m,1),last=new Date(y,m,dim(y,m));
   const list=expIn(first,last),spent=sum(list),allow=allowanceFor(y,m),income=incomeFor(y,m),tg=targets(y)[m];
-  const isNow=y===TODAY.getFullYear()&&m===TODAY.getMonth(),daily=allow/dim(y,m);
+  const isNow=y===TODAY.getFullYear()&&m===TODAY.getMonth(),daily=dailyAllow(isNow?TODAY:first);
   let cells=WD.map(w=>`<div class="wh">${w}</div>`).join('')+'<div class="cell blank"></div>'.repeat(wdi(first));
   for(let i=1;i<=dim(y,m);i++){
     const d=new Date(y,m,i),di=iso(d),sp=sum(state.exps.filter(e=>e.date===di)),ts=state.tasks.filter(t=>t.due===di&&!t.done);
-    cells+=`<button class="cell ${di===TI?'is-today':''} ${d>TODAY?'fut':''}" data-act="goto" data-date="${di}" aria-label="${short(d)}"><span class="n">${i}</span><span class="tdots">${ts.map(t=>`<i class="${t.priority==='high'?'hi':''}"></i>`).join('')}</span>${sp?`<span class="sp ${sp>daily?'over':''}">${eur0(sp)}</span>`:''}</button>`;
+    cells+=`<button class="cell ${di===TI?'is-today':''} ${d>TODAY?'fut':''}" data-act="goto" data-date="${di}" aria-label="${short(d)}"><span class="n">${i}</span><span class="tdots">${ts.map(t=>`<i class="${t.priority==='high'?'hi':''}"></i>`).join('')}</span>${sp?`<span class="sp ${sp>dailyAllow(d)?'over':''}">${eur0(sp)}</span>`:''}</button>`;
   }
   const saved=income-spent;
   return hdr(isNow?'This month':'Month',`${MON[m]} ${y}`,navBtns())+
@@ -629,7 +637,7 @@ V.year=()=>{
     <div class="inputs"><label for="s-income">Usual monthly income<input class="field num" id="s-income" type="number" min="0" step="10" value="${income}" data-set="income"></label><label for="s-goal">Savings goal for ${y}<input class="field num" id="s-goal" type="number" min="0" step="50" value="${goal}" data-set="goal"></label></div>
     <p class="eyebrow">${p.left?(p.cur.status==='now'?'Save this month':'Next to save · '+MON[p.cur.m]):'Nothing left to save'}</p>
     <p class="save-big">${eur(p.need)}<span style="font-size:18px;color:var(--muted);font-weight:600"> / month</span></p>
-    <p style="font-size:14px;color:var(--muted);margin:10px 0 16px">to reach ${eur0(goal)} by December. That leaves <b style="color:var(--ink)">${eur(Math.max(0,p.cur.income-p.need))}</b> for spending in ${MON[p.cur.m]} (${eur(Math.max(0,p.cur.income-p.need)/dim(y,p.cur.m))} a day). Months without income are skipped, and anything you did not save moves to the next month.</p>
+    <p style="font-size:14px;color:var(--muted);margin:10px 0 16px">to reach ${eur0(goal)} by December. That leaves <b style="color:var(--ink)">${eur(Math.max(0,p.cur.income-p.need))}</b> for spending in ${MON[p.cur.m]} (${p.cur.status==='now'?`${eur(dailyAllow(TODAY))} a day for the rest of the month, based on what you've spent so far`:`${eur(Math.max(0,p.cur.income-p.need)/dim(y,p.cur.m))} a day`}). Months without income are skipped, and anything you did not save moves to the next month.</p>
     <div class="meter"><span style="width:${pct.toFixed(1)}%"></span></div>
     <p style="font-size:13px;margin-top:6px"><b class="num">${eur(p.savedDone)}</b> <span style="color:var(--muted)">saved so far (confirmed) · ${pct.toFixed(0)}% of goal</span></p>
   </section>
