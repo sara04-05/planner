@@ -116,7 +116,7 @@ function dailyAllow(d){
   const spentBefore=sum(expIn(new Date(y,m,1),new Date(y,m,d.getDate()-1)));
   return Math.max(0,allowanceFor(y,m)-spentBefore)/(n-d.getDate()+1);
 }
-function allowRange(a,b){let t=0;for(let d=new Date(a);d<=b;d=addDays(d,1))t+=baseDaily(d);return t}
+function allowRange(a,b,adaptive){let t=0;for(let d=new Date(a);d<=b;d=addDays(d,1))t+=adaptive?dailyAllow(d):baseDaily(d);return t}
 
 /* ---------- shared pieces ---------- */
 const navBtns=()=>`<button class="btn" data-act="shift" data-n="-1" aria-label="Previous">‹</button><button class="btn" data-act="today">Today</button><button class="btn" data-act="shift" data-n="1" aria-label="Next">›</button>`;
@@ -548,7 +548,7 @@ function revisedPanel(){
 /* ---------- views ---------- */
 const V={};
 V.day=()=>{
-  const d=cursor,di=iso(d),list=expIn(d,d),spent=sum(list),allow=dailyAllow(d);
+  const d=cursor,di=iso(d),list=expIn(d,d),spent=sum(list),allow=dailyAllow(d),nx=addDays(d,1);
   const blocks=studyBlocks(di);
   let tasks=state.tasks.filter(t=>t.due===di);
   if(di===TI)tasks=state.tasks.filter(t=>t.due===di||(!t.done&&t.due<TI));
@@ -563,14 +563,14 @@ V.day=()=>{
   </div>
   <section class="panel"><div class="sec-h"><h2>Money today</h2>${statusPill(spent,allow)}</div>
     <div class="meter ${meterCls(spent,allow)}" style="margin:6px 0 8px"><span style="width:${Math.min(100,spent/(allow||1)*100).toFixed(1)}%"></span></div>
-    <p class="s" style="font-size:13px;color:var(--muted);margin-bottom:16px">${state.settings.income?`Spent <b class="num" style="color:var(--ink)">${eur(spent)}</b> of your daily allowance of ${eur(allow)}.`:`Spent <b class="num" style="color:var(--ink)">${eur(spent)}</b> today. Set your income in the Year tab to get a daily allowance.`}</p>
+    <p class="s" style="font-size:13px;color:var(--muted);margin-bottom:16px">${state.settings.income?`Spent <b class="num" style="color:var(--ink)">${eur(spent)}</b> of your daily allowance of ${eur(allow)}.${nx&&nx.getMonth()===d.getMonth()?` From tomorrow: <b class="num" style="color:var(--ink)">${eur(dailyAllow(nx))}</b> a day.`:''}`:`Spent <b class="num" style="color:var(--ink)">${eur(spent)}</b> today. Set your income in the Year tab to get a daily allowance.`}</p>
     ${expForm(di)}${expRows(list,{showDate:false})}
     <div class="total-line"><span>Total for the day</span><span class="amt">${eur(spent)}</span></div>
   </section></div>`+hourSection(d);
 };
 V.week=()=>{
   const ws=weekStart(cursor),we=addDays(ws,6),days=[...Array(7)].map((_,i)=>addDays(ws,i));
-  const list=expIn(ws,we),spent=sum(list),allow=allowRange(ws,we);
+  const list=expIn(ws,we),spent=sum(list),allow=allowRange(ws,we,true);
   const def=(TODAY>=ws&&TODAY<=we)?TI:iso(ws);
   const cards=days.map(d=>{
     const di=iso(d),ts=state.tasks.filter(t=>t.due===di),bs=studyBlocks(di),sp=sum(state.exps.filter(e=>e.date===di));
@@ -699,7 +699,7 @@ V.money=()=>{
   else{a=new Date(c.getFullYear(),0,1);b=new Date(c.getFullYear(),11,31);title=`${c.getFullYear()}`;eyebrow='Whole year'}
   const list=expIn(a,b),spent=sum(list);
   const endElapsed=b<TODAY?b:TODAY,days=a>TODAY?0:dayDiff(endElapsed,a)+1;
-  const allow=allowRange(a,b);
+  const allow=allowRange(a,b,p==='day'||p==='week');
   const seg=`<div class="seg" role="group" aria-label="Period">${['day','week','month','year'].map(k=>`<button data-act="period" data-p="${k}" aria-pressed="${k===p}">${k[0].toUpperCase()+k.slice(1)}</button>`).join('')}</div>`;
   // ledger grouped by date
   const byDate={};list.forEach(e=>(byDate[e.date]=byDate[e.date]||[]).push(e));
