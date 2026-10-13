@@ -315,9 +315,11 @@ function paintHourRow(row){
 }
 function paintHourRows(){document.querySelectorAll('.hr').forEach(paintHourRow)}
 function hourSum(di){
-  const c={};for(let h=0;h<24;h++){const e=resolveHour(di,h);if(e&&HT[e.type]&&e.type!=='sleep')c[e.type]=(c[e.type]||0)+1}
-  const free=[...Array(24).keys()].filter(h=>!resolveHour(di,h)).length;
-  return Object.keys(HT).filter(k=>c[k]).map(k=>`<span style="--hc:var(--c-${HT[k][1]})"><i></i>${HT[k][0]} ${c[k]}h</span>`).join('')+`<span style="--hc:var(--line)"><i></i>Free ${free}h</span>`;
+  // Count minutes, not rows: 07:00–10:45 is 3h 45m, not 4h
+  const c={};let busy=0;
+  for(let h=0;h<24;h++){const e=resolveHour(di,h);if(!e)continue;const m=Math.max(0,hE(e)-hS(e));busy+=m;if(HT[e.type]&&e.type!=='sleep')c[e.type]=(c[e.type]||0)+m}
+  const free=Math.max(0,1440-busy);
+  return Object.keys(HT).filter(k=>c[k]).map(k=>`<span style="--hc:var(--c-${HT[k][1]})"><i></i>${HT[k][0]} ${durTxt(c[k])}</span>`).join('')+`<span style="--hc:var(--line)"><i></i>Free ${durTxt(free)}</span>`;
 }
 function hourSection(d){
   const di=iso(d),rows=(a,b)=>{let o='';for(let h=a;h<=b;h++)o+=hourRow(di,h);return o};
