@@ -771,7 +771,27 @@ a.btn:hover{text-decoration:none}
 .chat-send textarea{flex:1;min-width:0;resize:none;background:var(--paper);border:1px solid var(--line);border-radius:10px;padding:9px 10px;font:inherit;font-size:14px;color:var(--ink)}
 .chat-empty{color:var(--muted);font-size:14px;padding:10px}
 .chat-pick{margin:auto;text-align:center}
-@media (max-width:760px){.chat{grid-template-columns:minmax(0,1fr)}.chat-people{max-height:200px}.chat-main{min-height:380px}.msg{max-width:90%}}
+/* the notebook's ruled lines must not run through the conversation list or the messages */
+.chat-people,.chat-find{background:var(--paper)}
+.chat-main{background:var(--paper)}
+.chat-log{background:var(--paper-2)}
+@media (max-width:760px){
+  .chat{grid-template-columns:minmax(0,1fr);gap:12px;min-height:0}
+  .chat-side{gap:10px}
+  /* conversations become a row of chips you swipe through, so the chat itself stays on screen */
+  .chat-people{flex-direction:row;overflow-x:auto;overflow-y:hidden;max-height:none;padding:2px 0 6px;gap:8px;-webkit-overflow-scrolling:touch}
+  .chat-people li{flex:0 0 auto;max-width:70%}
+  .chat-people .chat-empty{padding:4px 2px}
+  .chat-person{border-color:var(--line);background:var(--paper);padding:8px 12px;min-width:120px}
+  .chat-person.on{background:var(--accent-soft);border-color:var(--accent)}
+  .chat-main{min-height:0}
+  .chat-log{min-height:240px;max-height:min(56vh,460px)}
+  .msg{max-width:88%}
+  .chat-send{padding:8px;gap:6px}
+  .chat-send textarea{min-height:0;height:44px;font-size:16px}   /* 16px stops iPhones zooming in when you tap it */
+  .chat-send .btn{height:44px}
+  .chat-row input{font-size:16px}
+}
 .auth-card a.btn{color:var(--ink);text-decoration:none}
 
 /* people, profiles and friends' notebooks (explore.php, profile.php, friend.php) */
