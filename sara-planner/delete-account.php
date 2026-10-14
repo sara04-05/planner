@@ -31,7 +31,7 @@ auth_top('Delete account'); ?>
     <h1>Delete your account</h1>
     <p class="auth-sub">This logs you out and permanently removes your account, your planner, notebooks, pictures, messages and friends. It cannot be undone.</p>
     <?php if ($error): ?><div class="formmsg err" role="alert"><?= h($error) ?></div><?php endif; ?>
-    <form method="post" class="auth-form" onsubmit="return confirm('Delete your account for good?')">
+    <form method="post" class="auth-form">
       <input type="hidden" name="csrf" value="<?= h(csrf_token()) ?>">
       <label for="password">Type your password to confirm<input id="password" name="password" type="password" autocomplete="current-password" required></label>
       <button class="btn danger">Delete my account for good</button>

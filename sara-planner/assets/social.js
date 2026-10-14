@@ -31,7 +31,7 @@ const PRESETS=[
 const SHARE_MSG='Only what you mark public ever shows.';
 
 let S=null,loading=false,loadErr='';
-const ui={nb:0,pg:'cover',panel:'',dd:null,dirty:false,sel:-1,post:null,pics:{},newList:false,newNb:false,marked:false};
+const ui={del:false,nb:0,pg:'cover',panel:'',dd:null,dirty:false,sel:-1,post:null,pics:{},newList:false,newNb:false,marked:false};
 
 async function api(action,data={}){
   const res=await fetch('api.php?action='+encodeURIComponent(action),{method:'POST',credentials:'same-origin',headers:{'Content-Type':'application/json','X-CSRF-Token':CSRF},body:JSON.stringify(data)});
@@ -293,10 +293,16 @@ function profileHtml(){
   }else editor='<p class="empty">You have no notebooks yet. Press <b>+ New notebook</b> to make your first one.</p>';
   const account=`<section class="xcard danger-zone"><h3>Account</h3>
     ${sw('Alert when someone likes my post','Shows in the bell at the top of the page.',S.profile.notify.like,'data-xsw="notify" data-k="like"')}
-    <div class="xrow"><a class="btn danger" href="delete-account.php">Delete my account</a></div>
+    <div class="xrow"><button type="button" class="btn danger" data-x="del-open">Delete my account</button></div>
     <p class="hint2">Logs you out and removes your account and everything in it for good.</p></section>`;
+  const modal=ui.del?`<div class="modal-bg" data-x="del-close" role="presentation"><form class="modal" method="post" action="delete-account.php" role="alertdialog" aria-modal="true" aria-labelledby="dm-t" aria-describedby="dm-d">
+      <input type="hidden" name="csrf" value="${esc(CSRF)}"><div class="modal-ic" aria-hidden="true">⚠️</div>
+      <h3 id="dm-t">Delete your account?</h3>
+      <p id="dm-d">This logs you out and permanently removes your account, planner, notebooks, pictures, messages and friends. It cannot be undone.</p>
+      <label class="l" for="dm-pw">Type your password to confirm</label><input type="password" id="dm-pw" name="password" autocomplete="current-password" required>
+      <div class="xrow" style="justify-content:flex-end"><button type="button" class="btn ghost" data-x="del-close">Cancel</button><button class="btn danger">Delete for good</button></div></form></div>`:'';
   return hdr('Your notebook','Profile','')+
-    `<div class="xcols1">${page}</div><h2 class="nb-h2">My notebooks</h2>${shelf}${newForm}${editor}<div class="xcols1" style="margin-top:22px">${account}</div>`;
+    `<div class="xcols1">${page}</div><h2 class="nb-h2">My notebooks</h2>${shelf}${newForm}${editor}<div class="xcols1" style="margin-top:22px">${account}</div>${modal}`;
 }
 
 /* ---------- entry point for app.js ---------- */
@@ -313,6 +319,7 @@ function html(tab){
   });
   return out;
 }
+document.addEventListener('keydown',e=>{if(e.key==='Escape'&&ui.del){ui.del=false;redraw()}});
 window.SPLX={html,setUnread:n=>{if(S){S.unread=n;S.notes.forEach(x=>x.read=true)}}};
 
 const markDirty=()=>{ui.dirty=true;const sv=$('saveDesign');if(sv)sv.disabled=false};
@@ -333,6 +340,8 @@ document.addEventListener('click',async e=>{
       case 'retry':loadErr='';S=null;redraw();return;
       // notebooks
       case 'nb-pick':if(ui.dirty)toast('Unsaved design changes were dropped.');pick(id);redraw();return;
+      case 'del-open':ui.del=true;redraw('dm-pw');return;
+      case 'del-close':if(e.target!==b&&b.classList.contains('modal-bg'))return;ui.del=false;redraw();return;
       case 'nb-new':ui.newNb=!ui.newNb;redraw(ui.newNb?'nn-title':'');return;
       case 'panel':ui.panel=ui.panel===b.dataset.v?'':b.dataset.v;ui.sel=-1;redraw();return;
       case 'pg':ui.pg=b.dataset.v;ui.sel=-1;ui.post=null;ui.newList=false;redraw();return;
