@@ -984,3 +984,6 @@ a.tab{display:block;text-decoration:none;box-sizing:border-box}
 @keyframes mpop{from{opacity:0;transform:translateY(8px) scale(.97)}}
 .modal input[type=password]{width:100%;padding:11px 14px;border-radius:12px;border:1px solid var(--line);background:var(--paper-2,var(--paper));color:var(--ink);font:inherit}
 .modal input[type=password]:focus{outline:2px solid var(--accent);outline-offset:1px}
+
+.btn.editprof{margin-left:auto}
+@media (max-width:760px){.btn.editprof .lbl{display:none}.btn.editprof{padding:8px 11px;font-size:16px}}
