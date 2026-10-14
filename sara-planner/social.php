@@ -1,5 +1,5 @@
 <?php
-// Shared helpers for people, profiles and friends (people.php, profile.php, friend.php, chat).
+// Shared helpers for people, profiles and friends (explore.php, profile.php, friend.php, chat).
 declare(strict_types=1);
 
 // Notebook covers: [name, style]. Vintage ones have a name label, spiral ones show your cover words in script.
