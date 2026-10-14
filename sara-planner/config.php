@@ -40,4 +40,4 @@ const GMAIL_APP_PASSWORD = '';   // the 16-letter app password
 const MAIL_FROM_NAME     = 'Splanner';
 
 // Your time zone, so "today" is right
-date_default_timezone_set('Europe/Belgrade');
+date_default_timezone_set('Europe/Tirane');
