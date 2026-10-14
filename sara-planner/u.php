@@ -83,7 +83,7 @@ $WD = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
         <div class="who-actions">
         <?php if ($viewer && !$isMe): ?>
           <?php if ($state === 'friends'): ?>
-            <a class="btn primary" href="messages.php?with=<?= $owner ?>">Message</a>
+            <a class="btn primary" href="index.php#chat-<?= $owner ?>">Message</a>
             <a class="btn" href="friend.php?id=<?= $owner ?>">Today's plan</a>
           <?php elseif ($state === 'sent'): ?><?= friend_btn('cancel', $owner, 'Requested · cancel', 'btn ghost', $back) ?>
           <?php elseif ($state === 'received'): ?><?= friend_btn('accept', $owner, 'Accept friend request', 'btn primary', $back) ?>

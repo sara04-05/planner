@@ -20,10 +20,10 @@ sara-planner/
 ├── layout.php         Shared layout for the login/sign-up pages
 ├── gcal.php           Sends the Hour by hour plan to Google Calendar
 ├── social.php         People, friends, profile pictures, notebook covers (used by people.php, friend.php, messages)
-├── people.php         Friends, friend requests and search (see ../MESSAGES.md)
+├── people.php         Friends, friend requests, search and public notebooks (see ../MESSAGES.md)
 ├── friend.php         A friend's notebook with today's plan
 ├── profile.php        Edit your name, bio, picture and notebook cover
-├── messages.php       Messages between users
+├── messages.php       Messages between users (full page); the planner also has a Messages tab
 ├── notebook.php       Sharing a notebook: privacy, design, blog, interest lists, likes, alerts, pictures (used by api.php)
 ├── u.php              A shared notebook (u.php?u=pagename), for friends, members or visitors
 ├── explore.php        Directory of public notebooks
@@ -132,10 +132,11 @@ Leave both empty and sign-up works like before, without the code.
 
 ## Share your notebook (blog, interests, design)
 
-Four extra tabs sit next to Expenses:
+Five extra tabs sit next to Expenses:
 
 - **Blog**: write posts with an optional picture. Each post is private or public.
 - **Interests**: lists of favourite movies, singers, clothes (with pictures) or anything else, as a list or a picture grid. Each list is private or public.
+- **Messages**: chat with your friends without leaving the planner (the same messages as the Messages page; new ones are looked for every 20 seconds). A friend you haven't written to yet is listed under Friends, so no email is needed.
 - **Profile**: choose a page name and bio, decide who can see the notebook, and design it (banner or your own banner picture, paper style and colour, accent colour, handwriting, stickers) with a live preview. Name, profile picture and notebook cover are changed on the People page (**Edit profile**).
 - **Alerts**: likes on your posts, with a switch to turn them off.
 

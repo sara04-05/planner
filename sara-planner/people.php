@@ -101,6 +101,25 @@ auth_top('People', 'wide people-card', true); ?>
       </div>
     </section>
 
+
+    <?php
+    $pubs = q('SELECT p.user_id, p.slug, p.bio, p.design FROM profiles p WHERE p.is_public = 1 AND p.slug IS NOT NULL AND p.user_id <> ? ORDER BY p.user_id DESC LIMIT 8', [$uid])->fetchAll();
+    if ($pubs): ?>
+    <section class="ppl-sec">
+      <h2>Public notebooks</h2>
+      <p class="auth-sub">Blogs and interests that people chose to share. <a href="explore.php">See all</a></p>
+      <div class="people">
+        <?php foreach ($pubs as $r): $d = profile_design($r); $pp = person((int)$r['user_id']); if (!$pp) continue; ?>
+          <a class="person" href="u.php?u=<?= h($r['slug']) ?>"<?= design_attrs($d, 'accent') ?>>
+            <?= banner_html($d, upload_url($d['cover_img'] ? (int)$d['cover_img'] : null)) ?>
+            <div class="pb"><div class="av" aria-hidden="true"><?= h(mb_strtoupper(mb_substr($pp['name'], 0, 1))) ?></div>
+              <h3 translate="no"><?= h($pp['name']) ?></h3><p translate="no"><?= $r['bio'] !== '' ? h($r['bio']) : '@' . h($r['slug']) ?></p></div>
+          </a>
+        <?php endforeach; ?>
+      </div>
+    </section>
+    <?php endif; ?>
+
     <section class="ppl-sec" id="find">
       <h2>Find people</h2>
       <form method="get" class="chat-row find-row" action="people.php#find">

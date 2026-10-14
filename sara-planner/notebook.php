@@ -476,6 +476,16 @@ function notebook_action(int $uid, string $action, array $in): void
     }
 
 
+    case 'x.friends': {
+        // Your friends, so the Messages tab can start a chat with one click (no email to type)
+        $out = [];
+        foreach (friend_ids($uid) as $fid) {
+            if ($p = person($fid)) $out[] = ['id' => $p['id'], 'name' => $p['name'], 'tag' => name_tag($p['name'], $p['email'])];
+        }
+        usort($out, fn($a, $b) => strcasecmp($a['name'], $b['name']));
+        ok(['friends' => $out]);
+    }
+
     case 'x.notes.read':
         q('UPDATE notifications SET is_read = 1 WHERE user_id = ?', [$uid]);
         ok(['unread' => 0]);

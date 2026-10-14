@@ -250,6 +250,84 @@ function closePop(){const p=popEl(),b=$('bellBtn');if(p)p.hidden=true;if(b)b.set
 document.addEventListener('click',e=>{if(popOpen()&&!e.target.closest('.notif-wrap'))closePop()});
 document.addEventListener('keydown',e=>{if(e.key==='Escape'&&popOpen()){closePop();const b=$('bellBtn');if(b)b.focus()}});
 
+
+/* ---------- MESSAGES tab (uses the same messages as messages.php; the host can't push, so it asks every 20 seconds) ---------- */
+const MS={threads:[],friends:[],with:0,list:[],lastId:0,loaded:false,loading:false,unread:0};
+const mtime=ts=>{const d=new Date(ts*1000),now=new Date(),hm=d.toLocaleTimeString([],{hour:'2-digit',minute:'2-digit'});return d.toDateString()===now.toDateString()?hm:d.toLocaleDateString([],{day:'numeric',month:'short'})+' '+hm};
+function paintMsgBadges(){
+  const b=$('msgBadge');if(b){b.textContent=MS.unread;b.hidden=!MS.unread}
+}
+function mthreadsHtml(){
+  const ids=new Set(MS.threads.map(t=>t.id));
+  const more=MS.friends.filter(f=>!ids.has(f.id));
+  const row=(id,name,sub,unread)=>`<button class="mth${id===MS.with?' on':''}" data-x="m-open" data-id="${id}"><span class="mav" aria-hidden="true">${esc((name[0]||'?').toUpperCase())}</span><span class="mtx"><b translate="no">${esc(name)}</b><small translate="no">${esc(sub)}</small></span>${unread?`<span class="badge">${unread}</span>`:''}</button>`;
+  let out=MS.threads.map(t=>row(t.id,t.name,(t.mine?'You: ':'')+(t.last||t.tag||''),t.unread)).join('');
+  if(more.length)out+=`<p class="mhead">Friends</p>`+more.map(f=>row(f.id,f.name,'Say hello 👋',0)).join('');
+  return out||'<p class="hint2" style="padding:6px">Nothing here yet. Add friends on <a href="people.php">People</a>, then write to them here.</p>';
+}
+function mbubbles(list){return list.map(m=>`<div class="mbub${m.mine?' me':''}" data-mid="${m.id}" translate="no">${esc(m.body)}<small>${esc(mtime(m.at))}</small></div>`).join('')}
+function mpaneHtml(){
+  const t=MS.threads.find(x=>x.id===MS.with)||MS.friends.find(x=>x.id===MS.with);
+  if(!t)return '<div class="mpane"><div class="mempty">Pick a friend on the left to start chatting.</div></div>';
+  return `<div class="mpane"><div class="mpane-h"><button class="btn sm mback" data-x="m-back">←</button><span translate="no">${esc(t.name)}</span><a class="btn sm" style="margin-left:auto" href="friend.php?id=${t.id}">Notebook</a></div>
+    <div class="mmsgs" id="mLog">${MS.list.length?mbubbles(MS.list):'<div class="mempty">Say hi! Your messages are only seen by the two of you.</div>'}</div>
+    <form class="mcomposer" data-xform="msg" autocomplete="off"><textarea id="msg-input" name="message" maxlength="2000" placeholder="Write a message…" aria-label="Message" rows="1" data-draft></textarea><button class="btn primary">Send</button></form></div>`;
+}
+let friendsAt=0;
+/** Friends can be added at any time, so look again every time the tab is opened. */
+function refreshFriends(){
+  if(Date.now()-friendsAt<4000)return;friendsAt=Date.now();
+  Promise.all([api('x.friends'),api('msg.list')]).then(([f,l])=>{
+    MS.friends=f.friends;MS.threads=l.people;MS.unread=l.unread;paintMsgBadges();
+    const th=$('mThreads');if(th&&!th.contains(document.activeElement))th.innerHTML=mthreadsHtml();
+  }).catch(()=>{});
+}
+function messagesHtml(){
+  if(MS.loaded)queueMicrotask(refreshFriends);
+  if(!MS.loaded){
+    if(!MS.loading){MS.loading=true;Promise.all([api('msg.list'),api('x.friends')]).then(([l,f])=>{MS.threads=l.people;MS.friends=f.friends;MS.unread=l.unread;MS.loaded=true;MS.loading=false;paintMsgBadges();openFromHash()}).catch(e=>{MS.loading=false;toast(e.message)})}
+    return hdr('Your notebook','Messages')+'<p class="empty">Loading…</p>';
+  }
+  return hdr('Your notebook','Messages')+`<div class="mchat${MS.with?' open':''}"><div class="mthreads" id="mThreads">${mthreadsHtml()}</div>${mpaneHtml()}</div>`;
+}
+function openFromHash(){
+  const m=/^#chat-(\d+)/.exec(location.hash);
+  if(m){history.replaceState(null,'',location.pathname+location.search);openThread(+m[1]);return}
+  redraw();
+}
+const mScroll=()=>{const b=$('mLog');if(b)b.scrollTop=b.scrollHeight};
+async function openThread(id){
+  MS.with=id;MS.list=[];MS.lastId=0;
+  try{
+    const r=await api('msg.messages',{with:id});
+    MS.list=r.messages;MS.lastId=r.messages.length?r.messages[r.messages.length-1].id:0;MS.unread=r.unread;
+    if(!MS.threads.some(t=>t.id===id)&&!MS.friends.some(f=>f.id===id))MS.threads.unshift({id,name:r.person.name,tag:r.person.tag,last:'',mine:false,unread:0});
+    const t=MS.threads.find(x=>x.id===id);if(t)t.unread=0;paintMsgBadges();
+  }catch(e){toast(e.message);MS.with=0}
+  redraw('msg-input');mScroll();
+}
+async function pollMessages(){
+  if(!S||document.hidden)return;
+  const onTab=window.SPL_TAB&&window.SPL_TAB()==='messages';
+  try{
+    const l=await api('msg.list');MS.unread=l.unread;paintMsgBadges();
+    if(!onTab||!MS.loaded)return;
+    MS.threads=l.people;
+    const th=$('mThreads');if(th&&!th.contains(document.activeElement))th.innerHTML=mthreadsHtml();
+    if(MS.with){
+      const r=await api('msg.messages',{with:MS.with,after:MS.lastId});
+      if(r.messages.length){
+        const log=$('mLog'),near=log&&log.scrollHeight-log.scrollTop-log.clientHeight<80;
+        const fresh=r.messages.filter(m=>!MS.list.some(x=>x.id===m.id));
+        if(log&&fresh.length){if(!MS.list.length)log.innerHTML='';log.insertAdjacentHTML('beforeend',mbubbles(fresh));if(near)mScroll()}
+        MS.list=MS.list.concat(fresh);MS.lastId=r.messages[r.messages.length-1].id;MS.unread=r.unread;paintMsgBadges();
+      }
+    }
+  }catch(e){}
+}
+setInterval(pollMessages,20000);
+setTimeout(pollMessages,1500);
+
 /* ---------- entry point for app.js ---------- */
 function html(tab){
   if(!S){
@@ -259,10 +337,12 @@ function html(tab){
   const keep=[...document.querySelectorAll('#view [data-draft]')].map(e=>[e.id,e.value]);
   let out='';
   if(tab==='interests')out=interestsHtml();
+  else if(tab==='messages')out=messagesHtml();
   else out=profileHtml();
   queueMicrotask(()=>{
     keep.forEach(([id,v])=>{const e=document.getElementById(id);if(e&&!e.value&&!e.dataset.cleared)e.value=v});
     if(tab==='profile'&&ui.ptab==='design'){syncDesignControls()}
+    if(tab==='messages')mScroll();
   });
   return out;
 }
@@ -285,6 +365,8 @@ document.addEventListener('click',async e=>{
   try{
     switch(a){
       case 'retry':loadErr='';S=null;redraw();return;
+      case 'm-open':openThread(id);return;
+      case 'm-back':MS.with=0;redraw();return;
       case 'bell':togglePop(b);return;
       case 'ptab':ui.ptab=b.dataset.v;ui.post=null;redraw();return;
       case 'post-new':ui.post={id:0,title:'',body:'',public:false};ui.pics.post=null;redraw('px-title');return;
@@ -346,6 +428,16 @@ document.addEventListener('submit',async e=>{
       const l=S.lists.find(x=>x.id===lid);l.items.push({id:r.id,text:d.text.trim(),note:(d.note||'').trim(),image:pic?pic.url:'',image_id:pic?pic.id:0});
       ui.pics[k]=null;clear(['ix-text-'+lid,'ix-note-'+lid]);redraw('ix-text-'+lid);
       document.querySelectorAll('[data-cleared]').forEach(el=>delete el.dataset.cleared);
+    }else if(f.dataset.xform==='msg'){
+      const text=d.message.trim();if(!text)return;
+      const r=await api('msg.send',{to:MS.with,message:text});
+      const ta=$('msg-input');if(ta){ta.value='';ta.style.height=''}
+      const log=$('mLog');if(log){if(!MS.list.length)log.innerHTML='';log.insertAdjacentHTML('beforeend',mbubbles([r.message]));mScroll()}
+      MS.list.push(r.message);MS.lastId=r.message.id;
+      let t=MS.threads.find(x=>x.id===MS.with);
+      if(!t){const fr=MS.friends.find(x=>x.id===MS.with);t={id:MS.with,name:fr?fr.name:'',tag:fr?fr.tag:'',last:'',mine:true,unread:0};MS.threads.unshift(t)}
+      t.last=text.slice(0,80);t.mine=true;MS.threads=[t,...MS.threads.filter(x=>x!==t)];
+      const th=$('mThreads');if(th)th.innerHTML=mthreadsHtml();
     }else if(f.dataset.xform==='me'){
       await api('x.profile.save',{slug:d.slug,bio:d.bio});
       const fd=new FormData(f);fd.delete('slug');fd.delete('bio');fd.append('csrf',CSRF);
@@ -399,6 +491,11 @@ document.addEventListener('change',async e=>{
     }catch(err){if(msg)msg.textContent='';toast(err.message)}
   }
 });
+
+document.addEventListener('keydown',e=>{
+  if(e.target.id==='msg-input'&&e.key==='Enter'&&!e.shiftKey&&!e.isComposing){e.preventDefault();const f=e.target.form;if(f)f.requestSubmit()}
+});
+document.addEventListener('input',e=>{if(e.target.id==='msg-input'){e.target.style.height='auto';e.target.style.height=Math.min(120,e.target.scrollHeight+2)+'px'}});
 
 /* ---------- dragging stickers on the preview cover ---------- */
 let drag=null;
