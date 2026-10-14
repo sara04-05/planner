@@ -170,6 +170,13 @@ function upgrade_schema(PDO $pdo): void
             $pdo->exec('CREATE INDEX IF NOT EXISTS idx_msg_from ON messages(from_id,to_id)');
             $pdo->exec('CREATE INDEX IF NOT EXISTS idx_friend_to ON friends(to_id)');
         }
+        // Words on a spiral notebook cover (came after the first version of the profiles table)
+        $cols = DB_DRIVER === 'sqlite'
+            ? array_column($pdo->query('PRAGMA table_info(profiles)')->fetchAll(), 'name')
+            : array_column($pdo->query('SHOW COLUMNS FROM profiles')->fetchAll(), 'Field');
+        if (!in_array('words', $cols, true)) {
+            $pdo->exec("ALTER TABLE profiles ADD COLUMN words VARCHAR(60) NOT NULL DEFAULT ''");
+        }
     } catch (PDOException $e) {
         error_log('Could not add the chat / profile / friends tables: ' . $e->getMessage());
     }

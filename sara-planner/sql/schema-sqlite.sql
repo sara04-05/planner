@@ -182,7 +182,8 @@ CREATE TABLE IF NOT EXISTS messages (
 CREATE TABLE IF NOT EXISTS profiles (
   user_id   INTEGER PRIMARY KEY,
   bio       VARCHAR(300) NOT NULL DEFAULT '',
-  cover     VARCHAR(20)  NOT NULL DEFAULT 'gingham',
+  cover     VARCHAR(20)  NOT NULL DEFAULT 'meadow',
+  words     VARCHAR(60)  NOT NULL DEFAULT '',
   avatar    MEDIUMTEXT NULL,
   avatar_v  INTEGER NOT NULL DEFAULT 0,
   FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE

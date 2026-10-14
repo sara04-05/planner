@@ -55,7 +55,7 @@ function act(string $do, int $id, string $label, string $cls = 'btn', string $ba
         . '<button class="' . $cls . '">' . h($label) . '</button></form>';
 }
 
-auth_top('People', 'wide people-card'); ?>
+auth_top('People', 'wide people-card', true); ?>
     <div class="admin-top">
       <h1>People</h1>
       <a class="btn" href="index.php">Back to planner</a>
@@ -90,7 +90,7 @@ auth_top('People', 'wide people-card'); ?>
         <a class="nb-new" href="#find"><span>+</span>Add a friend</a>
         <?php foreach ($friends as $p): ?>
           <a class="nb" href="friend.php?id=<?= $p['id'] ?>">
-            <span class="nb-cover cv-<?= h($p['cover']) ?>"><span class="nb-strap"></span><span class="nb-label"><?= avatar_html($p) ?></span></span>
+            <?= cover_html($p) ?>
             <span class="nb-title"><?= h($p['name']) ?></span>
             <?php if ($p['same_name']): ?><span class="nb-sub" translate="no"><?= h($p['email']) ?></span><?php endif; ?>
           </a>

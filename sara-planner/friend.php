@@ -24,21 +24,18 @@ $today = date('Y-m-d');
 $plan = day_schedule($id, $today);
 $now = (int)date('G') * 60 + (int)date('i');
 
-auth_top($p['name'], 'wide notebook-card'); ?>
+auth_top($p['name'], 'wide notebook-card', true); ?>
     <div class="admin-top">
       <a class="btn" href="people.php">← People</a>
       <?php if (!$self): ?><a class="btn primary" href="messages.php?with=<?= $p['id'] ?>">Message</a><?php endif; ?>
     </div>
     <div class="nb-open">
-      <aside class="nb-front cv-<?= h($p['cover']) ?>">
-        <span class="nb-strap"></span>
-        <div class="nb-who">
-          <?= avatar_html($p, 'xl') ?>
-          <div class="nb-name"><?= name_html($p) ?></div>
-          <?php if ($p['bio'] !== ''): ?><p class="nb-bio"><?= h($p['bio']) ?></p><?php endif; ?>
-        </div>
-      </aside>
+      <aside class="nb-front"><?= cover_html($p) ?></aside>
       <section class="nb-page">
+        <div class="nb-who">
+          <?= avatar_html($p, 'lg') ?>
+          <div><?= name_html($p) ?><?php if ($p['bio'] !== ''): ?><p class="nb-bio"><?= h($p['bio']) ?></p><?php endif; ?></div>
+        </div>
         <div class="eyebrow">Today</div>
         <h2 class="nb-date"><?= h(date('l, j F', strtotime($today))) ?></h2>
         <?php if (!$plan): ?>

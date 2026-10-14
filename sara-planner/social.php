@@ -2,8 +2,15 @@
 // Shared helpers for people, profiles and friends (people.php, profile.php, friend.php, chat).
 declare(strict_types=1);
 
-const COVERS = ['gingham' => 'Green check', 'sunny' => 'Yellow', 'dots' => 'Pink dots', 'lilac' => 'Lilac',
-    'melon' => 'Watermelon', 'sky' => 'Blue stripes'];
+// Notebook covers: [name, style]. Vintage ones have a name label, spiral ones show your cover words in script.
+// The drawings are in assets/covers.css.
+const COVERS = [
+    'meadow' => ['Wildflowers', 'vintage'], 'cherry' => ['Cherries & bows', 'top'], 'autumn' => ['Autumn leaves', 'vintage'],
+    'woodland' => ['Woodland', 'vintage'], 'cocoa' => ['Pressed ferns', 'vintage'], 'rose' => ['Rose vine', 'vintage'],
+    'blush' => ['Blush', 'spiral'], 'petal' => ['Pink bow', 'spiral'], 'rosewood' => ['Rosewood', 'spiral'],
+    'ivory' => ['White & bow', 'spiral'], 'nude' => ['Nude', 'spiral'],
+];
+const DEFAULT_COVER = 'meadow';
 // Hour types and the colour each one has in the planner (same as HT in assets/app.js)
 const HOUR_COLORS = ['uni' => 'school', 'work' => 'transport', 'study' => 'food', 'personal' => 'fun',
     'health' => 'groceries', 'sleep' => 'other'];
@@ -15,10 +22,14 @@ function person(int $id): ?array
 {
     $u = q('SELECT id, name, email FROM users WHERE id = ?', [$id])->fetch();
     if (!$u) return null;
-    $p = q('SELECT bio, cover, avatar_v FROM profiles WHERE user_id = ?', [$id])->fetch()
-        ?: ['bio' => '', 'cover' => 'gingham', 'avatar_v' => 0];
+    try {
+        $p = q('SELECT bio, cover, words, avatar_v FROM profiles WHERE user_id = ?', [$id])->fetch();
+    } catch (PDOException $e) {   // words column couldn't be added on this host
+        $p = q("SELECT bio, cover, '' AS words, avatar_v FROM profiles WHERE user_id = ?", [$id])->fetch();
+    }
+    $p = $p ?: ['bio' => '', 'cover' => DEFAULT_COVER, 'words' => '', 'avatar_v' => 0];
     return ['id' => (int)$u['id'], 'name' => $u['name'], 'email' => $u['email'], 'bio' => $p['bio'],
-        'cover' => isset(COVERS[$p['cover']]) ? $p['cover'] : 'gingham', 'avatar_v' => (int)$p['avatar_v'],
+        'cover' => isset(COVERS[$p['cover']]) ? $p['cover'] : DEFAULT_COVER, 'words' => (string)$p['words'], 'avatar_v' => (int)$p['avatar_v'],
         'same_name' => same_name_count($u['name']) > 1];
 }
 
@@ -74,6 +85,28 @@ function avatar_html(array $p, string $size = ''): string
     }
     $letter = mb_strtoupper(mb_substr(trim($p['name']), 0, 1)) ?: '?';
     return '<span class="' . $cls . ' letter" aria-hidden="true">' . h($letter) . '</span>';
+}
+
+/** A person's notebook cover. $mini = just the pattern, for the cover picker. */
+function cover_html(array $p, bool $mini = false, ?string $cover = null): string
+{
+    $cover = $cover ?? $p['cover'];
+    $style = COVERS[$cover][1];
+    $cls = 'nbc cv-' . $cover . ($style === 'spiral' ? ' spiral' : '') . ($style === 'top' ? ' top' : '') . ($mini ? ' mini' : '');
+    $lightSpine = in_array($cover, ['cherry', 'rose'], true) ? ' light' : '';
+    $out = '<span class="' . $cls . '" aria-hidden="true"><span class="nbc-art"></span><span class="nbc-spine' . $lightSpine . '"></span>';
+    if (!$mini) {
+        if ($style === 'spiral') {
+            $words = trim($p['words']);
+            $out .= '<span class="nbc-words">' . (in_array($cover, ['petal', 'ivory'], true) ? '<span class="nbc-bowtop"></span>' : '')
+                . '<span class="nbc-script" translate="no">' . h($words !== '' ? $words : $p['name']) . '</span>'
+                . avatar_html($p) . '<span class="nbc-small" translate="no">' . ($words !== '' ? h($p['name']) : '') . '</span></span>';
+        } else {
+            $out .= '<span class="nbc-label">' . avatar_html($p) . '<span class="nbc-name" translate="no">' . h($p['name']) . '</span>'
+                . '<span class="nbc-orn"></span><span class="nbc-dots"></span></span>';
+        }
+    }
+    return $out . '</span>';
 }
 
 /** Name, plus the email underneath when someone else has the same name. */

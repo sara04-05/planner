@@ -41,8 +41,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     } else {
         $name  = trim((string)($_POST['name'] ?? ''));
         $bio   = mb_substr(trim((string)($_POST['bio'] ?? '')), 0, 300);
-        $cover = (string)($_POST['cover'] ?? 'gingham');
-        if (!isset(COVERS[$cover])) $cover = 'gingham';
+        $cover = (string)($_POST['cover'] ?? DEFAULT_COVER);
+        if (!isset(COVERS[$cover])) $cover = DEFAULT_COVER;
+        $words = mb_substr(trim((string)($_POST['words'] ?? '')), 0, 60);
         $avatar = false;   // false = keep the picture as it is
         if (!empty($_POST['remove_avatar'])) $avatar = null;
         if (!empty($_FILES['avatar']) && $_FILES['avatar']['error'] !== UPLOAD_ERR_NO_FILE) {
@@ -56,6 +57,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 q('INSERT INTO profiles (user_id) VALUES (?)', [$uid]);
             }
             q('UPDATE profiles SET bio = ?, cover = ? WHERE user_id = ?', [$bio, $cover, $uid]);
+            try {
+                q('UPDATE profiles SET words = ? WHERE user_id = ?', [$words, $uid]);
+            } catch (PDOException $e) {   // words column couldn't be added on this host
+                error_log('Could not save cover words: ' . $e->getMessage());
+            }
             if ($avatar !== false) {
                 q('UPDATE profiles SET avatar = ?, avatar_v = ? WHERE user_id = ?', [$avatar, $avatar ? time() : 0, $uid]);
             }
@@ -66,7 +72,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 }
 
 $me = person($uid);
-auth_top('Your profile', 'wide'); ?>
+auth_top('Your profile', 'wide', true); ?>
     <div class="admin-top">
       <h1>Your profile</h1>
       <a class="btn" href="people.php">Back to people</a>
@@ -86,12 +92,34 @@ auth_top('Your profile', 'wide'); ?>
       <label for="name">Name (your username)<input id="name" name="name" value="<?= h($me['name']) ?>" required maxlength="80"></label>
       <?php if ($me['same_name']): ?><p class="hint">Someone else is also called <?= h($me['name']) ?>, so people see your email under your name to tell you apart.</p><?php endif; ?>
       <label for="bio">Bio<textarea id="bio" name="bio" rows="3" maxlength="300" placeholder="A few words about you"><?= h($me['bio']) ?></textarea></label>
-      <fieldset class="covers">
-        <legend>Notebook cover</legend>
-        <?php foreach (COVERS as $k => $label): ?>
-          <label class="cover-opt"><input type="radio" name="cover" value="<?= $k ?>" <?= $me['cover'] === $k ? 'checked' : '' ?>><span class="nb-cover mini cv-<?= $k ?>"></span><span><?= h($label) ?></span></label>
-        <?php endforeach; ?>
-      </fieldset>
+      <div class="cover-pick">
+        <div class="cover-preview" id="coverPreview"><?= cover_html($me) ?></div>
+        <div class="cover-side">
+          <fieldset class="covers">
+            <legend>Notebook cover</legend>
+            <?php foreach (COVERS as $k => [$label, $style]): ?>
+              <label class="cover-opt" title="<?= h($label) ?>"><input type="radio" name="cover" value="<?= $k ?>" <?= $me['cover'] === $k ? 'checked' : '' ?>><?= cover_html($me, true, $k) ?><span><?= h($label) ?></span></label>
+            <?php endforeach; ?>
+          </fieldset>
+          <label for="words">Words on a spiral cover<input id="words" name="words" value="<?= h($me['words']) ?>" maxlength="60" placeholder="e.g. she is fearless"></label>
+          <p class="hint">Shown in handwriting on the pink spiral covers. Leave it empty to show your name.</p>
+        </div>
+      </div>
       <button class="btn primary">Save profile</button>
     </form>
+    <template id="coverTpl"><?php foreach (COVERS as $k => $x): ?><div data-cover="<?= $k ?>"><?= cover_html($me, false, $k) ?></div><?php endforeach; ?></template>
+    <script>
+    (function(){
+      var f=document.querySelector('.profile-form'),pv=document.getElementById('coverPreview'),tpl=document.getElementById('coverTpl').content;
+      function paint(){
+        var k=(f.querySelector('input[name=cover]:checked')||{}).value;if(!k)return;
+        var n=tpl.querySelector('[data-cover="'+k+'"] .nbc').cloneNode(true),name=f.elements['name'].value.trim(),w=f.elements['words'].value.trim();
+        var nm=n.querySelector('.nbc-name');if(nm)nm.textContent=name;
+        var sc=n.querySelector('.nbc-script');if(sc)sc.textContent=w||name;
+        var sm=n.querySelector('.nbc-small');if(sm)sm.textContent=w?name:'';
+        pv.replaceChildren(n);
+      }
+      f.addEventListener('input',paint);f.addEventListener('change',paint);
+    })();
+    </script>
 <?php auth_bottom();
