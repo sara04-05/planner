@@ -204,6 +204,7 @@ CREATE TABLE IF NOT EXISTS profiles (
   share      TEXT NULL,
   design     TEXT NULL,
   notify     TEXT NULL,
+  nb_ready   TINYINT(1) NOT NULL DEFAULT 0,
   FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
 ) ENGINE=InnoDB;
 
@@ -237,6 +238,7 @@ CREATE TABLE IF NOT EXISTS posts (
   title      VARCHAR(150) NOT NULL,
   body       TEXT NOT NULL,
   image_id   INT UNSIGNED NULL,
+  notebook_id INT UNSIGNED NULL,
   is_public  TINYINT(1) NOT NULL DEFAULT 0,
   created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
   FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
@@ -256,6 +258,7 @@ CREATE TABLE IF NOT EXISTS interest_lists (
   title     VARCHAR(80) NOT NULL,
   emoji     VARCHAR(16) NOT NULL DEFAULT '',
   layout    VARCHAR(8) NOT NULL DEFAULT 'list',
+  notebook_id INT UNSIGNED NULL,
   is_public TINYINT(1) NOT NULL DEFAULT 0,
   FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
 ) ENGINE=InnoDB;
@@ -278,5 +281,28 @@ CREATE TABLE IF NOT EXISTS notifications (
   is_read    TINYINT(1) NOT NULL DEFAULT 0,
   created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
   UNIQUE KEY uq_notif_ref (user_id, ref),
+  FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+) ENGINE=InnoDB;
+
+-- A user can have several notebooks. Each one chooses its pages (sections), has its own look and stickers,
+-- and holds its own blog posts and interest lists (posts.notebook_id / interest_lists.notebook_id).
+CREATE TABLE IF NOT EXISTS notebooks (
+  id         INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+  user_id    INT UNSIGNED NOT NULL,
+  title      VARCHAR(80) NOT NULL,
+  intro      VARCHAR(300) NOT NULL DEFAULT '',
+  sections   VARCHAR(120) NOT NULL DEFAULT '',
+  design     TEXT NULL,
+  is_public  TINYINT(1) NOT NULL DEFAULT 0,
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+) ENGINE=InnoDB;
+
+-- Looks a user saved ("my styles") to reuse on any of their notebooks.
+CREATE TABLE IF NOT EXISTS notebook_styles (
+  id      INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+  user_id INT UNSIGNED NOT NULL,
+  name    VARCHAR(60) NOT NULL,
+  design  TEXT NOT NULL,
   FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
 ) ENGINE=InnoDB;

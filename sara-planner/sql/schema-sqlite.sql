@@ -186,6 +186,13 @@ CREATE TABLE IF NOT EXISTS profiles (
   words     VARCHAR(60)  NOT NULL DEFAULT '',
   avatar    MEDIUMTEXT NULL,
   avatar_v  INTEGER NOT NULL DEFAULT 0,
+  slug       VARCHAR(40) NULL,
+  is_public  TINYINT(1) NOT NULL DEFAULT 0,
+  guest_view TINYINT(1) NOT NULL DEFAULT 0,
+  share      TEXT NULL,
+  design     TEXT NULL,
+  notify     TEXT NULL,
+  nb_ready   TINYINT(1) NOT NULL DEFAULT 0,
   FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
 );
 
@@ -226,6 +233,7 @@ CREATE TABLE IF NOT EXISTS posts (
   title      VARCHAR(150) NOT NULL,
   body       TEXT NOT NULL,
   image_id   INTEGER NULL,
+  notebook_id INTEGER NULL,
   is_public  TINYINT(1) NOT NULL DEFAULT 0,
   created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
   FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
@@ -245,6 +253,7 @@ CREATE TABLE IF NOT EXISTS interest_lists (
   title     VARCHAR(80) NOT NULL,
   emoji     VARCHAR(16) NOT NULL DEFAULT '',
   layout    VARCHAR(8) NOT NULL DEFAULT 'list',
+  notebook_id INTEGER NULL,
   is_public TINYINT(1) NOT NULL DEFAULT 0,
   FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
 );
@@ -267,5 +276,25 @@ CREATE TABLE IF NOT EXISTS notifications (
   is_read    TINYINT(1) NOT NULL DEFAULT 0,
   created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
   UNIQUE (user_id, ref),
+  FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+);
+
+CREATE TABLE IF NOT EXISTS notebooks (
+  id         INTEGER PRIMARY KEY AUTOINCREMENT,
+  user_id    INTEGER NOT NULL,
+  title      VARCHAR(80) NOT NULL,
+  intro      VARCHAR(300) NOT NULL DEFAULT '',
+  sections   VARCHAR(120) NOT NULL DEFAULT '',
+  design     TEXT NULL,
+  is_public  TINYINT(1) NOT NULL DEFAULT 0,
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+);
+
+CREATE TABLE IF NOT EXISTS notebook_styles (
+  id      INTEGER PRIMARY KEY AUTOINCREMENT,
+  user_id INTEGER NOT NULL,
+  name    VARCHAR(60) NOT NULL,
+  design  TEXT NOT NULL,
   FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
 );

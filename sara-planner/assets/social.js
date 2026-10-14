@@ -1,23 +1,37 @@
-/* The sharing side of the planner: Blog, Interests, Profile (privacy + design) and Alerts tabs.
-   app.js asks window.SPLX.html(tab) for each tab's HTML; everything here talks to api.php (x.* actions) and upload.php. */
+/* The sharing side of the planner: the Profile tab (your notebooks: pages, blog, interests, design, stickers) and Alerts.
+   app.js asks window.SPLX.html(tab) for each tab's HTML; everything here talks to api.php (x.* actions) and upload.php.
+   A profile is just your notebooks. Each notebook picks its pages, has its own look and stickers, and holds its own blog posts and interest lists. */
 (function(){
 const CSRF=(document.querySelector('meta[name="csrf-token"]')||{}).content||'';
 const esc=s=>String(s==null?'':s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const $=id=>document.getElementById(id);
 const hdr=(eyebrow,title,right='')=>`<div class="vh"><div><p class="eyebrow">${eyebrow}</p><h1>${title}</h1></div><div class="nav">${right}</div></div>`;
 
-const COVERS={dusk:'linear-gradient(135deg,#6A4DC4,#E0609A)',peach:'linear-gradient(135deg,#F9A826,#F36B7F)',ocean:'linear-gradient(135deg,#1F77C9,#3FC1C9)',mint:'linear-gradient(135deg,#4FA36B,#B6E3C9)',berry:'linear-gradient(135deg,#8E2DE2,#C2185B)',sunny:'linear-gradient(135deg,#FFD452,#FF9966)',night:'linear-gradient(135deg,#1B1740,#4B3A8F)',cloud:'linear-gradient(135deg,#BFD7F5,#E8DDF8)'};
+const COVERS={dusk:['#6A4DC4','#E0609A'],peach:['#F9A826','#F36B7F'],ocean:['#1F77C9','#3FC1C9'],mint:['#4FA36B','#B6E3C9'],berry:['#8E2DE2','#C2185B'],sunny:['#FFD452','#FF9966'],night:['#1B1740','#4B3A8F'],cloud:['#BFD7F5','#E8DDF8']};
 const PAPER_COLORS={white:'#FFFFFF',cream:'#FFF8E8',blush:'#FFF0F3',mint:'#EEF9F2',sky:'#EEF5FD',lilac:'#F4EFFC'};
 const ACCENTS={violet:'#6A4DC4',rose:'#C93A72',ocean:'#1F77C9',forest:'#2B8A5B',sunset:'#D2661E',graphite:'#4A4F5C'};
 const PAPERS=[['lined','Lined'],['grid','Grid'],['dots','Dots'],['plain','Plain']];
 const FONTS=[['modern','Modern',''],['hand','Handwritten','Caveat,cursive'],['serif','Classic','Lora,Georgia,serif'],['mono','Typewriter','ui-monospace,Menlo,monospace']];
+const BINDINGS=[['coil','Spiral'],['stitch','Stitched'],['none','Plain edge']];
 const STICKERS=['⭐','💜','🌸','🎀','🦋','☁️','🌙','✨','🍓','🎧','📚','☕','🐱','🌈','🔥','🍒','🎬','🎵','👗','👠','🧸','🌷','🍀','💌','📌','✏️','🎨','🪩','💫','🍑','🌻','🧿'];
 const LIST_EMOJI=['🎬','🎤','👗','📚','🍕','🎮','🎧','✈️','🐾','💄','🎨','⭐'];
 const QUICK=[['🎬','Favourite movies','list'],['🎤','Favourite singers','list'],['👗','My clothes and style','grid'],['📚','Books I love','list'],['🍕','Favourite food','list'],['✈️','Places I want to visit','list']];
-const SHARE=[['blog','Blog posts','Posts you marked as public.'],['interests','Interest lists','Lists you marked as public.'],['timetable','Weekly timetable','Your repeating weekly hours (the ↻ ones).'],['subjects','Study subjects','Subject names and how far you are, never your notes.']];
+const SECS=[['interests','⭐','Interests','Lists of things you love, with pictures.'],['blog','✍️','Blog','Posts you write.'],['timetable','🗓️','Timetable','Your repeating weekly hours (the ↻ ones).'],['subjects','📚','Studying','Subject names and how far you are, never your notes.']];
+const SECNAME=Object.fromEntries([['cover','Cover']].concat(SECS.map(s=>[s[0],s[2]])));
+const BASE={cover:'dusk',cover_img:0,cover_c1:'',cover_c2:'',paper:'lined',paper_color:'white',paper_hex:'',accent:'violet',accent_hex:'',font:'modern',binding:'coil'};
+// ready-made looks (the user can also save their own)
+const PRESETS=[
+  ['Dreamy lilac',{cover:'dusk',paper:'dots',paper_color:'lilac',accent:'violet',font:'hand'}],
+  ['Cozy cream',{cover:'peach',paper:'lined',paper_color:'cream',accent:'sunset',font:'serif',binding:'stitch'}],
+  ['Midnight',{cover:'night',paper:'dots',paper_color:'custom',paper_hex:'#1f1b2e',accent:'custom',accent_hex:'#a98ff6'}],
+  ['Cherry blossom',{cover:'berry',paper:'plain',paper_color:'blush',accent:'rose',font:'hand'}],
+  ['Mint garden',{cover:'mint',paper:'grid',paper_color:'mint',accent:'forest'}],
+  ['Clean graphite',{cover:'cloud',paper:'grid',paper_color:'white',accent:'graphite',font:'mono',binding:'none'}],
+];
+const SHARE_MSG='Only what you mark public ever shows.';
 
 let S=null,loading=false,loadErr='';
-const ui={post:null,pics:{},dd:null,dirty:false,sel:-1,newList:false,marked:false};
+const ui={nb:0,pg:'cover',panel:'',dd:null,dirty:false,sel:-1,post:null,pics:{},newList:false,newNb:false,marked:false};
 
 async function api(action,data={}){
   const res=await fetch('api.php?action='+encodeURIComponent(action),{method:'POST',credentials:'same-origin',headers:{'Content-Type':'application/json','X-CSRF-Token':CSRF},body:JSON.stringify(data)});
@@ -36,17 +50,27 @@ async function upload(file,kind){
 const toast=m=>{const t=$('toast');if(!t)return;t.textContent=m;t.hidden=false;clearTimeout(toast.t);toast.t=setTimeout(()=>{t.hidden=true},4500)};
 const redraw=id=>window.SPL_RENDER&&window.SPL_RENDER(id);
 const clone=o=>JSON.parse(JSON.stringify(o));
+const mediaUrl=id=>id?'media.php?id='+id:'';
 
 function load(){
   if(loading)return;loading=true;loadErr='';
-  api('x.load').then(d=>{S=d;ui.dd=clone(d.design);ui.dd.cover_url=d.cover_url;ui.dirty=false;loading=false;paintBadges();redraw()})
+  api('x.load').then(d=>{S=d;loading=false;pick(ui.nb&&S.notebooks.some(n=>n.id===ui.nb)?ui.nb:(S.notebooks[0]?S.notebooks[0].id:0),true);paintBadges();redraw()})
     .catch(e=>{loading=false;loadErr=e.message;redraw()});
 }
 function paintBadges(){
   const n=S?S.unread:0;
   const b=$('bellBadge');if(b){b.textContent=n;b.hidden=!n}
   const t=$('tabBadge');if(t){if(n)t.textContent=n;else t.remove()}
-  else if(n){const tab=document.querySelector('.tab[data-tab="alerts"]');if(tab){tab.insertAdjacentHTML('beforeend',` <span class="badge" id="tabBadge">${n}</span>`)}}
+  else if(n){const tab=document.querySelector('nav[aria-label="Planner sections"] .tab[data-tab="alerts"]');if(tab){tab.insertAdjacentHTML('beforeend',` <span class="badge" id="tabBadge">${n}</span>`)}}
+}
+const cur=()=>S&&S.notebooks.find(n=>n.id===ui.nb)||null;
+/** Open a notebook in the editor (its saved design becomes the draft you edit). */
+function pick(id,keepPage){
+  ui.nb=id;const nb=cur();
+  ui.dd=nb?Object.assign(clone(BASE),clone(nb.design)):null;
+  if(ui.dd){ui.dd.cover_url=nb.cover_url;ui.dd.stickers=ui.dd.stickers||[]}
+  ui.dirty=false;ui.sel=-1;ui.post=null;ui.newList=false;
+  if(!keepPage||!nb||(ui.pg!=='cover'&&!nb.sections.includes(ui.pg)))ui.pg='cover';
 }
 
 /* ---------- small building blocks ---------- */
@@ -60,7 +84,39 @@ function picInner(key){
 const picPick=key=>`<div class="pic-pick" data-pic="${key}">${picInner(key)}</div>`;
 const armed=b=>{if(b.dataset.armed)return true;b.dataset.armed='1';b.textContent='Sure?';return false};
 
-/* ---------- BLOG ---------- */
+/* ---------- design: how a draft turns into attributes, colours and a cover ---------- */
+const lum=hex=>{const c=[1,3,5].map(i=>{const v=parseInt(hex.slice(i,i+2),16)/255;return v<=.03928?v/12.92:Math.pow((v+.055)/1.055,2.4)});return .2126*c[0]+.7152*c[1]+.0722*c[2]};
+function wrapAttrs(d){   // goes on the notebook wrapper: accent colour + the colours the user picked
+  let a='',v='';
+  if(d.accent&&d.accent!=='violet')a+=` data-accent="${d.accent}"`;
+  if(d.accent==='custom'&&d.accent_hex)v+=`--c-accent:${d.accent_hex};--c-on:${lum(d.accent_hex)>.55?'#17121F':'#FFFFFF'};`;
+  if(d.paper_color==='custom'&&d.paper_hex)v+=`--c-paper:${d.paper_hex};`;
+  return a+(v?` style="${v}"`:'');
+}
+function pageAttrs(d){
+  let a='';
+  if(d.paper&&d.paper!=='lined')a+=` data-paper="${d.paper}"`;
+  if(d.paper_color&&d.paper_color!=='white')a+=` data-pcolor="${d.paper_color}"`;
+  if(d.font&&d.font!=='modern')a+=` data-font="${d.font}"`;
+  if(d.paper_color==='custom'&&d.paper_hex&&lum(d.paper_hex)<.4)a+=' data-ptone="dark"';
+  return a;
+}
+function coverCss(d){
+  if(d.cover_url)return `background:url('${esc(d.cover_url)}') center/cover`;
+  if(d.cover==='custom'&&d.cover_c1&&d.cover_c2)return `background:linear-gradient(135deg,${d.cover_c1},${d.cover_c2})`;
+  const g=COVERS[d.cover]||COVERS.dusk;return `background:linear-gradient(135deg,${g[0]},${g[1]})`;
+}
+const stkImg=id=>{const u=S.stickers_up.find(s=>s.id===id);return u?u.url:mediaUrl(id)};
+function stkLayer(d,pg){
+  return `<div class="stk-layer" id="stkLayer">`+d.stickers.map((s,i)=>{
+    if((s.p||'cover')!==pg)return '';
+    const css=`--x:${s.x}%;--y:${s.y}%;--s:${s.s};--r:${s.r}deg`,cls='stk'+(i===ui.sel?' sel':'');
+    if(String(s.k).startsWith('up:'))return `<img class="${cls}" data-i="${i}" alt="" src="${esc(stkImg(+s.k.slice(3)))}" style="${css}" draggable="false">`;
+    return `<span class="${cls}" data-i="${i}" style="${css}">${esc(s.k)}</span>`;
+  }).join('')+`</div>`;
+}
+
+/* ---------- pages of a notebook (what you edit) ---------- */
 function postForm(){
   const f=ui.post;if(!f)return '';
   return `<form class="xcard xform" data-xform="post" autocomplete="off" style="margin-bottom:16px">
@@ -68,13 +124,12 @@ function postForm(){
     <label class="l" for="px-title">Title</label><input type="text" id="px-title" name="title" maxlength="150" value="${esc(f.title)}" data-draft required>
     <label class="l" for="px-body">Write something</label><textarea id="px-body" name="body" maxlength="20000" data-draft required placeholder="What's on your mind today?">${esc(f.body)}</textarea>
     ${picPick('post')}
-    ${miniSw('Show this post on my public notebook',f.public,'name="public"')}
+    ${miniSw('Show this post when the notebook is shared',f.public,'name="public"')}
     <div class="xrow"><button class="btn primary">${f.id?'Save changes':'Publish post'}</button><button type="button" class="btn ghost" data-x="post-cancel">Cancel</button></div>
   </form>`;
 }
-function blogHtml(){
-  const pub=S.profile.public;
-  const posts=S.posts.map(p=>`<article class="post">
+function blogPage(){
+  const posts=S.posts.filter(p=>p.nb===ui.nb).map(p=>`<article class="post">
     ${p.image?`<img class="pimg" src="${esc(p.image)}" alt="">`:''}
     <div class="pb"><h3 translate="no">${esc(p.title)}</h3>
       <div class="meta2"><span>${esc(p.date)}</span><span class="tag2 ${p.public?'':'priv'}">${p.public?'Public':'Only me'}</span><span>♥ ${p.likes}</span></div>
@@ -82,12 +137,9 @@ function blogHtml(){
       <div class="acts"><button class="btn sm" data-x="post-edit" data-id="${p.id}">Edit</button>
         <button class="btn sm" data-x="post-vis" data-id="${p.id}">${p.public?'Make private':'Make public'}</button>
         <button class="btn sm danger" data-x="post-del" data-id="${p.id}">Delete</button></div></div></article>`).join('');
-  return hdr('Your notebook','Blog',ui.post?'':'<button class="btn primary" data-x="post-new">+ New post</button>')+
-    (pub?'':'<p class="hint2" style="margin:-6px 0 14px;font-size:13px">Posts marked public show on your notebook once you turn on <b>Public profile</b> in the Profile tab.</p>')+
+  return `<div class="xrow sp" style="margin-bottom:14px">${ui.post?'<span></span>':'<button class="btn primary" data-x="post-new">+ New post</button>'}<span class="hint2">${SHARE_MSG}</span></div>`+
     postForm()+(posts||(ui.post?'':'<p class="empty">No posts yet. Write about your day, a book you finished, a trip — whatever you like. Each post can be private or public.</p>'));
 }
-
-/* ---------- INTERESTS ---------- */
 function listCard(l){
   const items=l.layout==='grid'
     ?`<div class="igrid">${l.items.map(it=>`<div class="gi">${it.image?`<img src="${esc(it.image)}" alt="" loading="lazy">`:'<div class="noimg">🖼️</div>'}<span class="cap" translate="no">${esc(it.text)}</span><button class="x" data-x="item-del" data-id="${it.id}" aria-label="Delete ${esc(it.text)}">×</button></div>`).join('')}</div>`
@@ -103,86 +155,146 @@ function listCard(l){
       ${picPick(k)}
     </form></div>`;
 }
-function interestsHtml(){
+function interestsPage(){
   const quick=QUICK.map((q,i)=>`<button class="chipbtn" data-x="list-quick" data-i="${i}">${q[0]} ${q[1]}</button>`).join('')+`<button class="chipbtn${ui.newList?' on':''}" data-x="list-new">+ My own list</button>`;
   const form=ui.newList?`<form class="xcard xform" data-xform="list" autocomplete="off" style="margin-bottom:16px"><h3>New list</h3>
       <label class="l" for="lx-title">Name</label><input type="text" id="lx-title" name="title" maxlength="80" placeholder="e.g. Perfumes I want" data-draft required>
       <label class="l" for="lx-emoji">Icon</label><select id="lx-emoji" name="emoji">${LIST_EMOJI.map(e=>`<option>${e}</option>`).join('')}</select>
       <label class="l" for="lx-layout">Show it as</label><select id="lx-layout" name="layout"><option value="list">A list</option><option value="grid">A grid of pictures</option></select>
       <div class="xrow"><button class="btn primary">Create list</button><button type="button" class="btn ghost" data-x="list-new">Cancel</button></div></form>`:'';
-  return hdr('Your notebook','Interests')+
-    '<p class="hint2" style="margin:-6px 0 12px;font-size:13px">Lists of the things you love: movies, singers, fashion, anything. Add pictures of your clothes or favourites. Each list is private until you switch it to public.</p>'+
+  const lists=S.lists.filter(l=>l.nb===ui.nb);
+  return '<p class="hint2" style="margin:-6px 0 12px;font-size:13px">Lists of the things you love: movies, singers, fashion, anything. Add pictures of your clothes or favourites. Each list is private until you switch it to public.</p>'+
     `<div class="quick">${quick}</div>${form}`+
-    (S.lists.length?`<div class="ilists">${S.lists.map(listCard).join('')}</div>`:'<p class="empty">No lists yet. Pick one of the ideas above to start.</p>');
+    (lists.length?`<div class="ilists">${lists.map(listCard).join('')}</div>`:'<p class="empty">No lists yet. Pick one of the ideas above to start.</p>');
+}
+const WD=['Mon','Tue','Wed','Thu','Fri','Sat','Sun'];
+function timetablePage(){
+  const t=S.timetable||{},any=Object.keys(t).length;
+  return `<p class="hint2" style="margin:-6px 0 12px;font-size:13px">This page shows your repeating weekly hours from the Week tab. Change them there.</p>`+
+    (any?`<div style="overflow:auto"><table class="tt"><thead><tr>${WD.map(w=>`<th>${w}</th>`).join('')}</tr></thead><tbody><tr>${WD.map((w,i)=>`<td translate="no">${(t[i]||[]).map(esc).join('<br>')}</td>`).join('')}</tr></tbody></table></div>`:'<p class="empty">No weekly plan yet. Add repeating hours (↻) in the Week tab.</p>');
+}
+function subjectsPage(){
+  const s=S.subjects||[];
+  return `<p class="hint2" style="margin:-6px 0 12px;font-size:13px">Shows each subject and how far you are. Never your notes.</p>`+
+    (s.length?`<div class="xcard">${s.map(x=>`<div class="subj-row"><b style="min-width:120px" translate="no">${esc(x.name)}</b><div class="bar"><i style="width:${x.pct}%"></i></div><span class="hint2">${x.pct}% of ${x.n} chapter${x.n===1?'':'s'}</span></div>`).join('')}</div>`:'<p class="empty">No subjects yet. Add them in the Study tab.</p>');
+}
+function coverPage(nb,d){
+  const name=(document.querySelector('.hello span:last-child')||{textContent:'You'}).textContent.replace(/^Hi,\s*/,'');
+  return `<div class="nbcover" id="pvCover" style="${coverCss(d)}"><div class="nbcover-in"><span class="avatar xl letter" aria-hidden="true">${esc((name[0]||'S').toUpperCase())}</span><h2 translate="no">${esc(nb.title)}</h2><p class="by" translate="no">by ${esc(name)} · @${esc(S.profile.slug)}</p></div></div>`+
+    (nb.intro?`<p class="nb-intro" translate="no">${esc(nb.intro)}</p>`:'<p class="hint2" style="margin-top:12px">Add a few words about this notebook in <b>Settings</b>.</p>')+
+    (nb.sections.length?'':'<p class="hint2">This notebook has no pages yet. Add some in <b>Settings</b>.</p>');
 }
 
-/* ---------- PROFILE: privacy + design + live preview ---------- */
-const stkImg=id=>{const u=S.stickers_up.find(s=>s.id===id);return u?u.url:''};
-function bannerInner(d,edit){
-  return d.stickers.map((s,i)=>{
-    const css=`--x:${s.x}%;--y:${s.y}%;--s:${s.s};--r:${s.r}deg`;
-    const cls='stk'+(edit&&i===ui.sel?' sel':'');
-    if(String(s.k).startsWith('up:')){const u=stkImg(+s.k.slice(3));return u?`<img class="${cls}" data-i="${i}" alt="" src="${esc(u)}" style="${css}" draggable="false">`:''}
-    return `<span class="${cls}" data-i="${i}" style="${css}">${esc(s.k)}</span>`;
-  }).join('');
+/* ---------- the notebook itself (cover, pages as side tabs, stickers inside) ---------- */
+function notebookHtml(nb){
+  const d=ui.dd,tabs=['cover'].concat(nb.sections);
+  const body=ui.pg==='cover'?coverPage(nb,d):ui.pg==='blog'?blogPage():ui.pg==='interests'?interestsPage():ui.pg==='timetable'?timetablePage():subjectsPage();
+  return `<div class="nbv${ui.panel==='deco'?' deco':''}" id="nbv"${wrapAttrs(d)}>
+    <div class="binder" id="nbBinder"${d.binding&&d.binding!=='coil'?` data-binding="${d.binding}"`:''}>
+      <div class="coil" aria-hidden="true">${'<span></span>'.repeat(70)}</div>
+      <div class="page" id="nbPage"${pageAttrs(d)}>
+        <div class="vh"><div><p class="eyebrow">${esc(nb.title)}</p><h1>${esc(SECNAME[ui.pg])}</h1></div></div>
+        ${body}${stkLayer(d,ui.pg)}
+      </div>
+      <nav class="tabs" role="tablist">${tabs.map(k=>`<button class="tab" role="tab" data-x="pg" data-v="${k}" data-tab="${k}" aria-selected="${k===ui.pg}">${SECNAME[k]}</button>`).join('')}</nav>
+    </div></div>`;
 }
-function pvHtml(){
-  const d=ui.dd,name=document.querySelector('.hello span:last-child')?document.querySelector('.hello span:last-child').textContent.replace(/^Hi,\s*/,''):'You';
-  const attrs=(d.paper!=='lined'?` data-paper="${d.paper}"`:'')+(d.paper_color!=='white'?` data-pcolor="${d.paper_color}"`:'')+(d.font!=='modern'?` data-font="${d.font}"`:'');
-  return `<p class="pv-l">Live preview · this is how your notebook will look</p>
-    <div data-accent="${d.accent}">
-      <div class="nb-banner edit${d.cover_url?' has-img':''}" id="pvBanner" data-cover="${d.cover}" ${d.cover_url?`style="--img:url('${esc(d.cover_url)}')"`:''}>${bannerInner(d,true)}</div>
-      <div class="nbx-page"${attrs}>
-        <div class="who"><div class="av" aria-hidden="true">${esc((name[0]||'S').toUpperCase())}</div><div><h2 translate="no">${esc(name)}</h2><div class="bio" translate="no">${esc(S.profile.bio||'Your bio shows up here.')}</div></div></div>
-        <div class="sample"><span class="hl">Today's plan</span> · finish the lab report, read chapter 4,<br>buy a notebook 📓 and call mum.</div>
-        <div class="acc-row"><span class="btn primary">Add friend</span><span class="tag2">Blog</span><span class="tag2">Interests</span></div>
-      </div></div>
-    <p class="pv-note">Drag the stickers on the banner to place them. Nothing changes for others until you press <b>Save design</b>.</p>`;
+
+/* ---------- panels: settings + decorate ---------- */
+function settingsPanel(nb){
+  return `<section class="xcard"><h3>Notebook settings</h3><p class="sub">The name, intro and pages of this notebook.</p>
+    <form class="xform" data-xform="nb" autocomplete="off">
+      <label class="l" for="nb-title">Name</label><input type="text" id="nb-title" name="title" maxlength="80" value="${esc(nb.title)}" required>
+      <label class="l" for="nb-intro">Intro on the cover</label><textarea id="nb-intro" name="intro" maxlength="300" style="min-height:70px" placeholder="What is this notebook about?">${esc(nb.intro)}</textarea>
+      <p class="opt-h">Pages</p>
+      <div class="secpick">${SECS.map(s=>`<label><input type="checkbox" name="sections" value="${s[0]}" ${nb.sections.includes(s[0])?'checked':''}><span><b>${s[1]} ${s[2]}</b><small>${s[3]}</small></span></label>`).join('')}</div>
+      <div class="xrow"><button class="btn primary">Save</button></div></form>
+    <div style="margin-top:10px">${sw('Show this notebook on my profile','People who may open your profile can read it. Items you keep private stay hidden.',nb.public,`data-xsw="nb-public"`)}</div>
+    ${S.profile.public?'':'<p class="hint2">Your profile itself is private right now. Turn on <b>Public profile</b> above for others to see your shared notebooks.</p>'}
+    <div class="xrow" style="margin-top:12px"><button class="btn danger sm" data-x="nb-del">Delete this notebook</button><span class="hint2">Also deletes its posts and lists.</span></div></section>`;
 }
-function refreshPv(){const el=$('pv');if(el)el.innerHTML=pvHtml();syncDesignControls()}
-function syncDesignControls(){
+const swatch=(act,v,bg,label)=>`<button type="button" class="swatch${act==='cover'?' sq':''}" style="background:${bg}" data-x="${act}" data-v="${v}" aria-label="${label}" aria-pressed="false"></button>`;
+function decoPanel(nb){
   const d=ui.dd;
-  document.querySelectorAll('[data-x="cover"]').forEach(b=>b.setAttribute('aria-pressed',String(!d.cover_url&&b.dataset.v===d.cover)));
-  document.querySelectorAll('[data-x="paper"]').forEach(b=>b.setAttribute('aria-pressed',String(b.dataset.v===d.paper)));
-  document.querySelectorAll('[data-x="pcolor"]').forEach(b=>b.setAttribute('aria-pressed',String(b.dataset.v===d.paper_color)));
-  document.querySelectorAll('[data-x="accent"]').forEach(b=>b.setAttribute('aria-pressed',String(b.dataset.v===d.accent)));
-  document.querySelectorAll('[data-x="font"]').forEach(b=>b.setAttribute('aria-pressed',String(b.dataset.v===d.font)));
+  const styles=S.styles.map(s=>`<div class="row"><button class="btn sm apply" data-x="style-apply" data-id="${s.id}">🎨 ${esc(s.name)}</button><button class="btn sm ghost" data-x="style-del" data-id="${s.id}" aria-label="Delete style ${esc(s.name)}">×</button></div>`).join('');
+  return `<section class="xcard xdesign"><h3>Decorate this notebook</h3><p class="sub">Pick a look, make your own colours, and put stickers on its pages. You see it on the left straight away.</p>
+    <p class="opt-h">Ready-made looks</p><div class="quick">${PRESETS.map((p,i)=>`<button class="chipbtn" data-x="preset" data-i="${i}">${p[0]}</button>`).join('')}</div>
+    <p class="opt-h">My styles</p><div class="stylelist">${styles||'<span class="hint2">Styles you save show up here, ready to use on any notebook.</span>'}</div>
+    <form class="xrow" data-xform="style" style="margin-top:8px" autocomplete="off"><input type="text" name="name" maxlength="60" placeholder="Name this look" aria-label="Style name" required style="flex:1;min-width:0"><button class="btn sm">Save as my style</button></form>
+    <p class="opt-h">Cover</p><div class="swatches">${Object.keys(COVERS).map(c=>swatch('cover',c,`linear-gradient(135deg,${COVERS[c][0]},${COVERS[c][1]})`,'Cover '+c)).join('')}</div>
+    <div class="colorrow"><span>Your own colours</span><input type="color" data-xcolor="cover_c1" value="${d.cover_c1||'#6a4dc4'}" aria-label="Cover colour 1"><input type="color" data-xcolor="cover_c2" value="${d.cover_c2||'#e0609a'}" aria-label="Cover colour 2"></div>
+    <div class="pic-pick" style="margin-top:10px"><label class="btn sm"><input type="file" accept="image/*" data-xfile="cover" data-kind="cover">🖼️ Use my own cover picture</label><button type="button" class="btn sm ghost" id="coverRm" data-x="cover-rm" ${d.cover_url?'':'hidden'}>Remove my picture</button><span class="hint2" data-pic-msg></span></div>
+    <p class="opt-h">Paper</p><div class="pilltabs">${PAPERS.map(x=>`<button type="button" data-x="paper" data-v="${x[0]}" aria-pressed="false">${x[1]}</button>`).join('')}</div>
+    <p class="opt-h">Paper colour</p><div class="swatches">${Object.keys(PAPER_COLORS).map(c=>swatch('pcolor',c,PAPER_COLORS[c],'Paper '+c)).join('')}<input type="color" class="colorpick" data-xcolor="paper_hex" value="${d.paper_hex||'#ffffff'}" aria-label="Your own paper colour"></div>
+    <p class="opt-h">Accent colour</p><div class="swatches">${Object.keys(ACCENTS).map(c=>swatch('accent',c,ACCENTS[c],'Accent '+c)).join('')}<input type="color" class="colorpick" data-xcolor="accent_hex" value="${d.accent_hex||'#6a4dc4'}" aria-label="Your own accent colour"></div>
+    <p class="opt-h">Writing</p><div class="pilltabs">${FONTS.map(f=>`<button type="button" data-x="font" data-v="${f[0]}" style="${f[2]?`font-family:${f[2]};font-size:15px`:''}" aria-pressed="false">${f[1]}</button>`).join('')}</div>
+    <p class="opt-h">Binding</p><div class="pilltabs">${BINDINGS.map(b=>`<button type="button" data-x="binding" data-v="${b[0]}" aria-pressed="false">${b[1]}</button>`).join('')}</div>
+    <p class="opt-h">Stickers on the page “<span id="stkPg">${esc(SECNAME[ui.pg])}</span>”</p>
+    <div class="stk-lib">${STICKERS.map(s=>`<button type="button" data-x="stk-add" data-k="${s}" aria-label="Add sticker ${s}">${s}</button>`).join('')}${S.stickers_up.map(u=>`<button type="button" data-x="stk-add" data-k="up:${u.id}" aria-label="Add my sticker"><img src="${esc(u.url)}" alt=""></button>`).join('')}</div>
+    <div class="pic-pick" style="margin-top:8px"><label class="btn sm"><input type="file" accept="image/*" data-xfile="sticker" data-kind="sticker">➕ Make a sticker from my picture</label><span class="hint2" data-pic-msg></span></div>
+    <div class="stk-bar" id="stkCtl">${stkCtl()}</div>
+    <p class="hint2" style="margin-top:6px">Stickers go on the page you have open. Use the tabs on the right of the notebook to move between pages, and drag a sticker to place it.</p>
+    <div class="xrow" style="margin-top:16px"><button class="btn primary" id="saveDesign" data-x="design-save" ${ui.dirty?'':'disabled'}>Save design</button><button class="btn ghost" data-x="design-reset">Undo changes</button><button class="btn sm" data-x="use-planner" title="Use this paper, colours and writing for your planner too">Use for my planner</button></div></section>`;
+}
+function stkCtl(){
+  const s=ui.dd&&ui.dd.stickers[ui.sel];
+  const here=ui.dd?ui.dd.stickers.filter(x=>(x.p||'cover')===ui.pg).length:0;
+  if(!s)return `<span>${here?'Click a sticker on the page to resize it.':'Pick a sticker above to put it on this page.'}</span>`;
+  return `<span>Selected:</span><button class="btn sm" data-x="stk-size" data-v="-0.2" aria-label="Smaller">−</button><button class="btn sm" data-x="stk-size" data-v="0.2" aria-label="Bigger">+</button><button class="btn sm" data-x="stk-rot" data-v="-15" aria-label="Turn left">↺</button><button class="btn sm" data-x="stk-rot" data-v="15" aria-label="Turn right">↻</button><button class="btn sm danger" data-x="stk-del">Remove</button>`;
+}
+/** Update the live notebook and the controls without redrawing the panel (so a colour picker stays open). */
+function paintPreview(){
+  const d=ui.dd,w=$('nbv'),pg=$('nbPage'),bd=$('nbBinder');if(!w||!d)return;
+  [...w.attributes].forEach(a=>{if(a.name==='data-accent'||a.name==='style')w.removeAttribute(a.name)});
+  const t=document.createElement('div');t.innerHTML=`<i${wrapAttrs(d)}></i>`;[...t.firstChild.attributes].forEach(a=>w.setAttribute(a.name,a.value));
+  ['data-paper','data-pcolor','data-font','data-ptone'].forEach(a=>pg.removeAttribute(a));
+  const p=document.createElement('div');p.innerHTML=`<i${pageAttrs(d)}></i>`;[...p.firstChild.attributes].forEach(a=>pg.setAttribute(a.name,a.value));
+  if(d.binding&&d.binding!=='coil')bd.setAttribute('data-binding',d.binding);else bd.removeAttribute('data-binding');
+  const cv=$('pvCover');if(cv)cv.style.cssText=coverCss(d).replace(/&#39;/g,"'");
+  const sl=$('stkLayer');if(sl)sl.outerHTML=stkLayer(d,ui.pg);
+  syncControls();
+}
+function syncControls(){
+  const d=ui.dd;if(!d)return;
+  const on=(sel,fn)=>document.querySelectorAll(sel).forEach(b=>b.setAttribute('aria-pressed',String(fn(b))));
+  on('[data-x="cover"]',b=>!d.cover_url&&b.dataset.v===d.cover);
+  on('[data-x="paper"]',b=>b.dataset.v===d.paper);
+  on('[data-x="pcolor"]',b=>b.dataset.v===d.paper_color);
+  on('[data-x="accent"]',b=>b.dataset.v===d.accent);
+  on('[data-x="font"]',b=>b.dataset.v===d.font);
+  on('[data-x="binding"]',b=>b.dataset.v===(d.binding||'coil'));
   const sc=$('stkCtl');if(sc)sc.innerHTML=stkCtl();
   const sv=$('saveDesign');if(sv)sv.disabled=!ui.dirty;
   const rm=$('coverRm');if(rm)rm.hidden=!d.cover_url;
 }
-function stkCtl(){
-  const s=ui.dd.stickers[ui.sel];
-  if(!s)return `<span>${ui.dd.stickers.length?'Click a sticker on the banner to resize it.':'Pick a sticker above to put it on your banner.'}</span>`;
-  return `<span>Selected:</span><button class="btn sm" data-x="stk-size" data-v="-0.2" aria-label="Smaller">−</button><button class="btn sm" data-x="stk-size" data-v="0.2" aria-label="Bigger">+</button><button class="btn sm" data-x="stk-rot" data-v="-15" aria-label="Turn left">↺</button><button class="btn sm" data-x="stk-rot" data-v="15" aria-label="Turn right">↻</button><button class="btn sm danger" data-x="stk-del">Remove</button>`;
-}
+
+/* ---------- PROFILE: your page, your notebooks ---------- */
 function profileHtml(){
-  const p=S.profile,d=ui.dd;
+  const p=S.profile,nb=cur();
   const link=`${location.origin}${location.pathname.replace(/[^/]*$/,'')}u.php?u=${p.slug}`;
-  const sec1=`<section class="xcard"><h3>Your page</h3><p class="sub">The name and bio people see on your notebook.</p>
+  const page=`<section class="xcard"><h3>Your profile</h3><p class="sub">A profile is just your notebooks. Choose who can open it, and which notebooks to show.</p>
     <form class="xform" data-xform="profile" autocomplete="off">
       <label class="l" for="pf-slug">Page name</label><div class="xrow" style="flex-wrap:nowrap"><span class="hint2">@</span><input type="text" id="pf-slug" name="slug" value="${esc(p.slug)}" maxlength="30" pattern="[A-Za-z0-9_]{3,30}" data-draft required></div>
-      <label class="l" for="pf-bio">Bio</label><textarea id="pf-bio" name="bio" maxlength="300" style="min-height:70px" data-draft placeholder="A few words about you and your notebook">${esc(p.bio)}</textarea>
-      <div class="xrow"><button class="btn primary">Save</button><a class="btn" href="u.php?u=${esc(p.slug)}" target="_blank" rel="noopener">Open my page ↗</a><button type="button" class="btn ghost" data-x="copy-link" data-link="${esc(link)}">Copy link</button></div>
-      <p class="hint2">${p.friends} friend${p.friends===1?'':'s'} · <a href="profile.php">Change your name, picture and notebook cover</a></p></form></section>`;
-  const sec2=`<section class="xcard"><h3>Who can see your notebook</h3><p class="sub">Your planner itself always stays private. Only what you switch on below is ever shown.</p>
-    ${sw('Public profile','Listed in Explore. Anyone with an account can open your notebook and send you a friend request.',p.public,'data-xsw="public"')}
-    ${sw('Visible without logging in','Also show it to visitors who have no account. Needs a public profile.',p.guest,'data-xsw="guest"',!p.public)}
-    <p class="opt-h" style="margin-top:12px">What to show</p>
-    ${SHARE.map(s=>sw(s[1],s[2],p.share[s[0]],`data-xsw="share" data-k="${s[0]}"`)).join('')}</section>`;
-  const sec3=`<section class="xcard xdesign"><h3>Design your notebook</h3><p class="sub">Pick how your notebook looks. You see it on the right straight away.</p>
-    <p class="opt-h">Banner</p><div class="swatches">${Object.keys(COVERS).map(c=>`<button type="button" class="swatch sq" style="background:${COVERS[c]}" data-x="cover" data-v="${c}" aria-label="Banner ${c}" aria-pressed="false"></button>`).join('')}</div>
-    <div class="pic-pick" style="margin-top:10px"><label class="btn sm"><input type="file" accept="image/*" data-xfile="cover" data-kind="cover">🖼️ Use my own banner</label><button type="button" class="btn sm ghost" id="coverRm" data-x="cover-rm" ${d.cover_url?'':'hidden'}>Remove my banner</button><span class="hint2" data-pic-msg></span></div>
-    <p class="opt-h">Paper</p><div class="pilltabs">${PAPERS.map(x=>`<button type="button" data-x="paper" data-v="${x[0]}" aria-pressed="false">${x[1]}</button>`).join('')}</div>
-    <p class="opt-h">Paper colour</p><div class="swatches">${Object.keys(PAPER_COLORS).map(c=>`<button type="button" class="swatch" style="background:${PAPER_COLORS[c]}" data-x="pcolor" data-v="${c}" aria-label="Paper ${c}" aria-pressed="false"></button>`).join('')}</div>
-    <p class="opt-h">Accent colour</p><div class="swatches">${Object.keys(ACCENTS).map(c=>`<button type="button" class="swatch" style="background:${ACCENTS[c]}" data-x="accent" data-v="${c}" aria-label="Accent ${c}" aria-pressed="false"></button>`).join('')}</div>
-    <p class="opt-h">Writing</p><div class="pilltabs">${FONTS.map(f=>`<button type="button" data-x="font" data-v="${f[0]}" style="${f[2]?`font-family:${f[2]};font-size:15px`:''}" aria-pressed="false">${f[1]}</button>`).join('')}</div>
-    <p class="opt-h">Stickers</p>
-    <div class="stk-lib">${STICKERS.map(s=>`<button type="button" data-x="stk-add" data-k="${s}" aria-label="Add sticker ${s}">${s}</button>`).join('')}${S.stickers_up.map(u=>`<button type="button" data-x="stk-add" data-k="up:${u.id}" aria-label="Add my sticker"><img src="${esc(u.url)}" alt=""></button>`).join('')}</div>
-    <div class="pic-pick" style="margin-top:8px"><label class="btn sm"><input type="file" accept="image/*" data-xfile="sticker" data-kind="sticker">➕ Make a sticker from my picture</label><span class="hint2" data-pic-msg></span></div>
-    <div class="stk-bar" id="stkCtl">${stkCtl()}</div>
-    <div class="xrow" style="margin-top:16px"><button class="btn primary" id="saveDesign" data-x="design-save" ${ui.dirty?'':'disabled'}>Save design</button><button class="btn ghost" data-x="design-reset">Undo changes</button></div></section>`;
-  return hdr('Your notebook','Profile')+`<div class="xcols"><div class="xleft">${sec1}${sec2}${sec3}</div><div class="xpv"><div class="pv" id="pv">${pvHtml()}</div></div></div>`;
+      <label class="l" for="pf-bio">Bio</label><textarea id="pf-bio" name="bio" maxlength="300" style="min-height:70px" data-draft placeholder="A few words about you">${esc(p.bio)}</textarea>
+      <div class="xrow"><button class="btn primary">Save</button><a class="btn" href="u.php?u=${esc(p.slug)}" target="_blank" rel="noopener">Open my profile ↗</a><button type="button" class="btn ghost" data-x="copy-link" data-link="${esc(link)}">Copy link</button></div>
+      <p class="hint2">${p.friends} friend${p.friends===1?'':'s'} · <a href="profile.php">Change your name, picture and cover</a></p></form>
+    ${sw('Public profile','Listed in Explore. Anyone with an account can open it and send you a friend request.',p.public,'data-xsw="public"')}
+    ${sw('Visible without logging in','Also show it to visitors who have no account. Needs a public profile.',p.guest,'data-xsw="guest"',!p.public)}</section>`;
+  const shelf=`<div class="nbe-shelf">${S.notebooks.map(n=>`<button class="nbchip${nb&&n.id===nb.id?' on':''}" data-x="nb-pick" data-id="${n.id}"${n.design.accent&&n.design.accent!=='violet'?` data-accent="${n.design.accent}"`:''}><i style="${coverCss({...n.design,cover_url:n.cover_url})}"></i><span translate="no">${esc(n.title)}</span> <small>${n.public?'🌍':'🔒'}</small></button>`).join('')}<button class="chipbtn${ui.newNb?' on':''}" data-x="nb-new">+ New notebook</button></div>`;
+  const secs=SECS.map((s,i)=>`<label><input type="checkbox" name="sections" value="${s[0]}" ${i<2?'checked':''}><span><b>${s[1]} ${s[2]}</b><small>${s[3]}</small></span></label>`).join('');
+  const newForm=ui.newNb?`<form class="xcard xform" data-xform="nbnew" autocomplete="off" style="margin:12px 0"><h3>New notebook</h3><p class="sub">One for your interests, one for your plans, one for your blog… make as many as you like.</p>
+      <label class="l" for="nn-title">Name</label><input type="text" id="nn-title" name="title" maxlength="80" placeholder="e.g. Things I love" required>
+      <p class="opt-h">Pages</p><div class="secpick">${secs}</div>
+      <label class="l" for="nn-look">Look</label><select id="nn-look" name="look"><option value="">Plain to start (you can decorate it next)</option>${PRESETS.map((x,i)=>`<option value="${i}">${x[0]}</option>`).join('')}</select>
+      <div class="xrow"><button class="btn primary">Create notebook</button><button type="button" class="btn ghost" data-x="nb-new">Cancel</button></div></form>`:'';
+  let editor='';
+  if(nb){
+    const open=ui.panel?' panel-open':'';
+    editor=`<div class="nbe-bar"><button class="btn${ui.panel==='settings'?' on':''}" data-x="panel" data-v="settings">⚙️ Settings</button><button class="btn${ui.panel==='deco'?' on':''}" data-x="panel" data-v="deco">🎨 Decorate</button><span class="hint2">${nb.public?'Shown on your profile':'Private: only you can see it'}</span></div>
+      <div class="nbe${open}"><div>${notebookHtml(nb)}</div>${ui.panel?`<div class="nbe-side">${ui.panel==='settings'?settingsPanel(nb):decoPanel(nb)}</div>`:''}</div>`;
+  }else editor='<p class="empty">You have no notebooks yet. Press <b>+ New notebook</b> to make your first one.</p>';
+  return hdr('Your notebook','Profile','<button class="btn primary" data-x="nb-new">+ New notebook</button>')+
+    `<div class="xcols1">${page}</div><h2 style="margin:26px 0 4px;font-size:20px">My notebooks</h2>${shelf}${newForm}${editor}`;
 }
 
 /* ---------- ALERTS ---------- */
@@ -195,7 +307,6 @@ function alertsHtml(){
     (rows||'<p class="empty">No alerts yet. When someone likes one of your posts, you will see it here.</p>')+prefs;
 }
 
-
 /* ---------- entry point for app.js ---------- */
 function html(tab){
   if(!S){
@@ -203,50 +314,55 @@ function html(tab){
     load();return '<p class="empty">Loading…</p>';
   }
   const keep=[...document.querySelectorAll('#view [data-draft]')].map(e=>[e.id,e.value]);
-  let out='';
-  if(tab==='blog')out=blogHtml();
-  else if(tab==='interests')out=interestsHtml();
-  else if(tab==='profile')out=profileHtml();
-  else out=alertsHtml();
+  const out=tab==='profile'?profileHtml():alertsHtml();
   queueMicrotask(()=>{
     keep.forEach(([id,v])=>{const e=document.getElementById(id);if(e&&!e.value&&!e.dataset.cleared)e.value=v});
-    if(tab==='profile'){syncDesignControls()}
+    if(tab==='profile')syncControls();
     if(tab==='alerts'&&S.unread>0&&!ui.marked){ui.marked=true;setTimeout(()=>{api('x.notes.read').then(()=>{S.unread=0;S.notes.forEach(n=>n.read=true);paintBadges();ui.marked=false}).catch(()=>{ui.marked=false})},1500)}
   });
   return out;
 }
 window.SPLX={html};
 
-/* ---------- design helpers ---------- */
-function markDirty(){ui.dirty=true;const sv=$('saveDesign');if(sv)sv.disabled=false}
-function applyDesign(d){
-  const r=document.documentElement;
-  if(d.accent&&d.accent!=='violet')r.setAttribute('data-accent',d.accent);else r.removeAttribute('data-accent');
-  const v=$('view');if(!v)return;
-  [['paper','data-paper','lined'],['paper_color','data-pcolor','white'],['font','data-font','modern']].forEach(([k,a,def])=>{if(d[k]&&d[k]!==def)v.setAttribute(a,d[k]);else v.removeAttribute(a)});
-}
+const markDirty=()=>{ui.dirty=true;const sv=$('saveDesign');if(sv)sv.disabled=false};
 const designOut=()=>{const d=clone(ui.dd);delete d.cover_url;return d};
+const DESIGN_ACTS=['cover','cover-rm','paper','pcolor','accent','font','binding','stk-add','stk-size','stk-rot','stk-del','preset','style-apply'];
+function applyLook(look){   // a ready-made or saved look: replaces colours/paper/font/binding/cover, keeps your stickers
+  const keep=ui.dd.stickers;
+  ui.dd=Object.assign(clone(BASE),clone(look),{stickers:keep});
+  ui.dd.cover_url=ui.dd.cover_img?mediaUrl(ui.dd.cover_img):'';
+}
 
 /* ---------- clicks ---------- */
 document.addEventListener('click',async e=>{
   const b=e.target.closest('[data-x]');if(!b)return;
-  const a=b.dataset.x,id=+b.dataset.id;
+  const a=b.dataset.x,id=+b.dataset.id,nb=S&&cur();
   try{
     switch(a){
       case 'retry':loadErr='';S=null;redraw();return;
+      // notebooks
+      case 'nb-pick':if(ui.dirty)toast('Unsaved design changes were dropped.');pick(id);redraw();return;
+      case 'nb-new':ui.newNb=!ui.newNb;redraw(ui.newNb?'nn-title':'');return;
+      case 'panel':ui.panel=ui.panel===b.dataset.v?'':b.dataset.v;ui.sel=-1;redraw();return;
+      case 'pg':ui.pg=b.dataset.v;ui.sel=-1;ui.post=null;ui.newList=false;redraw();return;
+      case 'nb-del':{if(!armed(b))return;await api('x.nb.delete',{id:nb.id});S.notebooks=S.notebooks.filter(n=>n.id!==nb.id);S.posts=S.posts.filter(p=>p.nb!==nb.id);S.lists=S.lists.filter(l=>l.nb!==nb.id);ui.panel='';pick(S.notebooks[0]?S.notebooks[0].id:0);toast('Notebook deleted.');redraw();return}
+      case 'use-planner':{await api('x.nb.planner',{id:nb.id});toast('Your planner will use this look from the next time you open it.');return}
+      // blog + interests
       case 'post-new':ui.post={id:0,title:'',body:'',public:false};ui.pics.post=null;redraw('px-title');return;
       case 'post-edit':{const p=S.posts.find(x=>x.id===id);if(!p)return;ui.post={id:p.id,title:p.title,body:p.body,public:p.public};ui.pics.post=p.image?{id:p.image_id,url:p.image}:null;redraw('px-title');return}
       case 'post-cancel':ui.post=null;redraw();return;
       case 'post-vis':{const p=S.posts.find(x=>x.id===id);if(!p)return;p.public=!p.public;redraw();await api('x.post.public',{id,public:p.public});return}
       case 'post-del':{if(!armed(b))return;S.posts=S.posts.filter(x=>x.id!==id);redraw();await api('x.post.delete',{id});return}
       case 'list-new':ui.newList=!ui.newList;redraw(ui.newList?'lx-title':'');return;
-      case 'list-quick':{const q=QUICK[+b.dataset.i];const r=await api('x.list.add',{title:q[1],emoji:q[0],layout:q[2]});S.lists.push({id:r.id,title:q[1],emoji:q[0],layout:q[2],public:false,items:[]});redraw('ix-text-'+r.id);return}
+      case 'list-quick':{const q=QUICK[+b.dataset.i];const r=await api('x.list.add',{notebook_id:ui.nb,title:q[1],emoji:q[0],layout:q[2]});S.lists.push({id:r.id,nb:ui.nb,title:q[1],emoji:q[0],layout:q[2],public:false,items:[]});redraw('ix-text-'+r.id);return}
       case 'list-del':{if(!armed(b))return;S.lists=S.lists.filter(x=>x.id!==id);redraw();await api('x.list.delete',{id});return}
       case 'list-layout':{const l=S.lists.find(x=>x.id===id);if(!l||l.layout===b.dataset.v)return;l.layout=b.dataset.v;redraw();await api('x.list.update',{id,layout:l.layout});return}
       case 'item-del':{const l=S.lists.find(x=>x.items.some(i=>i.id===id));if(l)l.items=l.items.filter(i=>i.id!==id);redraw();await api('x.item.delete',{id});return}
       case 'pic-rm':ui.pics[b.dataset.key]=null;{const w=b.closest('.pic-pick');if(w)w.innerHTML=picInner(b.dataset.key)}return;
       case 'copy-link':{try{await navigator.clipboard.writeText(b.dataset.link);toast('Link copied.')}catch(err){toast(b.dataset.link)}return}
       case 'notes-clear':await api('x.notes.clear');S.notes=[];S.unread=0;paintBadges();redraw();return;
+      // my styles
+      case 'style-del':{const r=await api('x.style.delete',{id});S.styles=r.styles;redraw();return}
       // design
       case 'cover':ui.dd.cover=b.dataset.v;ui.dd.cover_img=0;ui.dd.cover_url='';break;
       case 'cover-rm':ui.dd.cover_img=0;ui.dd.cover_url='';break;
@@ -254,22 +370,37 @@ document.addEventListener('click',async e=>{
       case 'pcolor':ui.dd.paper_color=b.dataset.v;break;
       case 'accent':ui.dd.accent=b.dataset.v;break;
       case 'font':ui.dd.font=b.dataset.v;break;
-      case 'stk-add':if(ui.dd.stickers.length>=24){toast('That is plenty of stickers!');return}ui.dd.stickers.push({k:b.dataset.k,x:20+Math.random()*60,y:25+Math.random()*50,s:1,r:0});ui.sel=ui.dd.stickers.length-1;break;
+      case 'binding':ui.dd.binding=b.dataset.v;break;
+      case 'preset':applyLook(PRESETS[+b.dataset.i][1]);break;
+      case 'style-apply':{const s=S.styles.find(x=>x.id===id);if(!s)return;applyLook(s.design);break}
+      case 'stk-add':if(ui.dd.stickers.length>=30){toast('That is plenty of stickers!');return}ui.dd.stickers.push({k:b.dataset.k,p:ui.pg,x:20+Math.random()*60,y:25+Math.random()*50,s:1,r:0});ui.sel=ui.dd.stickers.length-1;break;
       case 'stk-size':{const s=ui.dd.stickers[ui.sel];if(!s)return;s.s=Math.max(0.5,Math.min(3,Math.round((s.s+ +b.dataset.v)*10)/10));break}
       case 'stk-rot':{const s=ui.dd.stickers[ui.sel];if(!s)return;s.r=Math.max(-180,Math.min(180,s.r+ +b.dataset.v));break}
       case 'stk-del':ui.dd.stickers.splice(ui.sel,1);ui.sel=-1;break;
-      case 'design-reset':ui.dd=clone(S.design);ui.dd.cover_url=S.cover_url;ui.dirty=false;ui.sel=-1;refreshPv();return;
+      case 'design-reset':pick(ui.nb,true);redraw();return;
       case 'design-save':{
         b.disabled=true;
-        const r=await api('x.design.save',{design:designOut()});
-        S.design=r.design;S.cover_url=r.cover_url;ui.dd=clone(r.design);ui.dd.cover_url=r.cover_url;ui.dirty=false;
-        applyDesign(S.design);refreshPv();toast('Design saved. This is now your notebook.');return}
+        const r=await api('x.nb.design',{id:nb.id,design:designOut()});
+        nb.design=r.design;nb.cover_url=r.cover_url;ui.dd=Object.assign(clone(BASE),clone(r.design));ui.dd.cover_url=r.cover_url;ui.dirty=false;
+        toast('Design saved.');redraw();return}
       default:return;
     }
   }catch(err){toast(err.message);if(S&&a!=='retry')load2()}
-  if(['cover','cover-rm','paper','pcolor','accent','font','stk-add','stk-size','stk-rot','stk-del'].includes(a)){markDirty();refreshPv()}
+  if(DESIGN_ACTS.includes(a)){markDirty();
+    if(a==='preset'||a==='style-apply'){redraw()}   // colour pickers hold the new values
+    else paintPreview()}
 });
 function load2(){S=null;loading=false;loadErr='';redraw()}
+
+/* sticker clicks on the live page + colour pickers */
+document.addEventListener('input',e=>{
+  const t=e.target;if(!t.dataset||!t.dataset.xcolor||!ui.dd)return;
+  const k=t.dataset.xcolor;ui.dd[k]=t.value;
+  if(k==='cover_c1'||k==='cover_c2'){ui.dd.cover='custom';ui.dd.cover_img=0;ui.dd.cover_url='';if(!ui.dd.cover_c1)ui.dd.cover_c1='#6a4dc4';if(!ui.dd.cover_c2)ui.dd.cover_c2='#e0609a'}
+  if(k==='paper_hex')ui.dd.paper_color='custom';
+  if(k==='accent_hex')ui.dd.accent='custom';
+  markDirty();paintPreview();
+});
 
 /* ---------- forms ---------- */
 document.addEventListener('submit',async e=>{
@@ -279,23 +410,37 @@ document.addEventListener('submit',async e=>{
   f.dataset.busy='1';if(btn)btn.disabled=true;
   const clear=ids=>ids.forEach(i=>{const el=$(i);if(el){el.value='';el.dataset.cleared='1'}});
   try{
-    if(f.dataset.xform==='post'){
+    const x=f.dataset.xform;
+    if(x==='post'){
       const pic=ui.pics.post,pub=f.querySelector('[name=public]').checked;
-      const r=await api('x.post.save',{id:ui.post.id,title:d.title,body:d.body,public:pub,image_id:pic?pic.id:0});
+      await api('x.post.save',{id:ui.post.id,notebook_id:ui.nb,title:d.title,body:d.body,public:pub,image_id:pic?pic.id:0});
       ui.post=null;ui.pics.post=null;
-      const x=await api('x.load');S=Object.assign(S,{posts:x.posts});toast(pub?'Published.':'Saved as private.');redraw();
-    }else if(f.dataset.xform==='list'){
-      const r=await api('x.list.add',{title:d.title,emoji:d.emoji,layout:d.layout});
-      S.lists.push({id:r.id,title:d.title.trim(),emoji:d.emoji,layout:d.layout,public:false,items:[]});ui.newList=false;redraw('ix-text-'+r.id);
-    }else if(f.dataset.xform==='item'){
+      const r=await api('x.load');S=Object.assign(S,{posts:r.posts});toast(pub?'Published.':'Saved as private.');redraw();
+    }else if(x==='list'){
+      const r=await api('x.list.add',{notebook_id:ui.nb,title:d.title,emoji:d.emoji,layout:d.layout});
+      S.lists.push({id:r.id,nb:ui.nb,title:d.title.trim(),emoji:d.emoji,layout:d.layout,public:false,items:[]});ui.newList=false;redraw('ix-text-'+r.id);
+    }else if(x==='item'){
       const lid=+f.dataset.id,k='item-'+lid,pic=ui.pics[k];
       const r=await api('x.item.add',{list_id:lid,text:d.text,note:d.note||'',image_id:pic?pic.id:0});
-      const l=S.lists.find(x=>x.id===lid);l.items.push({id:r.id,text:d.text.trim(),note:(d.note||'').trim(),image:pic?pic.url:'',image_id:pic?pic.id:0});
+      const l=S.lists.find(y=>y.id===lid);l.items.push({id:r.id,text:d.text.trim(),note:(d.note||'').trim(),image:pic?pic.url:'',image_id:pic?pic.id:0});
       ui.pics[k]=null;clear(['ix-text-'+lid,'ix-note-'+lid]);redraw('ix-text-'+lid);
       document.querySelectorAll('[data-cleared]').forEach(el=>delete el.dataset.cleared);
-    }else if(f.dataset.xform==='profile'){
+    }else if(x==='profile'){
       await api('x.profile.save',{slug:d.slug,bio:d.bio});
       S.profile.slug=d.slug.toLowerCase();S.profile.bio=d.bio.trim();toast('Saved.');redraw();
+    }else if(x==='nb'){
+      const nb=cur(),sections=new FormData(f).getAll('sections');
+      const r=await api('x.nb.save',{id:nb.id,title:d.title,intro:d.intro||'',sections});
+      Object.assign(nb,{title:r.notebook.title,intro:r.notebook.intro,sections:r.notebook.sections});
+      if(ui.pg!=='cover'&&!nb.sections.includes(ui.pg))ui.pg='cover';
+      toast('Saved.');redraw();
+    }else if(x==='nbnew'){
+      const look=d.look!==''?PRESETS[+d.look][1]:{};
+      const r=await api('x.nb.add',{title:d.title,sections:new FormData(f).getAll('sections'),design:look});
+      S.notebooks.push(r.notebook);ui.newNb=false;ui.panel='deco';pick(r.notebook.id);toast('Notebook created. Decorate it, then add things to its pages.');redraw();
+    }else if(x==='style'){
+      const r=await api('x.style.save',{name:d.name,design:designOut()});
+      S.styles=r.styles;toast('Style saved. Find it under My styles.');redraw();
     }
   }catch(err){toast(err.message)}
   finally{delete f.dataset.busy;if(btn&&btn.isConnected)btn.disabled=false}
@@ -312,7 +457,7 @@ document.addEventListener('change',async e=>{
         const body={public:S.profile.public};if(k==='guest'||!on)body.guest=S.profile.guest;
         if(k==='guest')body.guest=on;
         await api('x.profile.save',body);redraw();
-      }else if(k==='share'){S.profile.share[t.dataset.k]=on;await api('x.profile.save',{share:{[t.dataset.k]:on}})}
+      }else if(k==='nb-public'){const nb=cur();nb.public=on;await api('x.nb.save',{id:nb.id,public:on});redraw()}
       else if(k==='notify'){S.profile.notify[t.dataset.k]=on;await api('x.profile.save',{notify:{[t.dataset.k]:on}})}
       else if(k==='list-public'){const l=S.lists.find(x=>x.id===+t.dataset.id);if(l)l.public=on;await api('x.list.update',{id:+t.dataset.id,public:on})}
     }catch(err){t.checked=!on;toast(err.message)}
@@ -325,20 +470,19 @@ document.addEventListener('change',async e=>{
     try{
       const r=await upload(f,kind);
       if(kind==='photo'){ui.pics[key]={id:r.id,url:r.url};if(wrap)wrap.innerHTML=picInner(key)}
-      else if(kind==='cover'){ui.dd.cover_img=r.id;ui.dd.cover_url=r.url;markDirty();refreshPv();if(msg)msg.textContent=''}
-      else{S.stickers_up.unshift({id:r.id,url:r.url});ui.dd.stickers.push({k:'up:'+r.id,x:50,y:50,s:1,r:0});ui.sel=ui.dd.stickers.length-1;markDirty();redraw()}
+      else if(kind==='cover'){ui.dd.cover_img=r.id;ui.dd.cover_url=r.url;markDirty();paintPreview();if(msg)msg.textContent=''}
+      else{S.stickers_up.unshift({id:r.id,url:r.url});ui.dd.stickers.push({k:'up:'+r.id,p:ui.pg,x:50,y:50,s:1,r:0});ui.sel=ui.dd.stickers.length-1;markDirty();redraw()}
     }catch(err){if(msg)msg.textContent='';toast(err.message)}
   }
 });
 
-/* ---------- dragging stickers on the preview cover ---------- */
+/* ---------- dragging stickers on the page (only while decorating) ---------- */
 let drag=null;
 document.addEventListener('pointerdown',e=>{
-  const s=e.target.closest('#pvBanner .stk');if(!s||!ui.dd)return;
+  const s=e.target.closest('.deco .stk-layer .stk');if(!s||!ui.dd)return;
   const i=+s.dataset.i;ui.sel=i;
-  const box=s.parentElement.getBoundingClientRect();
-  drag={i,box,el:s};s.setPointerCapture&&s.setPointerCapture(e.pointerId);e.preventDefault();
-  document.querySelectorAll('#pvBanner .stk').forEach(x=>x.classList.toggle('sel',+x.dataset.i===i));
+  drag={i,box:s.parentElement.getBoundingClientRect(),el:s};s.setPointerCapture&&s.setPointerCapture(e.pointerId);e.preventDefault();
+  document.querySelectorAll('.stk-layer .stk').forEach(x=>x.classList.toggle('sel',+x.dataset.i===i));
   const c=$('stkCtl');if(c)c.innerHTML=stkCtl();
 });
 document.addEventListener('pointermove',e=>{
@@ -350,6 +494,4 @@ document.addEventListener('pointermove',e=>{
 });
 const endDrag=()=>{if(drag){drag=null;markDirty()}};
 document.addEventListener('pointerup',endDrag);document.addEventListener('pointercancel',endDrag);
-
-// Apply the saved look to the planner right away (the server also sets it before the page draws)
 })();

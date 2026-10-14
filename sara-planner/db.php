@@ -190,7 +190,7 @@ function upgrade_schema(PDO $pdo): void
             : array_column($pdo->query("SHOW COLUMNS FROM $t")->fetchAll(), 'Field');
         $have = $colsOf('profiles');
         foreach (['slug' => 'VARCHAR(40) NULL', 'is_public' => 'TINYINT(1) NOT NULL DEFAULT 0', 'guest_view' => 'TINYINT(1) NOT NULL DEFAULT 0',
-                  'share' => 'TEXT NULL', 'design' => 'TEXT NULL', 'notify' => 'TEXT NULL'] as $c => $def) {
+                  'share' => 'TEXT NULL', 'design' => 'TEXT NULL', 'notify' => 'TEXT NULL', 'nb_ready' => 'TINYINT(1) NOT NULL DEFAULT 0'] as $c => $def) {
             if (!in_array($c, $have, true)) $pdo->exec("ALTER TABLE profiles ADD COLUMN $c $def");
         }
         if (DB_DRIVER === 'sqlite') {
@@ -201,8 +201,12 @@ function upgrade_schema(PDO $pdo): void
         // An early test version kept pictures as files on disk; that table has no "data" column. Set it aside.
         $up = $pdo->query(DB_DRIVER === 'sqlite' ? "SELECT name FROM sqlite_master WHERE type = 'table' AND name = 'uploads'" : "SHOW TABLES LIKE 'uploads'")->fetch();
         if ($up && !in_array('data', $colsOf('uploads'), true)) $pdo->exec('ALTER TABLE uploads RENAME TO uploads_old_files');
-        foreach (['uploads', 'posts', 'post_likes', 'interest_lists', 'interest_items', 'notifications'] as $t) {
+        foreach (['uploads', 'posts', 'post_likes', 'interest_lists', 'interest_items', 'notifications', 'notebooks', 'notebook_styles'] as $t) {
             if (preg_match("/CREATE TABLE IF NOT EXISTS $t \\(.*?\\n\\)[^;]*;/s", $sql, $m)) $pdo->exec($m[0]);
+        }
+        // Blog posts and interest lists now belong to one notebook
+        foreach (['posts', 'interest_lists'] as $t) {
+            if (!in_array('notebook_id', $colsOf($t), true)) $pdo->exec("ALTER TABLE $t ADD COLUMN notebook_id INT NULL");
         }
     } catch (PDOException $e) {
         error_log('Could not add the notebook sharing tables: ' . $e->getMessage());

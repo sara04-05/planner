@@ -1,5 +1,5 @@
 <?php
-// Explore: public notebooks you're allowed to see. Visitors who aren't logged in only get the ones whose owners opened them to everyone.
+// Explore: public notebooks you're allowed to see (never your own). Visitors who aren't logged in only get the ones whose owners opened them to everyone.
 declare(strict_types=1);
 require __DIR__ . '/db.php';
 require __DIR__ . '/social.php';
@@ -11,7 +11,7 @@ if ($viewer && !is_verified($viewer)) $viewer = null;
 $term = trim((string)($_GET['q'] ?? ''));
 
 $sql = 'SELECT p.*, u.name FROM profiles p JOIN users u ON u.id = p.user_id WHERE p.is_public = 1 AND p.slug IS NOT NULL'
-    . ($viewer ? '' : ' AND p.guest_view = 1');
+    . ($viewer ? ' AND p.user_id <> ' . (int)$viewer : ' AND p.guest_view = 1');
 $args = [];
 if ($term !== '') {
     $like = '%' . str_replace(['|', '%', '_'], ['||', '|%', '|_'], $term) . '%';
@@ -19,31 +19,25 @@ if ($term !== '') {
     $args = [$like, $like];
 }
 $sql .= ' ORDER BY u.name LIMIT 60';
-$rows = q($sql, $args)->fetchAll();
+$rows = [];
+foreach (q($sql, $args)->fetchAll() as $r) {
+    $r['nbs'] = load_notebooks((int)$r['user_id'], true);
+    if ($r['nbs']) $rows[] = $r;      // only people who share at least one notebook
+}
 
-pub_top('Explore', [], $viewer);
+app_top('Explore', ['active' => 'explore', 'tab' => '', 'eyebrow' => 'Your notebook', 'h1' => 'Explore',
+    'actions' => $viewer ? '<a class="btn" href="people.php">People</a>' : '']);
 ?>
-  <h1 style="margin-bottom:6px">Explore notebooks</h1>
-  <p class="hint2" style="font-size:14px;margin-bottom:16px">Notebooks that their owners chose to share.<?= $viewer ? '' : ' Log in to see more.' ?></p>
+  <p class="hint2" style="font-size:14px;margin:-6px 0 16px">Notebooks that their owners chose to share.<?= $viewer ? '' : ' Log in to see more.' ?></p>
   <form class="searchbar" method="get" action="explore.php">
     <input type="search" name="q" value="<?= h($term) ?>" placeholder="Search by name or page name" aria-label="Search people">
     <button class="btn primary">Search</button>
   </form>
   <?php if (!$rows): ?>
-    <div class="pub-note">No public notebooks <?= $term !== '' ? 'match that search' : 'yet' ?>.</div>
+    <div class="pub-note">No public notebooks <?= $term !== '' ? 'match that search' : 'from other people yet' ?>.</div>
   <?php else: ?>
   <div class="people">
-    <?php foreach ($rows as $r):
-        $d = profile_design($r); ?>
-      <a class="person" href="u.php?u=<?= h($r['slug']) ?>"<?= design_attrs($d, 'accent') ?>>
-        <?= banner_html($d, upload_url($d['cover_img'] ? (int)$d['cover_img'] : null)) ?>
-        <div class="pb">
-          <div class="av" aria-hidden="true"><?= h(mb_strtoupper(mb_substr($r['name'], 0, 1))) ?></div>
-          <h3 translate="no"><?= h($r['name']) ?></h3>
-          <p translate="no"><?= $r['bio'] !== '' ? h($r['bio']) : '@' . h($r['slug']) ?></p>
-        </div>
-      </a>
-    <?php endforeach; ?>
+    <?php foreach ($rows as $r): echo person_card($r, $r['nbs']); endforeach; ?>
   </div>
   <?php endif; ?>
-<?php pub_bottom();
+<?php app_bottom();

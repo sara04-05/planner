@@ -56,22 +56,23 @@ function act(string $do, int $id, string $label, string $cls = 'btn', string $ba
         . '<button class="' . $cls . '">' . h($label) . '</button></form>';
 }
 
-auth_top('People', 'wide people-card', true); ?>
-    <div class="admin-top">
-      <h1>People</h1>
-      <span class="grow"></span>
-      <a class="btn" href="explore.php">Explore notebooks</a>
-      <a class="btn" href="index.php">Back to planner</a>
-    </div>
-    <?php if ($msg): ?><div class="formmsg err" role="alert"><?= h($msg) ?></div><?php endif; ?>
+// Public notebooks of other people (never yours)
+$pubRows = [];
+foreach (q('SELECT p.*, u.name FROM profiles p JOIN users u ON u.id = p.user_id WHERE p.is_public = 1 AND p.slug IS NOT NULL AND p.user_id <> ? ORDER BY u.name LIMIT 24', [$uid])->fetchAll() as $r) {
+    $r['nbs'] = load_notebooks((int)$r['user_id'], true);
+    if ($r['nbs']) $pubRows[] = $r;
+    if (count($pubRows) >= 6) break;
+}
 
+app_top('People', ['active' => 'people', 'covers' => true, 'eyebrow' => 'Your notebook', 'h1' => 'People',
+    'actions' => '<a class="btn" href="explore.php">Explore notebooks</a>']); ?>
     <div class="me-card">
       <?= avatar_html($me, 'lg') ?>
       <div class="grow">
         <div class="me-name"><?= name_html($me) ?></div>
         <p class="me-bio"><?= $me['bio'] !== '' ? h($me['bio']) : '<span class="muted">No bio yet.</span>' ?></p>
       </div>
-      <a class="btn" href="profile.php">Edit profile</a>
+      <a class="btn" href="index.php?tab=profile">My profile</a>
     </div>
 
     <?php if ($requests): ?>
@@ -101,6 +102,13 @@ auth_top('People', 'wide people-card', true); ?>
       </div>
     </section>
 
+    <section class="ppl-sec">
+      <h2>Public notebooks</h2>
+      <p class="auth-sub">Notebooks that people chose to share. <a href="explore.php">See all</a></p>
+      <?php if (!$pubRows): ?><p class="chat-empty">Nobody else has shared a notebook yet.</p>
+      <?php else: ?><div class="people"><?php foreach ($pubRows as $r) echo person_card($r, $r['nbs']); ?></div><?php endif; ?>
+    </section>
+
     <section class="ppl-sec" id="find">
       <h2>Find people</h2>
       <form method="get" class="chat-row find-row" action="people.php#find">
@@ -121,4 +129,4 @@ auth_top('People', 'wide people-card', true); ?>
       </ul>
       <?php endif; ?>
     </section>
-<?php auth_bottom();
+<?php app_bottom();

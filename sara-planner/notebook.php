@@ -4,31 +4,53 @@
 // People, friends, profile pictures, notebook covers and messages live in social.php / people.php / messages.php.
 declare(strict_types=1);
 
-const SHARE_KEYS   = ['blog', 'interests', 'timetable', 'subjects'];
+const SHARE_KEYS   = ['blog', 'interests', 'timetable', 'subjects'];   // kept for the old share column (used once, when moving to notebooks)
+const SECTIONS     = ['interests', 'blog', 'timetable', 'subjects'];       // the pages a notebook can have, besides its cover
 const NOTIFY_KEYS  = ['like'];
 const BANNERS      = ['dusk', 'peach', 'ocean', 'mint', 'berry', 'sunny', 'night', 'cloud'];
+const COVER_GRADIENTS = [
+    'dusk' => ['#6A4DC4', '#E0609A'], 'peach' => ['#F9A826', '#F36B7F'], 'ocean' => ['#1F77C9', '#3FC1C9'], 'mint' => ['#4FA36B', '#B6E3C9'],
+    'berry' => ['#8E2DE2', '#C2185B'], 'sunny' => ['#FFD452', '#FF9966'], 'night' => ['#1B1740', '#4B3A8F'], 'cloud' => ['#BFD7F5', '#E8DDF8'],
+];
 const PAPERS       = ['lined', 'grid', 'dots', 'plain'];
 const PAPER_COLORS = ['white', 'cream', 'blush', 'mint', 'sky', 'lilac'];
 const ACCENTS      = ['violet', 'rose', 'ocean', 'forest', 'sunset', 'graphite'];
 const FONTS        = ['modern', 'hand', 'serif', 'mono'];
+const BINDINGS     = ['coil', 'stitch', 'none'];
 const STICKERS     = ['⭐', '💜', '🌸', '🎀', '🦋', '☁️', '🌙', '✨', '🍓', '🎧', '📚', '☕', '🐱', '🌈', '🔥', '🍒', '🎬', '🎵', '👗', '👠', '🧸', '🌷', '🍀', '💌', '📌', '✏️', '🎨', '🪩', '💫', '🍑', '🌻', '🧿'];
 const LIST_EMOJI   = ['🎬', '🎤', '👗', '📚', '🍕', '🎮', '🎧', '✈️', '🐾', '💄', '🎨', '⭐'];
+const MAX_NOTEBOOKS = 12;
+const MAX_STYLES    = 20;
 
 function default_design(): array
 {
-    return ['cover' => 'dusk', 'cover_img' => 0, 'paper' => 'lined', 'paper_color' => 'white', 'accent' => 'violet', 'font' => 'modern', 'stickers' => []];
+    return ['cover' => 'dusk', 'cover_img' => 0, 'cover_c1' => '', 'cover_c2' => '', 'paper' => 'lined', 'paper_color' => 'white', 'paper_hex' => '',
+        'accent' => 'violet', 'accent_hex' => '', 'font' => 'modern', 'binding' => 'coil', 'stickers' => []];
 }
 
-/** Clean up whatever design the browser sent: only known values get through. */
-function clean_design(int $uid, array $d): array
+function clean_hex($v): string
+{
+    return is_string($v) && preg_match('/^#[0-9a-fA-F]{6}$/', $v) ? strtolower($v) : '';
+}
+
+/** Clean up whatever design the browser sent: only known values and valid colours get through. $withStickers = false for a saved style. */
+function clean_design(int $uid, array $d, bool $withStickers = true): array
 {
     $out = default_design();
-    foreach (['cover' => BANNERS, 'paper' => PAPERS, 'paper_color' => PAPER_COLORS, 'accent' => ACCENTS, 'font' => FONTS] as $k => $allowed) {
+    foreach (['paper' => PAPERS, 'font' => FONTS, 'binding' => BINDINGS] as $k => $allowed) {
         if (isset($d[$k]) && in_array($d[$k], $allowed, true)) $out[$k] = $d[$k];
     }
+    foreach (['cover_c1', 'cover_c2', 'paper_hex', 'accent_hex'] as $k) $out[$k] = clean_hex($d[$k] ?? '');
+    $c = $d['cover'] ?? '';
+    if (in_array($c, BANNERS, true) || ($c === 'custom' && $out['cover_c1'] !== '' && $out['cover_c2'] !== '')) $out['cover'] = $c;
+    $c = $d['paper_color'] ?? '';
+    if (in_array($c, PAPER_COLORS, true) || ($c === 'custom' && $out['paper_hex'] !== '')) $out['paper_color'] = $c;
+    $c = $d['accent'] ?? '';
+    if (in_array($c, ACCENTS, true) || ($c === 'custom' && $out['accent_hex'] !== '')) $out['accent'] = $c;
     $img = (int)($d['cover_img'] ?? 0);
     if ($img > 0 && own_upload($uid, $img, 'cover')) $out['cover_img'] = $img;
-    foreach (array_slice((array)($d['stickers'] ?? []), 0, 24) as $s) {
+    if (!$withStickers) return $out;
+    foreach (array_slice((array)($d['stickers'] ?? []), 0, 30) as $s) {
         if (!is_array($s)) continue;
         $key = (string)($s['k'] ?? '');
         if (preg_match('/^up:(\d+)$/', $key, $m)) {
@@ -36,8 +58,10 @@ function clean_design(int $uid, array $d): array
         } elseif (!in_array($key, STICKERS, true)) {
             continue;
         }
+        $page = (string)($s['p'] ?? 'cover');
+        if ($page !== 'cover' && !in_array($page, SECTIONS, true)) $page = 'cover';
         $out['stickers'][] = [
-            'k' => $key,
+            'k' => $key, 'p' => $page,
             'x' => max(0, min(100, round((float)($s['x'] ?? 50), 1))),
             'y' => max(0, min(100, round((float)($s['y'] ?? 50), 1))),
             's' => max(0.5, min(3, round((float)($s['s'] ?? 1), 1))),
@@ -65,7 +89,7 @@ function delete_upload(int $uid, ?int $id): void
     if ($id && own_upload($uid, $id)) q('DELETE FROM uploads WHERE id = ?', [$id]);
 }
 
-/** May this viewer (null = not logged in) see this picture? Only if it is part of something they may see. */
+/** May this viewer (null = not logged in) see this picture? Only if it is part of a notebook (page) they may see. */
 function can_see_upload(int $id, ?int $viewer): bool
 {
     $up = q('SELECT user_id FROM uploads WHERE id = ?', [$id])->fetch();
@@ -74,12 +98,14 @@ function can_see_upload(int $id, ?int $viewer): bool
     if ($viewer !== null && $viewer === $owner) return true;
     $prof = q('SELECT * FROM profiles WHERE user_id = ?', [$owner])->fetch();
     if (!$prof || !can_view_profile($prof, $viewer)) return false;
-    $design = profile_design($prof);
-    if ((int)$design['cover_img'] === $id) return true;
-    foreach ($design['stickers'] as $s) if ($s['k'] === 'up:' . $id) return true;
-    $share = profile_share($prof);
-    if (!empty($share['blog']) && q('SELECT 1 FROM posts WHERE user_id = ? AND image_id = ? AND is_public = 1', [$owner, $id])->fetch()) return true;
-    if (!empty($share['interests']) && q('SELECT 1 FROM interest_items i JOIN interest_lists l ON l.id = i.list_id WHERE l.user_id = ? AND i.image_id = ? AND l.is_public = 1', [$owner, $id])->fetch()) return true;
+    foreach (q('SELECT id, sections, design FROM notebooks WHERE user_id = ? AND is_public = 1', [$owner])->fetchAll() as $nb) {
+        $design = json_col($nb['design'] ?? null, default_design());
+        if ((int)$design['cover_img'] === $id) return true;
+        foreach ((array)$design['stickers'] as $s) if (($s['k'] ?? '') === 'up:' . $id) return true;
+        $sections = nb_sections($nb);
+        if (in_array('blog', $sections, true) && q('SELECT 1 FROM posts WHERE user_id = ? AND notebook_id = ? AND image_id = ? AND is_public = 1', [$owner, $nb['id'], $id])->fetch()) return true;
+        if (in_array('interests', $sections, true) && q('SELECT 1 FROM interest_items i JOIN interest_lists l ON l.id = i.list_id WHERE l.user_id = ? AND l.notebook_id = ? AND i.image_id = ? AND l.is_public = 1', [$owner, $nb['id'], $id])->fetch()) return true;
+    }
     return false;
 }
 
@@ -134,6 +160,110 @@ function profile_share(array $row): array
 function profile_design(array $row): array
 {
     return json_col($row['design'] ?? null, default_design());
+}
+
+// ---------- notebooks ----------
+
+/** The pages of a notebook, in the order the owner picked them. */
+function nb_sections(array $nb): array
+{
+    $out = [];
+    foreach (explode(',', (string)($nb['sections'] ?? '')) as $k) if (in_array($k, SECTIONS, true) && !in_array($k, $out, true)) $out[] = $k;
+    return $out;
+}
+
+function clean_sections($v): array
+{
+    $out = [];
+    foreach ((array)$v as $k) if (is_string($k) && in_array($k, SECTIONS, true) && !in_array($k, $out, true)) $out[] = $k;
+    return $out;
+}
+
+function nb_design(array $nb): array
+{
+    return json_col($nb['design'] ?? null, default_design());
+}
+
+function nb_row(array $r): array
+{
+    $d = nb_design($r);
+    return ['id' => (int)$r['id'], 'title' => $r['title'], 'intro' => $r['intro'], 'sections' => nb_sections($r), 'public' => (int)$r['is_public'] === 1,
+        'design' => $d, 'cover_url' => upload_url($d['cover_img'] ? (int)$d['cover_img'] : null)];
+}
+
+/** A user's notebooks. $onlyPublic = what other people may see. */
+function load_notebooks(int $owner, bool $onlyPublic = false): array
+{
+    ensure_notebooks($owner);
+    $rows = q('SELECT * FROM notebooks WHERE user_id = ?' . ($onlyPublic ? ' AND is_public = 1' : '') . ' ORDER BY id', [$owner])->fetchAll();
+    return array_map('nb_row', $rows);
+}
+
+function own_notebook(int $uid, int $id): array
+{
+    $r = q('SELECT * FROM notebooks WHERE id = ? AND user_id = ?', [$id, $uid])->fetch();
+    if (!$r) fail(404, 'That notebook was not found.');
+    return $r;
+}
+
+/** An optional notebook id sent with a post / list: it has to be one of your own. */
+function notebook_in(int $uid, array $in): int
+{
+    $id = (int)($in['notebook_id'] ?? 0);
+    if ($id <= 0) fail(400, 'Open a notebook first.');
+    own_notebook($uid, $id);
+    return $id;
+}
+
+/**
+ * Everyone starts with one notebook. Accounts from before notebooks existed get one made from their old settings:
+ * the pages they had switched on, their look, and (moved into it) all their posts and lists. Runs once (profiles.nb_ready).
+ */
+function ensure_notebooks(int $uid): void
+{
+    $p = ensure_profile($uid);
+    if ((int)($p['nb_ready'] ?? 0) === 1) return;
+    q('UPDATE profiles SET nb_ready = 1 WHERE user_id = ?', [$uid]);   // first, so a second request can't do it twice
+    $share = profile_share($p);
+    $hasPosts = (bool)q('SELECT 1 FROM posts WHERE user_id = ?', [$uid])->fetch();
+    $hasLists = (bool)q('SELECT 1 FROM interest_lists WHERE user_id = ?', [$uid])->fetch();
+    $sections = [];
+    foreach (['interests', 'blog', 'timetable', 'subjects'] as $k) {
+        if (!empty($share[$k]) || ($k === 'blog' && $hasPosts) || ($k === 'interests' && $hasLists)) $sections[] = $k;
+    }
+    if (!$sections) $sections = ['interests', 'blog'];
+    // things whose page was switched off stay private
+    if (empty($share['blog'])) q('UPDATE posts SET is_public = 0 WHERE user_id = ?', [$uid]);
+    if (empty($share['interests'])) q('UPDATE interest_lists SET is_public = 0 WHERE user_id = ?', [$uid]);
+    $design = profile_design($p);
+    $design['stickers'] = array_map(fn($s) => $s + ['p' => 'cover'], (array)$design['stickers']);
+    $anyShared = !empty($share['blog']) || !empty($share['interests']) || !empty($share['timetable']) || !empty($share['subjects']);
+    q('INSERT INTO notebooks (user_id, title, intro, sections, design, is_public) VALUES (?, ?, ?, ?, ?, ?)',
+        [$uid, 'My notebook', '', implode(',', $sections), json_encode($design), ($anyShared && (int)$p['is_public'] === 1) ? 1 : 0]);
+    $id = (int)db()->lastInsertId();
+    q('UPDATE posts SET notebook_id = ? WHERE user_id = ? AND notebook_id IS NULL', [$id, $uid]);
+    q('UPDATE interest_lists SET notebook_id = ? WHERE user_id = ? AND notebook_id IS NULL', [$id, $uid]);
+}
+
+/** The repeating weekly plan, as [weekday => ['08:00 Lecture', ...]]. */
+function load_timetable(int $owner): array
+{
+    $out = [];
+    foreach (q('SELECT weekday, hour, text FROM weekly_hours WHERE user_id = ? AND text <> \'\' ORDER BY weekday, hour', [$owner])->fetchAll() as $r) {
+        $out[(int)$r['weekday']][] = sprintf('%02d:00', $r['hour']) . ' ' . $r['text'];
+    }
+    return $out;
+}
+
+/** Study subjects with how far along they are (never the notes inside them). */
+function load_subjects(int $owner): array
+{
+    $out = [];
+    foreach (q('SELECT id, name FROM subjects WHERE user_id = ? ORDER BY id', [$owner])->fetchAll() as $s) {
+        $c = q('SELECT COUNT(*) n, COALESCE(SUM(done), 0) d FROM chapters WHERE subject_id = ?', [$s['id']])->fetch();
+        $out[] = ['name' => $s['name'], 'pct' => (int)$c['n'] ? (int)round(100 * $c['d'] / $c['n']) : 0, 'n' => (int)$c['n']];
+    }
+    return $out;
 }
 
 /** May this viewer (a user id, or null for a visitor who isn't logged in) open this notebook? */
@@ -235,28 +365,30 @@ function save_image(int $uid, array $file, string $kind): int
 function post_row(array $p, int $likes, bool $liked = false): array
 {
     return [
-        'id' => (int)$p['id'], 'title' => $p['title'], 'body' => $p['body'],
+        'id' => (int)$p['id'], 'nb' => (int)$p['notebook_id'], 'title' => $p['title'], 'body' => $p['body'],
         'image' => upload_url($p['image_id'] ? (int)$p['image_id'] : null), 'image_id' => (int)($p['image_id'] ?? 0),
         'public' => (int)$p['is_public'] === 1, 'date' => substr((string)$p['created_at'], 0, 10),
         'likes' => $likes, 'liked' => $liked,
     ];
 }
 
-function load_posts(int $owner, bool $onlyPublic, ?int $viewer): array
+/** Posts of one owner. $notebook = only that notebook's posts (0 = all of them). */
+function load_posts(int $owner, bool $onlyPublic, ?int $viewer, int $notebook = 0): array
 {
     $sql = 'SELECT p.*, (SELECT COUNT(*) FROM post_likes l WHERE l.post_id = p.id) AS likes FROM posts p WHERE p.user_id = ?'
-        . ($onlyPublic ? ' AND p.is_public = 1' : '') . ' ORDER BY p.created_at DESC, p.id DESC';
+        . ($notebook ? ' AND p.notebook_id = ?' : '') . ($onlyPublic ? ' AND p.is_public = 1' : '') . ' ORDER BY p.created_at DESC, p.id DESC';
     $out = [];
-    foreach (q($sql, [$owner])->fetchAll() as $p) {
+    foreach (q($sql, $notebook ? [$owner, $notebook] : [$owner])->fetchAll() as $p) {
         $liked = $viewer !== null && (bool)q('SELECT 1 FROM post_likes WHERE post_id = ? AND user_id = ?', [$p['id'], $viewer])->fetch();
         $out[] = post_row($p, (int)$p['likes'], $liked);
     }
     return $out;
 }
 
-function load_lists(int $owner, bool $onlyPublic): array
+function load_lists(int $owner, bool $onlyPublic, int $notebook = 0): array
 {
-    $lists = q('SELECT * FROM interest_lists WHERE user_id = ?' . ($onlyPublic ? ' AND is_public = 1' : '') . ' ORDER BY id', [$owner])->fetchAll();
+    $lists = q('SELECT * FROM interest_lists WHERE user_id = ?' . ($notebook ? ' AND notebook_id = ?' : '') . ($onlyPublic ? ' AND is_public = 1' : '') . ' ORDER BY id',
+        $notebook ? [$owner, $notebook] : [$owner])->fetchAll();
     $out = [];
     foreach ($lists as $l) {
         $items = [];
@@ -264,7 +396,7 @@ function load_lists(int $owner, bool $onlyPublic): array
             $items[] = ['id' => (int)$it['id'], 'text' => $it['text'], 'note' => $it['note'],
                 'image' => upload_url($it['image_id'] ? (int)$it['image_id'] : null), 'image_id' => (int)($it['image_id'] ?? 0)];
         }
-        $out[] = ['id' => (int)$l['id'], 'title' => $l['title'], 'emoji' => $l['emoji'], 'layout' => $l['layout'],
+        $out[] = ['id' => (int)$l['id'], 'nb' => (int)$l['notebook_id'], 'title' => $l['title'], 'emoji' => $l['emoji'], 'layout' => $l['layout'],
             'public' => (int)$l['is_public'] === 1, 'items' => $items];
     }
     return $out;
@@ -279,21 +411,28 @@ function load_notifications(int $uid): array
     return $out;
 }
 
+function load_styles(int $uid): array
+{
+    return array_map(fn($r) => ['id' => (int)$r['id'], 'name' => $r['name'], 'design' => json_col($r['design'], default_design())],
+        q('SELECT * FROM notebook_styles WHERE user_id = ? ORDER BY id', [$uid])->fetchAll());
+}
+
 function notebook_bootstrap(int $uid): array
 {
     $p = ensure_profile($uid);
+    ensure_notebooks($uid);
     $notify = json_col($p['notify'] ?? null, ['like' => 1]);
-    $friends = count(friend_ids($uid));
-    $design = profile_design($p);
     return [
         'profile' => ['slug' => $p['slug'], 'bio' => $p['bio'], 'public' => (int)$p['is_public'] === 1, 'guest' => (int)$p['guest_view'] === 1,
-            'share' => profile_share($p), 'notify' => $notify, 'friends' => $friends],
-        'design' => $design,
-        'cover_url' => upload_url($design['cover_img'] ? (int)$design['cover_img'] : null),
+            'notify' => $notify, 'friends' => count(friend_ids($uid))],
+        'notebooks' => load_notebooks($uid),
+        'styles' => load_styles($uid),
         'stickers_up' => array_map(fn($r) => ['id' => (int)$r['id'], 'url' => upload_url((int)$r['id'])],
             q("SELECT id FROM uploads WHERE user_id = ? AND kind = 'sticker' ORDER BY id DESC LIMIT 40", [$uid])->fetchAll()),
         'posts' => load_posts($uid, false, $uid),
         'lists' => load_lists($uid, false),
+        'timetable' => load_timetable($uid),
+        'subjects' => load_subjects($uid),
         'notes' => load_notifications($uid),
         'unread' => unread_count($uid),
     ];
@@ -323,6 +462,25 @@ function photo_in(int $uid, array $in, string $key = 'image_id'): ?int
     return own_upload($uid, $id, 'photo') ? $id : null;
 }
 
+/** Drop a deleted picture from every notebook design and saved style that uses it. */
+function forget_upload(int $uid, int $id): void
+{
+    foreach (q('SELECT id, design FROM notebooks WHERE user_id = ?', [$uid])->fetchAll() as $nb) {
+        $d = nb_design($nb);
+        $old = json_encode($d);
+        if ((int)$d['cover_img'] === $id) $d['cover_img'] = 0;
+        $d['stickers'] = array_values(array_filter((array)$d['stickers'], fn($s) => ($s['k'] ?? '') !== 'up:' . $id));
+        if (json_encode($d) !== $old) q('UPDATE notebooks SET design = ? WHERE id = ?', [json_encode($d), $nb['id']]);
+    }
+    foreach (q('SELECT id, design FROM notebook_styles WHERE user_id = ?', [$uid])->fetchAll() as $st) {
+        $d = json_col($st['design'], default_design());
+        if ((int)$d['cover_img'] === $id) { $d['cover_img'] = 0; q('UPDATE notebook_styles SET design = ? WHERE id = ?', [json_encode($d), $st['id']]); }
+    }
+    $p = ensure_profile($uid);
+    $d = profile_design($p);
+    if ((int)$d['cover_img'] === $id) { $d['cover_img'] = 0; q('UPDATE profiles SET design = ? WHERE user_id = ?', [json_encode($d), $uid]); }
+}
+
 function notebook_action(int $uid, string $action, array $in): void
 {
     switch ($action) {
@@ -341,11 +499,6 @@ function notebook_action(int $uid, string $action, array $in): void
         if (array_key_exists('bio', $in)) q('UPDATE profiles SET bio = ? WHERE user_id = ?', [mb_substr(trim((string)$in['bio']), 0, 300), $uid]);
         if (array_key_exists('public', $in)) q('UPDATE profiles SET is_public = ? WHERE user_id = ?', [!empty($in['public']) ? 1 : 0, $uid]);
         if (array_key_exists('guest', $in)) q('UPDATE profiles SET guest_view = ? WHERE user_id = ?', [!empty($in['guest']) ? 1 : 0, $uid]);
-        if (isset($in['share']) && is_array($in['share'])) {
-            $share = profile_share($p);
-            foreach (SHARE_KEYS as $k) if (array_key_exists($k, $in['share'])) $share[$k] = !empty($in['share'][$k]) ? 1 : 0;
-            q('UPDATE profiles SET share = ? WHERE user_id = ?', [json_encode($share), $uid]);
-        }
         if (isset($in['notify']) && is_array($in['notify'])) {
             $n = json_col($p['notify'] ?? null, ['like' => 1]);
             foreach (NOTIFY_KEYS as $k) if (array_key_exists($k, $in['notify'])) $n[$k] = !empty($in['notify'][$k]) ? 1 : 0;
@@ -354,29 +507,83 @@ function notebook_action(int $uid, string $action, array $in): void
         ok();
     }
 
-    case 'x.design.save': {
-        ensure_profile($uid);
+    // ----- notebooks -----
+    case 'x.nb.add': {
+        ensure_notebooks($uid);
+        if ((int)q('SELECT COUNT(*) c FROM notebooks WHERE user_id = ?', [$uid])->fetch()['c'] >= MAX_NOTEBOOKS) fail(400, 'That is plenty of notebooks! Delete one first.');
+        $title = str_in($in, 'title', 80);
+        $sections = clean_sections($in['sections'] ?? []);
+        $design = clean_design($uid, (array)($in['design'] ?? []), false);
+        q('INSERT INTO notebooks (user_id, title, sections, design, is_public) VALUES (?, ?, ?, ?, 0)', [$uid, $title, implode(',', $sections), json_encode($design)]);
+        $id = (int)db()->lastInsertId();
+        ok(['notebook' => nb_row(own_notebook($uid, $id))]);
+    }
+
+    case 'x.nb.save': {
+        $id = id_in($in);
+        own_notebook($uid, $id);
+        if (array_key_exists('title', $in)) q('UPDATE notebooks SET title = ? WHERE id = ?', [str_in($in, 'title', 80), $id]);
+        if (array_key_exists('intro', $in)) q('UPDATE notebooks SET intro = ? WHERE id = ?', [mb_substr(trim((string)$in['intro']), 0, 300), $id]);
+        if (array_key_exists('sections', $in)) q('UPDATE notebooks SET sections = ? WHERE id = ?', [implode(',', clean_sections($in['sections'])), $id]);
+        if (array_key_exists('public', $in)) q('UPDATE notebooks SET is_public = ? WHERE id = ?', [!empty($in['public']) ? 1 : 0, $id]);
+        ok(['notebook' => nb_row(own_notebook($uid, $id))]);
+    }
+
+    case 'x.nb.design': {
+        $id = id_in($in);
+        own_notebook($uid, $id);
         $d = clean_design($uid, (array)($in['design'] ?? []));
-        q('UPDATE profiles SET design = ? WHERE user_id = ?', [json_encode($d), $uid]);
+        q('UPDATE notebooks SET design = ? WHERE id = ?', [json_encode($d), $id]);
         ok(['design' => $d, 'cover_url' => upload_url($d['cover_img'] ? (int)$d['cover_img'] : null)]);
     }
+
+    case 'x.nb.planner': {   // use a notebook's look (not its stickers) for the planner itself
+        $nb = own_notebook($uid, id_in($in));
+        ensure_profile($uid);
+        $d = clean_design($uid, nb_design($nb), false);
+        q('UPDATE profiles SET design = ? WHERE user_id = ?', [json_encode($d), $uid]);
+        ok();
+    }
+
+    case 'x.nb.delete': {
+        $id = id_in($in);
+        own_notebook($uid, $id);
+        foreach (q('SELECT image_id FROM posts WHERE notebook_id = ? AND user_id = ? AND image_id IS NOT NULL', [$id, $uid])->fetchAll() as $r) delete_upload($uid, (int)$r['image_id']);
+        q('DELETE FROM posts WHERE notebook_id = ? AND user_id = ?', [$id, $uid]);
+        foreach (q('SELECT i.image_id FROM interest_items i JOIN interest_lists l ON l.id = i.list_id WHERE l.notebook_id = ? AND l.user_id = ? AND i.image_id IS NOT NULL', [$id, $uid])->fetchAll() as $r) delete_upload($uid, (int)$r['image_id']);
+        foreach (q('SELECT id FROM interest_lists WHERE notebook_id = ? AND user_id = ?', [$id, $uid])->fetchAll() as $r) {
+            q('DELETE FROM interest_items WHERE list_id = ?', [$r['id']]);
+            q('DELETE FROM interest_lists WHERE id = ?', [$r['id']]);
+        }
+        q('DELETE FROM notebooks WHERE id = ?', [$id]);
+        ok();
+    }
+
+    // ----- "my styles": looks saved to reuse -----
+    case 'x.style.save': {
+        if ((int)q('SELECT COUNT(*) c FROM notebook_styles WHERE user_id = ?', [$uid])->fetch()['c'] >= MAX_STYLES) fail(400, 'You have saved plenty of styles. Delete one first.');
+        $d = clean_design($uid, (array)($in['design'] ?? []), false);
+        q('INSERT INTO notebook_styles (user_id, name, design) VALUES (?, ?, ?)', [$uid, str_in($in, 'name', 60), json_encode($d)]);
+        ok(['styles' => load_styles($uid)]);
+    }
+
+    case 'x.style.delete':
+        q('DELETE FROM notebook_styles WHERE id = ? AND user_id = ?', [id_in($in), $uid]);
+        ok(['styles' => load_styles($uid)]);
 
     case 'x.upload.delete': {
         $id = id_in($in);
         $row = own_upload($uid, $id);
         if (!$row) fail(404, 'Picture not found.');
         // pictures that are still used somewhere stay; this is for stickers and covers you no longer want
-        $p = ensure_profile($uid);
-        $design = profile_design($p);
-        if ((int)$design['cover_img'] === $id) $design['cover_img'] = 0;
-        $design['stickers'] = array_values(array_filter($design['stickers'], fn($s) => $s['k'] !== 'up:' . $id));
-        q('UPDATE profiles SET design = ? WHERE user_id = ?', [json_encode($design), $uid]);
+        forget_upload($uid, $id);
         q('UPDATE posts SET image_id = NULL WHERE image_id = ? AND user_id = ?', [$id, $uid]);
         q('UPDATE interest_items SET image_id = NULL WHERE image_id = ? AND list_id IN (SELECT id FROM interest_lists WHERE user_id = ?)', [$id, $uid]);
         delete_upload($uid, $id);
-        ok(['design' => $design]);
+        ok(['notebooks' => load_notebooks($uid)]);
     }
 
+    // ----- blog posts and interest lists (each belongs to one notebook) -----
     case 'x.post.save': {
         $title = str_in($in, 'title', 150);
         $body = mb_substr(trim((string)($in['body'] ?? '')), 0, 20000);
@@ -390,7 +597,8 @@ function notebook_action(int $uid, string $action, array $in): void
             if ($old['image_id'] && (int)$old['image_id'] !== $img) delete_upload($uid, (int)$old['image_id']);
             ok(['id' => $id]);
         }
-        q('INSERT INTO posts (user_id, title, body, image_id, is_public) VALUES (?, ?, ?, ?, ?)', [$uid, $title, $body, $img, $public]);
+        $nb = notebook_in($uid, $in);
+        q('INSERT INTO posts (user_id, notebook_id, title, body, image_id, is_public) VALUES (?, ?, ?, ?, ?, ?)', [$uid, $nb, $title, $body, $img, $public]);
         ok(['id' => (int)db()->lastInsertId()]);
     }
 
@@ -410,11 +618,12 @@ function notebook_action(int $uid, string $action, array $in): void
     }
 
     case 'x.list.add': {
+        $nb = notebook_in($uid, $in);
         $title = str_in($in, 'title', 80);
         $emoji = in_array($in['emoji'] ?? '', LIST_EMOJI, true) ? $in['emoji'] : '';
         $layout = ($in['layout'] ?? '') === 'grid' ? 'grid' : 'list';
         if ((int)q('SELECT COUNT(*) c FROM interest_lists WHERE user_id = ?', [$uid])->fetch()['c'] >= 40) fail(400, 'That is plenty of lists! Delete one first.');
-        q('INSERT INTO interest_lists (user_id, title, emoji, layout, is_public) VALUES (?, ?, ?, ?, ?)', [$uid, $title, $emoji, $layout, !empty($in['public']) ? 1 : 0]);
+        q('INSERT INTO interest_lists (user_id, notebook_id, title, emoji, layout, is_public) VALUES (?, ?, ?, ?, ?, ?)', [$uid, $nb, $title, $emoji, $layout, !empty($in['public']) ? 1 : 0]);
         ok(['id' => (int)db()->lastInsertId()]);
     }
 
@@ -460,8 +669,10 @@ function notebook_action(int $uid, string $action, array $in): void
         if (!$post) fail(404, 'That post was not found.');
         $owner = (int)$post['user_id'];
         $prof = ensure_profile($owner);
-        $share = profile_share($prof);
-        if ($owner !== $uid && (!can_view_profile($prof, $uid) || !(int)$post['is_public'] || empty($share['blog']))) fail(404, 'That post is private.');
+        if ($owner !== $uid) {
+            $nb = q('SELECT * FROM notebooks WHERE id = ? AND user_id = ? AND is_public = 1', [(int)$post['notebook_id'], $owner])->fetch();
+            if (!$nb || !in_array('blog', nb_sections($nb), true) || !can_view_profile($prof, $uid) || !(int)$post['is_public']) fail(404, 'That post is private.');
+        }
         $have = q('SELECT 1 FROM post_likes WHERE post_id = ? AND user_id = ?', [$pid, $uid])->fetch();
         if ($have) {
             q('DELETE FROM post_likes WHERE post_id = ? AND user_id = ?', [$pid, $uid]);
@@ -474,7 +685,6 @@ function notebook_action(int $uid, string $action, array $in): void
         }
         ok(['liked' => !$have, 'likes' => (int)q('SELECT COUNT(*) c FROM post_likes WHERE post_id = ?', [$pid])->fetch()['c']]);
     }
-
 
     case 'x.notes.read':
         q('UPDATE notifications SET is_read = 1 WHERE user_id = ?', [$uid]);

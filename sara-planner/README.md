@@ -22,10 +22,10 @@ sara-planner/
 ├── social.php         People, friends, profile pictures, notebook covers (used by people.php, friend.php, messages)
 ├── people.php         Friends, friend requests and search (see ../MESSAGES.md)
 ├── friend.php         A friend's notebook with today's plan
-├── profile.php        Edit your name, bio, picture and notebook cover
+├── profile.php        Edit your name, picture and cover (the rest of your profile is the Profile tab)
 ├── messages.php       Messages between users
-├── notebook.php       Sharing a notebook: privacy, design, blog, interest lists, likes, alerts, pictures (used by api.php)
-├── u.php              A shared notebook (u.php?u=pagename), for friends, members or visitors
+├── notebook.php       Notebooks: pages, designs, styles, blog, interest lists, likes, alerts, pictures (used by api.php)
+├── u.php              A profile (u.php?u=pagename): its notebooks, opened in the same notebook layout
 ├── explore.php        Directory of public notebooks
 ├── upload.php         Picture upload (blog photos, interest pictures, banners, stickers)
 ├── media.php          Sends a picture, only to people who may see it (pictures live in the database)
@@ -130,24 +130,26 @@ and get a new code. Accounts made before you turned this on are not asked.
 
 Leave both empty and sign-up works like before, without the code.
 
-## Share your notebook (blog, interests, design)
+## Your profile is your notebooks
 
-Four extra tabs sit next to Expenses:
+The whole site is one notebook: the same top bar, the same binder with its spiral and side tabs on every page (planner, People, Messages, Explore, profiles). The **Profile** tab (or the *Hi, name* button in the top bar) is where you manage yours.
 
-- **Blog**: write posts with an optional picture. Each post is private or public.
-- **Interests**: lists of favourite movies, singers, clothes (with pictures) or anything else, as a list or a picture grid. Each list is private or public.
-- **Profile**: choose a page name and bio, decide who can see the notebook, and design it (banner or your own banner picture, paper style and colour, accent colour, handwriting, stickers) with a live preview. Name, profile picture and notebook cover are changed on the People page (**Edit profile**).
+- **Notebooks**: make as many as you like (one for interests, one for plans, one for a blog…). Each has a **cover**, an intro and the **pages** you pick: *Interests*, *Blog*, *Timetable* (your repeating weekly hours) and *Studying* (subject progress, never notes). Blog posts and interest lists live inside the notebook you write them in, and you add them right on the notebook's pages.
+- **Decorate**: ready-made looks, or your own cover colours or picture, paper colour, accent colour, paper style, handwriting and binding (spiral, stitched, plain). Save a look as **My styles** and reuse it on any notebook, or use it for your planner too. **Stickers** (emoji or your own pictures) are placed on the pages of the notebook, and you drag them where you want.
 - **Alerts**: likes on your posts, with a switch to turn them off.
+- Name, profile picture and the cover used in the People shelf are changed on **Name & picture** (`profile.php`).
 
 People connect as **friends** (People page, see `MESSAGES.md`); friends can message each other and see each other's day.
 
-Nothing is shared by default. In **Profile → Who can see your notebook**:
+Nothing is shared by default. In **Profile**:
 
-- *Public profile* lists the notebook in **Explore** and lets anyone with an account open it (they can send you a friend request from there).
+- *Public profile* lists you in **Explore** and **People → Public notebooks** (never your own) and lets anyone with an account open it. They can send you a friend request from there.
 - *Visible without logging in* also opens it to visitors without an account.
-- *What to show* picks which parts appear (blog, interests, weekly timetable, study subjects). Your planner itself is never shown.
+- Each notebook has *Show this notebook on my profile*. Posts and lists inside it still need to be marked public. Your planner itself is never shown.
 
-Pictures are saved in the database (like profile pictures), so no upload folder is needed, and `media.php` only sends a picture to people who may see the post, list or notebook it belongs to.
+Accounts from before notebooks existed get one notebook ("My notebook") made from their old settings, with their posts and lists moved into it.
+
+Pictures are saved in the database (like profile pictures), so no upload folder is needed, and `media.php` only sends a picture to people who may see the notebook page it belongs to.
 The extra tables and columns are added automatically the first time the site runs, or import `sql/schema.sql` again. Pictures are re-drawn on upload, which shrinks them and removes hidden data such as camera location.
 
 ## Security that's already built in

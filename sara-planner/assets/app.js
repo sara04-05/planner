@@ -62,6 +62,10 @@ async function reload(){
     const data=await api('bootstrap');
     const p=loadPrefs();
     state={tab:'day',taskFilter:'open',expPeriod:'month',...p,...data,showAll:false};
+    // Blog and Interests are pages of your notebooks now (Profile tab); other pages link here with ?tab=
+    const want=new URLSearchParams(location.search).get('tab');
+    if(want&&document.querySelector('nav[aria-label="Planner sections"] .tab[data-tab="'+want+'"]')){state.tab=want;history.replaceState(null,'',location.pathname)}
+    if(state.tab==='blog'||state.tab==='interests')state.tab='profile';
     render();
     if(state.google&&state.google.connected&&state.google.needsSync&&!gcalBusy)gcalRun(true);
   }catch(err){
@@ -723,8 +727,9 @@ let drawing=false; // true while the page is re-drawn: boxes removed then fire c
 function render(focusId){
   if(!state)return;
   drawing=true;
-  document.querySelectorAll('.tab').forEach(t=>t.setAttribute('aria-selected',t.dataset.tab===state.tab));
-  {const t=document.querySelector('.tab[aria-selected="true"]'),r=t&&t.parentElement;   // phone: keep the open tab in view in the scrolling tab strip
+  const PT='nav[aria-label="Planner sections"] .tab';   // the notebook inside the Profile tab has tabs of its own
+  document.querySelectorAll(PT).forEach(t=>t.setAttribute('aria-selected',t.dataset.tab===state.tab));
+  {const t=document.querySelector(PT+'[aria-selected="true"]'),r=t&&t.parentElement;   // phone: keep the open tab in view in the scrolling tab strip
    if(r&&r.scrollWidth>r.clientWidth){const a=t.getBoundingClientRect(),b=r.getBoundingClientRect();r.scrollBy({left:a.left-b.left-(b.width-a.width)/2})}}
   // Keep text typed in other "+ Add …" boxes that hasn't been added yet, so re-drawing doesn't wipe it
   const drafts=[...view.querySelectorAll('form.mini input[id]:not([type=date])')].filter(i=>i.value.trim()).map(i=>[i.id,i.value]);
@@ -1007,7 +1012,7 @@ paintThemeBtn();
  const M={connected:'Google Calendar is connected. Your hours are on their way to the "Splanner" calendar.',disconnected:'Google Calendar is disconnected. You can delete the "Splanner" calendar in Google if you don\'t need it.',cancelled:'Google Calendar was not connected.','no-calendar':'Please tick the calendar box on Google\'s page so the planner can add your hours.','not-set-up':'Google Calendar is not set up on this site yet.',error:"Couldn't connect Google Calendar. Please try again."};
  if(r){if(M[r])setTimeout(()=>toast(M[r]),300);history.replaceState(null,'',location.pathname)}}
 // Blog, Interests, Profile and Alerts are drawn by social.js
-for(const k of ['blog','interests','profile','alerts'])V[k]=()=>window.SPLX?window.SPLX.html(k):'';
+for(const k of ['profile','alerts'])V[k]=()=>window.SPLX?window.SPLX.html(k):'';
 window.SPL_RENDER=render;
 window.SPL_TAB=()=>state&&state.tab;
 document.getElementById('coil').innerHTML='<span></span>'.repeat(90);
