@@ -3,6 +3,7 @@
 declare(strict_types=1);
 require __DIR__ . '/db.php';
 require __DIR__ . '/social.php';
+require __DIR__ . '/notebook.php';
 
 header('Content-Type: application/json; charset=utf-8');
 header('Cache-Control: no-store');

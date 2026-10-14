@@ -174,12 +174,31 @@ CREATE TABLE IF NOT EXISTS email_codes (
   FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
 ) ENGINE=InnoDB;
 
--- ---- Notebook sharing: profile, blog, interests, follows, notifications, uploaded pictures ----
--- One row per user. is_public = listed in People and open to logged-in users; guest_view = also open to visitors who are not logged in.
+-- Chat between users. sent_at is a Unix time, so it shows right in every time zone.
+CREATE TABLE IF NOT EXISTS messages (
+  id       INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+  from_id  INT UNSIGNED NOT NULL,
+  to_id    INT UNSIGNED NOT NULL,
+  body     TEXT NOT NULL,
+  sent_at  INT UNSIGNED NOT NULL,
+  is_read  TINYINT UNSIGNED NOT NULL DEFAULT 0,
+  INDEX idx_msg_to (to_id, from_id),
+  INDEX idx_msg_from (from_id, to_id),
+  FOREIGN KEY (from_id) REFERENCES users(id) ON DELETE CASCADE,
+  FOREIGN KEY (to_id) REFERENCES users(id) ON DELETE CASCADE
+) ENGINE=InnoDB;
+
+-- What other people see about you: a short bio, a profile picture and the colour of your notebook cover.
+-- avatar holds the picture itself ("image/jpeg;<base64>"), so no upload folder is needed on the host.
 CREATE TABLE IF NOT EXISTS profiles (
-  user_id    INT UNSIGNED PRIMARY KEY,
-  slug       VARCHAR(40) NOT NULL UNIQUE,
-  bio        VARCHAR(300) NOT NULL DEFAULT '',
+  user_id   INT UNSIGNED PRIMARY KEY,
+  bio       VARCHAR(300) NOT NULL DEFAULT '',
+  cover     VARCHAR(20)  NOT NULL DEFAULT 'meadow',
+  words     VARCHAR(60)  NOT NULL DEFAULT '',
+  avatar    MEDIUMTEXT NULL,
+  avatar_v  INT UNSIGNED NOT NULL DEFAULT 0,
+  -- notebook sharing (added later): page name, who may see the notebook, what is shown, the design, which alerts to get
+  slug       VARCHAR(40) NULL UNIQUE,
   is_public  TINYINT(1) NOT NULL DEFAULT 0,
   guest_view TINYINT(1) NOT NULL DEFAULT 0,
   share      TEXT NULL,
@@ -188,11 +207,25 @@ CREATE TABLE IF NOT EXISTS profiles (
   FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
 ) ENGINE=InnoDB;
 
+-- Friends. from_id asked to_id; accepted = 1 once to_id said yes. Friends can see each other's day.
+CREATE TABLE IF NOT EXISTS friends (
+  from_id   INT UNSIGNED NOT NULL,
+  to_id     INT UNSIGNED NOT NULL,
+  accepted  TINYINT UNSIGNED NOT NULL DEFAULT 0,
+  sent_at   INT UNSIGNED NOT NULL,
+  PRIMARY KEY (from_id, to_id),
+  INDEX idx_friend_to (to_id),
+  FOREIGN KEY (from_id) REFERENCES users(id) ON DELETE CASCADE,
+  FOREIGN KEY (to_id) REFERENCES users(id) ON DELETE CASCADE
+
+-- ---- Notebook sharing: pictures, blog, interest lists, likes, alerts ----
+-- Pictures are kept in the database (like profile pictures), so no upload folder is needed on the host.
 CREATE TABLE IF NOT EXISTS uploads (
   id         INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
   user_id    INT UNSIGNED NOT NULL,
   kind       VARCHAR(10) NOT NULL,
-  file       VARCHAR(120) NOT NULL,
+  mime       VARCHAR(30) NOT NULL,
+  data       MEDIUMTEXT NOT NULL,
   created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
   FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
 ) ENGINE=InnoDB;
@@ -235,14 +268,6 @@ CREATE TABLE IF NOT EXISTS interest_items (
   FOREIGN KEY (list_id) REFERENCES interest_lists(id) ON DELETE CASCADE
 ) ENGINE=InnoDB;
 
-CREATE TABLE IF NOT EXISTS follows (
-  follower_id INT UNSIGNED NOT NULL,
-  followee_id INT UNSIGNED NOT NULL,
-  PRIMARY KEY (follower_id, followee_id),
-  FOREIGN KEY (follower_id) REFERENCES users(id) ON DELETE CASCADE,
-  FOREIGN KEY (followee_id) REFERENCES users(id) ON DELETE CASCADE
-) ENGINE=InnoDB;
-
 CREATE TABLE IF NOT EXISTS notifications (
   id         INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
   user_id    INT UNSIGNED NOT NULL,
@@ -253,18 +278,4 @@ CREATE TABLE IF NOT EXISTS notifications (
   created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
   UNIQUE KEY uq_notif_ref (user_id, ref),
   FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
-) ENGINE=InnoDB;
-
--- Direct messages between people who follow each other
-CREATE TABLE IF NOT EXISTS messages (
-  id           INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
-  sender_id    INT UNSIGNED NOT NULL,
-  recipient_id INT UNSIGNED NOT NULL,
-  body         TEXT NOT NULL,
-  is_read      TINYINT(1) NOT NULL DEFAULT 0,
-  created_at   TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-  INDEX idx_msg_to (recipient_id, is_read),
-  INDEX idx_msg_pair (sender_id, recipient_id),
-  FOREIGN KEY (sender_id) REFERENCES users(id) ON DELETE CASCADE,
-  FOREIGN KEY (recipient_id) REFERENCES users(id) ON DELETE CASCADE
 ) ENGINE=InnoDB;

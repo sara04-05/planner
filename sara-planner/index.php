@@ -2,6 +2,7 @@
 declare(strict_types=1);
 require __DIR__ . '/db.php';
 require __DIR__ . '/social.php';
+require __DIR__ . '/notebook.php';
 require __DIR__ . '/layout.php';
 
 $uid = require_login();
@@ -14,7 +15,8 @@ if (!$user) {            // account was deleted
 $prof = ensure_profile($uid);
 $design = profile_design($prof);
 $unread = unread_count($uid);
-$msgUnread = msg_unread($uid);
+$chatUnread = chat_unread($uid);
+$requests = friend_requests_count($uid);
 ?>
 <!DOCTYPE html>
 <html lang="en"<?= design_attrs($design, 'accent') ?>>
@@ -37,8 +39,8 @@ $msgUnread = msg_unread($uid);
     <div class="brand"><?= logo_html() ?><span class="hello"><i class="avatar" aria-hidden="true"><?= h(mb_strtoupper(mb_substr($user['name'], 0, 1))) ?></i><span>Hi, <?= h($user['name']) ?></span></span></div>
     <div class="top-r">
       <span class="date-pill"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="5" width="18" height="16" rx="3"/><path d="M3 10h18M8 3v4M16 3v4"/></svg><span class="chip-date" id="todayChip"></span></span>
-      <a class="btn" href="people.php" aria-label="People"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2M9 11a4 4 0 1 0 0-8 4 4 0 0 0 0 8zM22 21v-2a4 4 0 0 0-3-3.9M16 3.1a4 4 0 0 1 0 7.8"/></svg>People</a>
-      <button class="btn bell" data-act="tab" data-tab="messages" aria-label="Messages"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 12a8 8 0 0 1-11.6 7.1L3 21l1.9-5.4A8 8 0 1 1 21 12z"/></svg>Messages<span class="badge" id="msgBadge"<?= $msgUnread ? '' : ' hidden' ?>><?= $msgUnread ?></span></button>
+      <a class="btn bell" href="people.php" aria-label="People"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2M9 11a4 4 0 1 0 0-8 4 4 0 0 0 0 8zM22 21v-2a4 4 0 0 0-3-3.9M16 3.1a4 4 0 0 1 0 7.8"/></svg>People<?php if ($requests): ?><span class="badge"><?= $requests ?></span><?php endif; ?></a>
+      <a class="btn bell" href="messages.php" id="msgBtn" aria-label="Messages"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 12a8 8 0 0 1-11.6 7.1L3 21l1.9-5.4A8 8 0 1 1 21 12z"/></svg>Messages<?php if ($chatUnread): ?><span class="badge"><?= $chatUnread ?></span><?php endif; ?></a>
       <button class="btn bell" data-act="tab" data-tab="alerts" aria-label="Notifications"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M18 8a6 6 0 0 0-12 0c0 7-3 9-3 9h18s-3-2-3-9M13.7 21a2 2 0 0 1-3.4 0"/></svg><span class="badge" id="bellBadge"<?= $unread ? '' : ' hidden' ?>><?= $unread ?></span></button>
       <?php if (is_admin($uid)): ?><a class="btn" href="admin.php">Users</a><?php endif; ?>
       <button class="btn" data-lang-btn>Shqip</button>
@@ -64,7 +66,6 @@ $msgUnread = msg_unread($uid);
       <div class="tab-gap"></div>
       <button class="tab" role="tab" data-act="tab" data-tab="blog">Blog</button>
       <button class="tab" role="tab" data-act="tab" data-tab="interests">Interests</button>
-      <button class="tab" role="tab" data-act="tab" data-tab="messages">Messages<?= $msgUnread ? ' <span class="badge" id="tabMsgBadge">' . $msgUnread . '</span>' : '' ?></button>
       <button class="tab" role="tab" data-act="tab" data-tab="profile">Profile</button>
       <button class="tab" role="tab" data-act="tab" data-tab="alerts">Alerts<?= $unread ? ' <span class="badge" id="tabBadge">' . $unread . '</span>' : '' ?></button>
     </nav>

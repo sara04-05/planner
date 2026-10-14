@@ -3,6 +3,7 @@
 declare(strict_types=1);
 require __DIR__ . '/db.php';
 require __DIR__ . '/social.php';
+require __DIR__ . '/notebook.php';
 require __DIR__ . '/layout.php';
 
 $viewer = current_user_id();
@@ -35,8 +36,13 @@ $design = profile_design($prof);
 $share = profile_share($prof);
 $isMe = $viewer === $owner;
 $cover = upload_url($design['cover_img'] ? (int)$design['cover_img'] : null);
-$followers = (int)q('SELECT COUNT(*) c FROM follows WHERE followee_id = ?', [$owner])->fetch()['c'];
-$following = $viewer && !$isMe && q('SELECT 1 FROM follows WHERE follower_id = ? AND followee_id = ?', [$viewer, $owner])->fetch();
+$state = $viewer && !$isMe ? friendship($viewer, $owner) : 'none';   // friends, sent, received or none (see people.php)
+$person = person($owner);
+if (!$viewer) $person['avatar_v'] = 0;   // profile pictures are only sent to logged-in people
+function friend_btn(string $do, int $id, string $label, string $cls, string $back): string
+{
+    return '<form method="post" action="people.php" class="inline"><input type="hidden" name="csrf" value="' . h(csrf_token()) . '"><input type="hidden" name="do" value="' . $do . '"><input type="hidden" name="id" value="' . $id . '"><input type="hidden" name="back" value="' . h($back) . '"><button class="' . $cls . '">' . h($label) . '</button></form>';
+}
 $posts = !empty($share['blog']) ? load_posts($owner, true, $viewer) : [];
 $lists = !empty($share['interests']) ? load_lists($owner, true) : [];
 
@@ -68,16 +74,21 @@ $WD = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
     <?= banner_html($design, $cover) ?>
     <div class="nb-page"<?= design_attrs($design, 'page') ?>>
       <div class="who">
-        <div class="av" aria-hidden="true"><?= h(mb_strtoupper(mb_substr($name, 0, 1))) ?></div>
+        <?= avatar_html($person, 'lg') ?>
         <div style="min-width:0;flex:1">
           <h2 translate="no"><?= h($name) ?></h2>
-          <div class="hint2">@<?= h($prof['slug']) ?> · <span id="fc"><?= $followers ?></span> follower<?= $followers === 1 ? '' : 's' ?></div>
+          <div class="hint2">@<?= h($prof['slug']) ?></div>
         </div>
+        <?php $back = 'u.php?u=' . $prof['slug']; ?>
         <?php if ($viewer && !$isMe): ?>
-          <?php if (is_mutual($viewer, $owner)): ?><a class="btn" href="index.php#chat-<?= $owner ?>">Message</a><?php endif; ?>
-          <button class="btn <?= $following ? '' : 'primary' ?>" id="followBtn" data-uid="<?= $owner ?>"><?= $following ? 'Following' : 'Follow' ?></button>
+          <?php if ($state === 'friends'): ?>
+            <a class="btn primary" href="messages.php?with=<?= $owner ?>">Message</a>
+            <a class="btn" href="friend.php?id=<?= $owner ?>">Today's plan</a>
+          <?php elseif ($state === 'sent'): ?><?= friend_btn('cancel', $owner, 'Requested · cancel', 'btn ghost', $back) ?>
+          <?php elseif ($state === 'received'): ?><?= friend_btn('accept', $owner, 'Accept friend request', 'btn primary', $back) ?>
+          <?php else: ?><?= friend_btn('add', $owner, 'Add friend', 'btn primary', $back) ?><?php endif; ?>
         <?php elseif (!$viewer): ?>
-          <a class="btn primary" href="login.php">Log in to follow</a>
+          <a class="btn primary" href="login.php">Log in to add friend</a>
         <?php endif; ?>
       </div>
       <?php if ($prof['bio'] !== ''): ?><p class="bio" translate="no"><?= nl2br(h($prof['bio'])) ?></p><?php endif; ?>
@@ -161,13 +172,6 @@ $WD = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
 (function(){
   var csrf=(document.querySelector('meta[name="csrf-token"]')||{}).content||'';
   function call(action,data){return fetch('api.php?action='+action,{method:'POST',credentials:'same-origin',headers:{'Content-Type':'application/json','X-CSRF-Token':csrf},body:JSON.stringify(data)}).then(function(r){return r.json().then(function(b){if(!r.ok)throw new Error(b.error||'Something went wrong.');return b})})}
-  var f=document.getElementById('followBtn');
-  if(f)f.addEventListener('click',function(){
-    call('x.follow',{user_id:+f.dataset.uid}).then(function(r){
-      f.textContent=r.following?'Following':'Follow';f.classList.toggle('primary',!r.following);
-      document.getElementById('fc').textContent=r.followers;
-    }).catch(function(e){alert(e.message)});
-  });
   document.addEventListener('click',function(e){
     var b=e.target.closest('[data-like]');if(!b)return;
     call('x.like',{post_id:+b.dataset.like}).then(function(r){b.classList.toggle('on',r.liked);b.querySelector('span').textContent=r.likes}).catch(function(e){alert(e.message)});
