@@ -270,6 +270,7 @@ function load_subjects(int $owner): array
 function can_view_profile(array $row, ?int $viewer): bool
 {
     if ($viewer !== null && $viewer === (int)$row['user_id']) return true;
+    if ($viewer !== null && friendship($viewer, (int)$row['user_id']) === 'friends') return true;   // friends see the notebooks shared with them even when the account is private
     if (!(int)$row['is_public']) return false;
     return $viewer !== null || (int)$row['guest_view'] === 1;
 }
@@ -290,11 +291,13 @@ function wants_notice(int $uid, string $type): bool
     return !empty($n[$type]);
 }
 
-/** The page name of someone's shared notebook, or '' when their notebook is private. */
-function public_slug(int $uid): string
+/** The page name of someone's shared notebook, or '' when their notebook is private (friends of the owner always get it). */
+function public_slug(int $uid, ?int $viewer = null): string
 {
     $r = q('SELECT slug, is_public FROM profiles WHERE user_id = ?', [$uid])->fetch();
-    return $r && (int)$r['is_public'] === 1 && !empty($r['slug']) ? (string)$r['slug'] : '';
+    if (!$r || empty($r['slug'])) return '';
+    $friends = $viewer !== null && friendship($viewer, $uid) === 'friends';
+    return (int)$r['is_public'] === 1 || $friends ? (string)$r['slug'] : '';
 }
 
 function unread_count(int $uid): int
