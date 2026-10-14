@@ -2,6 +2,7 @@
 declare(strict_types=1);
 require __DIR__ . '/db.php';
 require __DIR__ . '/layout.php';
+require __DIR__ . '/social.php';
 
 $uid = require_login();
 $user = q('SELECT name FROM users WHERE id = ?', [$uid])->fetch();
@@ -32,8 +33,9 @@ if (!$user) {            // account was deleted
     <div class="brand"><?= logo_html() ?><span>Hi, <?= h($user['name']) ?></span></div>
     <div class="top-r">
       <span class="chip-date" id="todayChip"></span>
-      <?php $unread = chat_unread($uid); ?>
-      <a class="btn" href="chat.php" id="chatBtn">Chat<?php if ($unread): ?> <span class="badge"><?= $unread ?></span><?php endif; ?></a>
+      <?php $unread = chat_unread($uid); $requests = friend_requests_count($uid); ?>
+      <a class="btn" href="people.php">People<?php if ($requests): ?> <span class="badge"><?= $requests ?></span><?php endif; ?></a>
+      <a class="btn" href="messages.php" id="msgBtn">Messages<?php if ($unread): ?> <span class="badge"><?= $unread ?></span><?php endif; ?></a>
       <?php if (is_admin($uid)): ?><a class="btn" href="admin.php">Users</a><?php endif; ?>
       <button class="btn" data-lang-btn>Shqip</button>
       <button class="btn" id="themeBtn" data-act="theme" aria-label="Switch theme"></button>

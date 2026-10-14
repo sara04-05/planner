@@ -159,16 +159,19 @@ function upgrade_schema(PDO $pdo): void
         error_log('Could not add users.last_login: ' . $e->getMessage());
     }
 
-    // Chat between users: same table as in the schema file.
+    // Chat, profiles and friends: same tables as in the schema file.
     try {
         $sql = file_get_contents(__DIR__ . (DB_DRIVER === 'sqlite' ? '/sql/schema-sqlite.sql' : '/sql/schema.sql'));
-        if (preg_match('/CREATE TABLE IF NOT EXISTS messages \\(.*?\\n\\)[^;]*;/s', $sql, $m)) $pdo->exec($m[0]);
+        foreach (['messages', 'profiles', 'friends'] as $t) {
+            if (preg_match("/CREATE TABLE IF NOT EXISTS $t \\(.*?\\n\\)[^;]*;/s", $sql, $m)) $pdo->exec($m[0]);
+        }
         if (DB_DRIVER === 'sqlite') {
             $pdo->exec('CREATE INDEX IF NOT EXISTS idx_msg_to ON messages(to_id,from_id)');
             $pdo->exec('CREATE INDEX IF NOT EXISTS idx_msg_from ON messages(from_id,to_id)');
+            $pdo->exec('CREATE INDEX IF NOT EXISTS idx_friend_to ON friends(to_id)');
         }
     } catch (PDOException $e) {
-        error_log('Could not add the messages table: ' . $e->getMessage());
+        error_log('Could not add the chat / profile / friends tables: ' . $e->getMessage());
     }
 
     // Google Calendar and email codes: same tables as in the schema file. Existing accounts count as confirmed (DEFAULT 1).

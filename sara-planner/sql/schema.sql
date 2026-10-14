@@ -187,3 +187,26 @@ CREATE TABLE IF NOT EXISTS messages (
   FOREIGN KEY (from_id) REFERENCES users(id) ON DELETE CASCADE,
   FOREIGN KEY (to_id) REFERENCES users(id) ON DELETE CASCADE
 ) ENGINE=InnoDB;
+
+-- What other people see about you: a short bio, a profile picture and the colour of your notebook cover.
+-- avatar holds the picture itself ("image/jpeg;<base64>"), so no upload folder is needed on the host.
+CREATE TABLE IF NOT EXISTS profiles (
+  user_id   INT UNSIGNED PRIMARY KEY,
+  bio       VARCHAR(300) NOT NULL DEFAULT '',
+  cover     VARCHAR(20)  NOT NULL DEFAULT 'gingham',
+  avatar    MEDIUMTEXT NULL,
+  avatar_v  INT UNSIGNED NOT NULL DEFAULT 0,
+  FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+) ENGINE=InnoDB;
+
+-- Friends. from_id asked to_id; accepted = 1 once to_id said yes. Friends can see each other's day.
+CREATE TABLE IF NOT EXISTS friends (
+  from_id   INT UNSIGNED NOT NULL,
+  to_id     INT UNSIGNED NOT NULL,
+  accepted  TINYINT UNSIGNED NOT NULL DEFAULT 0,
+  sent_at   INT UNSIGNED NOT NULL,
+  PRIMARY KEY (from_id, to_id),
+  INDEX idx_friend_to (to_id),
+  FOREIGN KEY (from_id) REFERENCES users(id) ON DELETE CASCADE,
+  FOREIGN KEY (to_id) REFERENCES users(id) ON DELETE CASCADE
+) ENGINE=InnoDB;

@@ -5,6 +5,7 @@ declare(strict_types=1);
 
 require __DIR__ . '/db.php';
 require __DIR__ . '/gcal.php';
+require __DIR__ . '/social.php';
 
 header('Content-Type: application/json; charset=utf-8');
 header('Cache-Control: no-store');
@@ -706,7 +707,7 @@ try {
     }
 
     // ---------- chat between users ----------
-    case 'chat.list': {
+    case 'msg.list': {
         // Everyone this user has written with, newest first, with the last message and how many are unread
         $rows = q('SELECT CASE WHEN from_id = ? THEN to_id ELSE from_id END AS other, MAX(id) AS last_id,
                           SUM(CASE WHEN to_id = ? AND is_read = 0 THEN 1 ELSE 0 END) AS unread
@@ -714,16 +715,16 @@ try {
                    GROUP BY other ORDER BY last_id DESC LIMIT 100', [$uid, $uid, $uid, $uid])->fetchAll();
         $people = [];
         foreach ($rows as $r) {
-            $u = q('SELECT id, name FROM users WHERE id = ?', [(int)$r['other']])->fetch();
+            $u = q('SELECT id, name, email FROM users WHERE id = ?', [(int)$r['other']])->fetch();
             $m = q('SELECT from_id, body, sent_at FROM messages WHERE id = ?', [(int)$r['last_id']])->fetch();
             if (!$u || !$m) continue;
-            $people[] = ['id' => (int)$u['id'], 'name' => $u['name'], 'last' => mb_substr($m['body'], 0, 80),
+            $people[] = ['id' => (int)$u['id'], 'name' => $u['name'], 'tag' => name_tag($u['name'], $u['email']), 'last' => mb_substr($m['body'], 0, 80),
                 'mine' => (int)$m['from_id'] === $uid, 'at' => (int)$m['sent_at'], 'unread' => (int)$r['unread']];
         }
         ok(['people' => $people, 'unread' => chat_unread($uid)]);
     }
 
-    case 'chat.find': {
+    case 'msg.find': {
         // Start a chat by typing someone's exact email, so nobody can browse the list of users
         $email = strtolower(str_in($in, 'email', 190));
         $u = q('SELECT id, name FROM users WHERE LOWER(email) = ?', [$email])->fetch();
@@ -732,10 +733,10 @@ try {
         ok(['person' => ['id' => (int)$u['id'], 'name' => $u['name']]]);
     }
 
-    case 'chat.messages': {
+    case 'msg.messages': {
         // The chat with one person. "after" = the last message id the page already has, so polling only gets new ones.
         $other = id_in($in, 'with');
-        $u = q('SELECT id, name FROM users WHERE id = ?', [$other])->fetch();
+        $u = q('SELECT id, name, email FROM users WHERE id = ?', [$other])->fetch();
         if (!$u) fail(404, 'That account no longer exists.');
         $after = isset($in['after']) && is_numeric($in['after']) ? max(0, (int)$in['after']) : 0;
         $rows = q('SELECT id, from_id, body, sent_at FROM messages
@@ -744,10 +745,10 @@ try {
         $msgs = array_map(fn($m) => ['id' => (int)$m['id'], 'mine' => (int)$m['from_id'] === $uid,
             'body' => $m['body'], 'at' => (int)$m['sent_at']], array_reverse($rows));
         q('UPDATE messages SET is_read = 1 WHERE to_id = ? AND from_id = ? AND is_read = 0', [$uid, $other]);
-        ok(['person' => ['id' => (int)$u['id'], 'name' => $u['name']], 'messages' => $msgs, 'unread' => chat_unread($uid)]);
+        ok(['person' => ['id' => (int)$u['id'], 'name' => $u['name'], 'tag' => name_tag($u['name'], $u['email'])], 'messages' => $msgs, 'unread' => chat_unread($uid)]);
     }
 
-    case 'chat.send': {
+    case 'msg.send': {
         $to = id_in($in, 'to');
         if ($to === $uid) fail(400, "You can't message yourself.");
         if (!q('SELECT id FROM users WHERE id = ?', [$to])->fetch()) fail(404, 'That account no longer exists.');
