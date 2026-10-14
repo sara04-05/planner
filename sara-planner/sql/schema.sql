@@ -217,6 +217,7 @@ CREATE TABLE IF NOT EXISTS friends (
   INDEX idx_friend_to (to_id),
   FOREIGN KEY (from_id) REFERENCES users(id) ON DELETE CASCADE,
   FOREIGN KEY (to_id) REFERENCES users(id) ON DELETE CASCADE
+) ENGINE=InnoDB;
 
 -- ---- Notebook sharing: pictures, blog, interest lists, likes, alerts ----
 -- Pictures are kept in the database (like profile pictures), so no upload folder is needed on the host.

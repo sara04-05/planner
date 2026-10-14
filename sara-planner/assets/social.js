@@ -132,7 +132,7 @@ function pvHtml(){
   return `<p class="pv-l">Live preview · this is how your notebook will look</p>
     <div data-accent="${d.accent}">
       <div class="nb-banner edit${d.cover_url?' has-img':''}" id="pvBanner" data-cover="${d.cover}" ${d.cover_url?`style="--img:url('${esc(d.cover_url)}')"`:''}>${bannerInner(d,true)}</div>
-      <div class="nb-page"${attrs}>
+      <div class="nbx-page"${attrs}>
         <div class="who"><div class="av" aria-hidden="true">${esc((name[0]||'S').toUpperCase())}</div><div><h2 translate="no">${esc(name)}</h2><div class="bio" translate="no">${esc(S.profile.bio||'Your bio shows up here.')}</div></div></div>
         <div class="sample"><span class="hl">Today's plan</span> · finish the lab report, read chapter 4,<br>buy a notebook 📓 and call mum.</div>
         <div class="acc-row"><span class="btn primary">Add friend</span><span class="tag2">Blog</span><span class="tag2">Interests</span></div>

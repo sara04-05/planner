@@ -72,7 +72,7 @@ $WD = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
   <?php endif; ?>
   <div class="nb-hero">
     <?= banner_html($design, $cover) ?>
-    <div class="nb-page"<?= design_attrs($design, 'page') ?>>
+    <div class="nbx-page"<?= design_attrs($design, 'page') ?>>
       <div class="who">
         <?= avatar_html($person, 'lg') ?>
         <div style="min-width:0;flex:1">
@@ -80,6 +80,7 @@ $WD = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
           <div class="hint2">@<?= h($prof['slug']) ?></div>
         </div>
         <?php $back = 'u.php?u=' . $prof['slug']; ?>
+        <div class="who-actions">
         <?php if ($viewer && !$isMe): ?>
           <?php if ($state === 'friends'): ?>
             <a class="btn primary" href="messages.php?with=<?= $owner ?>">Message</a>
@@ -90,6 +91,7 @@ $WD = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
         <?php elseif (!$viewer): ?>
           <a class="btn primary" href="login.php">Log in to add friend</a>
         <?php endif; ?>
+        </div>
       </div>
       <?php if ($prof['bio'] !== ''): ?><p class="bio" translate="no"><?= nl2br(h($prof['bio'])) ?></p><?php endif; ?>
     </div>

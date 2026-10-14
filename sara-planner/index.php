@@ -36,7 +36,7 @@ $requests = friend_requests_count($uid);
 <body>
 <div class="app">
   <header class="top">
-    <div class="brand"><?= logo_html() ?><span class="hello"><i class="avatar" aria-hidden="true"><?= h(mb_strtoupper(mb_substr($user['name'], 0, 1))) ?></i><span>Hi, <?= h($user['name']) ?></span></span></div>
+    <div class="brand"><?= logo_html() ?><span class="hello"><?php $me = person($uid); ?><?= $me && $me['avatar_v'] ? '<img class="avatar" alt="" src="avatar.php?id=' . $uid . '&amp;v=' . $me['avatar_v'] . '">' : '<i class="avatar" aria-hidden="true">' . h(mb_strtoupper(mb_substr($user['name'], 0, 1))) . '</i>' ?><span>Hi, <?= h($user['name']) ?></span></span></div>
     <div class="top-r">
       <span class="date-pill"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="5" width="18" height="16" rx="3"/><path d="M3 10h18M8 3v4M16 3v4"/></svg><span class="chip-date" id="todayChip"></span></span>
       <a class="btn bell" href="people.php" aria-label="People"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2M9 11a4 4 0 1 0 0-8 4 4 0 0 0 0 8zM22 21v-2a4 4 0 0 0-3-3.9M16 3.1a4 4 0 0 1 0 7.8"/></svg>People<?php if ($requests): ?><span class="badge"><?= $requests ?></span><?php endif; ?></a>
