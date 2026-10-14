@@ -3,17 +3,18 @@
 // Only the emails listed in ADMIN_EMAILS (config.php) can open this page.
 declare(strict_types=1);
 require __DIR__ . '/db.php';
+require __DIR__ . '/social.php';
+require __DIR__ . '/notebook.php';
 require __DIR__ . '/layout.php';
 
 $uid = require_login();
 if (!is_admin($uid)) {
     http_response_code(403);
-    auth_top('Not allowed'); ?>
-    <h1>Not allowed</h1>
+    app_top('Not allowed', ['eyebrow' => 'Your notebook', 'h1' => 'Not allowed']); ?>
     <p class="auth-sub">This page is only for the site owner.</p>
-    <p class="auth-alt"><a href="index.php">Back to your planner</a></p>
+    <p class="auth-alt"><a class="btn" href="index.php">Back to your planner</a></p>
 <?php
-    auth_bottom();
+    app_bottom();
     exit;
 }
 
@@ -28,11 +29,7 @@ function when(?string $ts): string
     return $ts ? date('j M Y, H:i', strtotime($ts)) : '—';
 }
 
-auth_top('Users', 'wide'); ?>
-    <div class="admin-top">
-      <h1>Users</h1>
-      <a class="btn" href="index.php">Back to planner</a>
-    </div>
+app_top('Users', ['active' => 'admin', 'eyebrow' => 'Your notebook', 'h1' => 'Users']); ?>
     <p class="auth-sub"><span class="admin-count"><?= count($users) ?></span> <?= count($users) === 1 ? 'account' : 'accounts' ?> in this database.</p>
     <div class="tbl-wrap">
       <table class="tbl">
@@ -49,4 +46,4 @@ auth_top('Users', 'wide'); ?>
         </tbody>
       </table>
     </div>
-<?php auth_bottom();
+<?php app_bottom();

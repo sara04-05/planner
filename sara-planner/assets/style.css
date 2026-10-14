@@ -857,3 +857,74 @@ a.btn:hover{text-decoration:none}
 .top-r .badge,.tab .badge{background:var(--bad);color:#fff}
 
 .hello img.avatar{width:26px;height:26px;border-radius:50%;object-fit:cover}
+
+/* ================= One notebook for the whole site: navbar + binder + side tabs on every page ================= */
+.hello{font:inherit;font-size:13px;font-weight:600;cursor:pointer;text-decoration:none}
+a.hello:hover,button.hello:hover{border-color:var(--accent)}
+.btn.on{border-color:var(--accent);color:var(--accent)!important;background:var(--accent-soft)}
+a.tab{display:block;text-decoration:none;box-sizing:border-box}
+.tab[data-tab="profile"]{--tc:var(--t-year)} .tab[data-tab="alerts"]{--tc:var(--t-month)}
+.tab[data-tab="cover"]{--tc:var(--t-year)} .tab[data-tab="interests"]{--tc:var(--t-month)} .tab[data-tab="blog"]{--tc:var(--t-week)}
+.tab[data-tab="timetable"]{--tc:var(--t-day)} .tab[data-tab="subjects"]{--tc:var(--t-study)}
+.binder.notabs{grid-template-columns:minmax(0,1fr)}
+.page .auth-sub{color:var(--muted);margin:0 0 12px;font-size:14px}
+.page .friend-day{max-width:720px}
+.page .who-line{display:flex;gap:14px;align-items:center;margin-bottom:10px}
+
+/* custom colours picked by the user */
+[data-accent="custom"]{--ac-l:var(--c-accent);--ac-d:color-mix(in srgb,var(--c-accent) 62%,#fff);--ac-on-l:var(--c-on);--ac-on-d:#17121F}
+[data-pcolor="custom"]{--pc-l:var(--c-paper);--pc-d:color-mix(in srgb,var(--c-paper) 16%,#17131f)}
+[data-ptone="dark"]{--ink:#EDE9F5;--muted:#B9B1CB;--line:rgba(255,255,255,.2);--rule:rgba(255,255,255,.09);--margin:#7a4056;--edge:#2a2536}
+
+/* stickers live inside the notebook page */
+.page{position:relative}
+.stk-layer{position:absolute;inset:0;overflow:hidden;border-radius:inherit;pointer-events:none;z-index:4}
+.stk-layer .stk{pointer-events:none}
+.deco .stk-layer .stk{pointer-events:auto;cursor:grab;touch-action:none;outline:2px dashed transparent;outline-offset:4px;border-radius:6px}
+.deco .stk-layer .stk.sel{outline-color:var(--accent)}
+.deco .stk-layer .stk:active{cursor:grabbing}
+
+/* binding styles */
+.binder[data-binding="stitch"]>.coil,.binder[data-binding="none"]>.coil{display:none}
+.binder[data-binding="stitch"]>.page{border-left:4px dashed var(--wire)}
+.binder[data-binding="none"]>.page{padding-left:36px;background-image:repeating-linear-gradient(to bottom,transparent 0 31px,var(--rule) 31px 32px)}
+
+/* a notebook's cover page and the shelf of notebooks */
+.nbcover{border-radius:6px 18px 18px 6px;min-height:320px;display:grid;place-items:center;padding:28px;color:#fff;position:relative;overflow:hidden;box-shadow:inset 10px 0 0 rgba(0,0,0,.18),var(--shadow);isolation:isolate}
+.nbcover::after{content:"";position:absolute;inset:0;background:linear-gradient(180deg,transparent 40%,rgba(20,14,40,.4));z-index:-1}
+.nbcover-in{text-align:center;display:flex;flex-direction:column;align-items:center;gap:6px;text-shadow:0 1px 8px rgba(0,0,0,.35)}
+.nbcover-in h2{font-size:34px;line-height:1.1}
+.nbcover-in .by{margin:0;font-size:14px;opacity:.95}
+.nbcover .avatar{border:3px solid rgba(255,255,255,.85)}
+.nb-intro{margin:16px 0 0;font-size:15px;line-height:1.7;white-space:pre-wrap}
+.page .bio{color:var(--muted);font-size:14px;margin-top:10px}
+.nbshelf{display:flex;gap:8px;flex-wrap:wrap;margin:0 0 16px}
+.nbchip{display:inline-flex;align-items:center;gap:8px;padding:6px 12px 6px 6px;border-radius:999px;border:1px solid var(--line);background:var(--paper-2);font-size:13px;font-weight:600;text-decoration:none;color:var(--ink)}
+.nbchip i{width:20px;height:26px;border-radius:3px 6px 6px 3px;box-shadow:inset 3px 0 0 rgba(0,0,0,.2);flex:none;background-size:cover}
+.nbchip.on{border-color:var(--accent);background:var(--accent-soft);color:var(--accent)}
+.nb-cover-bar{height:84px;background-size:cover}
+.person .nbtitles{font-size:12px;opacity:.8;-webkit-line-clamp:1}
+.person .pb{padding-top:0}
+
+/* the Profile tab: your notebooks */
+.nbe{display:grid;grid-template-columns:minmax(0,1fr);gap:20px;align-items:start}
+.nbe.panel-open{grid-template-columns:minmax(0,1.5fr) minmax(300px,1fr)}
+.nbe-side{position:sticky;top:12px;display:flex;flex-direction:column;gap:14px}
+.nbe .binder{margin-inline:6px}
+.nbe .binder .page{min-height:520px}
+.nbe .binder .coil{left:-14px}
+.nbe-bar{display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin:12px 0}
+.nbe-shelf{display:flex;gap:10px;flex-wrap:wrap;margin:6px 0 4px}
+.nbe-shelf .nbchip{cursor:pointer;font:inherit;font-size:13px;font-weight:600}
+.secpick{display:flex;flex-direction:column;gap:6px;margin:6px 0 4px}
+.secpick label{display:flex;gap:10px;align-items:flex-start;font-size:14px;padding:8px 10px;border:1px solid var(--line);border-radius:12px;background:var(--paper);cursor:pointer}
+.secpick label small{display:block;color:var(--muted);font-size:12px}
+.secpick input{margin-top:3px;accent-color:var(--accent)}
+.colorrow{display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin-top:8px;font-size:13px;color:var(--muted)}
+.colorrow input[type=color]{width:44px;height:34px;padding:0;border:1px solid var(--line);border-radius:8px;background:var(--paper);cursor:pointer}
+.stylelist{display:flex;flex-direction:column;gap:6px;margin-top:8px}
+.stylelist .row{display:flex;gap:6px;align-items:center}
+.stylelist .row button.apply{flex:1;text-align:left}
+.decobar{display:flex;gap:6px;flex-wrap:wrap;align-items:center}
+@media (max-width:980px){.nbe.panel-open{grid-template-columns:minmax(0,1fr)}.nbe-side{position:static}}
+@media (max-width:640px){.nbcover-in h2{font-size:26px}.nbe .binder{margin-inline:0}}

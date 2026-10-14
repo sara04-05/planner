@@ -4,16 +4,14 @@
 // any address with "chat" in it, so nothing here is called chat.
 declare(strict_types=1);
 require __DIR__ . '/db.php';
+require __DIR__ . '/social.php';
+require __DIR__ . '/notebook.php';
 require __DIR__ . '/layout.php';
 
 $uid = require_login();
 $with = isset($_GET['with']) && ctype_digit((string)$_GET['with']) ? (int)$_GET['with'] : 0;
 
-auth_top('Messages', 'wide chat-card'); ?>
-    <div class="admin-top">
-      <h1>Messages</h1>
-      <a class="btn" href="index.php">Back to planner</a>
-    </div>
+app_top('Messages', ['active' => 'messages', 'eyebrow' => 'Your notebook', 'h1' => 'Messages']); ?>
     <div class="chat" id="chat" data-csrf="<?= h(csrf_token()) ?>" data-with="<?= $with ?>">
       <aside class="chat-side">
         <form class="chat-find" id="chatFind">
@@ -30,4 +28,4 @@ auth_top('Messages', 'wide chat-card'); ?>
       </section>
     </div>
 <script src="assets/messages.js?v=<?= filemtime(__DIR__ . '/assets/messages.js') ?>"></script>
-<?php auth_bottom();
+<?php app_bottom();

@@ -15,11 +15,9 @@ if (!$user) {            // account was deleted
 $prof = ensure_profile($uid);
 $design = profile_design($prof);
 $unread = unread_count($uid);
-$chatUnread = chat_unread($uid);
-$requests = friend_requests_count($uid);
 ?>
 <!DOCTYPE html>
-<html lang="en"<?= design_attrs($design, 'accent') ?>>
+<html lang="en"<?= design_attrs($design, 'accent') . design_style($design) ?>>
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -35,40 +33,11 @@ $requests = friend_requests_count($uid);
 </head>
 <body>
 <div class="app">
-  <header class="top">
-    <div class="brand"><?= logo_html() ?><span class="hello"><?php $me = person($uid); ?><?= $me && $me['avatar_v'] ? '<img class="avatar" alt="" src="avatar.php?id=' . $uid . '&amp;v=' . $me['avatar_v'] . '">' : '<i class="avatar" aria-hidden="true">' . h(mb_strtoupper(mb_substr($user['name'], 0, 1))) . '</i>' ?><span>Hi, <?= h($user['name']) ?></span></span></div>
-    <div class="top-r">
-      <span class="date-pill"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="5" width="18" height="16" rx="3"/><path d="M3 10h18M8 3v4M16 3v4"/></svg><span class="chip-date" id="todayChip"></span></span>
-      <a class="btn bell" href="people.php" aria-label="People"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2M9 11a4 4 0 1 0 0-8 4 4 0 0 0 0 8zM22 21v-2a4 4 0 0 0-3-3.9M16 3.1a4 4 0 0 1 0 7.8"/></svg>People<?php if ($requests): ?><span class="badge"><?= $requests ?></span><?php endif; ?></a>
-      <a class="btn bell" href="messages.php" id="msgBtn" aria-label="Messages"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 12a8 8 0 0 1-11.6 7.1L3 21l1.9-5.4A8 8 0 1 1 21 12z"/></svg>Messages<?php if ($chatUnread): ?><span class="badge"><?= $chatUnread ?></span><?php endif; ?></a>
-      <button class="btn bell" data-act="tab" data-tab="alerts" aria-label="Notifications"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M18 8a6 6 0 0 0-12 0c0 7-3 9-3 9h18s-3-2-3-9M13.7 21a2 2 0 0 1-3.4 0"/></svg><span class="badge" id="bellBadge"<?= $unread ? '' : ' hidden' ?>><?= $unread ?></span></button>
-      <?php if (is_admin($uid)): ?><a class="btn" href="admin.php">Users</a><?php endif; ?>
-      <button class="btn" data-lang-btn>Shqip</button>
-      <button class="btn" id="themeBtn" data-act="theme" aria-label="Switch theme"></button>
-      <form method="post" action="logout.php" class="inline">
-        <input type="hidden" name="csrf" value="<?= h(csrf_token()) ?>">
-        <button class="btn ghost logout" aria-label="Log out"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4M16 17l5-5-5-5M21 12H9"/></svg>Log out</button>
-      </form>
-    </div>
-  </header>
+<?php app_nav($uid, '', true); ?>
   <div class="binder">
     <div class="coil" aria-hidden="true" id="coil"></div>
     <main class="page" id="view" aria-live="polite"<?= design_attrs($design, 'page') ?>><p class="empty">Loading your planner…</p></main>
-    <nav class="tabs" role="tablist" aria-label="Planner sections">
-      <button class="tab" role="tab" data-act="tab" data-tab="day">Day</button>
-      <button class="tab" role="tab" data-act="tab" data-tab="week">Week</button>
-      <button class="tab" role="tab" data-act="tab" data-tab="month">Month</button>
-      <button class="tab" role="tab" data-act="tab" data-tab="year">Year</button>
-      <div class="tab-gap"></div>
-      <button class="tab" role="tab" data-act="tab" data-tab="study">Study</button>
-      <button class="tab" role="tab" data-act="tab" data-tab="tasks">Tasks</button>
-      <button class="tab" role="tab" data-act="tab" data-tab="money">Expenses</button>
-      <div class="tab-gap"></div>
-      <button class="tab" role="tab" data-act="tab" data-tab="blog">Blog</button>
-      <button class="tab" role="tab" data-act="tab" data-tab="interests">Interests</button>
-      <button class="tab" role="tab" data-act="tab" data-tab="profile">Profile</button>
-      <button class="tab" role="tab" data-act="tab" data-tab="alerts">Alerts<?= $unread ? ' <span class="badge" id="tabBadge">' . $unread . '</span>' : '' ?></button>
-    </nav>
+    <nav class="tabs" role="tablist" aria-label="Planner sections"><?= planner_tabs_html('', true, $unread) ?></nav>
   </div>
 </div>
 <div class="toast" id="toast" role="status" hidden></div>

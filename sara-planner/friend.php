@@ -12,12 +12,11 @@ $p = $id ? person($id) : null;
 $self = $id === $uid;
 if (!$p || (!$self && friendship($uid, $id) !== 'friends')) {
     http_response_code(403);
-    auth_top('Not friends'); ?>
-    <h1>Not friends yet</h1>
+    app_top('Not friends', ['active' => 'people', 'eyebrow' => 'Your notebook', 'h1' => 'Not friends yet']); ?>
     <p class="auth-sub">You can see someone's day once you're friends. Send them a friend request on the People page.</p>
-    <p class="auth-alt"><a href="people.php">Go to People</a></p>
+    <p class="auth-alt"><a class="btn" href="people.php">Go to People</a></p>
 <?php
-    auth_bottom();
+    app_bottom();
     exit;
 }
 
@@ -25,16 +24,12 @@ $today = date('Y-m-d');
 $plan = day_schedule($id, $today);
 $now = (int)date('G') * 60 + (int)date('i');
 
-auth_top($p['name'], 'wide notebook-card', true); ?>
-    <div class="admin-top">
-      <a class="btn" href="people.php">← People</a>
-      <span class="grow"></span>
-      <?php if ($ns = public_slug($p['id'])): ?><a class="btn" href="u.php?u=<?= h($ns) ?>">Blog &amp; interests</a><?php endif; ?>
-      <?php if (!$self): ?><a class="btn primary" href="messages.php?with=<?= $p['id'] ?>">Message</a><?php endif; ?>
-    </div>
-    <div class="nb-open">
-      <aside class="nb-front"><?= cover_html($p) ?></aside>
-      <section class="nb-page">
+$acts = '<a class="btn" href="people.php">← People</a>';
+if ($ns = public_slug($p['id'])) $acts .= ' <a class="btn" href="u.php?u=' . h($ns) . '">Notebooks</a>';
+if (!$self) $acts .= ' <a class="btn primary" href="messages.php?with=' . $p['id'] . '">Message</a>';
+app_top($p['name'], ['active' => 'people', 'covers' => true, 'eyebrow' => 'Friend\'s notebook', 'h1' => $p['name'], 'actions' => $acts]); ?>
+    <div class="friend-day">
+      <section>
         <div class="nb-who">
           <?= avatar_html($p, 'lg') ?>
           <div><?= name_html($p) ?><?php if ($p['bio'] !== ''): ?><p class="nb-bio"><?= h($p['bio']) ?></p><?php endif; ?></div>
@@ -63,4 +58,4 @@ auth_top($p['name'], 'wide notebook-card', true); ?>
       <button class="linkbtn">Remove from friends</button>
     </form>
     <?php endif; ?>
-<?php auth_bottom();
+<?php app_bottom();

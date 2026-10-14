@@ -4,6 +4,7 @@ declare(strict_types=1);
 require __DIR__ . '/db.php';
 require __DIR__ . '/layout.php';
 require __DIR__ . '/social.php';
+require __DIR__ . '/notebook.php';
 
 $uid = require_login();
 $error = '';
@@ -72,11 +73,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 }
 
 $me = person($uid);
-auth_top('Your profile', 'wide', true); ?>
-    <div class="admin-top">
-      <h1>Your profile</h1>
-      <a class="btn" href="people.php">Back to people</a>
-    </div>
+app_top('Your profile', ['tab' => 'profile', 'covers' => true, 'eyebrow' => 'Your notebook', 'h1' => 'Name & picture', 'actions' => '<a class="btn" href="index.php?tab=profile">Back to my profile</a>']); ?>
     <p class="auth-sub">This is what your friends see. They can also see your hour-by-hour plan for today, nothing else.</p>
     <?php if ($error): ?><div class="formmsg err" role="alert"><?= h($error) ?></div><?php endif; ?>
     <?php if ($saved && !$error): ?><div class="formmsg ok" role="status">Saved.</div><?php endif; ?>
@@ -122,4 +119,4 @@ auth_top('Your profile', 'wide', true); ?>
       f.addEventListener('input',paint);f.addEventListener('change',paint);
     })();
     </script>
-<?php auth_bottom();
+<?php app_bottom();
