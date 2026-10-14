@@ -12,9 +12,9 @@ $p = $id ? person($id) : null;
 $self = $id === $uid;
 if (!$p || (!$self && friendship($uid, $id) !== 'friends')) {
     http_response_code(403);
-    app_top('Not friends', ['active' => 'people', 'eyebrow' => 'Your notebook', 'h1' => 'Not friends yet']); ?>
+    app_top('Not friends', ['active' => 'explore', 'eyebrow' => 'Your notebook', 'h1' => 'Not friends yet']); ?>
     <p class="auth-sub">You can see someone's day once you're friends. Send them a friend request on the People page.</p>
-    <p class="auth-alt"><a class="btn" href="people.php">Go to People</a></p>
+    <p class="auth-alt"><a class="btn" href="explore.php">Go to Explore</a></p>
 <?php
     app_bottom();
     exit;
@@ -24,10 +24,10 @@ $today = date('Y-m-d');
 $plan = day_schedule($id, $today);
 $now = (int)date('G') * 60 + (int)date('i');
 
-$acts = '<a class="btn" href="people.php">← People</a>';
+$acts = '<a class="btn" href="explore.php">← Explore</a>';
 if ($ns = public_slug($p['id'])) $acts .= ' <a class="btn" href="u.php?u=' . h($ns) . '">Notebooks</a>';
 if (!$self) $acts .= ' <a class="btn primary" href="messages.php?with=' . $p['id'] . '">Message</a>';
-app_top($p['name'], ['active' => 'people', 'covers' => true, 'eyebrow' => 'Friend\'s notebook', 'h1' => $p['name'], 'actions' => $acts]); ?>
+app_top($p['name'], ['active' => 'explore', 'covers' => true, 'eyebrow' => 'Friend\'s notebook', 'h1' => $p['name'], 'actions' => $acts]); ?>
     <div class="friend-day">
       <section>
         <div class="nb-who">
@@ -53,7 +53,7 @@ app_top($p['name'], ['active' => 'people', 'covers' => true, 'eyebrow' => 'Frien
       </section>
     </div>
     <?php if (!$self): ?>
-    <form method="post" action="people.php" class="nb-remove" onsubmit="return confirm((window.SPL_T||String)(this.dataset.q))" data-q="Remove <?= h($p['name']) ?> from your friends?">
+    <form method="post" action="explore.php" class="nb-remove" onsubmit="return confirm((window.SPL_T||String)(this.dataset.q))" data-q="Remove <?= h($p['name']) ?> from your friends?">
       <input type="hidden" name="csrf" value="<?= h(csrf_token()) ?>"><input type="hidden" name="do" value="remove"><input type="hidden" name="id" value="<?= $p['id'] ?>">
       <button class="linkbtn">Remove from friends</button>
     </form>

@@ -1,7 +1,7 @@
 <?php
 // Everything about sharing a notebook: privacy, design, blog, interest lists, likes, alerts and pictures.
 // Used by api.php (the x.* actions), u.php (a shared notebook), explore.php (public notebooks) and media.php (pictures).
-// People, friends, profile pictures, notebook covers and messages live in social.php / people.php / messages.php.
+// People, friends, profile pictures, notebook covers and messages live in social.php / explore.php / messages.php.
 declare(strict_types=1);
 
 const SHARE_KEYS   = ['blog', 'interests', 'timetable', 'subjects'];   // kept for the old share column (used once, when moving to notebooks)

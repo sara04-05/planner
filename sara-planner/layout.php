@@ -153,7 +153,7 @@ function app_nav(?int $uid, string $active = '', bool $planner = false): void
     <?php if ($uid):
         $unread = unread_count($uid); $chatUnread = chat_unread($uid); $requests = friend_requests_count($uid); ?>
       <span class="date-pill"><?= $ic('<rect x="3" y="5" width="18" height="16" rx="3"/><path d="M3 10h18M8 3v4M16 3v4"/>') ?><span class="chip-date" id="todayChip"><?= h(date('l, j F')) ?></span></span>
-      <a class="btn bell<?= $active === 'people' ? ' on' : '' ?>" href="people.php" aria-label="People"><?= $ic('<path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2M9 11a4 4 0 1 0 0-8 4 4 0 0 0 0 8zM22 21v-2a4 4 0 0 0-3-3.9M16 3.1a4 4 0 0 1 0 7.8"/>') ?>People<?php if ($requests): ?><span class="badge"><?= $requests ?></span><?php endif; ?></a>
+      <a class="btn bell<?= $active === 'explore' ? ' on' : '' ?>" href="explore.php" aria-label="Explore"><?= $ic('<circle cx="12" cy="12" r="9"/><path d="M15.5 8.5l-2 5-5 2 2-5z"/>') ?>Explore<?php if ($requests): ?><span class="badge"><?= $requests ?></span><?php endif; ?></a>
       <a class="btn bell<?= $active === 'messages' ? ' on' : '' ?>" href="messages.php" id="msgBtn" aria-label="Messages"><?= $ic('<path d="M21 12a8 8 0 0 1-11.6 7.1L3 21l1.9-5.4A8 8 0 1 1 21 12z"/>') ?>Messages<?php if ($chatUnread): ?><span class="badge"><?= $chatUnread ?></span><?php endif; ?></a>
       <div class="bellwrap">
         <button class="btn bell" id="bellBtn" aria-label="Notifications" aria-haspopup="true" aria-expanded="false"><?= $ic('<path d="M18 8a6 6 0 0 0-12 0c0 7-3 9-3 9h18s-3-2-3-9M13.7 21a2 2 0 0 1-3.4 0"/>') ?><span class="badge" id="bellBadge"<?= $unread ? '' : ' hidden' ?>><?= $unread ?></span></button>

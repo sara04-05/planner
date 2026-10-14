@@ -27,7 +27,7 @@ Splanner is PHP + MySQL on free InfinityFree hosting. InfinityFree has two rules
 | `sql/schema.sql`, `sql/schema-sqlite.sql` | Three new tables. `messages`: sender, receiver, text, time, read or not. `profiles`: bio, cover, picture. `friends`: who asked whom, and whether it was accepted. |
 | `db.php` | Adds the new tables to the existing database by itself the first time the site loads. Nothing needs importing. |
 | `social.php` | Shared helpers: a person's profile, whether two people are friends, when to show the email next to a name, and today's plan for a user. The plan is worked out the same way as the planner: that day's own hours first, otherwise the weekly ↻ hours, with hours that run on joined into one entry. |
-| `people.php` | Search, friend requests and the shelf of friends' notebooks. |
+| `explore.php` | Everyone on the site, friend requests and the shelf of friends' notebooks. |
 | `friend.php` | A friend's notebook: cover, picture, name, bio and today's plan. It refuses anyone who isn't a friend. |
 | `profile.php` | Edit your name, bio, picture and cover. Pictures are cropped to a square and shrunk to 256×256, then stored in the database. That way the host needs no upload folder, and nobody can upload a script. |
 | `avatar.php` | Sends a profile picture to logged-in users. |

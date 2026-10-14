@@ -34,11 +34,11 @@ $person = person($owner);
 $name = (string)$person['name'];
 if (!$viewer) $person['avatar_v'] = 0;   // profile pictures are only sent to logged-in people
 $notebooks = load_notebooks($owner, !$isMe);   // you see all of yours; others only the ones you shared
-$state = $viewer && !$isMe ? friendship($viewer, $owner) : 'none';   // friends, sent, received or none (see people.php)
+$state = $viewer && !$isMe ? friendship($viewer, $owner) : 'none';   // friends, sent, received or none (see explore.php)
 $back = 'u.php?u=' . $prof['slug'];
 function friend_btn(string $do, int $id, string $label, string $cls, string $back): string
 {
-    return '<form method="post" action="people.php" class="inline"><input type="hidden" name="csrf" value="' . h(csrf_token()) . '"><input type="hidden" name="do" value="' . $do . '"><input type="hidden" name="id" value="' . $id . '"><input type="hidden" name="back" value="' . h($back) . '"><button class="' . $cls . '">' . h($label) . '</button></form>';
+    return '<form method="post" action="explore.php" class="inline"><input type="hidden" name="csrf" value="' . h(csrf_token()) . '"><input type="hidden" name="do" value="' . $do . '"><input type="hidden" name="id" value="' . $id . '"><input type="hidden" name="back" value="' . h($back) . '"><button class="' . $cls . '">' . h($label) . '</button></form>';
 }
 $actions = '';
 if ($isMe) {

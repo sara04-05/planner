@@ -19,14 +19,13 @@ sara-planner/
 ├── config.php         Your database settings  ← edit this
 ├── layout.php         Shared layout for the login/sign-up pages
 ├── gcal.php           Sends the Hour by hour plan to Google Calendar
-├── social.php         People, friends, profile pictures, notebook covers (used by people.php, friend.php, messages)
-├── people.php         Friends, friend requests and search (see ../MESSAGES.md)
+├── social.php         People, friends, profile pictures, notebook covers (used by explore.php, friend.php, messages)
 ├── friend.php         A friend's notebook with today's plan
 ├── profile.php        Edit your name, picture and cover (the rest of your profile is the Profile tab)
 ├── messages.php       Messages between users
 ├── notebook.php       Notebooks: pages, designs, styles, blog, interest lists, likes, alerts, pictures (used by api.php)
 ├── u.php              A profile (u.php?u=pagename): its notebooks, opened in the same notebook layout
-├── explore.php        Directory of public notebooks
+├── explore.php        Everyone on the site, friend requests and your friends (see ../MESSAGES.md)
 ├── upload.php         Picture upload (blog photos, interest pictures, banners, stickers)
 ├── media.php          Sends a picture, only to people who may see it (pictures live in the database)
 ├── mail.php           Sends emails through Gmail (the sign-up codes)
