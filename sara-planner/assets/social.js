@@ -60,8 +60,6 @@ function load(){
 function paintBadges(){
   const n=S?S.unread:0;
   const b=$('bellBadge');if(b){b.textContent=n;b.hidden=!n}
-  const t=$('tabBadge');if(t){if(n)t.textContent=n;else t.remove()}
-  else if(n){const tab=document.querySelector('nav[aria-label="Planner sections"] .tab[data-tab="alerts"]');if(tab){tab.insertAdjacentHTML('beforeend',` <span class="badge" id="tabBadge">${n}</span>`)}}
 }
 const cur=()=>S&&S.notebooks.find(n=>n.id===ui.nb)||null;
 /** Open a notebook in the editor (its saved design becomes the draft you edit). */
@@ -293,18 +291,12 @@ function profileHtml(){
     editor=`<div class="nbe-bar"><button class="btn${ui.panel==='settings'?' on':''}" data-x="panel" data-v="settings">⚙️ Settings</button><button class="btn${ui.panel==='deco'?' on':''}" data-x="panel" data-v="deco">🎨 Decorate</button><span class="hint2">${nb.public?'Shown on your profile':'Private: only you can see it'}</span></div>
       <div class="nbe${open}"><div>${notebookHtml(nb)}</div>${ui.panel?`<div class="nbe-side">${ui.panel==='settings'?settingsPanel(nb):decoPanel(nb)}</div>`:''}</div>`;
   }else editor='<p class="empty">You have no notebooks yet. Press <b>+ New notebook</b> to make your first one.</p>';
-  return hdr('Your notebook','Profile','<button class="btn primary" data-x="nb-new">+ New notebook</button>')+
-    `<div class="xcols1">${page}</div><h2 style="margin:26px 0 4px;font-size:20px">My notebooks</h2>${shelf}${newForm}${editor}`;
-}
-
-/* ---------- ALERTS ---------- */
-function alertsHtml(){
-  const ic={follow:'👤',like:'♥'};
-  const rows=S.notes.map(n=>`<div class="note-row${n.read?'':' new'}"><span class="ic">${ic[n.kind]||'🔔'}</span><div class="tx" translate="no">${esc(n.text)}<small>${esc(n.at.slice(0,16))}</small></div>${n.link?`<a class="btn sm" href="${esc(n.link)}">View</a>`:''}</div>`).join('');
-  const prefs=`<section class="xcard" style="margin-top:20px"><h3>Alerts</h3><p class="sub">Choose which alerts you get.</p>
-    ${sw('Someone likes my post','A like on one of your public blog posts.',S.profile.notify.like,'data-xsw="notify" data-k="like"')}</section>`;
-  return hdr('Your notebook','Alerts',S.notes.length?'<button class="btn sm" data-x="notes-clear">Clear all</button>':'')+
-    (rows||'<p class="empty">No alerts yet. When someone likes one of your posts, you will see it here.</p>')+prefs;
+  const account=`<section class="xcard danger-zone"><h3>Account</h3>
+    ${sw('Alert when someone likes my post','Shows in the bell at the top of the page.',S.profile.notify.like,'data-xsw="notify" data-k="like"')}
+    <div class="xrow"><a class="btn danger" href="delete-account.php">Delete my account</a></div>
+    <p class="hint2">Logs you out and removes your account and everything in it for good.</p></section>`;
+  return hdr('Your notebook','Profile','')+
+    `<div class="xcols1">${page}</div><h2 class="nb-h2">My notebooks</h2>${shelf}${newForm}${editor}<div class="xcols1" style="margin-top:22px">${account}</div>`;
 }
 
 /* ---------- entry point for app.js ---------- */
@@ -314,15 +306,14 @@ function html(tab){
     load();return '<p class="empty">Loading…</p>';
   }
   const keep=[...document.querySelectorAll('#view [data-draft]')].map(e=>[e.id,e.value]);
-  const out=tab==='profile'?profileHtml():alertsHtml();
+  const out=profileHtml();
   queueMicrotask(()=>{
     keep.forEach(([id,v])=>{const e=document.getElementById(id);if(e&&!e.value&&!e.dataset.cleared)e.value=v});
-    if(tab==='profile')syncControls();
-    if(tab==='alerts'&&S.unread>0&&!ui.marked){ui.marked=true;setTimeout(()=>{api('x.notes.read').then(()=>{S.unread=0;S.notes.forEach(n=>n.read=true);paintBadges();ui.marked=false}).catch(()=>{ui.marked=false})},1500)}
+    syncControls();
   });
   return out;
 }
-window.SPLX={html};
+window.SPLX={html,setUnread:n=>{if(S){S.unread=n;S.notes.forEach(x=>x.read=true)}}};
 
 const markDirty=()=>{ui.dirty=true;const sv=$('saveDesign');if(sv)sv.disabled=false};
 const designOut=()=>{const d=clone(ui.dd);delete d.cover_url;return d};
@@ -360,7 +351,6 @@ document.addEventListener('click',async e=>{
       case 'item-del':{const l=S.lists.find(x=>x.items.some(i=>i.id===id));if(l)l.items=l.items.filter(i=>i.id!==id);redraw();await api('x.item.delete',{id});return}
       case 'pic-rm':ui.pics[b.dataset.key]=null;{const w=b.closest('.pic-pick');if(w)w.innerHTML=picInner(b.dataset.key)}return;
       case 'copy-link':{try{await navigator.clipboard.writeText(b.dataset.link);toast('Link copied.')}catch(err){toast(b.dataset.link)}return}
-      case 'notes-clear':await api('x.notes.clear');S.notes=[];S.unread=0;paintBadges();redraw();return;
       // my styles
       case 'style-del':{const r=await api('x.style.delete',{id});S.styles=r.styles;redraw();return}
       // design

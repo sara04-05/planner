@@ -686,6 +686,9 @@ function notebook_action(int $uid, string $action, array $in): void
         ok(['liked' => !$have, 'likes' => (int)q('SELECT COUNT(*) c FROM post_likes WHERE post_id = ?', [$pid])->fetch()['c']]);
     }
 
+    case 'x.notes':
+        ok(['notes' => load_notifications($uid), 'unread' => unread_count($uid)]);
+
     case 'x.notes.read':
         q('UPDATE notifications SET is_read = 1 WHERE user_id = ?', [$uid]);
         ok(['unread' => 0]);

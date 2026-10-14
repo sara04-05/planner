@@ -57,15 +57,8 @@ function act(string $do, int $id, string $label, string $cls = 'btn', string $ba
 }
 
 // Public notebooks of other people (never yours)
-$pubRows = [];
-foreach (q('SELECT p.*, u.name FROM profiles p JOIN users u ON u.id = p.user_id WHERE p.is_public = 1 AND p.slug IS NOT NULL AND p.user_id <> ? ORDER BY u.name LIMIT 24', [$uid])->fetchAll() as $r) {
-    $r['nbs'] = load_notebooks((int)$r['user_id'], true);
-    if ($r['nbs']) $pubRows[] = $r;
-    if (count($pubRows) >= 6) break;
-}
-
 app_top('People', ['active' => 'people', 'covers' => true, 'eyebrow' => 'Your notebook', 'h1' => 'People',
-    'actions' => '<a class="btn" href="explore.php">Explore notebooks</a>']); ?>
+    'actions' => '<a class="btn" href="explore.php">Explore</a>']); ?>
     <div class="me-card">
       <?= avatar_html($me, 'lg') ?>
       <div class="grow">
@@ -100,13 +93,6 @@ app_top('People', ['active' => 'people', 'covers' => true, 'eyebrow' => 'Your no
           </a>
         <?php endforeach; ?>
       </div>
-    </section>
-
-    <section class="ppl-sec">
-      <h2>Public notebooks</h2>
-      <p class="auth-sub">Notebooks that people chose to share. <a href="explore.php">See all</a></p>
-      <?php if (!$pubRows): ?><p class="chat-empty">Nobody else has shared a notebook yet.</p>
-      <?php else: ?><div class="people"><?php foreach ($pubRows as $r) echo person_card($r, $r['nbs']); ?></div><?php endif; ?>
     </section>
 
     <section class="ppl-sec" id="find">

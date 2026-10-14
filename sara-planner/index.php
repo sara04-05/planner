@@ -37,11 +37,12 @@ $unread = unread_count($uid);
   <div class="binder">
     <div class="coil" aria-hidden="true" id="coil"></div>
     <main class="page" id="view" aria-live="polite"<?= design_attrs($design, 'page') ?>><p class="empty">Loading your planner…</p></main>
-    <nav class="tabs" role="tablist" aria-label="Planner sections"><?= planner_tabs_html('', true, $unread) ?></nav>
+    <nav class="tabs" role="tablist" aria-label="Planner sections"><?= planner_tabs_html('', true) ?></nav>
   </div>
 </div>
 <div class="toast" id="toast" role="status" hidden></div>
 <script src="assets/import.js?v=<?= filemtime(__DIR__ . '/assets/import.js') ?>"></script>
+<script src="assets/bell.js?v=<?= filemtime(__DIR__ . '/assets/bell.js') ?>"></script>
 <script src="assets/social.js?v=<?= filemtime(__DIR__ . '/assets/social.js') ?>"></script>
 <script src="assets/app.js?v=<?= filemtime(__DIR__ . '/assets/app.js') ?>"></script>
 </body>

@@ -928,3 +928,39 @@ a.tab{display:block;text-decoration:none;box-sizing:border-box}
 .decobar{display:flex;gap:6px;flex-wrap:wrap;align-items:center}
 @media (max-width:980px){.nbe.panel-open{grid-template-columns:minmax(0,1fr)}.nbe-side{position:static}}
 @media (max-width:640px){.nbcover-in h2{font-size:26px}.nbe .binder{margin-inline:0}}
+
+/* ---- bell dropdown, user list, account zone ---- */
+.bellwrap{position:relative;display:inline-flex}
+.bellpop{position:absolute;top:calc(100% + 10px);right:0;width:min(360px,calc(100vw - 32px));max-height:min(70vh,480px);display:flex;flex-direction:column;background:var(--paper);color:var(--ink);border:1px solid var(--line);border-radius:18px;box-shadow:0 18px 48px rgba(20,12,40,.28);z-index:60;overflow:hidden}
+.bellpop[hidden]{display:none}
+.bellpop-h{display:flex;justify-content:space-between;align-items:center;padding:12px 16px;border-bottom:1px solid var(--line)}
+.bellpop-h b{font-size:15px}
+.bellpop-b{overflow:auto;padding:10px;display:flex;flex-direction:column;gap:8px}
+.bellpop-b .empty{padding:18px 10px;text-align:center;font-size:14px;margin:0}
+.bellpop .note-row+.note-row{margin-top:0}
+@media (max-width:640px){.bellwrap{position:static}.bellpop{position:fixed;left:16px;right:16px;top:140px;width:auto}}
+.userlist{list-style:none;margin:18px 0 0;padding:0;display:grid;grid-template-columns:repeat(auto-fill,minmax(210px,1fr));gap:10px}
+.userlist li{display:flex;align-items:center;gap:12px;padding:10px 14px;background:var(--paper);border:1px solid var(--line);border-radius:14px;min-width:0}
+.userlist .av{width:36px;height:36px;border-radius:50%;flex:none;display:grid;place-items:center;font-weight:700;background:var(--accent-soft);color:var(--accent)}
+.userlist .un{font-weight:600;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.btn.danger{background:var(--bad);border-color:var(--bad);color:#fff}
+.danger-zone .xrow{margin-top:12px}
+.nb-h2{margin:26px 0 4px;font-size:20px}
+.top{position:relative;z-index:50}
+
+/* the notebook you edit inside the Profile tab: a clean card with its own tabs, not a second spiral binder */
+.nbv .binder .coil{display:none}
+.nbv .binder{margin:0}
+.nbv .binder .page{padding:24px 28px 30px 68px;border-radius:16px 8px 8px 16px;border:1px solid var(--line);border-left:6px solid var(--accent);min-height:420px;box-shadow:var(--shadow)}
+.nbv .binder .page .vh h1{font-size:30px}
+.nbv .binder[data-binding="stitch"]>.page{border-left-style:dashed}
+.nbv .binder .tabs{padding-top:22px}
+@media (max-width:760px){
+  .nbv .binder .page{padding:18px 16px 22px;border-radius:14px;box-shadow:var(--shadow)}
+  .nbv .binder .tabs{padding:0 4px}
+  .nbe-bar{gap:6px}
+}
+@media (max-width:640px){
+  .top-r .bellwrap{display:contents}
+  .nb-new{aspect-ratio:auto;min-height:120px}
+}
