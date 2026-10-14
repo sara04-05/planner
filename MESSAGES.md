@@ -5,7 +5,7 @@
 **Your profile.** Click **People** at the top of the planner, then **Edit profile**. There you can:
 - pick a profile picture
 - write a short bio
-- choose a notebook cover (green check, yellow, pink dots, lilac, watermelon or blue stripes)
+- choose a notebook cover: vintage botanical ones with your name on a label (wildflowers, cherries & bows, autumn leaves, woodland, pressed ferns, rose vine), or pink spiral ones with your own words in handwriting
 - change your name
 
 Your name is your username. If someone else has the same name, people see your email under it so they can tell you apart.
@@ -34,6 +34,7 @@ Splanner is PHP + MySQL on free InfinityFree hosting. InfinityFree has two rules
 | `messages.php`, `assets/messages.js` | The messages page. Messages are shown as plain text, so nobody can inject HTML. |
 | `api.php` | `msg.list`, `msg.find`, `msg.messages`, `msg.send` (up to 2000 characters, at most 20 a minute). |
 | `index.php` | The **People** and **Messages** buttons with their counts. |
-| `assets/style.css`, `assets/lang.js` | Notebook covers and layout (light, dark, phone), and the Albanian text. |
+| `assets/covers.css` | The notebook covers. Each pattern is a small SVG drawing repeated across the cover, with a spine and a name label, or spiral rings and script words. |
+| `assets/style.css`, `assets/lang.js` | Layout (light, dark, phone) and the Albanian text. |
 
 Every page checks that you're logged in with a confirmed email. Every form uses the site's CSRF token.
