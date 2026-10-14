@@ -62,6 +62,7 @@ async function reload(){
     const data=await api('bootstrap');
     const p=loadPrefs();
     state={tab:'day',taskFilter:'open',expPeriod:'month',...p,...data,showAll:false};
+    if(/^#chat-\d+/.test(location.hash))state.tab='messages';   // a "Message" button on someone's notebook
     render();
     if(state.google&&state.google.connected&&state.google.needsSync&&!gcalBusy)gcalRun(true);
   }catch(err){
@@ -1007,8 +1008,9 @@ paintThemeBtn();
  const M={connected:'Google Calendar is connected. Your hours are on their way to the "Splanner" calendar.',disconnected:'Google Calendar is disconnected. You can delete the "Splanner" calendar in Google if you don\'t need it.',cancelled:'Google Calendar was not connected.','no-calendar':'Please tick the calendar box on Google\'s page so the planner can add your hours.','not-set-up':'Google Calendar is not set up on this site yet.',error:"Couldn't connect Google Calendar. Please try again."};
  if(r){if(M[r])setTimeout(()=>toast(M[r]),300);history.replaceState(null,'',location.pathname)}}
 // Blog, Interests, Profile and Alerts are drawn by social.js
-for(const k of ['blog','interests','profile','alerts'])V[k]=()=>window.SPLX?window.SPLX.html(k):'';
+for(const k of ['blog','interests','messages','profile','alerts'])V[k]=()=>window.SPLX?window.SPLX.html(k):'';
 window.SPL_RENDER=render;
+window.SPL_TAB=()=>state&&state.tab;
 window.SPL_TAB=()=>state&&state.tab;
 document.getElementById('coil').innerHTML='<span></span>'.repeat(90);
 document.getElementById('todayChip').textContent=`${WDL[wdi(TODAY)]}, ${TODAY.getDate()} ${MON[TODAY.getMonth()]}`;
