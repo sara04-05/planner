@@ -155,6 +155,11 @@ const T={
 'What currency does it use?':'Çfarë monedhe përdor?','Amounts are shown in euros (€).':'Shumat shfaqen në euro (€).','Is there a dark mode?':'A ka modalitet të errët?',
 'Yes. It follows your device setting, and you can switch it with one button at the top of the planner.':'Po. Ndjek cilësimin e pajisjes, dhe mund ta ndryshosh me një buton në krye të planerit.','Can other people see my planner?':'A mund ta shohin të tjerët planerin tim?',
 "No. Your planner is only visible when you're logged in to your own account.":'Jo. Planeri shihet vetëm kur je i kyçur në llogarinë tënde.','Ready to plan your week?':'Gati ta planifikosh javën?','It takes under a minute to set up.':'Krijohet për më pak se një minutë.',
+'Chat':'Bisedë','Start a chat':'Fillo një bisedë','Their email':'Email-i i tyre','Open':'Hap','Send':'Dërgo','Message':'Mesazhi','Write a message…':'Shkruaj një mesazh…','You:':'Ti:','Loading…':'Po hapet…',
+"No chats yet. Type someone's email above to start one.":'Ende pa biseda. Shkruaj email-in e dikujt më lart për të filluar një.','Pick a chat, or start one with someone\'s email.':'Zgjidh një bisedë, ose fillo një me email-in e dikujt.',
+'Say hi! Your messages are only seen by the two of you.':'Përshëndeti! Mesazhet i shihni vetëm ju të dy.','Nobody has a Splanner account with that email.':'Askush nuk ka llogari Splanner me këtë email.',
+"That's your own email.":'Ky është email-i yt.',"You can't message yourself.":'Nuk mund t\'i shkruash vetes.','That account no longer exists.':'Kjo llogari nuk ekziston më.',
+'You are sending messages too fast. Wait a minute and try again.':'Po dërgon mesazhe shumë shpejt. Prit një minutë dhe provo përsëri.','Something went wrong. Try again.':'Diçka shkoi keq. Provo përsëri.',
 'I already have one':'E kam një','Privacy':'Privatësia','Main':'Kryesore','Preview sections':'Pjesët e shembullit','Splanner · Study, tasks & money in one notebook':'Splanner · Studime, detyra dhe para në një fletore','Splanner':'Splanner',
 };
 

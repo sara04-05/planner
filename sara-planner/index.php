@@ -32,6 +32,8 @@ if (!$user) {            // account was deleted
     <div class="brand"><?= logo_html() ?><span>Hi, <?= h($user['name']) ?></span></div>
     <div class="top-r">
       <span class="chip-date" id="todayChip"></span>
+      <?php $unread = chat_unread($uid); ?>
+      <a class="btn" href="chat.php" id="chatBtn">Chat<?php if ($unread): ?> <span class="badge"><?= $unread ?></span><?php endif; ?></a>
       <?php if (is_admin($uid)): ?><a class="btn" href="admin.php">Users</a><?php endif; ?>
       <button class="btn" data-lang-btn>Shqip</button>
       <button class="btn" id="themeBtn" data-act="theme" aria-label="Switch theme"></button>

@@ -173,3 +173,17 @@ CREATE TABLE IF NOT EXISTS email_codes (
   tries      TINYINT UNSIGNED NOT NULL DEFAULT 0,
   FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
 ) ENGINE=InnoDB;
+
+-- Chat between users. sent_at is a Unix time, so it shows right in every time zone.
+CREATE TABLE IF NOT EXISTS messages (
+  id       INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+  from_id  INT UNSIGNED NOT NULL,
+  to_id    INT UNSIGNED NOT NULL,
+  body     TEXT NOT NULL,
+  sent_at  INT UNSIGNED NOT NULL,
+  is_read  TINYINT UNSIGNED NOT NULL DEFAULT 0,
+  INDEX idx_msg_to (to_id, from_id),
+  INDEX idx_msg_from (from_id, to_id),
+  FOREIGN KEY (from_id) REFERENCES users(id) ON DELETE CASCADE,
+  FOREIGN KEY (to_id) REFERENCES users(id) ON DELETE CASCADE
+) ENGINE=InnoDB;

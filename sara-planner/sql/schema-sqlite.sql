@@ -166,6 +166,20 @@ CREATE TABLE IF NOT EXISTS email_codes (
   FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
 );
 
+-- Chat between users. sent_at is a Unix time, so it shows right in every time zone.
+CREATE TABLE IF NOT EXISTS messages (
+  id       INTEGER PRIMARY KEY AUTOINCREMENT,
+  from_id  INTEGER NOT NULL,
+  to_id    INTEGER NOT NULL,
+  body     TEXT NOT NULL,
+  sent_at  INTEGER NOT NULL,
+  is_read  TINYINTEGER NOT NULL DEFAULT 0,
+  FOREIGN KEY (from_id) REFERENCES users(id) ON DELETE CASCADE,
+  FOREIGN KEY (to_id) REFERENCES users(id) ON DELETE CASCADE
+);
+
 CREATE INDEX IF NOT EXISTS idx_exp_user_date ON expenses(user_id,date);
 CREATE INDEX IF NOT EXISTS idx_task_user_due ON tasks(user_id,due);
 CREATE INDEX IF NOT EXISTS idx_gcal_user_date ON gcal_events(user_id,date);
+CREATE INDEX IF NOT EXISTS idx_msg_to ON messages(to_id,from_id);
+CREATE INDEX IF NOT EXISTS idx_msg_from ON messages(from_id,to_id);

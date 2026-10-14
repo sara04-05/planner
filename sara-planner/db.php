@@ -159,6 +159,18 @@ function upgrade_schema(PDO $pdo): void
         error_log('Could not add users.last_login: ' . $e->getMessage());
     }
 
+    // Chat between users: same table as in the schema file.
+    try {
+        $sql = file_get_contents(__DIR__ . (DB_DRIVER === 'sqlite' ? '/sql/schema-sqlite.sql' : '/sql/schema.sql'));
+        if (preg_match('/CREATE TABLE IF NOT EXISTS messages \\(.*?\\n\\)[^;]*;/s', $sql, $m)) $pdo->exec($m[0]);
+        if (DB_DRIVER === 'sqlite') {
+            $pdo->exec('CREATE INDEX IF NOT EXISTS idx_msg_to ON messages(to_id,from_id)');
+            $pdo->exec('CREATE INDEX IF NOT EXISTS idx_msg_from ON messages(from_id,to_id)');
+        }
+    } catch (PDOException $e) {
+        error_log('Could not add the messages table: ' . $e->getMessage());
+    }
+
     // Google Calendar and email codes: same tables as in the schema file. Existing accounts count as confirmed (DEFAULT 1).
     try {
         $sql = file_get_contents(__DIR__ . (DB_DRIVER === 'sqlite' ? '/sql/schema-sqlite.sql' : '/sql/schema.sql'));
@@ -255,6 +267,16 @@ function is_admin(int $uid): bool
     if (!$admins) return false;
     $row = q('SELECT email FROM users WHERE id = ?', [$uid])->fetch();
     return $row && in_array(strtolower($row['email']), $admins, true);
+}
+
+/** How many chat messages this user hasn't read yet (0 if the messages table couldn't be made on this host). */
+function chat_unread(int $uid): int
+{
+    try {
+        return (int)q('SELECT COUNT(*) AS n FROM messages WHERE to_id = ? AND is_read = 0', [$uid])->fetch()['n'];
+    } catch (PDOException $e) {
+        return 0;
+    }
 }
 
 /** Create the rows every new user starts with. */
