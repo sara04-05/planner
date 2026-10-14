@@ -25,7 +25,7 @@ $plan = day_schedule($id, $today);
 $now = (int)date('G') * 60 + (int)date('i');
 
 $acts = '<a class="btn" href="explore.php">← Explore</a>';
-if ($ns = public_slug($p['id'])) $acts .= ' <a class="btn" href="u.php?u=' . h($ns) . '">Notebooks</a>';
+if ($ns = public_slug($p['id'], $uid)) $acts .= ' <a class="btn" href="u.php?u=' . h($ns) . '">Notebooks</a>';
 if (!$self) $acts .= ' <a class="btn primary" href="messages.php?with=' . $p['id'] . '">Message</a>';
 app_top($p['name'], ['active' => 'explore', 'covers' => true, 'eyebrow' => 'Friend\'s notebook', 'h1' => $p['name'], 'actions' => $acts]); ?>
     <div class="friend-day">
