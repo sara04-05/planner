@@ -69,6 +69,9 @@ function db(): PDO
         $dsn = sprintf('mysql:host=%s;port=%d;dbname=%s;charset=utf8mb4', DB_HOST, DB_PORT, DB_NAME);
         // Give up after 10 seconds instead of hanging when the database server can't be reached
         $pdo = new PDO($dsn, DB_USER, DB_PASS, $opts + [PDO::ATTR_TIMEOUT => 10]);
+        // Dates the database fills in itself (CURRENT_TIMESTAMP) use the same time zone as PHP. An offset like +02:00
+        // is used because named zones are not installed on every host.
+        $pdo->exec("SET time_zone = '" . date('P') . "'");
     }
     // Checking for missing tables/columns takes about ten database round trips, so it runs only
     // once per version of this file (remembered in data/), not on every page and every save.
