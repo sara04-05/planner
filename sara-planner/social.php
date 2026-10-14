@@ -2,15 +2,24 @@
 // Shared helpers for people, profiles and friends (people.php, profile.php, friend.php, chat).
 declare(strict_types=1);
 
-// Notebook covers: [name, style]. Vintage ones have a name label, spiral ones show your cover words in script.
-// The drawings are in assets/covers.css.
+// Notebook covers: [name, style]. 'label' covers have a name label with your picture, 'spiral' ones show your cover words in script.
+// The drawings are plain CSS in assets/covers.css. Old cover names (from earlier versions) are mapped to the closest new one.
 const COVERS = [
-    'meadow' => ['Wildflowers', 'vintage'], 'cherry' => ['Cherries & bows', 'top'], 'autumn' => ['Autumn leaves', 'vintage'],
-    'woodland' => ['Woodland', 'vintage'], 'cocoa' => ['Pressed ferns', 'vintage'], 'rose' => ['Rose vine', 'vintage'],
-    'blush' => ['Blush', 'spiral'], 'petal' => ['Pink bow', 'spiral'], 'rosewood' => ['Rosewood', 'spiral'],
-    'ivory' => ['White & bow', 'spiral'], 'nude' => ['Nude', 'spiral'],
+    'daisy' => ['Daisy meadow', 'label'], 'gingham' => ['Cherry gingham', 'label'], 'cream' => ['Cream & gold', 'label'],
+    'sage' => ['Sage linen', 'label'], 'midnight' => ['Midnight stars', 'label'], 'mocha' => ['Mocha corduroy', 'label'],
+    'marble' => ['Pink marble', 'spiral'], 'lavender' => ['Lavender', 'spiral'], 'sunset' => ['Retro sunset', 'spiral'],
+    'butter' => ['Butter dots', 'spiral'], 'cloud' => ['Soft clouds', 'spiral'], 'matcha' => ['Matcha waves', 'spiral'],
 ];
-const DEFAULT_COVER = 'meadow';
+const COVER_LEGACY = ['meadow' => 'daisy', 'cherry' => 'gingham', 'autumn' => 'mocha', 'woodland' => 'sage', 'cocoa' => 'mocha',
+    'rose' => 'cream', 'blush' => 'marble', 'petal' => 'marble', 'rosewood' => 'sunset', 'ivory' => 'cloud', 'nude' => 'butter'];
+const DEFAULT_COVER = 'daisy';
+
+/** A saved cover name as a current one (old names are mapped, unknown ones fall back to the default). */
+function resolve_cover(string $c): string
+{
+    $c = COVER_LEGACY[$c] ?? $c;
+    return isset(COVERS[$c]) ? $c : DEFAULT_COVER;
+}
 // Hour types and the colour each one has in the planner (same as HT in assets/app.js)
 const HOUR_COLORS = ['uni' => 'school', 'work' => 'transport', 'study' => 'food', 'personal' => 'fun',
     'health' => 'groceries', 'sleep' => 'other'];
@@ -29,7 +38,7 @@ function person(int $id): ?array
     }
     $p = $p ?: ['bio' => '', 'cover' => DEFAULT_COVER, 'words' => '', 'avatar_v' => 0];
     return ['id' => (int)$u['id'], 'name' => $u['name'], 'email' => $u['email'], 'bio' => $p['bio'],
-        'cover' => isset(COVERS[$p['cover']]) ? $p['cover'] : DEFAULT_COVER, 'words' => (string)$p['words'], 'avatar_v' => (int)$p['avatar_v'],
+        'cover' => resolve_cover((string)$p['cover']), 'words' => (string)$p['words'], 'avatar_v' => (int)$p['avatar_v'],
         'same_name' => same_name_count($u['name']) > 1];
 }
 
@@ -90,20 +99,18 @@ function avatar_html(array $p, string $size = ''): string
 /** A person's notebook cover. $mini = just the pattern, for the cover picker. */
 function cover_html(array $p, bool $mini = false, ?string $cover = null): string
 {
-    $cover = $cover ?? $p['cover'];
+    $cover = resolve_cover($cover ?? $p['cover']);
     $style = COVERS[$cover][1];
-    $cls = 'nbc cv-' . $cover . ($style === 'spiral' ? ' spiral' : '') . ($style === 'top' ? ' top' : '') . ($mini ? ' mini' : '');
-    $lightSpine = in_array($cover, ['cherry', 'rose'], true) ? ' light' : '';
-    $out = '<span class="' . $cls . '" aria-hidden="true"><span class="nbc-art"></span><span class="nbc-spine' . $lightSpine . '"></span>';
+    $cls = 'nbc cv-' . $cover . ($style === 'spiral' ? ' spiral' : '') . ($mini ? ' mini' : '');
+    $out = '<span class="' . $cls . '" aria-hidden="true"><span class="nbc-art"></span><span class="nbc-spine"></span>';
     if (!$mini) {
         if ($style === 'spiral') {
             $words = trim($p['words']);
-            $out .= '<span class="nbc-words">' . (in_array($cover, ['petal', 'ivory'], true) ? '<span class="nbc-bowtop"></span>' : '')
-                . '<span class="nbc-script" translate="no">' . h($words !== '' ? $words : $p['name']) . '</span>'
+            $out .= '<span class="nbc-words"><span class="nbc-script" translate="no">' . h($words !== '' ? $words : $p['name']) . '</span>'
                 . avatar_html($p) . '<span class="nbc-small" translate="no">' . ($words !== '' ? h($p['name']) : '') . '</span></span>';
         } else {
             $out .= '<span class="nbc-label">' . avatar_html($p) . '<span class="nbc-name" translate="no">' . h($p['name']) . '</span>'
-                . '<span class="nbc-orn"></span><span class="nbc-dots"></span></span>';
+                . '<span class="nbc-orn"></span></span>';
         }
     }
     return $out . '</span>';

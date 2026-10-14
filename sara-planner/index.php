@@ -29,6 +29,7 @@ $requests = friend_requests_count($uid);
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="<?= FONT_LINK ?>" rel="stylesheet">
   <link rel="stylesheet" href="assets/style.css?v=<?= filemtime(__DIR__ . '/assets/style.css') ?>">
+  <link rel="stylesheet" href="assets/covers.css?v=<?= filemtime(__DIR__ . '/assets/covers.css') ?>">
   <link rel="icon" href="assets/logo.svg" type="image/svg+xml">
   <script>try{var t=localStorage.getItem('sara-theme');if(t)document.documentElement.setAttribute('data-theme',t)}catch(e){}</script>
 <script src="assets/lang.js?v=<?= filemtime(__DIR__ . '/assets/lang.js') ?>"></script>
@@ -41,7 +42,10 @@ $requests = friend_requests_count($uid);
       <span class="date-pill"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="5" width="18" height="16" rx="3"/><path d="M3 10h18M8 3v4M16 3v4"/></svg><span class="chip-date" id="todayChip"></span></span>
       <a class="btn bell" href="people.php" aria-label="People"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2M9 11a4 4 0 1 0 0-8 4 4 0 0 0 0 8zM22 21v-2a4 4 0 0 0-3-3.9M16 3.1a4 4 0 0 1 0 7.8"/></svg>People<?php if ($requests): ?><span class="badge"><?= $requests ?></span><?php endif; ?></a>
       <a class="btn bell" href="messages.php" id="msgBtn" aria-label="Messages"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 12a8 8 0 0 1-11.6 7.1L3 21l1.9-5.4A8 8 0 1 1 21 12z"/></svg>Messages<?php if ($chatUnread): ?><span class="badge"><?= $chatUnread ?></span><?php endif; ?></a>
-      <button class="btn bell" data-act="tab" data-tab="alerts" aria-label="Notifications"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M18 8a6 6 0 0 0-12 0c0 7-3 9-3 9h18s-3-2-3-9M13.7 21a2 2 0 0 1-3.4 0"/></svg><span class="badge" id="bellBadge"<?= $unread ? '' : ' hidden' ?>><?= $unread ?></span></button>
+      <div class="notif-wrap">
+        <button class="btn bell" data-x="bell" id="bellBtn" aria-haspopup="true" aria-expanded="false" aria-label="Notifications"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M18 8a6 6 0 0 0-12 0c0 7-3 9-3 9h18s-3-2-3-9M13.7 21a2 2 0 0 1-3.4 0"/></svg><span class="badge" id="bellBadge"<?= $unread ? '' : ' hidden' ?>><?= $unread ?></span></button>
+        <div class="notif-pop" id="notifPop" role="dialog" aria-label="Notifications" hidden></div>
+      </div>
       <?php if (is_admin($uid)): ?><a class="btn" href="admin.php">Users</a><?php endif; ?>
       <button class="btn" data-lang-btn>Shqip</button>
       <button class="btn" id="themeBtn" data-act="theme" aria-label="Switch theme"></button>
@@ -64,14 +68,15 @@ $requests = friend_requests_count($uid);
       <button class="tab" role="tab" data-act="tab" data-tab="tasks">Tasks</button>
       <button class="tab" role="tab" data-act="tab" data-tab="money">Expenses</button>
       <div class="tab-gap"></div>
-      <button class="tab" role="tab" data-act="tab" data-tab="blog">Blog</button>
       <button class="tab" role="tab" data-act="tab" data-tab="interests">Interests</button>
       <button class="tab" role="tab" data-act="tab" data-tab="profile">Profile</button>
-      <button class="tab" role="tab" data-act="tab" data-tab="alerts">Alerts<?= $unread ? ' <span class="badge" id="tabBadge">' . $unread . '</span>' : '' ?></button>
     </nav>
   </div>
 </div>
 <div class="toast" id="toast" role="status" hidden></div>
+<template id="coverTpl"><?php foreach (COVERS as $k => $x): ?><div data-cover="<?= $k ?>" data-label="<?= h($x[0]) ?>"><?= cover_html($me, false, $k) ?></div><?php endforeach; ?></template>
+<template id="coverMiniTpl"><?php foreach (COVERS as $k => $x): ?><div data-cover="<?= $k ?>"><?= cover_html($me, true, $k) ?></div><?php endforeach; ?></template>
+<script>window.SPL_ME=<?= json_encode(['id' => $uid, 'name' => $me['name'], 'email' => $me['email'], 'cover' => $me['cover'], 'words' => $me['words'], 'avatar_v' => $me['avatar_v']], JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT) ?>;</script>
 <script src="assets/import.js?v=<?= filemtime(__DIR__ . '/assets/import.js') ?>"></script>
 <script src="assets/social.js?v=<?= filemtime(__DIR__ . '/assets/social.js') ?>"></script>
 <script src="assets/app.js?v=<?= filemtime(__DIR__ . '/assets/app.js') ?>"></script>

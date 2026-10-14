@@ -71,7 +71,7 @@ auth_top('People', 'wide people-card', true); ?>
         <div class="me-name"><?= name_html($me) ?></div>
         <p class="me-bio"><?= $me['bio'] !== '' ? h($me['bio']) : '<span class="muted">No bio yet.</span>' ?></p>
       </div>
-      <a class="btn" href="profile.php">Edit profile</a>
+      <a class="btn" href="index.php?tab=profile">Edit profile</a>
     </div>
 
     <?php if ($requests): ?>

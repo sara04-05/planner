@@ -1,4 +1,4 @@
-/* The sharing side of the planner: Blog, Interests, Profile (privacy + design) and Alerts tabs.
+/* The sharing side of the planner: the Profile tab (about you, blog, privacy, design), Interests, and the bell's notification dropdown.
    app.js asks window.SPLX.html(tab) for each tab's HTML; everything here talks to api.php (x.* actions) and upload.php. */
 (function(){
 const CSRF=(document.querySelector('meta[name="csrf-token"]')||{}).content||'';
@@ -17,7 +17,7 @@ const QUICK=[['🎬','Favourite movies','list'],['🎤','Favourite singers','lis
 const SHARE=[['blog','Blog posts','Posts you marked as public.'],['interests','Interest lists','Lists you marked as public.'],['timetable','Weekly timetable','Your repeating weekly hours (the ↻ ones).'],['subjects','Study subjects','Subject names and how far you are, never your notes.']];
 
 let S=null,loading=false,loadErr='';
-const ui={post:null,pics:{},dd:null,dirty:false,sel:-1,newList:false,marked:false};
+const ui={ptab:'me',post:null,pics:{},dd:null,dirty:false,sel:-1,newList:false,marked:false};
 
 async function api(action,data={}){
   const res=await fetch('api.php?action='+encodeURIComponent(action),{method:'POST',credentials:'same-origin',headers:{'Content-Type':'application/json','X-CSRF-Token':CSRF},body:JSON.stringify(data)});
@@ -39,14 +39,12 @@ const clone=o=>JSON.parse(JSON.stringify(o));
 
 function load(){
   if(loading)return;loading=true;loadErr='';
-  api('x.load').then(d=>{S=d;ui.dd=clone(d.design);ui.dd.cover_url=d.cover_url;ui.dirty=false;loading=false;paintBadges();redraw()})
+  api('x.load').then(d=>{S=d;ui.dd=clone(d.design);ui.dd.cover_url=d.cover_url;ui.dirty=false;loading=false;paintBadges();redraw();if(popOpen())paintPop()})
     .catch(e=>{loading=false;loadErr=e.message;redraw()});
 }
 function paintBadges(){
   const n=S?S.unread:0;
   const b=$('bellBadge');if(b){b.textContent=n;b.hidden=!n}
-  const t=$('tabBadge');if(t){if(n)t.textContent=n;else t.remove()}
-  else if(n){const tab=document.querySelector('.tab[data-tab="alerts"]');if(tab){tab.insertAdjacentHTML('beforeend',` <span class="badge" id="tabBadge">${n}</span>`)}}
 }
 
 /* ---------- small building blocks ---------- */
@@ -82,9 +80,9 @@ function blogHtml(){
       <div class="acts"><button class="btn sm" data-x="post-edit" data-id="${p.id}">Edit</button>
         <button class="btn sm" data-x="post-vis" data-id="${p.id}">${p.public?'Make private':'Make public'}</button>
         <button class="btn sm danger" data-x="post-del" data-id="${p.id}">Delete</button></div></div></article>`).join('');
-  return hdr('Your notebook','Blog',ui.post?'':'<button class="btn primary" data-x="post-new">+ New post</button>')+
-    (pub?'':'<p class="hint2" style="margin:-6px 0 14px;font-size:13px">Posts marked public show on your notebook once you turn on <b>Public profile</b> in the Profile tab.</p>')+
-    postForm()+(posts||(ui.post?'':'<p class="empty">No posts yet. Write about your day, a book you finished, a trip — whatever you like. Each post can be private or public.</p>'));
+  return `<div class="xrow sp" style="margin-bottom:12px"><p class="sub" style="margin:0">Write about your day, a book you finished, a trip. Each post can be private or public.</p>${ui.post?'':'<button class="btn primary" data-x="post-new">+ New post</button>'}</div>`+
+    (pub?'':'<p class="hint2" style="margin:0 0 14px;font-size:13px">Posts marked public show on your notebook once you turn on <b>Public profile</b> under <button class="linkbtn" data-x="ptab" data-v="privacy">Privacy</button>.</p>')+
+    postForm()+(posts||(ui.post?'':'<p class="empty">No posts yet. Your first one is a click away.</p>'));
 }
 
 /* ---------- INTERESTS ---------- */
@@ -156,20 +154,57 @@ function stkCtl(){
   if(!s)return `<span>${ui.dd.stickers.length?'Click a sticker on the banner to resize it.':'Pick a sticker above to put it on your banner.'}</span>`;
   return `<span>Selected:</span><button class="btn sm" data-x="stk-size" data-v="-0.2" aria-label="Smaller">−</button><button class="btn sm" data-x="stk-size" data-v="0.2" aria-label="Bigger">+</button><button class="btn sm" data-x="stk-rot" data-v="-15" aria-label="Turn left">↺</button><button class="btn sm" data-x="stk-rot" data-v="15" aria-label="Turn right">↻</button><button class="btn sm danger" data-x="stk-del">Remove</button>`;
 }
-function profileHtml(){
-  const p=S.profile,d=ui.dd;
-  const link=`${location.origin}${location.pathname.replace(/[^/]*$/,'')}u.php?u=${p.slug}`;
-  const sec1=`<section class="xcard"><h3>Your page</h3><p class="sub">The name and bio people see on your notebook.</p>
-    <form class="xform" data-xform="profile" autocomplete="off">
-      <label class="l" for="pf-slug">Page name</label><div class="xrow" style="flex-wrap:nowrap"><span class="hint2">@</span><input type="text" id="pf-slug" name="slug" value="${esc(p.slug)}" maxlength="30" pattern="[A-Za-z0-9_]{3,30}" data-draft required></div>
-      <label class="l" for="pf-bio">Bio</label><textarea id="pf-bio" name="bio" maxlength="300" style="min-height:70px" data-draft placeholder="A few words about you and your notebook">${esc(p.bio)}</textarea>
-      <div class="xrow"><button class="btn primary">Save</button><a class="btn" href="u.php?u=${esc(p.slug)}" target="_blank" rel="noopener">Open my page ↗</a><button type="button" class="btn ghost" data-x="copy-link" data-link="${esc(link)}">Copy link</button></div>
-      <p class="hint2">${p.friends} friend${p.friends===1?'':'s'} · <a href="profile.php">Change your name, picture and notebook cover</a></p></form></section>`;
-  const sec2=`<section class="xcard"><h3>Who can see your notebook</h3><p class="sub">Your planner itself always stays private. Only what you switch on below is ever shown.</p>
+const ME=()=>window.SPL_ME||{name:'',email:'',cover:'daisy',words:'',avatar_v:0,id:0};
+const avatarHtml=(cls='')=>{const m=ME();return m.avatar_v?`<img class="avatar ${cls}" id="meAv" src="avatar.php?id=${m.id}&v=${m.avatar_v}" alt="">`:`<span class="avatar ${cls} letter" id="meAv" aria-hidden="true">${esc((m.name.trim()[0]||'?').toUpperCase())}</span>`};
+function coverClone(k){const el=document.querySelector(`#coverTpl [data-cover="${k}"] .nbc`);return el?el.cloneNode(true):null}
+const coverPick=cur=>{
+  const t=document.getElementById('coverMiniTpl'),l=document.getElementById('coverTpl');if(!t||!l)return '';
+  return [...t.content.querySelectorAll('[data-cover]')].map(d=>{const k=d.dataset.cover,lab=l.content.querySelector(`[data-cover="${k}"]`).dataset.label;
+    return `<label class="cover-opt" title="${esc(lab)}"><input type="radio" name="cover" value="${k}" ${k===cur?'checked':''}>${d.innerHTML}<span>${esc(lab)}</span></label>`}).join('');
+};
+const PTABS=[['me','About you'],['blog','Blog'],['privacy','Privacy'],['design','Design']];
+function heroHtml(){
+  const p=S.profile,m=ME(),cv=coverClone(m.cover);
+  return `<section class="phero"><div class="phero-cv">${cv?cv.outerHTML:''}</div>
+    <div class="phero-tx"><div class="phero-id">${avatarHtml('lg')}<div><h2 translate="no">${esc(m.name)}</h2><div class="hint2" translate="no">@${esc(p.slug)} · ${p.friends} friend${p.friends===1?'':'s'} · ${S.posts.length} post${S.posts.length===1?'':'s'}</div></div></div>
+      <p class="phero-bio" translate="no">${p.bio?esc(p.bio):'<span class="hint2">Add a few words about you in “About you”.</span>'}</p>
+      <div class="xrow"><a class="btn" href="u.php?u=${esc(p.slug)}" target="_blank" rel="noopener">Open my page ↗</a><button type="button" class="btn ghost" data-x="copy-link" data-link="${esc(`${location.origin}${location.pathname.replace(/[^/]*$/,'')}u.php?u=${p.slug}`)}">Copy link</button></div></div></section>`;
+}
+function meHtml(){
+  const p=S.profile,m=ME();
+  return `<form class="xform pme" data-xform="me" autocomplete="off" enctype="multipart/form-data">
+    <section class="xcard"><h3>About you</h3><p class="sub">What people see on your page, in People and on your notebook cover.</p>
+      <div class="pme-top">${avatarHtml('xl')}<div class="pme-up"><span class="l">Profile picture</span>
+        <div class="xrow"><label class="btn sm"><input type="file" name="avatar" accept="image/jpeg,image/png,image/webp,image/gif" data-x-av>📎 ${m.avatar_v?'Change picture':'Choose a picture'}</label>${m.avatar_v?'<label class="mini-sw"><input type="checkbox" name="remove_avatar" value="1"><span class="tg"></span>Remove my picture</label>':''}</div>
+        <span class="hint2">JPG, PNG, WebP or GIF, under 5 MB. It is cropped to a circle.</span></div></div>
+      <div class="pme-grid"><div><label class="l" for="me-name">Name (your username)</label><input type="text" id="me-name" name="name" value="${esc(m.name)}" maxlength="80" required data-draft></div>
+        <div><label class="l" for="pf-slug">Page name</label><div class="xrow" style="flex-wrap:nowrap"><span class="hint2">@</span><input type="text" id="pf-slug" name="slug" value="${esc(p.slug)}" maxlength="30" pattern="[A-Za-z0-9_]{3,30}" data-draft required></div></div></div>
+      <label class="l" for="pf-bio">Bio</label><textarea id="pf-bio" name="bio" maxlength="300" style="min-height:84px" data-draft placeholder="A few words about you and your notebook">${esc(p.bio)}</textarea></section>
+    <section class="xcard"><h3>Notebook cover</h3><p class="sub">The cover friends see on your notebook in People.</p>
+      <div class="cover-pick"><div class="cover-preview" id="coverPreview">${(coverClone(m.cover)||document.createElement('i')).outerHTML}</div>
+        <div class="cover-side"><div class="covers" role="radiogroup" aria-label="Notebook cover">${coverPick(m.cover)}</div>
+          <div><label class="l" for="me-words">Words on a spiral cover</label><input type="text" id="me-words" name="words" value="${esc(m.words)}" maxlength="60" placeholder="e.g. she is fearless" data-draft><p class="hint2" style="margin-top:4px">Shown in handwriting on the spiral covers. Leave it empty to show your name.</p></div></div></div></section>
+    <div class="xrow"><button class="btn primary">Save</button><span class="hint2">${p.friends} friend${p.friends===1?'':'s'} can see this.</span></div></form>`;
+}
+function paintCover(f){
+  const k=(f.querySelector('input[name=cover]:checked')||{}).value,pv=$('coverPreview');if(!k||!pv)return;
+  const n=coverClone(k);if(!n)return;
+  const name=f.elements.name.value.trim(),w=f.elements.words.value.trim();
+  const nm=n.querySelector('.nbc-name');if(nm)nm.textContent=name;
+  const sc=n.querySelector('.nbc-script');if(sc)sc.textContent=w||name;
+  const sm=n.querySelector('.nbc-small');if(sm)sm.textContent=w?name:'';
+  pv.replaceChildren(n);
+}
+function privacyHtml(){
+  const p=S.profile;
+  return `<section class="xcard"><h3>Who can see your notebook</h3><p class="sub">Your planner itself always stays private. Only what you switch on below is ever shown.</p>
     ${sw('Public profile','Listed in Explore. Anyone with an account can open your notebook and send you a friend request.',p.public,'data-xsw="public"')}
     ${sw('Visible without logging in','Also show it to visitors who have no account. Needs a public profile.',p.guest,'data-xsw="guest"',!p.public)}
     <p class="opt-h" style="margin-top:12px">What to show</p>
     ${SHARE.map(s=>sw(s[1],s[2],p.share[s[0]],`data-xsw="share" data-k="${s[0]}"`)).join('')}</section>`;
+}
+function designHtml(){
+  const d=ui.dd;
   const sec3=`<section class="xcard xdesign"><h3>Design your notebook</h3><p class="sub">Pick how your notebook looks. You see it on the right straight away.</p>
     <p class="opt-h">Banner</p><div class="swatches">${Object.keys(COVERS).map(c=>`<button type="button" class="swatch sq" style="background:${COVERS[c]}" data-x="cover" data-v="${c}" aria-label="Banner ${c}" aria-pressed="false"></button>`).join('')}</div>
     <div class="pic-pick" style="margin-top:10px"><label class="btn sm"><input type="file" accept="image/*" data-xfile="cover" data-kind="cover">🖼️ Use my own banner</label><button type="button" class="btn sm ghost" id="coverRm" data-x="cover-rm" ${d.cover_url?'':'hidden'}>Remove my banner</button><span class="hint2" data-pic-msg></span></div>
@@ -182,19 +217,38 @@ function profileHtml(){
     <div class="pic-pick" style="margin-top:8px"><label class="btn sm"><input type="file" accept="image/*" data-xfile="sticker" data-kind="sticker">➕ Make a sticker from my picture</label><span class="hint2" data-pic-msg></span></div>
     <div class="stk-bar" id="stkCtl">${stkCtl()}</div>
     <div class="xrow" style="margin-top:16px"><button class="btn primary" id="saveDesign" data-x="design-save" ${ui.dirty?'':'disabled'}>Save design</button><button class="btn ghost" data-x="design-reset">Undo changes</button></div></section>`;
-  return hdr('Your notebook','Profile')+`<div class="xcols"><div class="xleft">${sec1}${sec2}${sec3}</div><div class="xpv"><div class="pv" id="pv">${pvHtml()}</div></div></div>`;
+  return `<div class="xcols"><div class="xleft">${sec3}</div><div class="xpv"><div class="pv" id="pv">${pvHtml()}</div></div></div>`;
+}
+function profileHtml(){
+  const body=ui.ptab==='blog'?blogHtml():ui.ptab==='privacy'?privacyHtml():ui.ptab==='design'?designHtml():meHtml();
+  const tabs=`<div class="ptabs" role="tablist">${PTABS.map(t=>`<button type="button" role="tab" data-x="ptab" data-v="${t[0]}" aria-selected="${t[0]===ui.ptab}">${t[1]}${t[0]==='blog'&&S.posts.length?` <span class="cnt">${S.posts.length}</span>`:''}</button>`).join('')}</div>`;
+  return hdr('Your notebook','Profile')+heroHtml()+tabs+`<div class="pbody">${body}</div>`;
 }
 
-/* ---------- ALERTS ---------- */
-function alertsHtml(){
+/* ---------- NOTIFICATIONS: the bell's dropdown ---------- */
+const popEl=()=>$('notifPop');
+const popOpen=()=>{const p=popEl();return !!p&&!p.hidden};
+function paintPop(){
+  const p=popEl();if(!p||!S)return;
   const ic={follow:'👤',like:'♥'};
   const rows=S.notes.map(n=>`<div class="note-row${n.read?'':' new'}"><span class="ic">${ic[n.kind]||'🔔'}</span><div class="tx" translate="no">${esc(n.text)}<small>${esc(n.at.slice(0,16))}</small></div>${n.link?`<a class="btn sm" href="${esc(n.link)}">View</a>`:''}</div>`).join('');
-  const prefs=`<section class="xcard" style="margin-top:20px"><h3>Alerts</h3><p class="sub">Choose which alerts you get.</p>
-    ${sw('Someone likes my post','A like on one of your public blog posts.',S.profile.notify.like,'data-xsw="notify" data-k="like"')}</section>`;
-  return hdr('Your notebook','Alerts',S.notes.length?'<button class="btn sm" data-x="notes-clear">Clear all</button>':'')+
-    (rows||'<p class="empty">No alerts yet. When someone likes one of your posts, you will see it here.</p>')+prefs;
+  p.innerHTML=`<div class="np-h"><b>Notifications</b>${S.notes.length?'<button class="linkbtn" data-x="notes-clear">Clear all</button>':''}</div>
+    <div class="np-list">${rows||'<p class="empty">Nothing new. When someone likes one of your posts, you will see it here.</p>'}</div>
+    <div class="np-f">${miniSw('Tell me when someone likes my post',S.profile.notify.like,'data-xsw="notify" data-k="like"')}</div>`;
 }
-
+async function togglePop(btn){
+  const p=popEl();if(!p)return;
+  if(!p.hidden){closePop();return}
+  p.hidden=false;btn.setAttribute('aria-expanded','true');p.innerHTML='<p class="empty" style="padding:14px">Loading…</p>';
+  try{
+    if(!S){const d=await api('x.load');S=d;ui.dd=clone(d.design);ui.dd.cover_url=d.cover_url;ui.dirty=false;paintBadges()}
+    paintPop();
+    if(S.unread>0&&!ui.marked){ui.marked=true;api('x.notes.read').then(()=>{S.unread=0;paintBadges();ui.marked=false}).catch(()=>{ui.marked=false})}
+  }catch(err){p.innerHTML=`<p class="empty" style="padding:14px">${esc(err.message)}</p>`}
+}
+function closePop(){const p=popEl(),b=$('bellBtn');if(p)p.hidden=true;if(b)b.setAttribute('aria-expanded','false');if(S)S.notes.forEach(n=>n.read=true)}
+document.addEventListener('click',e=>{if(popOpen()&&!e.target.closest('.notif-wrap'))closePop()});
+document.addEventListener('keydown',e=>{if(e.key==='Escape'&&popOpen()){closePop();const b=$('bellBtn');if(b)b.focus()}});
 
 /* ---------- entry point for app.js ---------- */
 function html(tab){
@@ -204,14 +258,11 @@ function html(tab){
   }
   const keep=[...document.querySelectorAll('#view [data-draft]')].map(e=>[e.id,e.value]);
   let out='';
-  if(tab==='blog')out=blogHtml();
-  else if(tab==='interests')out=interestsHtml();
-  else if(tab==='profile')out=profileHtml();
-  else out=alertsHtml();
+  if(tab==='interests')out=interestsHtml();
+  else out=profileHtml();
   queueMicrotask(()=>{
     keep.forEach(([id,v])=>{const e=document.getElementById(id);if(e&&!e.value&&!e.dataset.cleared)e.value=v});
-    if(tab==='profile'){syncDesignControls()}
-    if(tab==='alerts'&&S.unread>0&&!ui.marked){ui.marked=true;setTimeout(()=>{api('x.notes.read').then(()=>{S.unread=0;S.notes.forEach(n=>n.read=true);paintBadges();ui.marked=false}).catch(()=>{ui.marked=false})},1500)}
+    if(tab==='profile'&&ui.ptab==='design'){syncDesignControls()}
   });
   return out;
 }
@@ -234,6 +285,8 @@ document.addEventListener('click',async e=>{
   try{
     switch(a){
       case 'retry':loadErr='';S=null;redraw();return;
+      case 'bell':togglePop(b);return;
+      case 'ptab':ui.ptab=b.dataset.v;ui.post=null;redraw();return;
       case 'post-new':ui.post={id:0,title:'',body:'',public:false};ui.pics.post=null;redraw('px-title');return;
       case 'post-edit':{const p=S.posts.find(x=>x.id===id);if(!p)return;ui.post={id:p.id,title:p.title,body:p.body,public:p.public};ui.pics.post=p.image?{id:p.image_id,url:p.image}:null;redraw('px-title');return}
       case 'post-cancel':ui.post=null;redraw();return;
@@ -246,7 +299,7 @@ document.addEventListener('click',async e=>{
       case 'item-del':{const l=S.lists.find(x=>x.items.some(i=>i.id===id));if(l)l.items=l.items.filter(i=>i.id!==id);redraw();await api('x.item.delete',{id});return}
       case 'pic-rm':ui.pics[b.dataset.key]=null;{const w=b.closest('.pic-pick');if(w)w.innerHTML=picInner(b.dataset.key)}return;
       case 'copy-link':{try{await navigator.clipboard.writeText(b.dataset.link);toast('Link copied.')}catch(err){toast(b.dataset.link)}return}
-      case 'notes-clear':await api('x.notes.clear');S.notes=[];S.unread=0;paintBadges();redraw();return;
+      case 'notes-clear':await api('x.notes.clear');S.notes=[];S.unread=0;paintBadges();paintPop();return;
       // design
       case 'cover':ui.dd.cover=b.dataset.v;ui.dd.cover_img=0;ui.dd.cover_url='';break;
       case 'cover-rm':ui.dd.cover_img=0;ui.dd.cover_url='';break;
@@ -293,12 +346,28 @@ document.addEventListener('submit',async e=>{
       const l=S.lists.find(x=>x.id===lid);l.items.push({id:r.id,text:d.text.trim(),note:(d.note||'').trim(),image:pic?pic.url:'',image_id:pic?pic.id:0});
       ui.pics[k]=null;clear(['ix-text-'+lid,'ix-note-'+lid]);redraw('ix-text-'+lid);
       document.querySelectorAll('[data-cleared]').forEach(el=>delete el.dataset.cleared);
-    }else if(f.dataset.xform==='profile'){
+    }else if(f.dataset.xform==='me'){
       await api('x.profile.save',{slug:d.slug,bio:d.bio});
-      S.profile.slug=d.slug.toLowerCase();S.profile.bio=d.bio.trim();toast('Saved.');redraw();
+      const fd=new FormData(f);fd.delete('slug');fd.delete('bio');fd.append('csrf',CSRF);
+      const res=await fetch('profile.php',{method:'POST',credentials:'same-origin',body:fd});
+      let body={};try{body=await res.json()}catch(e){}
+      if(!res.ok)throw new Error(body.error||'Could not save. Try again.');
+      try{sessionStorage.setItem('spl-toast','Saved. This is how people see you now.')}catch(e){}
+      location.reload();return;
     }
   }catch(err){toast(err.message)}
   finally{delete f.dataset.busy;if(btn&&btn.isConnected)btn.disabled=false}
+});
+
+/* ---------- live preview of the cover and picture while editing "About you" ---------- */
+document.addEventListener('input',e=>{const f=e.target.closest&&e.target.closest('form[data-xform="me"]');if(f)paintCover(f)});
+document.addEventListener('change',e=>{
+  const f=e.target.closest&&e.target.closest('form[data-xform="me"]');if(!f)return;
+  paintCover(f);
+  if(e.target.matches('[data-x-av]')&&e.target.files&&e.target.files[0]){
+    const url=URL.createObjectURL(e.target.files[0]),a=$('meAv');
+    if(a){const img=document.createElement('img');img.className=a.className.replace(' letter','');img.id='meAv';img.alt='';img.src=url;a.replaceWith(img)}
+  }
 });
 
 /* ---------- switches + uploads ---------- */
@@ -351,5 +420,5 @@ document.addEventListener('pointermove',e=>{
 const endDrag=()=>{if(drag){drag=null;markDirty()}};
 document.addEventListener('pointerup',endDrag);document.addEventListener('pointercancel',endDrag);
 
-// Apply the saved look to the planner right away (the server also sets it before the page draws)
+try{const m=sessionStorage.getItem('spl-toast');if(m){sessionStorage.removeItem('spl-toast');setTimeout(()=>toast(m),500)}}catch(e){}
 })();
