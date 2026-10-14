@@ -41,6 +41,7 @@ function auth_bottom(): void
   </div>
 </main>
 <script src="assets/theme.js?v=<?= filemtime(__DIR__ . '/assets/theme.js') ?>"></script>
+<?php if (current_user_id()): ?><script src="assets/bell.js?v=<?= filemtime(__DIR__ . '/assets/bell.js') ?>"></script><?php endif; ?>
 </body>
 </html>
 <?php }
@@ -120,17 +121,16 @@ function person_card(array $r, array $nbs): string
 // ---------- the notebook shell: every page of the site is a page of the same notebook ----------
 
 /** The side tabs of the planner. $planner = true on index.php (buttons that switch tab), false elsewhere (links into the planner). */
-function planner_tabs_html(string $active = '', bool $planner = false, int $unread = 0): string
+function planner_tabs_html(string $active = '', bool $planner = false): string
 {
-    $tabs = [['day', 'Day'], ['week', 'Week'], ['month', 'Month'], ['year', 'Year'], null, ['study', 'Study'], ['tasks', 'Tasks'], ['money', 'Expenses'], null, ['profile', 'Profile'], ['alerts', 'Alerts']];
+    $tabs = [['day', 'Day'], ['week', 'Week'], ['month', 'Month'], ['year', 'Year'], null, ['study', 'Study'], ['tasks', 'Tasks'], ['money', 'Expenses']];
     $o = '';
     foreach ($tabs as $t) {
         if ($t === null) { $o .= '<div class="tab-gap"></div>'; continue; }
         [$k, $label] = $t;
-        $badge = $k === 'alerts' && $unread ? ' <span class="badge" id="tabBadge">' . $unread . '</span>' : '';
         $o .= $planner
-            ? '<button class="tab" role="tab" data-act="tab" data-tab="' . $k . '">' . $label . $badge . '</button>'
-            : '<a class="tab" role="tab" href="index.php?tab=' . $k . '" data-tab="' . $k . '"' . ($active === $k ? ' aria-selected="true"' : '') . '>' . $label . $badge . '</a>';
+            ? '<button class="tab" role="tab" data-act="tab" data-tab="' . $k . '">' . $label . '</button>'
+            : '<a class="tab" role="tab" href="index.php?tab=' . $k . '" data-tab="' . $k . '"' . ($active === $k ? ' aria-selected="true"' : '') . '>' . $label . '</a>';
     }
     return $o;
 }
@@ -155,11 +155,10 @@ function app_nav(?int $uid, string $active = '', bool $planner = false): void
       <span class="date-pill"><?= $ic('<rect x="3" y="5" width="18" height="16" rx="3"/><path d="M3 10h18M8 3v4M16 3v4"/>') ?><span class="chip-date" id="todayChip"><?= h(date('l, j F')) ?></span></span>
       <a class="btn bell<?= $active === 'people' ? ' on' : '' ?>" href="people.php" aria-label="People"><?= $ic('<path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2M9 11a4 4 0 1 0 0-8 4 4 0 0 0 0 8zM22 21v-2a4 4 0 0 0-3-3.9M16 3.1a4 4 0 0 1 0 7.8"/>') ?>People<?php if ($requests): ?><span class="badge"><?= $requests ?></span><?php endif; ?></a>
       <a class="btn bell<?= $active === 'messages' ? ' on' : '' ?>" href="messages.php" id="msgBtn" aria-label="Messages"><?= $ic('<path d="M21 12a8 8 0 0 1-11.6 7.1L3 21l1.9-5.4A8 8 0 1 1 21 12z"/>') ?>Messages<?php if ($chatUnread): ?><span class="badge"><?= $chatUnread ?></span><?php endif; ?></a>
-      <?php if ($planner): ?>
-      <button class="btn bell" data-act="tab" data-tab="alerts" aria-label="Notifications"><?= $ic('<path d="M18 8a6 6 0 0 0-12 0c0 7-3 9-3 9h18s-3-2-3-9M13.7 21a2 2 0 0 1-3.4 0"/>') ?><span class="badge" id="bellBadge"<?= $unread ? '' : ' hidden' ?>><?= $unread ?></span></button>
-      <?php else: ?>
-      <a class="btn bell" href="index.php?tab=alerts" aria-label="Notifications"><?= $ic('<path d="M18 8a6 6 0 0 0-12 0c0 7-3 9-3 9h18s-3-2-3-9M13.7 21a2 2 0 0 1-3.4 0"/>') ?><?php if ($unread): ?><span class="badge"><?= $unread ?></span><?php endif; ?></a>
-      <?php endif; ?>
+      <div class="bellwrap">
+        <button class="btn bell" id="bellBtn" aria-label="Notifications" aria-haspopup="true" aria-expanded="false"><?= $ic('<path d="M18 8a6 6 0 0 0-12 0c0 7-3 9-3 9h18s-3-2-3-9M13.7 21a2 2 0 0 1-3.4 0"/>') ?><span class="badge" id="bellBadge"<?= $unread ? '' : ' hidden' ?>><?= $unread ?></span></button>
+        <div class="bellpop" id="bellPop" role="dialog" aria-label="Notifications" hidden></div>
+      </div>
       <?php if (is_admin($uid)): ?><a class="btn<?= $active === 'admin' ? ' on' : '' ?>" href="admin.php">Users</a><?php endif; ?>
       <button class="btn" data-lang-btn>Shqip</button>
       <button class="btn"<?= $planner ? ' id="themeBtn" data-act="theme"' : ' data-theme-btn' ?> aria-label="Switch theme"></button>
@@ -189,7 +188,7 @@ function app_top(string $title, array $o = []): void
     $uid = current_user_id();
     if ($uid && !is_verified($uid)) $uid = null;
     $d = $o['design'] ?? [];
-    $APP_SHELL = ['tabs' => $o['tabs'] ?? ($uid && empty($o['notabs']) ? planner_tabs_html($o['tab'] ?? '', false, unread_count($uid)) : ''), 'inside' => ''];
+    $APP_SHELL = ['tabs' => $o['tabs'] ?? ($uid && empty($o['notabs']) ? planner_tabs_html($o['tab'] ?? '', false) : ''), 'inside' => ''];
     ?>
 <!DOCTYPE html>
 <html lang="en">
@@ -235,6 +234,7 @@ function app_bottom(): void
   </div>
 </div>
 <script src="assets/theme.js?v=<?= filemtime(__DIR__ . '/assets/theme.js') ?>"></script>
+<?php if (current_user_id()): ?><script src="assets/bell.js?v=<?= filemtime(__DIR__ . '/assets/bell.js') ?>"></script><?php endif; ?>
 </body>
 </html>
 <?php }

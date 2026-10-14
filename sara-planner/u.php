@@ -21,7 +21,7 @@ if (!$prof || !can_view_profile($prof, $viewer)) {
   <p class="auth-sub"><?= $needLogin ? 'The owner shares it with people who have an account.' : 'It is either not shared, or the page name is wrong.' ?></p>
   <p style="margin-top:16px">
     <?php if ($needLogin): ?><a class="btn primary" href="login.php">Log in</a> <a class="btn" href="register.php">Create free account</a>
-    <?php else: ?><a class="btn" href="explore.php">Browse public notebooks</a><?php endif; ?>
+    <?php else: ?><a class="btn" href="explore.php">See who is on Splanner</a><?php endif; ?>
   </p>
 <?php
     app_bottom();

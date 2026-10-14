@@ -123,6 +123,7 @@ if (current_user_id()) {
     </nav>
   </header>
 
+  <?php if (isset($_GET['deleted'])): ?><p class="pub-note" style="max-width:640px;margin:12px auto" role="status">Your account has been deleted. You are logged out.</p><?php endif; ?>
   <!-- HERO -->
   <section class="hero">
     <div>
