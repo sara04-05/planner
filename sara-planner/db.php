@@ -162,10 +162,14 @@ function upgrade_schema(PDO $pdo): void
     // Google Calendar and email codes: same tables as in the schema file. Existing accounts count as confirmed (DEFAULT 1).
     try {
         $sql = file_get_contents(__DIR__ . (DB_DRIVER === 'sqlite' ? '/sql/schema-sqlite.sql' : '/sql/schema.sql'));
-        foreach (['google_accounts', 'gcal_events', 'email_codes', 'profiles', 'uploads', 'posts', 'post_likes', 'interest_lists', 'interest_items', 'follows', 'notifications'] as $t) {
+        foreach (['google_accounts', 'gcal_events', 'email_codes', 'profiles', 'uploads', 'posts', 'post_likes', 'interest_lists', 'interest_items', 'follows', 'notifications', 'messages'] as $t) {
             if (preg_match("/CREATE TABLE IF NOT EXISTS $t \\(.*?\\n\\)[^;]*;/s", $sql, $m)) $pdo->exec($m[0]);
         }
-        if (DB_DRIVER === 'sqlite') $pdo->exec('CREATE INDEX IF NOT EXISTS idx_gcal_user_date ON gcal_events(user_id,date)');
+        if (DB_DRIVER === 'sqlite') {
+            $pdo->exec('CREATE INDEX IF NOT EXISTS idx_gcal_user_date ON gcal_events(user_id,date)');
+            $pdo->exec('CREATE INDEX IF NOT EXISTS idx_msg_to ON messages(recipient_id,is_read)');
+            $pdo->exec('CREATE INDEX IF NOT EXISTS idx_msg_pair ON messages(sender_id,recipient_id)');
+        }
         $cols = DB_DRIVER === 'sqlite'
             ? array_column($pdo->query('PRAGMA table_info(users)')->fetchAll(), 'name')
             : array_column($pdo->query('SHOW COLUMNS FROM users')->fetchAll(), 'Field');

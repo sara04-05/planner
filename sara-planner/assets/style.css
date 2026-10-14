@@ -668,3 +668,107 @@ img.stk{width:calc(var(--s,1)*56px);height:auto;font-size:0}
 a.btn{text-decoration:none;color:var(--ink)}
 a.btn.primary{color:var(--on-accent)}
 a.btn:hover{text-decoration:none}
+
+/* messages */
+.chat{display:grid;grid-template-columns:260px minmax(0,1fr);gap:16px;min-height:460px}
+.threads{display:flex;flex-direction:column;gap:6px;max-height:560px;overflow:auto}
+.th{display:flex;gap:10px;align-items:center;width:100%;text-align:left;border:1px solid var(--line);background:var(--paper-2);border-radius:14px;padding:9px 11px;cursor:pointer}
+.th:hover{border-color:var(--accent)}
+.th.on{background:var(--accent-soft);border-color:var(--accent)}
+.th .av2{width:36px;height:36px;border-radius:50%;display:grid;place-items:center;font-weight:700;background:linear-gradient(135deg,var(--accent),color-mix(in srgb,var(--accent) 55%,#E0609A));color:var(--on-accent);flex:none}
+.th .tx{flex:1;min-width:0}
+.th .tx b{display:block;font-size:14px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.th .tx small{display:block;font-size:12px;color:var(--muted);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.pane{display:flex;flex-direction:column;background:var(--paper-2);border:1px solid var(--line);border-radius:16px;overflow:hidden;min-height:460px}
+.pane-h{display:flex;align-items:center;gap:10px;padding:11px 14px;border-bottom:1px solid var(--line);font-weight:700}
+.pane-h .back{display:none}
+.msgs{flex:1;overflow:auto;padding:14px;display:flex;flex-direction:column;gap:6px;max-height:430px;min-height:280px}
+.bub{max-width:76%;padding:8px 12px;border-radius:16px;font-size:14px;line-height:1.45;white-space:pre-wrap;overflow-wrap:anywhere;background:var(--paper);border:1px solid var(--line);align-self:flex-start;border-bottom-left-radius:4px}
+.bub.me{align-self:flex-end;background:var(--accent);border-color:var(--accent);color:var(--on-accent);border-bottom-left-radius:16px;border-bottom-right-radius:4px}
+.bub small{display:block;font-size:10.5px;opacity:.65;margin-top:2px}
+.dsep{align-self:center;font-size:11px;color:var(--muted);font-weight:700;margin:6px 0}
+.composer{display:flex;gap:8px;padding:10px;border-top:1px solid var(--line);align-items:flex-end}
+.composer textarea{flex:1;min-width:0;resize:none;height:42px;max-height:120px;background:var(--paper);border:1px solid var(--line);border-radius:14px;padding:10px 12px;font-size:14px}
+.composer textarea:focus{outline:none;border-color:var(--accent);box-shadow:0 0 0 3px var(--accent-soft)}
+.pane-note{padding:12px 14px;border-top:1px solid var(--line);font-size:13px;color:var(--muted)}
+.chat-empty{margin:auto;text-align:center;color:var(--muted);padding:30px;font-size:14px}
+@media (max-width:760px){
+  .chat{grid-template-columns:minmax(0,1fr)}
+  .chat.open .threads{display:none}
+  .chat:not(.open) .pane{display:none}
+  .pane-h .back{display:inline-flex}
+}
+
+/* ================= Phones ================= */
+@media (max-width:980px){
+  /* Profile: the preview sits right above the design controls instead of at the very bottom */
+  .xcols{display:flex;flex-direction:column;gap:14px}
+  .xleft{display:contents}
+  .xcols .xcard+.xcard{margin-top:0}
+  .xleft>.xcard{order:1}
+  .xpv{order:2}
+  .xleft>.xdesign{order:3}
+}
+@media (max-width:640px){
+  body{padding-inline:10px}
+  .app{padding-block:12px 36px}
+  /* header: logo + greeting on top, one tidy row of icon buttons below */
+  .top{padding:10px 12px 12px;gap:10px;border-radius:18px;margin-bottom:14px}
+  .brand{width:100%;justify-content:space-between;gap:8px;flex-wrap:nowrap}
+  .brand .logo{font-size:26px}
+  .hello{min-width:0;max-width:62%}
+  .hello span:last-child{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  .top-r{width:100%;display:grid;grid-auto-flow:column;grid-auto-columns:1fr;gap:6px}
+  .top-r form.inline{display:contents}
+  .top-r .btn{font-size:0;gap:0;padding:0;height:42px;justify-content:center;border-radius:14px;position:relative;min-width:0}
+  .top-r .btn svg{width:19px;height:19px}
+  .top-r .btn[data-lang-btn],.top-r a.btn[href="admin.php"]{font-size:13px}
+  .top-r .badge{position:absolute;top:2px;right:6px;font-size:10.5px;min-width:17px;height:17px}
+  .bell .badge{top:2px;right:6px}
+  /* the notebook page */
+  .page{padding:20px 16px 26px}
+  .vh{flex-wrap:wrap;gap:10px}
+  h1{font-size:28px}
+  .tabs{margin:0 -4px;padding:0 4px;scroll-snap-type:x proximity}
+  .tab{scroll-snap-align:center;font-size:14px;padding:10px 15px 13px}
+  /* easier to tap, and no zoom-in when you tap a box on iPhone */
+  .xform input[type=text],.xform textarea,.xform select,.composer textarea,.searchbar input,.mini input,.addform input,.addform select{font-size:16px}
+  .btn.sm{padding:8px 13px;font-size:13px;min-height:36px}
+  .pilltabs button,.chipbtn{padding:8px 14px}
+  .swatch{width:40px;height:40px}
+  .swatch.sq{width:48px;height:38px}
+  .stk-lib button{width:42px;height:42px}
+  .sw{padding:13px 0}
+  .xcard{padding:14px 14px}
+  .xrow{gap:8px}
+  .ilists{grid-template-columns:minmax(0,1fr)}
+  .igrid{grid-template-columns:repeat(auto-fill,minmax(96px,1fr))}
+  .post img.pimg{max-height:200px}
+  .post .pb{padding:12px 14px 14px}
+  .note-row{padding:11px 12px}
+  /* chat: fills the screen height, composer stays at the bottom */
+  .chat{min-height:0}
+  .msgs{max-height:none;height:min(56vh,460px)}
+  .bub{max-width:86%;font-size:15px}
+  .threads{max-height:none}
+  .th{padding:11px 12px}
+  /* public pages */
+  .pub{padding-block:12px 40px}
+  .pub-top{padding:10px 12px;gap:8px}
+  .pub-top nav{width:100%}
+  .pub-top nav .btn{flex:1 1 auto;justify-content:center;padding:9px 10px}
+  .nb-banner{height:140px;border-radius:16px}
+  .nb-page{margin-inline:8px;margin-top:-34px;padding:16px 16px 18px}
+  .nb-page .who{flex-wrap:wrap}
+  .nb-page .who>div:nth-child(2){flex:1 1 140px}
+  .person .nb-banner{height:76px}
+  .people{grid-template-columns:minmax(0,1fr)}
+  .nb-sec{margin-top:24px}
+  .tt{font-size:12px}
+}
+@media (max-width:380px){
+  .hello{max-width:56%}
+  .hello .avatar{display:none}
+  .hello{padding-left:12px}
+}
+.nb-hero .nb-page:not([data-paper]){background-image:none}

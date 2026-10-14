@@ -254,3 +254,17 @@ CREATE TABLE IF NOT EXISTS notifications (
   UNIQUE KEY uq_notif_ref (user_id, ref),
   FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
 ) ENGINE=InnoDB;
+
+-- Direct messages between people who follow each other
+CREATE TABLE IF NOT EXISTS messages (
+  id           INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+  sender_id    INT UNSIGNED NOT NULL,
+  recipient_id INT UNSIGNED NOT NULL,
+  body         TEXT NOT NULL,
+  is_read      TINYINT(1) NOT NULL DEFAULT 0,
+  created_at   TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  INDEX idx_msg_to (recipient_id, is_read),
+  INDEX idx_msg_pair (sender_id, recipient_id),
+  FOREIGN KEY (sender_id) REFERENCES users(id) ON DELETE CASCADE,
+  FOREIGN KEY (recipient_id) REFERENCES users(id) ON DELETE CASCADE
+) ENGINE=InnoDB;

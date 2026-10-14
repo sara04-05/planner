@@ -250,3 +250,17 @@ CREATE TABLE IF NOT EXISTS notifications (
   UNIQUE (user_id, ref),
   FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
 );
+
+-- Direct messages between people who follow each other
+CREATE TABLE IF NOT EXISTS messages (
+  id           INTEGER PRIMARY KEY AUTOINCREMENT,
+  sender_id    INTEGER NOT NULL,
+  recipient_id INTEGER NOT NULL,
+  body         TEXT NOT NULL,
+  is_read      TINYINT(1) NOT NULL DEFAULT 0,
+  created_at   TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  FOREIGN KEY (sender_id) REFERENCES users(id) ON DELETE CASCADE,
+  FOREIGN KEY (recipient_id) REFERENCES users(id) ON DELETE CASCADE
+);
+CREATE INDEX IF NOT EXISTS idx_msg_to ON messages(recipient_id,is_read);
+CREATE INDEX IF NOT EXISTS idx_msg_pair ON messages(sender_id,recipient_id);

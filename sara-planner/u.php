@@ -74,6 +74,7 @@ $WD = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
           <div class="hint2">@<?= h($prof['slug']) ?> · <span id="fc"><?= $followers ?></span> follower<?= $followers === 1 ? '' : 's' ?></div>
         </div>
         <?php if ($viewer && !$isMe): ?>
+          <?php if (is_mutual($viewer, $owner)): ?><a class="btn" href="index.php#chat-<?= $owner ?>">Message</a><?php endif; ?>
           <button class="btn <?= $following ? '' : 'primary' ?>" id="followBtn" data-uid="<?= $owner ?>"><?= $following ? 'Following' : 'Follow' ?></button>
         <?php elseif (!$viewer): ?>
           <a class="btn primary" href="login.php">Log in to follow</a>

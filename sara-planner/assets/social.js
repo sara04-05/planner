@@ -17,7 +17,7 @@ const QUICK=[['🎬','Favourite movies','list'],['🎤','Favourite singers','lis
 const SHARE=[['blog','Blog posts','Posts you marked as public.'],['interests','Interest lists','Lists you marked as public.'],['timetable','Weekly timetable','Your repeating weekly hours (the ↻ ones).'],['subjects','Study subjects','Subject names and how far you are, never your notes.']];
 
 let S=null,loading=false,loadErr='';
-const ui={post:null,pics:{},dd:null,dirty:false,sel:-1,newList:false,marked:false};
+const ui={msg:{threads:[],with:0,list:[],can:true,loaded:false,loading:false,hashDone:false},post:null,pics:{},dd:null,dirty:false,sel:-1,newList:false,marked:false};
 
 async function api(action,data={}){
   const res=await fetch('api.php?action='+encodeURIComponent(action),{method:'POST',credentials:'same-origin',headers:{'Content-Type':'application/json','X-CSRF-Token':CSRF},body:JSON.stringify(data)});
@@ -42,7 +42,15 @@ function load(){
   api('x.load').then(d=>{S=d;ui.dd=clone(d.design);ui.dd.cover_url=d.cover_url;ui.dirty=false;loading=false;paintBadges();redraw()})
     .catch(e=>{loading=false;loadErr=e.message;redraw()});
 }
+function paintMsgBadges(){
+  const n=S?S.msg_unread:0;
+  const b=$('msgBadge');if(b){b.textContent=n;b.hidden=!n}
+  const t=$('tabMsgBadge');
+  if(t){if(n)t.textContent=n;else t.remove()}
+  else if(n){const tab=document.querySelector('.tab[data-tab="messages"]');if(tab)tab.insertAdjacentHTML('beforeend',` <span class="badge" id="tabMsgBadge">${n}</span>`)}
+}
 function paintBadges(){
+  paintMsgBadges();
   const n=S?S.unread:0;
   const b=$('bellBadge');if(b){b.textContent=n;b.hidden=!n}
   const t=$('tabBadge');if(t){if(n)t.textContent=n;else t.remove()}
@@ -170,7 +178,7 @@ function profileHtml(){
     ${sw('Visible without logging in','Also show it to visitors who have no account. Needs a public profile.',p.guest,'data-xsw="guest"',!p.public)}
     <p class="opt-h" style="margin-top:12px">What to show</p>
     ${SHARE.map(s=>sw(s[1],s[2],p.share[s[0]],`data-xsw="share" data-k="${s[0]}"`)).join('')}</section>`;
-  const sec3=`<section class="xcard"><h3>Design your notebook</h3><p class="sub">Pick how your notebook looks. You see it on the right straight away.</p>
+  const sec3=`<section class="xcard xdesign"><h3>Design your notebook</h3><p class="sub">Pick how your notebook looks. You see it on the right straight away.</p>
     <p class="opt-h">Cover</p><div class="swatches">${Object.keys(COVERS).map(c=>`<button type="button" class="swatch sq" style="background:${COVERS[c]}" data-x="cover" data-v="${c}" aria-label="Cover ${c}" aria-pressed="false"></button>`).join('')}</div>
     <div class="pic-pick" style="margin-top:10px"><label class="btn sm"><input type="file" accept="image/*" data-xfile="cover" data-kind="cover">🖼️ Use my own cover</label><button type="button" class="btn sm ghost" id="coverRm" data-x="cover-rm" ${d.cover_url?'':'hidden'}>Remove my cover</button><span class="hint2" data-pic-msg></span></div>
     <p class="opt-h">Paper</p><div class="pilltabs">${PAPERS.map(x=>`<button type="button" data-x="paper" data-v="${x[0]}" aria-pressed="false">${x[1]}</button>`).join('')}</div>
@@ -182,19 +190,87 @@ function profileHtml(){
     <div class="pic-pick" style="margin-top:8px"><label class="btn sm"><input type="file" accept="image/*" data-xfile="sticker" data-kind="sticker">➕ Make a sticker from my picture</label><span class="hint2" data-pic-msg></span></div>
     <div class="stk-bar" id="stkCtl">${stkCtl()}</div>
     <div class="xrow" style="margin-top:16px"><button class="btn primary" id="saveDesign" data-x="design-save" ${ui.dirty?'':'disabled'}>Save design</button><button class="btn ghost" data-x="design-reset">Undo changes</button></div></section>`;
-  return hdr('Your notebook','Profile')+`<div class="xcols"><div>${sec1}${sec2}${sec3}</div><div><div class="pv" id="pv">${pvHtml()}</div></div></div>`;
+  return hdr('Your notebook','Profile')+`<div class="xcols"><div class="xleft">${sec1}${sec2}${sec3}</div><div class="xpv"><div class="pv" id="pv">${pvHtml()}</div></div></div>`;
 }
 
 /* ---------- ALERTS ---------- */
 function alertsHtml(){
   const ic={follow:'👤',like:'♥'};
   const rows=S.notes.map(n=>`<div class="note-row${n.read?'':' new'}"><span class="ic">${ic[n.kind]||'🔔'}</span><div class="tx" translate="no">${esc(n.text)}<small>${esc(n.at.slice(0,16))}</small></div>${n.link?`<a class="btn sm" href="${esc(n.link)}">View</a>`:''}</div>`).join('');
-  const prefs=`<section class="xcard" style="margin-top:20px"><h3>Tell me when…</h3><p class="sub">Choose which alerts you get.</p>
+  const prefs=`<section class="xcard" style="margin-top:20px"><h3>Alerts and messages</h3><p class="sub">Choose which alerts you get and whether people can message you.</p>
     ${sw('Someone follows me','A new follower on your public notebook.',S.profile.notify.follow,'data-xsw="notify" data-k="follow"')}
-    ${sw('Someone likes my post','A like on one of your public blog posts.',S.profile.notify.like,'data-xsw="notify" data-k="like"')}</section>`;
+    ${sw('Someone likes my post','A like on one of your public blog posts.',S.profile.notify.like,'data-xsw="notify" data-k="like"')}
+    ${sw('Let people I follow back message me','Turn this off to stop new messages. Old chats stay.',S.profile.notify.dm,'data-xsw="notify" data-k="dm"')}</section>`;
   return hdr('Your notebook','Alerts',S.notes.length?'<button class="btn sm" data-x="notes-clear">Clear all</button>':'')+
     (rows||'<p class="empty">No alerts yet. When someone follows you or likes a post, you will see it here.</p>')+prefs;
 }
+
+
+/* ---------- MESSAGES (only between people who follow each other) ---------- */
+const hhmm=a=>String(a||'').slice(11,16),day=a=>String(a||'').slice(0,10);
+function threadsHtml(){
+  const m=ui.msg;
+  if(!m.threads.length)return '<p class="hint2" style="padding:6px">Nobody here yet. When you and someone else follow each other, you can message them. Find people in <a href="people.php">People</a>.</p>';
+  return m.threads.map(t=>`<button class="th${t.id===m.with?' on':''}" data-x="th-open" data-id="${t.id}"><span class="av2" aria-hidden="true">${esc((t.name[0]||'?').toUpperCase())}</span><span class="tx"><b translate="no">${esc(t.name)}</b><small translate="no">${esc(t.last||(t.can?'Say hello 👋':'Not following each other'))}</small></span>${t.unread?`<span class="badge">${t.unread}</span>`:''}</button>`).join('');
+}
+function bubbles(list,prevDay=''){
+  let last=prevDay;
+  return list.map(x=>{const d=day(x.at);const sep=d!==last?`<div class="dsep">${esc(d)}</div>`:'';last=d;return sep+`<div class="bub${x.mine?' me':''}" translate="no">${esc(x.body)}<small>${esc(hhmm(x.at))}</small></div>`}).join('');
+}
+function chatHtml(){
+  const m=ui.msg,t=m.threads.find(x=>x.id===m.with);
+  if(!t)return '<div class="pane"><div class="chat-empty">Pick someone on the left to start chatting.</div></div>';
+  return `<div class="pane"><div class="pane-h"><button class="btn sm back" data-x="th-back">←</button><span translate="no">${esc(t.name)}</span>${t.slug?`<a class="btn sm" style="margin-left:auto" href="u.php?u=${esc(t.slug)}">Notebook</a>`:''}</div>
+    <div class="msgs" id="chatBody">${m.list.length?bubbles(m.list):'<div class="chat-empty">No messages yet. Say hello 👋</div>'}</div>
+    ${m.can?`<form class="composer" data-xform="msg" autocomplete="off"><textarea id="msg-input" name="body" maxlength="2000" placeholder="Write a message…" aria-label="Message" data-draft rows="1"></textarea><button class="btn primary">Send</button></form>`
+      :'<div class="pane-note">You can only send messages while you follow each other.</div>'}</div>`;
+}
+function messagesHtml(){
+  const m=ui.msg;
+  if(!m.loaded){
+    if(!m.loading){m.loading=true;api('x.msg.threads').then(r=>{m.threads=r.threads;m.loaded=true;m.loading=false;S.msg_unread=r.unread;paintMsgBadges();openFromHash()}).catch(e=>{m.loading=false;toast(e.message)})}
+    return hdr('Your notebook','Messages')+'<p class="empty">Loading…</p>';
+  }
+  return hdr('Your notebook','Messages')+`<div class="chat${m.with?' open':''}"><div class="threads" id="thList">${threadsHtml()}</div>${chatHtml()}</div>`;
+}
+function openFromHash(){
+  const mt=/^#chat-(\d+)/.exec(location.hash);
+  if(mt&&!ui.msg.hashDone){ui.msg.hashDone=true;history.replaceState(null,'',location.pathname+location.search);openThread(+mt[1]);return}
+  redraw();
+}
+async function openThread(id){
+  const m=ui.msg;m.with=id;m.list=[];
+  if(!m.threads.some(t=>t.id===id)){try{const r=await api('x.msg.threads');m.threads=r.threads}catch(e){}}
+  try{
+    const r=await api('x.msg.load',{with:id});
+    m.list=r.messages;m.can=r.can;S.msg_unread=r.unread;const t=m.threads.find(x=>x.id===id);if(t)t.unread=0;paintMsgBadges();
+  }catch(e){toast(e.message);m.with=0}
+  redraw('msg-input');scrollChat();
+}
+const scrollChat=()=>{const b=$('chatBody');if(b)b.scrollTop=b.scrollHeight};
+/** Every few seconds: new messages in the open chat, a fresh list, and the unread badge. */
+async function pollMessages(){
+  if(!S||document.hidden)return;
+  const onTab=window.SPL_TAB&&window.SPL_TAB()==='messages',m=ui.msg;
+  try{
+    const r=await api('x.msg.threads');
+    S.msg_unread=r.unread;paintMsgBadges();
+    if(!onTab||!m.loaded)return;
+    m.threads=r.threads;
+    const tl=$('thList');if(tl&&!tl.contains(document.activeElement))tl.innerHTML=threadsHtml();
+    if(m.with){
+      const after=m.list.length?m.list[m.list.length-1].id:0;
+      const n=await api('x.msg.load',{with:m.with,after});
+      if(n.messages.length){
+        const body=$('chatBody'),near=body&&body.scrollHeight-body.scrollTop-body.clientHeight<80;
+        if(body){const prev=m.list.length?day(m.list[m.list.length-1].at):'';if(!m.list.length)body.innerHTML='';body.insertAdjacentHTML('beforeend',bubbles(n.messages,prev));if(near)scrollChat()}
+        m.list=m.list.concat(n.messages);
+        const t=m.threads.find(x=>x.id===m.with);if(t)t.unread=0;S.msg_unread=n.unread;paintMsgBadges();
+      }
+    }
+  }catch(e){}
+}
+setInterval(pollMessages,8000);
 
 /* ---------- entry point for app.js ---------- */
 function html(tab){
@@ -207,10 +283,12 @@ function html(tab){
   if(tab==='blog')out=blogHtml();
   else if(tab==='interests')out=interestsHtml();
   else if(tab==='profile')out=profileHtml();
+  else if(tab==='messages')out=messagesHtml();
   else out=alertsHtml();
   queueMicrotask(()=>{
     keep.forEach(([id,v])=>{const e=document.getElementById(id);if(e&&!e.value&&!e.dataset.cleared)e.value=v});
     if(tab==='profile'){syncDesignControls()}
+    if(tab==='messages')scrollChat();
     if(tab==='alerts'&&S.unread>0&&!ui.marked){ui.marked=true;setTimeout(()=>{api('x.notes.read').then(()=>{S.unread=0;S.notes.forEach(n=>n.read=true);paintBadges();ui.marked=false}).catch(()=>{ui.marked=false})},1500)}
   });
   return out;
@@ -234,6 +312,8 @@ document.addEventListener('click',async e=>{
   try{
     switch(a){
       case 'retry':loadErr='';S=null;redraw();return;
+      case 'th-open':openThread(id);return;
+      case 'th-back':ui.msg.with=0;redraw();return;
       case 'post-new':ui.post={id:0,title:'',body:'',public:false};ui.pics.post=null;redraw('px-title');return;
       case 'post-edit':{const p=S.posts.find(x=>x.id===id);if(!p)return;ui.post={id:p.id,title:p.title,body:p.body,public:p.public};ui.pics.post=p.image?{id:p.image_id,url:p.image}:null;redraw('px-title');return}
       case 'post-cancel':ui.post=null;redraw();return;
@@ -293,6 +373,15 @@ document.addEventListener('submit',async e=>{
       const l=S.lists.find(x=>x.id===lid);l.items.push({id:r.id,text:d.text.trim(),note:(d.note||'').trim(),image:pic?pic.url:'',image_id:pic?pic.id:0});
       ui.pics[k]=null;clear(['ix-text-'+lid,'ix-note-'+lid]);redraw('ix-text-'+lid);
       document.querySelectorAll('[data-cleared]').forEach(el=>delete el.dataset.cleared);
+    }else if(f.dataset.xform==='msg'){
+      const m=ui.msg,text=d.body.trim();if(!text)return;
+      const r=await api('x.msg.send',{to:m.with,body:text});
+      const ta=$('msg-input');if(ta){ta.value='';ta.style.height=''}
+      const body=$('chatBody');
+      if(body){const prev=m.list.length?day(m.list[m.list.length-1].at):'';if(!m.list.length)body.innerHTML='';body.insertAdjacentHTML('beforeend',bubbles([r.message],prev));scrollChat()}
+      m.list.push(r.message);
+      const t=m.threads.find(x=>x.id===m.with);if(t){t.last='You: '+text.slice(0,70);t.last_id=r.message.id;m.threads.sort((a,b)=>b.last_id-a.last_id)}
+      const tl=$('thList');if(tl)tl.innerHTML=threadsHtml();
     }else if(f.dataset.xform==='profile'){
       await api('x.profile.save',{slug:d.slug,bio:d.bio});
       S.profile.slug=d.slug.toLowerCase();S.profile.bio=d.bio.trim();toast('Saved.');redraw();
@@ -330,6 +419,11 @@ document.addEventListener('change',async e=>{
     }catch(err){if(msg)msg.textContent='';toast(err.message)}
   }
 });
+
+document.addEventListener('keydown',e=>{
+  if(e.target.id==='msg-input'&&e.key==='Enter'&&!e.shiftKey&&!e.isComposing){e.preventDefault();const f=e.target.form;if(f)f.requestSubmit()}
+});
+document.addEventListener('input',e=>{if(e.target.id==='msg-input'){e.target.style.height='auto';e.target.style.height=Math.min(120,e.target.scrollHeight+2)+'px'}});
 
 /* ---------- dragging stickers on the preview cover ---------- */
 let drag=null;

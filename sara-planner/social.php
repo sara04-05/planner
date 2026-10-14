@@ -4,7 +4,7 @@
 declare(strict_types=1);
 
 const SHARE_KEYS   = ['blog', 'interests', 'timetable', 'subjects'];
-const NOTIFY_KEYS  = ['follow', 'like'];
+const NOTIFY_KEYS  = ['follow', 'like', 'dm'];
 const COVERS       = ['dusk', 'peach', 'ocean', 'mint', 'berry', 'sunny', 'night', 'cloud'];
 const PAPERS       = ['lined', 'grid', 'dots', 'plain'];
 const PAPER_COLORS = ['white', 'cream', 'blush', 'mint', 'sky', 'lilac'];
@@ -78,7 +78,8 @@ function json_col(?string $raw, array $default): array
 
 function make_slug(string $name): string
 {
-    $base = strtolower(preg_replace('/[^a-z0-9]+/i', '', iconv('UTF-8', 'ASCII//TRANSLIT//IGNORE', $name) ?: '') ?? '');
+    $ascii = function_exists('iconv') ? (iconv('UTF-8', 'ASCII//TRANSLIT//IGNORE', $name) ?: '') : $name;   // some free hosts have no iconv
+    $base = strtolower(preg_replace('/[^a-z0-9]+/i', '', $ascii) ?? '');
     if (strlen($base) < 3) $base = 'user' . $base;
     $base = substr($base, 0, 24);
     do {
@@ -97,7 +98,7 @@ function ensure_profile(int $uid): array
             $uid, make_slug($name), '',
             json_encode(['blog' => 1, 'interests' => 1, 'timetable' => 0, 'subjects' => 0]),
             json_encode(default_design()),
-            json_encode(['follow' => 1, 'like' => 1]),
+            json_encode(['follow' => 1, 'like' => 1, 'dm' => 1]),
         ]);
         $row = q('SELECT * FROM profiles WHERE user_id = ?', [$uid])->fetch();
     }
@@ -134,7 +135,7 @@ function notify(int $to, string $ref, string $text, string $link): void
 function wants_notice(int $uid, string $type): bool
 {
     $row = ensure_profile($uid);
-    $n = json_col($row['notify'] ?? null, ['follow' => 1, 'like' => 1]);
+    $n = json_col($row['notify'] ?? null, ['follow' => 1, 'like' => 1, 'dm' => 1]);
     return !empty($n[$type]);
 }
 
@@ -204,6 +205,52 @@ function save_image(int $uid, array $file, string $kind): int
     return (int)db()->lastInsertId();
 }
 
+
+// ---------- messages ----------
+
+/** Do both people follow each other? Only then can they message. */
+function is_mutual(int $a, int $b): bool
+{
+    return (int)q('SELECT COUNT(*) c FROM follows WHERE (follower_id = ? AND followee_id = ?) OR (follower_id = ? AND followee_id = ?)', [$a, $b, $b, $a])->fetch()['c'] === 2;
+}
+
+function msg_unread(int $uid): int
+{
+    try {
+        return (int)q('SELECT COUNT(*) c FROM messages WHERE recipient_id = ? AND is_read = 0', [$uid])->fetch()['c'];
+    } catch (PDOException $e) {
+        return 0;
+    }
+}
+
+/** Everyone you can talk to (mutual followers) plus anyone you already talked to, newest conversation first. */
+function msg_threads(int $uid): array
+{
+    $ids = [];
+    foreach (q('SELECT f1.followee_id id FROM follows f1 JOIN follows f2 ON f2.follower_id = f1.followee_id AND f2.followee_id = f1.follower_id WHERE f1.follower_id = ?', [$uid])->fetchAll() as $r) $ids[(int)$r['id']] = true;
+    foreach (q('SELECT DISTINCT CASE WHEN sender_id = ? THEN recipient_id ELSE sender_id END id FROM messages WHERE sender_id = ? OR recipient_id = ?', [$uid, $uid, $uid])->fetchAll() as $r) $ids[(int)$r['id']] = true;
+    $out = [];
+    foreach (array_slice(array_keys($ids), 0, 200) as $id) {
+        $u = q('SELECT u.name, p.slug, p.is_public FROM users u LEFT JOIN profiles p ON p.user_id = u.id WHERE u.id = ?', [$id])->fetch();
+        if (!$u) continue;
+        $last = q('SELECT id, sender_id, body, created_at FROM messages WHERE (sender_id = ? AND recipient_id = ?) OR (sender_id = ? AND recipient_id = ?) ORDER BY id DESC LIMIT 1', [$uid, $id, $id, $uid])->fetch();
+        $unread = (int)q('SELECT COUNT(*) c FROM messages WHERE sender_id = ? AND recipient_id = ? AND is_read = 0', [$id, $uid])->fetch()['c'];
+        $out[] = ['id' => $id, 'name' => $u['name'], 'slug' => (int)($u['is_public'] ?? 0) ? $u['slug'] : '', 'can' => is_mutual($uid, $id),
+            'last' => $last ? ($last['sender_id'] == $uid ? 'You: ' : '') . mb_substr($last['body'], 0, 70) : '', 'last_id' => (int)($last['id'] ?? 0),
+            'at' => (string)($last['created_at'] ?? ''), 'unread' => $unread];
+    }
+    usort($out, fn($a, $b) => [$b['last_id'], $a['name']] <=> [$a['last_id'], $b['name']]);
+    return $out;
+}
+
+function msg_rows(int $uid, int $with, int $after = 0): array
+{
+    $rows = $after > 0
+        ? q('SELECT id, sender_id, body, created_at FROM messages WHERE id > ? AND ((sender_id = ? AND recipient_id = ?) OR (sender_id = ? AND recipient_id = ?)) ORDER BY id', [$after, $uid, $with, $with, $uid])->fetchAll()
+        : array_reverse(q('SELECT id, sender_id, body, created_at FROM messages WHERE (sender_id = ? AND recipient_id = ?) OR (sender_id = ? AND recipient_id = ?) ORDER BY id DESC LIMIT 100', [$uid, $with, $with, $uid])->fetchAll());
+    return array_map(fn($m) => ['id' => (int)$m['id'], 'mine' => (int)$m['sender_id'] === $uid, 'body' => $m['body'], 'at' => (string)$m['created_at']], $rows);
+}
+
 // ---------- loading ----------
 
 function post_row(array $p, int $likes, bool $liked = false): array
@@ -256,7 +303,7 @@ function load_notifications(int $uid): array
 function social_bootstrap(int $uid): array
 {
     $p = ensure_profile($uid);
-    $notify = json_col($p['notify'] ?? null, ['follow' => 1, 'like' => 1]);
+    $notify = json_col($p['notify'] ?? null, ['follow' => 1, 'like' => 1, 'dm' => 1]);
     $followers = (int)q('SELECT COUNT(*) c FROM follows WHERE followee_id = ?', [$uid])->fetch()['c'];
     $design = profile_design($p);
     return [
@@ -270,6 +317,7 @@ function social_bootstrap(int $uid): array
         'lists' => load_lists($uid, false),
         'notes' => load_notifications($uid),
         'unread' => unread_count($uid),
+        'msg_unread' => msg_unread($uid),
     ];
 }
 
@@ -321,7 +369,7 @@ function social_action(int $uid, string $action, array $in): void
             q('UPDATE profiles SET share = ? WHERE user_id = ?', [json_encode($share), $uid]);
         }
         if (isset($in['notify']) && is_array($in['notify'])) {
-            $n = json_col($p['notify'] ?? null, ['follow' => 1, 'like' => 1]);
+            $n = json_col($p['notify'] ?? null, ['follow' => 1, 'like' => 1, 'dm' => 1]);
             foreach (NOTIFY_KEYS as $k) if (array_key_exists($k, $in['notify'])) $n[$k] = !empty($in['notify'][$k]) ? 1 : 0;
             q('UPDATE profiles SET notify = ? WHERE user_id = ?', [json_encode($n), $uid]);
         }
@@ -467,6 +515,32 @@ function social_action(int $uid, string $action, array $in): void
             }
         }
         ok(['liked' => !$have, 'likes' => (int)q('SELECT COUNT(*) c FROM post_likes WHERE post_id = ?', [$pid])->fetch()['c']]);
+    }
+
+
+    case 'x.msg.threads':
+        ok(['threads' => msg_threads($uid), 'unread' => msg_unread($uid)]);
+
+    case 'x.msg.load': {
+        $with = id_in($in, 'with');
+        if (!q('SELECT 1 FROM users WHERE id = ?', [$with])->fetch()) fail(404, 'That person was not found.');
+        $rows = msg_rows($uid, $with, (int)($in['after'] ?? 0));
+        q('UPDATE messages SET is_read = 1 WHERE recipient_id = ? AND sender_id = ? AND is_read = 0', [$uid, $with]);
+        ok(['messages' => $rows, 'can' => is_mutual($uid, $with), 'unread' => msg_unread($uid)]);
+    }
+
+    case 'x.msg.send': {
+        $to = id_in($in, 'to');
+        $body = mb_substr(trim((string)($in['body'] ?? '')), 0, 2000);
+        if ($body === '') fail(400, 'Write a message first.');
+        if ($to === $uid) fail(400, 'You cannot message yourself.');
+        if (!is_mutual($uid, $to)) fail(403, 'You can only message people who follow you back.');
+        if (!wants_notice($to, 'dm')) fail(403, 'This person is not taking messages right now.');
+        $recent = (int)q('SELECT COUNT(*) c FROM messages WHERE sender_id = ? AND created_at > ?', [$uid, date('Y-m-d H:i:s', time() - 60)])->fetch()['c'];
+        if ($recent >= 30) fail(429, 'Slow down a little, then try again.');
+        q('INSERT INTO messages (sender_id, recipient_id, body, created_at) VALUES (?, ?, ?, ?)', [$uid, $to, $body, date('Y-m-d H:i:s')]);
+        $id = (int)db()->lastInsertId();
+        ok(['message' => ['id' => $id, 'mine' => true, 'body' => $body, 'at' => (string)q('SELECT created_at FROM messages WHERE id = ?', [$id])->fetch()['created_at']]]);
     }
 
     case 'x.notes.read':

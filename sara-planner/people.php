@@ -13,8 +13,8 @@ $sql = 'SELECT p.*, u.name FROM profiles p JOIN users u ON u.id = p.user_id WHER
     . ($viewer ? '' : ' AND p.guest_view = 1');
 $args = [];
 if ($term !== '') {
-    $like = '%' . str_replace(['\\', '%', '_'], ['\\\\', '\\%', '\\_'], $term) . '%';
-    $sql .= " AND (u.name LIKE ? ESCAPE '\\' OR p.slug LIKE ? ESCAPE '\\')";
+    $like = '%' . str_replace(['|', '%', '_'], ['||', '|%', '|_'], $term) . '%';
+    $sql .= " AND (u.name LIKE ? ESCAPE '|' OR p.slug LIKE ? ESCAPE '|')";
     $args = [$like, $like];
 }
 $sql .= ' ORDER BY u.name LIMIT 60';
