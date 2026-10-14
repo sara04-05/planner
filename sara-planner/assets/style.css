@@ -344,6 +344,11 @@ input[type=checkbox]{accent-color:var(--accent);width:18px;height:18px;cursor:po
   .plot.show-vals .b span{display:block}
   .time{width:74px}
   .catrow{grid-template-columns:96px minmax(0,1fr) 72px}
+  .nav .seg{width:100%}.nav .seg button{flex:1;padding:6px 4px}
+  .xl,.plot{gap:3px}
+  .xl span{font-size:9px;letter-spacing:0}
+  .sec-h{flex-direction:column;align-items:flex-start;gap:2px}
+  .addform input[type=date]{grid-column:1/-1}
 }
 @media (prefers-reduced-motion:reduce){*{transition:none!important}}
 
@@ -852,7 +857,7 @@ a.btn:hover{text-decoration:none}
 .cover-side{display:flex;flex-direction:column;gap:12px}
 .cover-side .hint{margin-top:-6px}
 .nbc-small:empty{display:none}
-@media (max-width:760px){.cover-pick{grid-template-columns:minmax(0,1fr)}.cover-preview{position:static;max-width:200px;margin:0 auto}}
+@media (max-width:760px){.cover-pick{grid-template-columns:minmax(0,1fr)}.cover-preview{position:static;width:200px;max-width:100%;margin:0 auto}}
 
 .top-r .badge,.tab .badge{background:var(--bad);color:#fff}
 
