@@ -66,6 +66,7 @@ async function reload(){
     const want=new URLSearchParams(location.search).get('tab');
     if(want&&(want==='profile'||document.querySelector('nav[aria-label="Planner sections"] .tab[data-tab="'+want+'"]'))){state.tab=want;history.replaceState(null,'',location.pathname)}
     if(state.tab==='blog'||state.tab==='interests')state.tab='profile';
+    if(typeof V[state.tab]!=='function')state.tab='day';   // a tab saved by an older version (e.g. Alerts) no longer exists
     render();
     if(state.google&&state.google.connected&&state.google.needsSync&&!gcalBusy)gcalRun(true);
   }catch(err){
