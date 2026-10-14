@@ -29,15 +29,15 @@ if (!$user) {            // account was deleted
 <body>
 <div class="app">
   <header class="top">
-    <div class="brand"><?= logo_html() ?><span>Hi, <?= h($user['name']) ?></span></div>
+    <div class="brand"><?= logo_html() ?><span class="hello"><i class="avatar" aria-hidden="true"><?= h(mb_strtoupper(mb_substr($user['name'], 0, 1))) ?></i><span>Hi, <?= h($user['name']) ?></span></span></div>
     <div class="top-r">
-      <span class="chip-date" id="todayChip"></span>
+      <span class="date-pill"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="5" width="18" height="16" rx="3"/><path d="M3 10h18M8 3v4M16 3v4"/></svg><span class="chip-date" id="todayChip"></span></span>
       <?php if (is_admin($uid)): ?><a class="btn" href="admin.php">Users</a><?php endif; ?>
       <button class="btn" data-lang-btn>Shqip</button>
       <button class="btn" id="themeBtn" data-act="theme" aria-label="Switch theme"></button>
       <form method="post" action="logout.php" class="inline">
         <input type="hidden" name="csrf" value="<?= h(csrf_token()) ?>">
-        <button class="btn ghost">Log out</button>
+        <button class="btn ghost logout"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4M16 17l5-5-5-5M21 12H9"/></svg>Log out</button>
       </form>
     </div>
   </header>
