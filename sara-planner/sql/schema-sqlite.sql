@@ -169,3 +169,84 @@ CREATE TABLE IF NOT EXISTS email_codes (
 CREATE INDEX IF NOT EXISTS idx_exp_user_date ON expenses(user_id,date);
 CREATE INDEX IF NOT EXISTS idx_task_user_due ON tasks(user_id,due);
 CREATE INDEX IF NOT EXISTS idx_gcal_user_date ON gcal_events(user_id,date);
+
+-- ---- Notebook sharing: profile, blog, interests, follows, notifications, uploaded pictures ----
+-- One row per user. is_public = listed in People and open to logged-in users; guest_view = also open to visitors who are not logged in.
+CREATE TABLE IF NOT EXISTS profiles (
+  user_id    INTEGER PRIMARY KEY,
+  slug       VARCHAR(40) NOT NULL UNIQUE,
+  bio        VARCHAR(300) NOT NULL DEFAULT '',
+  is_public  TINYINT(1) NOT NULL DEFAULT 0,
+  guest_view TINYINT(1) NOT NULL DEFAULT 0,
+  share      TEXT NULL,
+  design     TEXT NULL,
+  notify     TEXT NULL,
+  FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+);
+
+CREATE TABLE IF NOT EXISTS uploads (
+  id         INTEGER PRIMARY KEY AUTOINCREMENT,
+  user_id    INTEGER NOT NULL,
+  kind       VARCHAR(10) NOT NULL,
+  file       VARCHAR(120) NOT NULL,
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+);
+
+CREATE TABLE IF NOT EXISTS posts (
+  id         INTEGER PRIMARY KEY AUTOINCREMENT,
+  user_id    INTEGER NOT NULL,
+  title      VARCHAR(150) NOT NULL,
+  body       TEXT NOT NULL,
+  image_id   INTEGER NULL,
+  is_public  TINYINT(1) NOT NULL DEFAULT 0,
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+);
+
+CREATE TABLE IF NOT EXISTS post_likes (
+  post_id INTEGER NOT NULL,
+  user_id INTEGER NOT NULL,
+  PRIMARY KEY (post_id, user_id),
+  FOREIGN KEY (post_id) REFERENCES posts(id) ON DELETE CASCADE,
+  FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+);
+
+CREATE TABLE IF NOT EXISTS interest_lists (
+  id        INTEGER PRIMARY KEY AUTOINCREMENT,
+  user_id   INTEGER NOT NULL,
+  title     VARCHAR(80) NOT NULL,
+  emoji     VARCHAR(16) NOT NULL DEFAULT '',
+  layout    VARCHAR(8) NOT NULL DEFAULT 'list',
+  is_public TINYINT(1) NOT NULL DEFAULT 0,
+  FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+);
+
+CREATE TABLE IF NOT EXISTS interest_items (
+  id       INTEGER PRIMARY KEY AUTOINCREMENT,
+  list_id  INTEGER NOT NULL,
+  text     VARCHAR(150) NOT NULL,
+  note     VARCHAR(300) NOT NULL DEFAULT '',
+  image_id INTEGER NULL,
+  FOREIGN KEY (list_id) REFERENCES interest_lists(id) ON DELETE CASCADE
+);
+
+CREATE TABLE IF NOT EXISTS follows (
+  follower_id INTEGER NOT NULL,
+  followee_id INTEGER NOT NULL,
+  PRIMARY KEY (follower_id, followee_id),
+  FOREIGN KEY (follower_id) REFERENCES users(id) ON DELETE CASCADE,
+  FOREIGN KEY (followee_id) REFERENCES users(id) ON DELETE CASCADE
+);
+
+CREATE TABLE IF NOT EXISTS notifications (
+  id         INTEGER PRIMARY KEY AUTOINCREMENT,
+  user_id    INTEGER NOT NULL,
+  ref        VARCHAR(60) NOT NULL,
+  text       VARCHAR(250) NOT NULL,
+  link       VARCHAR(120) NOT NULL DEFAULT '',
+  is_read    TINYINT(1) NOT NULL DEFAULT 0,
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  UNIQUE (user_id, ref),
+  FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+);

@@ -5,6 +5,7 @@ declare(strict_types=1);
 
 require __DIR__ . '/db.php';
 require __DIR__ . '/gcal.php';
+require __DIR__ . '/social.php';
 
 header('Content-Type: application/json; charset=utf-8');
 header('Cache-Control: no-store');
@@ -729,6 +730,7 @@ try {
     }
 
     default:
+        if (str_starts_with($action, 'x.')) social_action($uid, $action, $in);
         fail(404, 'Unknown action.');
     }
 } catch (PDOException $e) {
