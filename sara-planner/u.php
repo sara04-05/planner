@@ -10,7 +10,31 @@ require __DIR__ . '/layout.php';
 $viewer = current_user_id();
 if ($viewer && !is_verified($viewer)) $viewer = null;
 $slug = strtolower(trim((string)($_GET['u'] ?? '')));
-$prof = $slug !== '' ? q('SELECT * FROM profiles WHERE slug = ?', [$slug])->fetch() : false;
+$uid = isset($_GET['id']) && ctype_digit((string)$_GET['id']) ? (int)$_GET['id'] : 0;   // people without a page name are opened by id (from Explore)
+$prof = $slug !== '' ? q('SELECT * FROM profiles WHERE slug = ?', [$slug])->fetch()
+    : ($uid ? q('SELECT * FROM profiles WHERE user_id = ?', [$uid])->fetch() : false);
+if (!$prof && $uid && $uid !== $viewer && person($uid)) $prof = ['user_id' => $uid, 'bio' => '', 'slug' => '', 'is_public' => 0, 'guest_view' => 0];   // account without a profile row yet: private
+
+if ($prof && $viewer && !can_view_profile($prof, $viewer)) {
+    // A private account: all that is shown is the profile itself (picture, name, bio and the friend buttons), no notebooks.
+    $owner = (int)$prof['user_id'];
+    $person = person($owner);
+    if (!$person) { http_response_code(404); app_top('Not found', ['active' => 'explore', 'h1' => 'Not found']); app_bottom(); exit; }
+    $state = friendship($viewer, $owner);
+    $back = 'u.php?id=' . $owner;
+    $btn = function (string $do, string $label, string $cls) use ($owner, $back): string {
+        return '<form method="post" action="explore.php" class="inline"><input type="hidden" name="csrf" value="' . h(csrf_token()) . '"><input type="hidden" name="do" value="' . $do . '"><input type="hidden" name="id" value="' . $owner . '"><input type="hidden" name="back" value="' . h($back) . '"><button class="' . $cls . '">' . h($label) . '</button></form>';
+    };
+    if ($state === 'friends') $actions = '<a class="btn primary" href="messages.php?with=' . $owner . '">Message</a> <a class="btn" href="friend.php?id=' . $owner . '">Today\'s plan</a>';
+    elseif ($state === 'sent') $actions = $btn('cancel', 'Requested · cancel', 'btn ghost');
+    elseif ($state === 'received') $actions = $btn('accept', 'Accept friend request', 'btn primary');
+    else $actions = $btn('add', 'Add friend', 'btn primary');
+    app_top($person['name'] . "'s profile", ['active' => 'explore', 'eyebrow' => 'Private account', 'h1' => $person['name'], 'actions' => $actions]);
+    echo '<div class="who-line">' . avatar_html($person, 'lg') . ($prof['bio'] !== '' ? '<p class="bio" translate="no">' . nl2br(h($prof['bio'])) . '</p>' : '') . '</div>';
+    echo '<div class="pub-note">🔒 This account is private.</div>';
+    app_bottom();
+    exit;
+}
 
 if (!$prof || !can_view_profile($prof, $viewer)) {
     $needLogin = $prof && (int)$prof['is_public'] === 1 && !$viewer;
