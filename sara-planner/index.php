@@ -1,6 +1,7 @@
 <?php
 declare(strict_types=1);
 require __DIR__ . '/db.php';
+require __DIR__ . '/social.php';
 require __DIR__ . '/layout.php';
 
 $uid = require_login();
@@ -10,9 +11,13 @@ if (!$user) {            // account was deleted
     header('Location: login.php');
     exit;
 }
+$prof = ensure_profile($uid);
+$design = profile_design($prof);
+$unread = unread_count($uid);
+$msgUnread = msg_unread($uid);
 ?>
 <!DOCTYPE html>
-<html lang="en">
+<html lang="en"<?= design_attrs($design, 'accent') ?>>
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -20,7 +25,7 @@ if (!$user) {            // account was deleted
   <title>Splanner</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Pacifico&family=Bricolage+Grotesque:opsz,wght@12..96,500;12..96,600;12..96,700&family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link href="<?= FONT_LINK ?>" rel="stylesheet">
   <link rel="stylesheet" href="assets/style.css?v=<?= filemtime(__DIR__ . '/assets/style.css') ?>">
   <link rel="icon" href="assets/logo.svg" type="image/svg+xml">
   <script>try{var t=localStorage.getItem('sara-theme');if(t)document.documentElement.setAttribute('data-theme',t)}catch(e){}</script>
@@ -29,21 +34,24 @@ if (!$user) {            // account was deleted
 <body>
 <div class="app">
   <header class="top">
-    <div class="brand"><?= logo_html() ?><span>Hi, <?= h($user['name']) ?></span></div>
+    <div class="brand"><?= logo_html() ?><span class="hello"><i class="avatar" aria-hidden="true"><?= h(mb_strtoupper(mb_substr($user['name'], 0, 1))) ?></i><span>Hi, <?= h($user['name']) ?></span></span></div>
     <div class="top-r">
-      <span class="chip-date" id="todayChip"></span>
+      <span class="date-pill"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="5" width="18" height="16" rx="3"/><path d="M3 10h18M8 3v4M16 3v4"/></svg><span class="chip-date" id="todayChip"></span></span>
+      <a class="btn" href="people.php" aria-label="People"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2M9 11a4 4 0 1 0 0-8 4 4 0 0 0 0 8zM22 21v-2a4 4 0 0 0-3-3.9M16 3.1a4 4 0 0 1 0 7.8"/></svg>People</a>
+      <button class="btn bell" data-act="tab" data-tab="messages" aria-label="Messages"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 12a8 8 0 0 1-11.6 7.1L3 21l1.9-5.4A8 8 0 1 1 21 12z"/></svg>Messages<span class="badge" id="msgBadge"<?= $msgUnread ? '' : ' hidden' ?>><?= $msgUnread ?></span></button>
+      <button class="btn bell" data-act="tab" data-tab="alerts" aria-label="Notifications"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M18 8a6 6 0 0 0-12 0c0 7-3 9-3 9h18s-3-2-3-9M13.7 21a2 2 0 0 1-3.4 0"/></svg><span class="badge" id="bellBadge"<?= $unread ? '' : ' hidden' ?>><?= $unread ?></span></button>
       <?php if (is_admin($uid)): ?><a class="btn" href="admin.php">Users</a><?php endif; ?>
       <button class="btn" data-lang-btn>Shqip</button>
       <button class="btn" id="themeBtn" data-act="theme" aria-label="Switch theme"></button>
       <form method="post" action="logout.php" class="inline">
         <input type="hidden" name="csrf" value="<?= h(csrf_token()) ?>">
-        <button class="btn ghost">Log out</button>
+        <button class="btn ghost logout" aria-label="Log out"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4M16 17l5-5-5-5M21 12H9"/></svg>Log out</button>
       </form>
     </div>
   </header>
   <div class="binder">
     <div class="coil" aria-hidden="true" id="coil"></div>
-    <main class="page" id="view" aria-live="polite"><p class="empty">Loading your planner…</p></main>
+    <main class="page" id="view" aria-live="polite"<?= design_attrs($design, 'page') ?>><p class="empty">Loading your planner…</p></main>
     <nav class="tabs" role="tablist" aria-label="Planner sections">
       <button class="tab" role="tab" data-act="tab" data-tab="day">Day</button>
       <button class="tab" role="tab" data-act="tab" data-tab="week">Week</button>
@@ -53,11 +61,18 @@ if (!$user) {            // account was deleted
       <button class="tab" role="tab" data-act="tab" data-tab="study">Study</button>
       <button class="tab" role="tab" data-act="tab" data-tab="tasks">Tasks</button>
       <button class="tab" role="tab" data-act="tab" data-tab="money">Expenses</button>
+      <div class="tab-gap"></div>
+      <button class="tab" role="tab" data-act="tab" data-tab="blog">Blog</button>
+      <button class="tab" role="tab" data-act="tab" data-tab="interests">Interests</button>
+      <button class="tab" role="tab" data-act="tab" data-tab="messages">Messages<?= $msgUnread ? ' <span class="badge" id="tabMsgBadge">' . $msgUnread . '</span>' : '' ?></button>
+      <button class="tab" role="tab" data-act="tab" data-tab="profile">Profile</button>
+      <button class="tab" role="tab" data-act="tab" data-tab="alerts">Alerts<?= $unread ? ' <span class="badge" id="tabBadge">' . $unread . '</span>' : '' ?></button>
     </nav>
   </div>
 </div>
 <div class="toast" id="toast" role="status" hidden></div>
 <script src="assets/import.js?v=<?= filemtime(__DIR__ . '/assets/import.js') ?>"></script>
+<script src="assets/social.js?v=<?= filemtime(__DIR__ . '/assets/social.js') ?>"></script>
 <script src="assets/app.js?v=<?= filemtime(__DIR__ . '/assets/app.js') ?>"></script>
 </body>
 </html>

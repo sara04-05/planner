@@ -173,3 +173,98 @@ CREATE TABLE IF NOT EXISTS email_codes (
   tries      TINYINT UNSIGNED NOT NULL DEFAULT 0,
   FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
 ) ENGINE=InnoDB;
+
+-- ---- Notebook sharing: profile, blog, interests, follows, notifications, uploaded pictures ----
+-- One row per user. is_public = listed in People and open to logged-in users; guest_view = also open to visitors who are not logged in.
+CREATE TABLE IF NOT EXISTS profiles (
+  user_id    INT UNSIGNED PRIMARY KEY,
+  slug       VARCHAR(40) NOT NULL UNIQUE,
+  bio        VARCHAR(300) NOT NULL DEFAULT '',
+  is_public  TINYINT(1) NOT NULL DEFAULT 0,
+  guest_view TINYINT(1) NOT NULL DEFAULT 0,
+  share      TEXT NULL,
+  design     TEXT NULL,
+  notify     TEXT NULL,
+  FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+) ENGINE=InnoDB;
+
+CREATE TABLE IF NOT EXISTS uploads (
+  id         INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+  user_id    INT UNSIGNED NOT NULL,
+  kind       VARCHAR(10) NOT NULL,
+  file       VARCHAR(120) NOT NULL,
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+) ENGINE=InnoDB;
+
+CREATE TABLE IF NOT EXISTS posts (
+  id         INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+  user_id    INT UNSIGNED NOT NULL,
+  title      VARCHAR(150) NOT NULL,
+  body       TEXT NOT NULL,
+  image_id   INT UNSIGNED NULL,
+  is_public  TINYINT(1) NOT NULL DEFAULT 0,
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+) ENGINE=InnoDB;
+
+CREATE TABLE IF NOT EXISTS post_likes (
+  post_id INT UNSIGNED NOT NULL,
+  user_id INT UNSIGNED NOT NULL,
+  PRIMARY KEY (post_id, user_id),
+  FOREIGN KEY (post_id) REFERENCES posts(id) ON DELETE CASCADE,
+  FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+) ENGINE=InnoDB;
+
+CREATE TABLE IF NOT EXISTS interest_lists (
+  id        INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+  user_id   INT UNSIGNED NOT NULL,
+  title     VARCHAR(80) NOT NULL,
+  emoji     VARCHAR(16) NOT NULL DEFAULT '',
+  layout    VARCHAR(8) NOT NULL DEFAULT 'list',
+  is_public TINYINT(1) NOT NULL DEFAULT 0,
+  FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+) ENGINE=InnoDB;
+
+CREATE TABLE IF NOT EXISTS interest_items (
+  id       INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+  list_id  INT UNSIGNED NOT NULL,
+  text     VARCHAR(150) NOT NULL,
+  note     VARCHAR(300) NOT NULL DEFAULT '',
+  image_id INT UNSIGNED NULL,
+  FOREIGN KEY (list_id) REFERENCES interest_lists(id) ON DELETE CASCADE
+) ENGINE=InnoDB;
+
+CREATE TABLE IF NOT EXISTS follows (
+  follower_id INT UNSIGNED NOT NULL,
+  followee_id INT UNSIGNED NOT NULL,
+  PRIMARY KEY (follower_id, followee_id),
+  FOREIGN KEY (follower_id) REFERENCES users(id) ON DELETE CASCADE,
+  FOREIGN KEY (followee_id) REFERENCES users(id) ON DELETE CASCADE
+) ENGINE=InnoDB;
+
+CREATE TABLE IF NOT EXISTS notifications (
+  id         INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+  user_id    INT UNSIGNED NOT NULL,
+  ref        VARCHAR(60) NOT NULL,
+  text       VARCHAR(250) NOT NULL,
+  link       VARCHAR(120) NOT NULL DEFAULT '',
+  is_read    TINYINT(1) NOT NULL DEFAULT 0,
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  UNIQUE KEY uq_notif_ref (user_id, ref),
+  FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+) ENGINE=InnoDB;
+
+-- Direct messages between people who follow each other
+CREATE TABLE IF NOT EXISTS messages (
+  id           INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+  sender_id    INT UNSIGNED NOT NULL,
+  recipient_id INT UNSIGNED NOT NULL,
+  body         TEXT NOT NULL,
+  is_read      TINYINT(1) NOT NULL DEFAULT 0,
+  created_at   TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  INDEX idx_msg_to (recipient_id, is_read),
+  INDEX idx_msg_pair (sender_id, recipient_id),
+  FOREIGN KEY (sender_id) REFERENCES users(id) ON DELETE CASCADE,
+  FOREIGN KEY (recipient_id) REFERENCES users(id) ON DELETE CASCADE
+) ENGINE=InnoDB;
