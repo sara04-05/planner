@@ -216,8 +216,6 @@ function upgrade_schema(PDO $pdo): void
         }
         if (DB_DRIVER === 'sqlite') {
             $pdo->exec('CREATE INDEX IF NOT EXISTS idx_gcal_user_date ON gcal_events(user_id,date)');
-            $pdo->exec('CREATE INDEX IF NOT EXISTS idx_msg_to ON messages(recipient_id,is_read)');
-            $pdo->exec('CREATE INDEX IF NOT EXISTS idx_msg_pair ON messages(sender_id,recipient_id)');
         }
         $cols = DB_DRIVER === 'sqlite'
             ? array_column($pdo->query('PRAGMA table_info(users)')->fetchAll(), 'name')

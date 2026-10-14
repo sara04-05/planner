@@ -139,7 +139,7 @@ Four extra tabs sit next to Expenses:
 - **Profile**: choose a page name and bio, decide who can see the notebook, and design it (banner or your own banner picture, paper style and colour, accent colour, handwriting, stickers) with a live preview. Name, profile picture and notebook cover are changed on the People page (**Edit profile**).
 - **Alerts**: likes on your posts, with a switch to turn them off.
 
-People connect as **friends** (People page, see `MESSAGES.md`); friends can message each other and see each other's day. The notebook settings add:
+People connect as **friends** (People page, see `MESSAGES.md`); friends can message each other and see each other's day.
 
 Nothing is shared by default. In **Profile → Who can see your notebook**:
 
