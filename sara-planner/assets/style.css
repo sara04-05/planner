@@ -52,7 +52,7 @@ button,input,select,textarea{font:inherit;color:inherit}
 .num{font-variant-numeric:tabular-nums}
 
 .app{max-width:1240px;margin:0 auto;padding-block:20px 48px}
-.top{display:flex;align-items:center;justify-content:space-between;gap:12px 16px;flex-wrap:wrap;margin-bottom:20px;padding:10px 14px 10px 18px;background:color-mix(in srgb,var(--paper) 78%,transparent);border:1px solid var(--line);border-radius:18px;box-shadow:var(--shadow);backdrop-filter:blur(10px)}
+.top{position:relative;z-index:50;display:flex;align-items:center;justify-content:space-between;gap:12px 16px;flex-wrap:wrap;margin-bottom:20px;padding:10px 14px 10px 18px;background:color-mix(in srgb,var(--paper) 78%,transparent);border:1px solid var(--line);border-radius:18px;box-shadow:var(--shadow);backdrop-filter:blur(10px)}
 .brand{display:flex;align-items:center;gap:14px;flex-wrap:wrap}
 .brand b{font-family:var(--display);font-size:24px;font-weight:700;letter-spacing:-.02em}
 .brand .logo{font-size:28px;line-height:1.2;padding-right:2px}
@@ -905,6 +905,8 @@ a.btn:hover{text-decoration:none}
   .cover-pick{grid-template-columns:minmax(0,1fr)}
   .notif-pop{position:fixed;left:12px;right:12px;top:64px;width:auto}
   .notif-pop::before{display:none}
+}
+
 /* Messages tab in the planner */
 .mchat{display:grid;grid-template-columns:260px minmax(0,1fr);gap:16px;min-height:460px;margin-top:6px}
 .mthreads{display:flex;flex-direction:column;gap:6px;max-height:560px;overflow:auto}
@@ -936,3 +938,5 @@ a.btn:hover{text-decoration:none}
   .mbub{max-width:86%;font-size:15px}
   .mcomposer textarea{font-size:16px}
 }
+.mnone{min-height:320px;justify-content:center}.mnone .mbig{font-size:40px;margin-bottom:6px}.mnone a{color:var(--accent);font-weight:600}
+.pbody>.empty{padding:34px 20px;text-align:center;border:2px dashed var(--line);border-radius:16px;background:var(--paper-2)}

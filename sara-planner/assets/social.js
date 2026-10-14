@@ -156,7 +156,7 @@ function stkCtl(){
 }
 const ME=()=>window.SPL_ME||{name:'',email:'',cover:'daisy',words:'',avatar_v:0,id:0};
 const avatarHtml=(cls='')=>{const m=ME();return m.avatar_v?`<img class="avatar ${cls}" id="meAv" src="avatar.php?id=${m.id}&v=${m.avatar_v}" alt="">`:`<span class="avatar ${cls} letter" id="meAv" aria-hidden="true">${esc((m.name.trim()[0]||'?').toUpperCase())}</span>`};
-function coverClone(k){const el=document.querySelector(`#coverTpl [data-cover="${k}"] .nbc`);return el?el.cloneNode(true):null}
+function coverClone(k){const t=document.getElementById('coverTpl'),el=t&&t.content.querySelector(`[data-cover="${k}"] .nbc`);return el?el.cloneNode(true):null}
 const coverPick=cur=>{
   const t=document.getElementById('coverMiniTpl'),l=document.getElementById('coverTpl');if(!t||!l)return '';
   return [...t.content.querySelectorAll('[data-cover]')].map(d=>{const k=d.dataset.cover,lab=l.content.querySelector(`[data-cover="${k}"]`).dataset.label;
@@ -288,6 +288,7 @@ function messagesHtml(){
     if(!MS.loading){MS.loading=true;Promise.all([api('msg.list'),api('x.friends')]).then(([l,f])=>{MS.threads=l.people;MS.friends=f.friends;MS.unread=l.unread;MS.loaded=true;MS.loading=false;paintMsgBadges();openFromHash()}).catch(e=>{MS.loading=false;toast(e.message)})}
     return hdr('Your notebook','Messages')+'<p class="empty">Loading…</p>';
   }
+  if(!MS.threads.length&&!MS.friends.length)return hdr('Your notebook','Messages')+'<div class="mpane mnone"><div class="mempty"><div class="mbig">💌</div><b>No conversations yet</b><br>Add friends on <a href="people.php">People</a>, then write to them here.</div></div>';
   return hdr('Your notebook','Messages')+`<div class="mchat${MS.with?' open':''}"><div class="mthreads" id="mThreads">${mthreadsHtml()}</div>${mpaneHtml()}</div>`;
 }
 function openFromHash(){
