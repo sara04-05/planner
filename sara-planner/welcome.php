@@ -117,6 +117,7 @@ if (current_user_id()) {
       <a href="#safety">Is it safe?</a>
       <a href="#faq">FAQ</a>
       <button class="linkbtn langsw" data-lang-btn>Shqip</button>
+      <button class="btn ghost" data-theme-btn aria-label="Switch theme"></button>
       <a class="btn ghost" href="login.php">Log in</a>
       <a class="btn primary" href="register.php">Create free account</a>
     </nav>
@@ -267,5 +268,6 @@ if (current_user_id()) {
   show('day');
 })();
 </script>
+<script src="assets/theme.js?v=<?= filemtime(__DIR__ . '/assets/theme.js') ?>"></script>
 </body>
 </html>

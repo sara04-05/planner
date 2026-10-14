@@ -28,7 +28,7 @@ function auth_top(string $title, string $cardClass = ''): void
 <body>
 <main class="auth">
   <div class="auth-card<?= $cardClass ? ' ' . h($cardClass) : '' ?>">
-    <div class="auth-lang"><button class="linkbtn langsw" data-lang-btn>Shqip</button></div>
+    <div class="auth-lang"><button class="btn ghost" data-theme-btn aria-label="Switch theme"></button> <button class="linkbtn langsw" data-lang-btn>Shqip</button></div>
     <?= logo_html('welcome.php') ?>
 <?php }
 
@@ -36,6 +36,7 @@ function auth_bottom(): void
 { ?>
   </div>
 </main>
+<script src="assets/theme.js?v=<?= filemtime(__DIR__ . '/assets/theme.js') ?>"></script>
 </body>
 </html>
 <?php }
