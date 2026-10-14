@@ -9,7 +9,7 @@ function logo_html(?string $href = null): string
         : '<span class="logo">Splanner</span>';
 }
 
-function auth_top(string $title, string $cardClass = ''): void
+function auth_top(string $title, string $cardClass = '', bool $covers = false): void
 { ?>
 <!DOCTYPE html>
 <html lang="en">
@@ -22,6 +22,10 @@ function auth_top(string $title, string $cardClass = ''): void
   <link href="https://fonts.googleapis.com/css2?family=Pacifico&family=Bricolage+Grotesque:opsz,wght@12..96,500;12..96,600;12..96,700&family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="assets/style.css?v=<?= filemtime(__DIR__ . '/assets/style.css') ?>">
   <link rel="icon" href="assets/logo.svg" type="image/svg+xml">
+  <?php if ($covers): ?>
+  <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@500;600&family=Great+Vibes&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="assets/covers.css?v=<?= filemtime(__DIR__ . '/assets/covers.css') ?>">
+  <?php endif; ?>
   <script>try{var t=localStorage.getItem('sara-theme');if(t)document.documentElement.setAttribute('data-theme',t)}catch(e){}</script>
 <script src="assets/lang.js?v=<?= filemtime(__DIR__ . '/assets/lang.js') ?>"></script>
 </head>
@@ -95,8 +99,9 @@ function pub_top(string $title, array $design = [], ?int $viewer = null): void
   <header class="pub-top">
     <?= logo_html($viewer ? 'index.php' : 'welcome.php') ?>
     <nav>
-      <a class="btn" href="people.php">People</a>
+      <a class="btn" href="explore.php">Explore</a>
       <?php if ($viewer): ?>
+        <a class="btn" href="people.php">People</a>
         <a class="btn" href="index.php">My planner</a>
       <?php else: ?>
         <a class="btn" href="login.php">Log in</a>

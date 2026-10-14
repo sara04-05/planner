@@ -19,11 +19,16 @@ sara-planner/
 ├── config.php         Your database settings  ← edit this
 ├── layout.php         Shared layout for the login/sign-up pages
 ├── gcal.php           Sends the Hour by hour plan to Google Calendar
-├── social.php         Profile, privacy, design, blog, interests, follows, alerts (used by api.php)
-├── u.php              A shared notebook (u.php?u=pagename), for logged-in people or visitors
-├── people.php         Directory of public notebooks
-├── upload.php         Picture upload (blog photos, clothes, stickers, covers)
-├── uploads/           Uploaded pictures (created automatically; PHP is blocked inside)
+├── social.php         People, friends, profile pictures, notebook covers (used by people.php, friend.php, messages)
+├── people.php         Friends, friend requests and search (see ../MESSAGES.md)
+├── friend.php         A friend's notebook with today's plan
+├── profile.php        Edit your name, bio, picture and notebook cover
+├── messages.php       Messages between users
+├── notebook.php       Sharing a notebook: privacy, design, blog, interest lists, likes, alerts, pictures (used by api.php)
+├── u.php              A shared notebook (u.php?u=pagename), for friends, members or visitors
+├── explore.php        Directory of public notebooks
+├── upload.php         Picture upload (blog photos, interest pictures, banners, stickers)
+├── media.php          Sends a picture, only to people who may see it (pictures live in the database)
 ├── mail.php           Sends emails through Gmail (the sign-up codes)
 ├── assets/
 │   ├── style.css      All the design (notebook look, dark mode)
@@ -131,18 +136,19 @@ Four extra tabs sit next to Expenses:
 
 - **Blog**: write posts with an optional picture. Each post is private or public.
 - **Interests**: lists of favourite movies, singers, clothes (with pictures) or anything else, as a list or a picture grid. Each list is private or public.
-- **Profile**: choose a page name and bio, decide who can see the notebook, and design it (cover or your own cover picture, paper style and colour, accent colour, handwriting, stickers) with a live preview.
-- **Alerts**: new followers and likes, with switches for which ones you want.
+- **Profile**: choose a page name and bio, decide who can see the notebook, and design it (banner or your own banner picture, paper style and colour, accent colour, handwriting, stickers) with a live preview. Name, profile picture and notebook cover are changed on the People page (**Edit profile**).
+- **Alerts**: likes on your posts, with a switch to turn them off.
+
+People connect as **friends** (People page, see `MESSAGES.md`); friends can message each other and see each other's day.
 
 Nothing is shared by default. In **Profile → Who can see your notebook**:
 
-- *Public profile* lists you in **People** and lets anyone with an account open and follow your notebook.
+- *Public profile* lists the notebook in **Explore** and lets anyone with an account open it (they can send you a friend request from there).
 - *Visible without logging in* also opens it to visitors without an account.
 - *What to show* picks which parts appear (blog, interests, weekly timetable, study subjects). Your planner itself is never shown.
 
-The pictures are saved in `uploads/` (the folder must be writable by PHP). The database tables are added automatically
-the first time the site runs, or import `sql/schema.sql` again. Pictures are re-drawn on upload, which shrinks them and removes hidden data such as camera location.
-Uploaded files have random names, so a picture is only found by someone who was shown its page.
+Pictures are saved in the database (like profile pictures), so no upload folder is needed, and `media.php` only sends a picture to people who may see the post, list or notebook it belongs to.
+The extra tables and columns are added automatically the first time the site runs, or import `sql/schema.sql` again. Pictures are re-drawn on upload, which shrinks them and removes hidden data such as camera location.
 
 ## Security that's already built in
 
