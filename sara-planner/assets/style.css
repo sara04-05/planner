@@ -76,6 +76,7 @@ button,input,select,textarea{font:inherit;color:inherit}
 
 .binder{display:grid;grid-template-columns:minmax(0,1fr) 54px;align-items:start}
 .binder{position:relative}
+.binder>.page{align-self:stretch}
 .page{position:relative;background-color:var(--paper);border-radius:6px 20px 20px 6px;padding:28px 30px 32px 62px;min-height:640px;transition:background-color .25s;
   background-image:linear-gradient(90deg,transparent 50px,var(--margin) 50px,var(--margin) 51.5px,transparent 51.5px,transparent 54px,var(--margin) 54px,var(--margin) 55px,transparent 55px),
     linear-gradient(var(--paper) 0 96px,transparent 96px),
