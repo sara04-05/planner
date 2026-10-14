@@ -964,3 +964,6 @@ a.tab{display:block;text-decoration:none;box-sizing:border-box}
   .top-r .bellwrap{display:contents}
   .nb-new{aspect-ratio:auto;min-height:120px}
 }
+.admin-acts{white-space:nowrap;display:flex;gap:6px;align-items:center}
+.admin-form{max-width:480px;padding:10px 0}
+@media (max-width:760px){.admin-acts{flex-direction:column;align-items:stretch}}
