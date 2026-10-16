@@ -69,6 +69,9 @@ function db(): PDO
         $dsn = sprintf('mysql:host=%s;port=%d;dbname=%s;charset=utf8mb4', DB_HOST, DB_PORT, DB_NAME);
         // Give up after 10 seconds instead of hanging when the database server can't be reached
         $pdo = new PDO($dsn, DB_USER, DB_PASS, $opts + [PDO::ATTR_TIMEOUT => 10]);
+        // Dates the database fills in itself (CURRENT_TIMESTAMP) use the same time zone as PHP. An offset like +02:00
+        // is used because named zones are not installed on every host.
+        $pdo->exec("SET time_zone = '" . date('P') . "'");
     }
     // Checking for missing tables/columns takes about ten database round trips, so it runs only
     // once per version of this file (remembered in data/), not on every page and every save.
@@ -96,6 +99,18 @@ function upgrade_schema(PDO $pdo): void
             income DECIMAL(10,2) NULL, save_target DECIMAL(10,2) NULL,
             PRIMARY KEY (user_id, year, month),
             FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE) ENGINE=InnoDB');
+    }
+
+    // What the user confirmed they really saved in a month. Only adds the column.
+    try {
+        $cols = DB_DRIVER === 'sqlite'
+            ? array_column($pdo->query('PRAGMA table_info(month_money)')->fetchAll(), 'name')
+            : array_column($pdo->query('SHOW COLUMNS FROM month_money')->fetchAll(), 'Field');
+        if (!in_array('saved_actual', $cols, true)) {
+            $pdo->exec('ALTER TABLE month_money ADD COLUMN saved_actual DECIMAL(10,2) NULL');
+        }
+    } catch (PDOException $e) {
+        error_log('Could not add month_money.saved_actual: ' . $e->getMessage());
     }
 
     // Where to find a chapter (book, author, literature). Only adds the column, existing rows are untouched.
@@ -147,13 +162,68 @@ function upgrade_schema(PDO $pdo): void
         error_log('Could not add users.last_login: ' . $e->getMessage());
     }
 
+    // Chat, profiles and friends: same tables as in the schema file.
+    try {
+        $sql = file_get_contents(__DIR__ . (DB_DRIVER === 'sqlite' ? '/sql/schema-sqlite.sql' : '/sql/schema.sql'));
+        foreach (['messages', 'profiles', 'friends'] as $t) {
+            if (preg_match("/CREATE TABLE IF NOT EXISTS $t \\(.*?\\n\\)[^;]*;/s", $sql, $m)) $pdo->exec($m[0]);
+        }
+        if (DB_DRIVER === 'sqlite') {
+            $pdo->exec('CREATE INDEX IF NOT EXISTS idx_msg_to ON messages(to_id,from_id)');
+            $pdo->exec('CREATE INDEX IF NOT EXISTS idx_msg_from ON messages(from_id,to_id)');
+            $pdo->exec('CREATE INDEX IF NOT EXISTS idx_friend_to ON friends(to_id)');
+        }
+        // Words on a spiral notebook cover (came after the first version of the profiles table)
+        $cols = DB_DRIVER === 'sqlite'
+            ? array_column($pdo->query('PRAGMA table_info(profiles)')->fetchAll(), 'name')
+            : array_column($pdo->query('SHOW COLUMNS FROM profiles')->fetchAll(), 'Field');
+        if (!in_array('words', $cols, true)) {
+            $pdo->exec("ALTER TABLE profiles ADD COLUMN words VARCHAR(60) NOT NULL DEFAULT ''");
+        }
+    } catch (PDOException $e) {
+        error_log('Could not add the chat / profile / friends tables: ' . $e->getMessage());
+    }
+
+    // Notebook sharing: extra columns on the profiles table (page name, who may see it, what is shown, design, alerts),
+    // and the tables for pictures, blog posts, interest lists, likes and alerts. Existing rows are untouched.
+    try {
+        $sql = file_get_contents(__DIR__ . (DB_DRIVER === 'sqlite' ? '/sql/schema-sqlite.sql' : '/sql/schema.sql'));
+        $colsOf = fn(string $t): array => DB_DRIVER === 'sqlite'
+            ? array_column($pdo->query("PRAGMA table_info($t)")->fetchAll(), 'name')
+            : array_column($pdo->query("SHOW COLUMNS FROM $t")->fetchAll(), 'Field');
+        $have = $colsOf('profiles');
+        foreach (['slug' => 'VARCHAR(40) NULL', 'is_public' => 'TINYINT(1) NOT NULL DEFAULT 0', 'guest_view' => 'TINYINT(1) NOT NULL DEFAULT 0',
+                  'share' => 'TEXT NULL', 'design' => 'TEXT NULL', 'notify' => 'TEXT NULL', 'nb_ready' => 'TINYINT(1) NOT NULL DEFAULT 0'] as $c => $def) {
+            if (!in_array($c, $have, true)) $pdo->exec("ALTER TABLE profiles ADD COLUMN $c $def");
+        }
+        if (DB_DRIVER === 'sqlite') {
+            $pdo->exec('CREATE UNIQUE INDEX IF NOT EXISTS uq_profiles_slug ON profiles(slug)');
+        } elseif (!$pdo->query("SHOW INDEX FROM profiles WHERE Column_name = 'slug' AND Non_unique = 0")->fetch()) {
+            $pdo->exec('ALTER TABLE profiles ADD UNIQUE KEY uq_profiles_slug (slug)');
+        }
+        // An early test version kept pictures as files on disk; that table has no "data" column. Set it aside.
+        $up = $pdo->query(DB_DRIVER === 'sqlite' ? "SELECT name FROM sqlite_master WHERE type = 'table' AND name = 'uploads'" : "SHOW TABLES LIKE 'uploads'")->fetch();
+        if ($up && !in_array('data', $colsOf('uploads'), true)) $pdo->exec('ALTER TABLE uploads RENAME TO uploads_old_files');
+        foreach (['uploads', 'posts', 'post_likes', 'interest_lists', 'interest_items', 'notifications', 'notebooks', 'notebook_styles'] as $t) {
+            if (preg_match("/CREATE TABLE IF NOT EXISTS $t \\(.*?\\n\\)[^;]*;/s", $sql, $m)) $pdo->exec($m[0]);
+        }
+        // Blog posts and interest lists now belong to one notebook
+        foreach (['posts', 'interest_lists'] as $t) {
+            if (!in_array('notebook_id', $colsOf($t), true)) $pdo->exec("ALTER TABLE $t ADD COLUMN notebook_id INT NULL");
+        }
+    } catch (PDOException $e) {
+        error_log('Could not add the notebook sharing tables: ' . $e->getMessage());
+    }
+
     // Google Calendar and email codes: same tables as in the schema file. Existing accounts count as confirmed (DEFAULT 1).
     try {
         $sql = file_get_contents(__DIR__ . (DB_DRIVER === 'sqlite' ? '/sql/schema-sqlite.sql' : '/sql/schema.sql'));
         foreach (['google_accounts', 'gcal_events', 'email_codes'] as $t) {
             if (preg_match("/CREATE TABLE IF NOT EXISTS $t \\(.*?\\n\\)[^;]*;/s", $sql, $m)) $pdo->exec($m[0]);
         }
-        if (DB_DRIVER === 'sqlite') $pdo->exec('CREATE INDEX IF NOT EXISTS idx_gcal_user_date ON gcal_events(user_id,date)');
+        if (DB_DRIVER === 'sqlite') {
+            $pdo->exec('CREATE INDEX IF NOT EXISTS idx_gcal_user_date ON gcal_events(user_id,date)');
+        }
         $cols = DB_DRIVER === 'sqlite'
             ? array_column($pdo->query('PRAGMA table_info(users)')->fetchAll(), 'name')
             : array_column($pdo->query('SHOW COLUMNS FROM users')->fetchAll(), 'Field');
@@ -243,6 +313,16 @@ function is_admin(int $uid): bool
     if (!$admins) return false;
     $row = q('SELECT email FROM users WHERE id = ?', [$uid])->fetch();
     return $row && in_array(strtolower($row['email']), $admins, true);
+}
+
+/** How many chat messages this user hasn't read yet (0 if the messages table couldn't be made on this host). */
+function chat_unread(int $uid): int
+{
+    try {
+        return (int)q('SELECT COUNT(*) AS n FROM messages WHERE to_id = ? AND is_read = 0', [$uid])->fetch()['n'];
+    } catch (PDOException $e) {
+        return 0;
+    }
 }
 
 /** Create the rows every new user starts with. */

@@ -62,6 +62,11 @@ async function reload(){
     const data=await api('bootstrap');
     const p=loadPrefs();
     state={tab:'day',taskFilter:'open',expPeriod:'month',...p,...data,showAll:false};
+    // Blog and Interests are pages of your notebooks now (Profile tab); other pages link here with ?tab=
+    const want=new URLSearchParams(location.search).get('tab');
+    if(want&&(want==='profile'||document.querySelector('nav[aria-label="Planner sections"] .tab[data-tab="'+want+'"]'))){state.tab=want;history.replaceState(null,'',location.pathname)}
+    if(state.tab==='blog'||state.tab==='interests')state.tab='profile';
+    if(typeof V[state.tab]!=='function')state.tab='day';   // a tab saved by an older version (e.g. Alerts) no longer exists
     render();
     if(GCAL_ON&&state.google&&state.google.connected&&state.google.needsSync&&!gcalBusy)gcalRun(true);
   }catch(err){
@@ -75,13 +80,20 @@ function expIn(a,b){const A=iso(a),B=iso(b);return state.exps.filter(e=>e.date>=
 const mOv=(y,m)=>(state.months&&state.months[`${y}-${m}`])||{};
 /** This month's income: the one you typed for that month, else your usual monthly income. */
 const incomeFor=(y,m)=>{const v=mOv(y,m).income;return v==null?state.settings.income:v};
-/** Savings target per month. A month you changed keeps your number; every other month
-    takes an even share of what is still left of the goal, so a short month is made up by the months after it. */
+const monthStatus=(y,m)=>{const ty=TODAY.getFullYear(),cm=TODAY.getMonth();return y<ty||(y===ty&&m<cm)?'past':(y===ty&&m===cm)?'now':'future'};
+/** Savings target per month. Only months with income count: the goal is shared evenly between them.
+    What you did not save in a month (target minus the amount you confirmed) moves on to the next month,
+    and anything saved extra lowers it. A finished month you have not confirmed counts as 0 saved. */
 function targets(y){
-  const goal=state.settings.goal,out=[];let planned=0;
+  const goal=state.settings.goal,out=[];
+  const act=[];for(let m=0;m<12;m++)if(incomeFor(y,m)>0)act.push(m);
+  const base=act.length?goal/act.length:0;let carry=0;
   for(let m=0;m<12;m++){
-    const own=mOv(y,m).save,t=own!=null?own:Math.max(0,(goal-planned)/(12-m));
-    out.push({t,custom:own!=null});planned+=t;
+    if(!act.includes(m)){out.push({t:0,active:false,custom:false,actual:null});continue}
+    const o=mOv(y,m),auto=base+carry,t=o.save!=null?o.save:Math.max(0,auto);
+    const eff=o.actual!=null?o.actual:(monthStatus(y,m)==='past'?0:t);
+    out.push({t,active:true,custom:o.save!=null,actual:o.actual!=null?o.actual:null});
+    carry=auto-eff;
   }
   return out;
 }
@@ -89,15 +101,14 @@ function plan(y){
   const {goal}=state.settings, ty=TODAY.getFullYear(), cm=TODAY.getMonth(), tg=targets(y);
   let savedDone=0; const months=[];
   for(let m=0;m<12;m++){
-    const income=incomeFor(y,m);
+    const income=incomeFor(y,m),status=monthStatus(y,m);
     const spent=sum(expIn(new Date(y,m,1),new Date(y,m,dim(y,m))));
-    const status=y<ty||(y===ty&&m<cm)?'past':(y===ty&&m===cm)?'now':'future';
-    const saved=status==='future'?null:income-spent;
-    if(status==='past')savedDone+=saved;
-    months.push({m,spent,income,saved,status,target:tg[m].t,custom:tg[m].custom,incCustom:mOv(y,m).income!=null});
+    const t=tg[m],saved=status==='future'||!t.active?null:income-spent;
+    if(status!=='future'&&t.actual!=null)savedDone+=t.actual;
+    months.push({m,spent,income,saved,status,active:t.active,actual:t.actual,target:t.t,custom:t.custom,incCustom:mOv(y,m).income!=null});
   }
-  const left=y===ty?12-cm:(y>ty?12:0);
-  const cur=months[y===ty?cm:y>ty?0:11];
+  const left=months.filter(o=>o.active&&o.status!=='past').length;
+  const cur=months.find(o=>o.active&&o.status!=='past')||months[y===ty?cm:y>ty?0:11];
   return {y,months,target:goal/12,savedDone,need:cur.target,cur,left,goal};
 }
 function allowanceFor(y,m){return Math.max(0,incomeFor(y,m)-targets(y)[m].t)}
@@ -309,9 +320,11 @@ function paintHourRow(row){
 }
 function paintHourRows(){document.querySelectorAll('.hr').forEach(paintHourRow)}
 function hourSum(di){
-  const c={};for(let h=0;h<24;h++){const e=resolveHour(di,h);if(e&&HT[e.type]&&e.type!=='sleep')c[e.type]=(c[e.type]||0)+1}
-  const free=[...Array(24).keys()].filter(h=>!resolveHour(di,h)).length;
-  return Object.keys(HT).filter(k=>c[k]).map(k=>`<span style="--hc:var(--c-${HT[k][1]})"><i></i>${HT[k][0]} ${c[k]}h</span>`).join('')+`<span style="--hc:var(--line)"><i></i>Free ${free}h</span>`;
+  // Count minutes, not rows: 07:00–10:45 is 3h 45m, not 4h
+  const c={};let busy=0;
+  for(let h=0;h<24;h++){const e=resolveHour(di,h);if(!e)continue;const m=Math.max(0,hE(e)-hS(e));busy+=m;if(HT[e.type]&&e.type!=='sleep')c[e.type]=(c[e.type]||0)+m}
+  const free=Math.max(0,1440-busy);
+  return Object.keys(HT).filter(k=>c[k]).map(k=>`<span style="--hc:var(--c-${HT[k][1]})"><i></i>${HT[k][0]} ${durTxt(c[k])}</span>`).join('')+`<span style="--hc:var(--line)"><i></i>Free ${durTxt(free)}</span>`;
 }
 function hourSection(d){
   const di=iso(d),rows=(a,b)=>{let o='';for(let h=a;h<=b;h++)o+=hourRow(di,h);return o};
@@ -371,16 +384,66 @@ function importHelp(){
       <p class="dlg-s">A time on its own (08:00) lasts until the next activity. A range (08:15–09:45) sets both ends. Days can be columns or headings like <b translate="no">Monday</b> or <b translate="no">E Hënë</b>.</p>
       <p class="dlg-s">Times can be written in English or Albanian, for example 8:30, 8 am, ora 8, 8 e gjysmë or 3 pasdite.</p>
     </div>
-    <div class="dlg-b"><button class="btn ghost" data-act="imp-example">Download an example</button><button class="btn primary" data-act="imp-close">Got it</button></div>`);
+    <p class="dlg-s">Download an example as:</p>
+    <div class="dlg-rep">${EX_FORMATS.map(f=>`<button class="btn ghost" data-act="imp-example" data-fmt="${f[0]}">${f[1]}</button>`).join('')}</div>
+    <div class="dlg-b"><button class="btn primary" data-act="imp-close">Got it</button></div>`);
 }
-/** A small example planner as a CSV file (opens in Excel), in the page's language. */
-function importExample(){
+const EX_FORMATS=[['xlsx','Excel (.xlsx)'],['docx','Word (.docx)'],['pptx','PowerPoint (.pptx)'],['pdf','PDF (.pdf)'],['csv','CSV (.csv)']];
+const EX_LIBS={
+  xlsx:['https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js'],
+  docx:['https://cdn.jsdelivr.net/npm/docx@7.8.2/build/index.js'],
+  pptx:['https://cdn.jsdelivr.net/npm/pptxgenjs@3.12.0/dist/pptxgen.bundle.js'],
+  pdf:['https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js'],
+};
+const exLoaded={};
+function exLoad(src){
+  return exLoaded[src]||(exLoaded[src]=new Promise((ok,bad)=>{
+    const s=document.createElement('script');s.src=src;s.async=true;s.onload=ok;
+    s.onerror=()=>{delete exLoaded[src];bad(new Error("Couldn't load the file writer. Check your internet connection and try again."))};
+    document.head.appendChild(s);
+  }));
+}
+function exSave(blob,name){
+  const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download=name;
+  document.body.appendChild(a);a.click();setTimeout(()=>{URL.revokeObjectURL(a.href);a.remove()},500);
+}
+/** A small example planner in the chosen format (Excel, Word, PowerPoint, PDF or CSV), in the page's language. */
+async function importExample(fmt){
+  fmt=fmt||'xlsx';
   const sq=window.SPL_LANG==='sq';
   const rows=sq?[['Fillon','Mbaron','Aktiviteti'],['07:30','08:00','Mëngjes'],['08:15','09:45','Ligjërata'],['10:00','12:00','Mësim'],['12:00','13:00','Drekë'],['17:00','18:00','Palestër']]
     :[['Start','End','Activity'],['07:30','08:00','Breakfast'],['08:15','09:45','Lecture'],['10:00','12:00','Study'],['12:00','13:00','Lunch'],['17:00','18:00','Gym']];
-  const csv='\ufeff'+rows.map(r=>r.join(',')).join('\r\n');
-  const a=document.createElement('a');a.href=URL.createObjectURL(new Blob([csv],{type:'text/csv'}));a.download=sq?'shembull-planeri.csv':'example-planner.csv';
-  document.body.appendChild(a);a.click();setTimeout(()=>{URL.revokeObjectURL(a.href);a.remove()},500);
+  const base=sq?'shembull-planeri':'example-planner',title=sq?'Shembull planeri':'Example planner';
+  try{
+    if(fmt==='csv'){exSave(new Blob(['﻿'+rows.map(r=>r.join(',')).join('\r\n')],{type:'text/csv'}),base+'.csv');return}
+    await Promise.all(EX_LIBS[fmt].map(exLoad));
+    if(fmt==='xlsx'){
+      const ws=XLSX.utils.aoa_to_sheet(rows);ws['!cols']=[{wch:10},{wch:10},{wch:24}];
+      const wb=XLSX.utils.book_new();XLSX.utils.book_append_sheet(wb,ws,title);
+      XLSX.writeFile(wb,base+'.xlsx');
+    }else if(fmt==='docx'){
+      const D=window.docx,cell=(t,b)=>new D.TableCell({children:[new D.Paragraph({children:[new D.TextRun({text:t,bold:b})]})]});
+      const doc=new D.Document({sections:[{children:[
+        new D.Paragraph({text:title,heading:D.HeadingLevel.HEADING_1}),
+        new D.Table({width:{size:100,type:D.WidthType.PERCENTAGE},rows:rows.map((r,i)=>new D.TableRow({children:r.map(c=>cell(c,i===0))}))}),
+      ]}]});
+      exSave(await D.Packer.toBlob(doc),base+'.docx');
+    }else if(fmt==='pptx'){
+      const p=new window.PptxGenJS(),s=p.addSlide();
+      s.addText(title,{x:0.5,y:0.3,w:9,h:0.8,fontSize:28,bold:true});
+      s.addTable(rows.map((r,i)=>r.map(c=>({text:c,options:{bold:i===0}}))),{x:0.5,y:1.3,w:9,colW:[1.5,1.5,6],fontSize:16,border:{type:'solid',color:'BBBBBB',pt:1}});
+      await p.writeFile({fileName:base+'.pptx'});
+    }else if(fmt==='pdf'){
+      const doc=new window.jspdf.jsPDF();
+      doc.setFontSize(18);doc.text(title,15,20);doc.setFontSize(12);
+      rows.forEach((r,i)=>{
+        const y=35+i*9;
+        doc.setFont('helvetica',i===0?'bold':'normal');
+        doc.text(r[0],15,y);doc.text(r[1],45,y);doc.text(r[2],75,y);
+      });
+      doc.save(base+'.pdf');
+    }
+  }catch(err){impDialog(`<h3>Couldn't create the example</h3><p class="dlg-s">${esc(err.message||'Please try another format.')}</p><div class="dlg-b"><button class="btn primary" data-act="imp-close">OK</button></div>`)}
 }
 async function importSave(btn){
   if(!impList)return;
@@ -514,7 +577,7 @@ V.week=()=>{
   const cards=days.map(d=>{
     const di=iso(d),ts=state.tasks.filter(t=>t.due===di),bs=studyBlocks(di),sp=sum(state.exps.filter(e=>e.date===di));
     const items=[...bs.map(b=>`<li class="${b.done?'dn':''}"><span class="dot" style="background:var(--c-${subjColor(b.title)})"></span>${hm(b.from)}–${hm(b.to)} ${esc(b.title)}</li>`),...ts.map(t=>`<li class="${t.done?'dn':''}"><span class="prio ${t.priority}" style="width:8px;height:8px;margin-top:5px"></span>${esc(t.title)}</li>`)];
-    return `<div class="wd ${di===TI?'is-today':''}"><button class="wd-h" data-act="goto" data-date="${di}"><span>${WD[wdi(d)]}</span><b>${d.getDate()}</b></button><ul>${items.slice(0,4).join('')||'<li style="color:var(--muted)">Free</li>'}${items.length>4?`<li style="color:var(--muted)">+${items.length-4} more</li>`:''}</ul><div class="foot"><span>Spent</span><span class="amt">${eur(sp)}</span></div></div>`;
+    return `<div class="wd ${di===TI?'is-today':''}" data-act="goto" data-date="${di}"><button class="wd-h" data-act="goto" data-date="${di}"><span>${WD[wdi(d)]}</span><b>${d.getDate()}</b></button><ul>${items.slice(0,4).join('')||'<li style="color:var(--muted)">Free</li>'}${items.length>4?`<li style="color:var(--muted)">+${items.length-4} more</li>`:''}</ul><div class="foot"><span>Spent</span><span class="amt">${eur(sp)}</span></div></div>`;
   }).join('');
   const daily=allow/7;
   const bars=days.map(d=>{const v=sum(state.exps.filter(e=>e.date===iso(d)));return {label:WD[wdi(d)],v,today:iso(d)===TI,cls:d>TODAY?'fut':v>dailyAllow(d)?'over':''}});
@@ -545,8 +608,8 @@ V.month=()=>{
   </section>
   <div class="stack"><section class="panel"><div class="sec-h"><h2>Money this month</h2>${isNow?statusPill(spent,allow):spent>allow?'<span class="pill bad">Over budget</span>':'<span class="pill good">Within budget</span>'}</div>
     <div class="meter ${meterCls(spent,allow)}" style="margin:6px 0 16px"><span style="width:${Math.min(100,spent/(allow||1)*100).toFixed(1)}%"></span></div>
-    <dl class="kv"><dt>Income</dt><dd>${eur(income)}</dd><dt>Spent${isNow?' so far':''}</dt><dd>${eur(spent)}</dd><dt>Spending allowance</dt><dd>${eur(allow)}</dd><dt><label for="m-save">Savings target</label>${tg.custom?` <button class="linkbtn" data-act="msave-reset" data-y="${y}" data-m="${m}" title="Go back to the automatic amount">reset</button>`:''}</dt><dd>€ <input class="cellin num${tg.custom?' edited':''}" id="m-save" type="number" min="0" step="1" value="${+tg.t.toFixed(2)}" data-mf="save" data-y="${y}" data-m="${m}" aria-label="Savings target for ${MON[m]}"></dd><dt>${isNow?'Left to save':'Saved'}</dt><dd style="color:${saved>=tg.t?'var(--good)':'var(--bad)'}">${eur(saved)}</dd></dl>
-    <p class="hint">Couldn't save that much? Change the target. The difference is split evenly over the months after ${MON[m]}.</p>
+    <dl class="kv"><dt>Income</dt><dd>${eur(income)}</dd><dt>Spent${isNow?' so far':''}</dt><dd>${eur(spent)}</dd><dt>Spending allowance</dt><dd>${eur(allow)}</dd><dt><label for="m-save">Savings target</label>${tg.custom?` <button class="linkbtn" data-act="msave-reset" data-y="${y}" data-m="${m}" title="Go back to the automatic amount">reset</button>`:''}</dt><dd>€ <input class="cellin num${tg.custom?' edited':''}" id="m-save" type="number" min="0" step="1" value="${+tg.t.toFixed(2)}" data-mf="save" data-y="${y}" data-m="${m}" aria-label="Savings target for ${MON[m]}"></dd><dt>Left over</dt><dd style="color:${saved>=0?'var(--good)':'var(--bad)'}">${eur(saved)}</dd>${!tg.active?'<dt>Savings</dt><dd style="color:var(--muted)">No income this month</dd>':monthStatus(y,m)==='future'?'':`<dt><label for="m-actual">I saved</label></dt><dd><input type="checkbox" data-chk="msaved" data-y="${y}" data-m="${m}" ${tg.actual!=null&&tg.actual>=tg.t-0.005?'checked':''} aria-label="I saved ${eur(tg.t)} in ${MON[m]}" title="Tick if you saved the target"> € <input class="cellin num${tg.actual!=null?' edited':''}" id="m-actual" type="number" min="0" step="1" value="${tg.actual==null?'':tg.actual}" placeholder="${+tg.t.toFixed(2)}" data-mf="actual" data-y="${y}" data-m="${m}" aria-label="Amount saved in ${MON[m]}" title="Type what you really saved. Clear to undo."></dd>`}</dl>
+    <p class="hint">Tick or type what you really saved in the Year tab. Whatever is missing is added to next month's target.</p>
     <div style="margin-top:16px">${catBars(list)}</div>
     <div class="total-line"><span>Month total</span><span class="amt">${eur(spent)}</span></div>
   </section>
@@ -556,35 +619,37 @@ V.year=()=>{
   const y=cursor.getFullYear(),p=plan(y),{income,goal}=state.settings;
   const allowM=Math.max(0,income-goal/12),allowOf=o=>Math.max(0,o.income-o.target);
   const bars=p.months.map(o=>({label:M3[o.m].slice(0,1)+M3[o.m].slice(1,3),v:o.spent,today:o.status==='now',cls:o.status==='future'?'fut':o.status==='now'?'now':o.spent>allowOf(o)?'over':''}));
-  const done=p.months.filter(o=>o.status!=='future');
+  const done=p.months.filter(o=>o.status!=='future'&&o.active);
   const totSpent=sum(done.map(o=>({amount:o.spent}))),totInc=sum(done.map(o=>({amount:o.income}))),totSaved=totInc-totSpent;
   const rows=p.months.map(o=>{
     let st;
-    if(o.status==='future')st='<span class="pill muted">Upcoming</span>';
-    else if(o.status==='now')st='<span class="pill">In progress</span>';
-    else st=o.saved>=o.target-0.005?'<span class="pill good">On target</span>':`<span class="pill bad">Short ${eur(o.target-o.saved)}</span>`;
+    if(!o.active)st='<span class="pill muted">No income</span>';
+    else if(o.status==='future')st='<span class="pill muted">Upcoming</span>';
+    else if(o.actual==null)st=o.status==='past'?`<span class="pill bad">Confirm · ${eur(o.target)} to catch up</span>`:'<span class="pill">In progress</span>';
+    else st=o.actual>=o.target-0.005?'<span class="pill good">On target</span>':`<span class="pill bad">Short ${eur(o.target-o.actual)}</span>`;
     const inc=`€ <input class="cellin num${o.incCustom?' edited':''}" id="yi-${o.m}" type="number" min="0" step="10" value="${o.income}" placeholder="${income}" data-mf="income" data-y="${y}" data-m="${o.m}" aria-label="Income for ${MON[o.m]}" title="Clear to use your usual income">`;
-    const tgt=`${eur(o.target)}${o.custom?' <span class="tag-edited" title="You changed this in the Month tab">edited</span>':''}`;
-    return `<tr class="${o.status==='now'?'now':o.status==='future'?'fut':''}"><td>${MON[o.m]}</td><td class="r">${o.status==='future'?'–':eur(o.spent)}</td><td class="r">${inc}</td><td class="r">${o.saved===null?'–':eur(o.saved)}</td><td class="r">${tgt}</td><td>${st}</td></tr>`;
+    const conf=!o.active||o.status==='future'?'–':`<input type="checkbox" data-chk="msaved" data-y="${y}" data-m="${o.m}" ${o.actual!=null&&o.actual>=o.target-0.005?'checked':''} aria-label="I saved ${eur(o.target)} in ${MON[o.m]}" title="Tick if you saved the target"> € <input class="cellin num${o.actual!=null?' edited':''}" type="number" min="0" step="1" value="${o.actual==null?'':o.actual}" placeholder="${+o.target.toFixed(2)}" data-mf="actual" data-y="${y}" data-m="${o.m}" aria-label="Amount saved in ${MON[o.m]}" title="Type what you really saved. Clear to undo.">`;
+    const tgt=!o.active?'–':`${eur(o.target)}${o.custom?' <span class="tag-edited" title="You changed this in the Month tab">edited</span>':''}`;
+    return `<tr class="${o.status==='now'?'now':o.status==='future'?'fut':''}${o.active?'':' off'}"><td class="mn">${MON[o.m]}</td><td class="r" data-l="Spent">${o.status==='future'?'–':eur(o.spent)}</td><td class="r" data-l="Income">${inc}</td><td class="r" data-l="Left over">${o.saved===null?'–':eur(o.saved)}</td><td class="r" data-l="Target">${tgt}</td><td class="r" data-l="I saved">${conf}</td><td class="st">${st}</td></tr>`;
   }).join('');
-  const pct=goal?Math.max(0,Math.min(100,p.savedDone/goal*100)):0;
+  const pct=goal>0?Math.max(0,Math.min(100,p.savedDone/goal*100)):0;
   const yList=expIn(new Date(y,0,1),new Date(y,11,31));
   return hdr('Year overview',`${y}`,navBtns())+
   `<div class="cols"><section class="panel"><div class="sec-h"><h2>Savings plan</h2><span class="meta">${p.left} month${p.left===1?'':'s'} left</span></div>
     <div class="inputs"><label for="s-income">Usual monthly income<input class="field num" id="s-income" type="number" min="0" step="10" value="${income}" data-set="income"></label><label for="s-goal">Savings goal for ${y}<input class="field num" id="s-goal" type="number" min="0" step="50" value="${goal}" data-set="goal"></label></div>
-    <p class="eyebrow">${p.left&&p.left<12?'Save this month':'You need to save'}</p>
+    <p class="eyebrow">${p.left?(p.cur.status==='now'?'Save this month':'Next to save · '+MON[p.cur.m]):'Nothing left to save'}</p>
     <p class="save-big">${eur(p.need)}<span style="font-size:18px;color:var(--muted);font-weight:600"> / month</span></p>
-    <p style="font-size:14px;color:var(--muted);margin:10px 0 16px">to reach ${eur0(goal)} by December. That leaves <b style="color:var(--ink)">${eur(Math.max(0,p.cur.income-p.need))}</b> for spending in ${MON[p.cur.m]}. The even split would be ${eur(p.target)} a month.</p>
+    <p style="font-size:14px;color:var(--muted);margin:10px 0 16px">to reach ${eur0(goal)} by December. That leaves <b style="color:var(--ink)">${eur(Math.max(0,p.cur.income-p.need))}</b> for spending in ${MON[p.cur.m]} (${eur(Math.max(0,p.cur.income-p.need)/dim(y,p.cur.m))} a day). Months without income are skipped, and anything you did not save moves to the next month.</p>
     <div class="meter"><span style="width:${pct.toFixed(1)}%"></span></div>
-    <p style="font-size:13px;margin-top:6px"><b class="num">${eur(p.savedDone)}</b> <span style="color:var(--muted)">saved in finished months · ${pct.toFixed(0)}% of goal</span></p>
+    <p style="font-size:13px;margin-top:6px"><b class="num">${eur(p.savedDone)}</b> <span style="color:var(--muted)">saved so far (confirmed) · ${pct.toFixed(0)}% of goal</span></p>
   </section>
   <section class="panel"><div class="sec-h"><h2>Spending by month</h2><span class="meta">from your daily expenses</span></div>
     ${barChart(bars,allowM,{vals:false,limitLabel:'budget'})}
     <div class="legend"><span><i style="background:var(--accent)"></i>Within budget</span><span><i style="background:var(--bad)"></i>Over budget</span><span><i style="background:var(--line)"></i>Upcoming</span></div>
   </section></div>
   <section style="margin-top:28px"><div class="sec-h"><h2>Year expenses</h2><span class="meta">Spending adds up from your daily expenses · click an income to change it for that month</span></div>
-    <div class="tbl-wrap"><table class="tbl"><thead><tr><th>Month</th><th class="r">Spent</th><th class="r">Income</th><th class="r">Saved</th><th class="r">Target</th><th>Status</th></tr></thead><tbody>${rows}</tbody>
-    <tfoot><tr><td>Total ${y}</td><td class="r">${eur(totSpent)}</td><td class="r">${eur(totInc)}</td><td class="r">${eur(totSaved)}</td><td class="r">${eur(goal)}</td><td></td></tr></tfoot></table></div>
+    <div class="tbl-wrap"><table class="tbl ytbl"><thead><tr><th>Month</th><th class="r">Spent</th><th class="r">Income</th><th class="r">Left over</th><th class="r">Target</th><th class="r">I saved</th><th>Status</th></tr></thead><tbody>${rows}</tbody>
+    <tfoot><tr><td class="mn">Total ${y}</td><td class="r" data-l="Spent">${eur(totSpent)}</td><td class="r" data-l="Income">${eur(totInc)}</td><td class="r" data-l="Left over">${eur(totSaved)}</td><td class="r" data-l="Target">${eur(goal)}</td><td class="r" data-l="I saved">${eur(p.savedDone)}</td><td class="st"></td></tr></tfoot></table></div>
   </section>
   <section style="margin-top:28px;max-width:640px"><div class="sec-h"><h2>Where the money went</h2><span class="meta">${yList.length} expenses</span></div>${catBars(yList)}</section>
   ${income===0?'<div class="onboard" style="margin-top:24px"><span>Enter your monthly income and savings goal above. The planner then works out how much to save each month and your daily spending allowance.</span></div>':''}`;
@@ -666,7 +731,10 @@ let drawing=false; // true while the page is re-drawn: boxes removed then fire c
 function render(focusId){
   if(!state)return;
   drawing=true;
-  document.querySelectorAll('.tab').forEach(t=>t.setAttribute('aria-selected',t.dataset.tab===state.tab));
+  const PT='nav[aria-label="Planner sections"] .tab';   // the notebook inside the Profile tab has tabs of its own
+  document.querySelectorAll(PT).forEach(t=>t.setAttribute('aria-selected',t.dataset.tab===state.tab));
+  {const t=document.querySelector(PT+'[aria-selected="true"]'),r=t&&t.parentElement;   // phone: keep the open tab in view in the scrolling tab strip
+   if(r&&r.scrollWidth>r.clientWidth){const a=t.getBoundingClientRect(),b=r.getBoundingClientRect();r.scrollBy({left:a.left-b.left-(b.width-a.width)/2})}}
   // Keep text typed in other "+ Add …" boxes that hasn't been added yet, so re-drawing doesn't wipe it
   const drafts=[...view.querySelectorAll('form.mini input[id]:not([type=date])')].filter(i=>i.value.trim()).map(i=>[i.id,i.value]);
   view.innerHTML=V[state.tab]();
@@ -738,7 +806,7 @@ document.addEventListener('click',e=>{
     case 'imp-close':impClose();return;
     case 'imp-save':importSave(b);return;
     case 'imp-help':importHelp();return;
-    case 'imp-example':importExample();return;
+    case 'imp-example':importExample(b.dataset.fmt);return;
     case 'msave-reset':setMonth(+b.dataset.y,+b.dataset.m,'save',null);break;
     case 'tab':state.tab=b.dataset.tab;state.showAll=false;window.scrollTo({top:0});break;
     case 'shift':shift(+b.dataset.n);break;
@@ -824,6 +892,7 @@ document.addEventListener('change',e=>{
   if(t.dataset.chk){
     const k=t.dataset.chk,on=t.checked;
     if(k==='task'){const x=state.tasks.find(i=>i.id===t.dataset.id);if(x)x.done=on;sync('task.toggle',{id:t.dataset.id,done:on})}
+    if(k==='msaved'){const y=+t.dataset.y,m=+t.dataset.m;setMonth(y,m,'actual',on?Math.round(targets(y)[m].t*100)/100:null)}
     if(k==='block'){if(on)state.blockDone[t.dataset.key]=true;else delete state.blockDone[t.dataset.key];sync('block.done',{key:t.dataset.key,done:on})}
     if(k==='rev'){state.study[+t.dataset.i].rev=on;sync('study.save',{weekday:+t.dataset.i,revised:on})}
     if(k==='ch'){const c=findC(t.dataset.sid,t.dataset.cid);if(c){c.done=on;c.topics.forEach(x=>x.done=on)}sync('chapter.toggle',{id:t.dataset.cid,done:on})}
@@ -935,7 +1004,7 @@ const root=document.documentElement,mq=window.matchMedia('(prefers-color-scheme:
 const eff=()=>root.getAttribute('data-theme')||(mq.matches?'dark':'light');
 const SUN='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4"/></svg>';
 const MOON='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12.8A9 9 0 1 1 11.2 3a7 7 0 0 0 9.8 9.8z"/></svg>';
-function paintThemeBtn(){const d=eff()==='dark';document.getElementById('themeBtn').innerHTML=d?SUN+'Light mode':MOON+'Dark mode'}
+function paintThemeBtn(){const d=eff()==='dark';document.getElementById('themeBtn').innerHTML=d?SUN+'Light':MOON+'Dark'}
 function toggleTheme(){const n=eff()==='dark'?'light':'dark';root.setAttribute('data-theme',n);try{localStorage.setItem('sara-theme',n)}catch(e){}paintThemeBtn()}
 try{const t=localStorage.getItem('sara-theme');if(t==='dark'||t==='light')root.setAttribute('data-theme',t)}catch(e){}
 mq.addEventListener&&mq.addEventListener('change',paintThemeBtn);
@@ -946,6 +1015,10 @@ paintThemeBtn();
 {const r=new URLSearchParams(location.search).get('gcal');
  const M={connected:'Google Calendar is connected. Your hours are on their way to the "Splanner" calendar.',disconnected:'Google Calendar is disconnected. You can delete the "Splanner" calendar in Google if you don\'t need it.',cancelled:'Google Calendar was not connected.','no-calendar':'Please tick the calendar box on Google\'s page so the planner can add your hours.','not-set-up':'Google Calendar is not set up on this site yet.',error:"Couldn't connect Google Calendar. Please try again."};
  if(r){if(M[r])setTimeout(()=>toast(M[r]),300);history.replaceState(null,'',location.pathname)}}
+// Blog, Interests and Profile are drawn by social.js
+V.profile=()=>window.SPLX?window.SPLX.html('profile'):'';
+window.SPL_RENDER=render;
+window.SPL_TAB=()=>state&&state.tab;
 document.getElementById('coil').innerHTML='<span></span>'.repeat(90);
 document.getElementById('todayChip').textContent=`${WDL[wdi(TODAY)]}, ${TODAY.getDate()} ${MON[TODAY.getMonth()]}`;
 reload();
