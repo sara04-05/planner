@@ -44,7 +44,7 @@ function clean_design(int $uid, array $d, bool $withStickers = true): array
         if (isset($d[$k]) && in_array($d[$k], $allowed, true)) $out[$k] = $d[$k];
     }
     foreach (['cover_c1', 'cover_c2', 'paper_hex', 'accent_hex', 'label_hex'] as $k) $out[$k] = clean_hex($d[$k] ?? '');
-    if (($d['label'] ?? '') === 'none') $out['label'] = 'none';
+    if (in_array($d['label'] ?? '', ['round', 'oval', 'arch', 'pill', 'ticket', 'band', 'none'], true)) $out['label'] = $d['label'];
     $c = $d['cover'] ?? '';
     if (in_array($c, BANNERS, true) || ($c === 'custom' && $out['cover_c1'] !== '' && $out['cover_c2'] !== '')) $out['cover'] = $c;
     $c = $d['paper_color'] ?? '';

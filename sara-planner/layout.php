@@ -63,7 +63,7 @@ function design_attrs(array $d, string $part = 'all'): string
     $acc = ($d['accent'] ?? 'violet') !== 'violet' ? ' data-accent="' . h($d['accent']) . '"' : '';
     if ($part === 'accent') return $acc;
     if ($part === 'all') $o .= $acc;
-    if (($d['label'] ?? 'box') === 'none') $o .= ' data-label="none"';
+    if (in_array($d['label'] ?? 'box', ['round', 'oval', 'arch', 'pill', 'ticket', 'band', 'none'], true)) $o .= ' data-label="' . h($d['label']) . '"';
     if (($d['paper'] ?? 'lined') !== 'lined') $o .= ' data-paper="' . h($d['paper']) . '"';
     if (($d['paper_color'] ?? 'white') !== 'white') $o .= ' data-pcolor="' . h($d['paper_color']) . '"';
     if (($d['font'] ?? 'modern') !== 'modern') $o .= ' data-font="' . h($d['font']) . '"';
