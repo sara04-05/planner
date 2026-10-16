@@ -1,5 +1,5 @@
 <?php
-// Your profile: the name, bio, picture and notebook cover other people see.
+// Edit profile & settings, all in one place: picture, name, page name, bio, who can see what, alerts, Explore cover, delete account.
 declare(strict_types=1);
 require __DIR__ . '/db.php';
 require __DIR__ . '/layout.php';
@@ -51,13 +51,25 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             [$avatar, $error] = avatar_from_upload($_FILES['avatar']);
             if ($error) $avatar = false;
         }
+        $slug = strtolower(trim((string)($_POST['slug'] ?? '')));
+        $prof = ensure_profile($uid);
         if ($name === '') $error = 'Please fill in your name.';
+        elseif ($slug !== '' && !preg_match('/^[a-z0-9_]{3,30}$/', $slug)) $error = 'The page name can use 3–30 letters, numbers and _ only.';
+        elseif ($slug !== '' && q('SELECT 1 FROM profiles WHERE slug = ? AND user_id <> ?', [$slug, $uid])->fetch()) $error = 'Someone already uses that page name. Try another.';
         if (!$error) {
             q('UPDATE users SET name = ? WHERE id = ?', [mb_substr($name, 0, 80), $uid]);
             if (!q('SELECT 1 FROM profiles WHERE user_id = ?', [$uid])->fetch()) {
                 q('INSERT INTO profiles (user_id) VALUES (?)', [$uid]);
             }
             q('UPDATE profiles SET bio = ?, cover = ? WHERE user_id = ?', [$bio, $cover, $uid]);
+            if ($slug !== '') q('UPDATE profiles SET slug = ? WHERE user_id = ?', [$slug, $uid]);
+            $public = !empty($_POST['public']) ? 1 : 0;
+            $share = profile_share($prof);
+            $share['day'] = !empty($_POST['day']) ? 1 : 0;
+            $notify = json_col($prof['notify'] ?? null, ['like' => 1]);
+            $notify['like'] = !empty($_POST['notify_like']) ? 1 : 0;
+            q('UPDATE profiles SET is_public = ?, guest_view = ?, share = ?, notify = ? WHERE user_id = ?',
+                [$public, $public && !empty($_POST['guest']) ? 1 : 0, json_encode($share), json_encode($notify), $uid]);
             try {
                 q('UPDATE profiles SET words = ? WHERE user_id = ?', [$words, $uid]);
             } catch (PDOException $e) {   // words column couldn't be added on this host
@@ -73,8 +85,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 }
 
 $me = person($uid);
-app_top('Your profile', ['tab' => 'profile', 'covers' => true, 'eyebrow' => 'Your notebook', 'h1' => 'Name & picture', 'actions' => '<a class="btn" href="index.php?tab=profile">Back to my profile</a>']); ?>
-    <p class="auth-sub">This is what your friends see. They can also see your hour-by-hour plan for today, nothing else.</p>
+$prof = ensure_profile($uid);
+$share = profile_share($prof);
+$notify = json_col($prof['notify'] ?? null, ['like' => 1]);
+$switch = fn(string $name, string $title, string $sub, bool $on) => '<label class="sw"><span class="t"><b>' . h($title) . '</b><span>' . h($sub) . '</span></span><input type="checkbox" name="' . $name . '" value="1"' . ($on ? ' checked' : '') . '><span class="tg"></span></label>';
+app_top('Edit profile & settings', ['tab' => 'profile', 'covers' => true, 'eyebrow' => 'Your notebook', 'h1' => 'Edit profile & settings', 'actions' => '<a class="btn" href="index.php?tab=profile">← Back to my profile</a>']); ?>
+    <p class="auth-sub">Everything about your profile is here. Notebook pages and looks are edited in your profile under <b>Notebooks</b>; see exactly what others can see under <b>What others see</b>.</p>
     <?php if ($error): ?><div class="formmsg err" role="alert"><?= h($error) ?></div><?php endif; ?>
     <?php if ($saved && !$error): ?><div class="formmsg ok" role="status">Saved.</div><?php endif; ?>
     <form method="post" enctype="multipart/form-data" class="auth-form profile-form">
@@ -88,12 +104,13 @@ app_top('Your profile', ['tab' => 'profile', 'covers' => true, 'eyebrow' => 'You
       </div>
       <label for="name">Name (your username)<input id="name" name="name" value="<?= h($me['name']) ?>" required maxlength="80"></label>
       <?php if ($me['same_name']): ?><p class="hint">Someone else is also called <?= h($me['name']) ?>, so people see your email under your name to tell you apart.</p><?php endif; ?>
+      <label for="slug">Page name (your link)<input id="slug" name="slug" value="<?= h($prof['slug']) ?>" maxlength="30" pattern="[A-Za-z0-9_]{3,30}" required></label>
       <label for="bio">Bio<textarea id="bio" name="bio" rows="3" maxlength="300" placeholder="A few words about you"><?= h($me['bio']) ?></textarea></label>
       <div class="cover-pick">
         <div class="cover-preview" id="coverPreview"><?= cover_html($me) ?></div>
         <div class="cover-side">
           <fieldset class="covers">
-            <legend>Notebook cover</legend>
+            <legend>Cover on my Explore card</legend>
             <?php foreach (COVERS as $k => [$label, $style]): ?>
               <label class="cover-opt" title="<?= h($label) ?>"><input type="radio" name="cover" value="<?= $k ?>" <?= $me['cover'] === $k ? 'checked' : '' ?>><?= cover_html($me, true, $k) ?><span><?= h($label) ?></span></label>
             <?php endforeach; ?>
@@ -102,8 +119,17 @@ app_top('Your profile', ['tab' => 'profile', 'covers' => true, 'eyebrow' => 'You
           <p class="hint">Shown in handwriting on the pink spiral covers. Leave it empty to show your name.</p>
         </div>
       </div>
-      <button class="btn primary">Save profile</button>
+      <h2 class="nb-h2">Who can see what</h2>
+      <?= $switch('public', 'Public profile', 'Listed in Explore. Anyone with an account can open it and send you a friend request.', (int)$prof['is_public'] === 1) ?>
+      <?= $switch('guest', 'Visible without logging in', 'Also show it to visitors who have no account. Needs a public profile.', (int)$prof['guest_view'] === 1) ?>
+      <?= $switch('day', 'Show my day to friends', 'Friends (only friends) can see today\'s hour-by-hour plan. Nothing else of your planner.', !empty($share['day'])) ?>
+      <h2 class="nb-h2">Alerts</h2>
+      <?= $switch('notify_like', 'Alert when someone likes my post', 'Shows in the bell at the top of the page.', !empty($notify['like'])) ?>
+      <button class="btn primary">Save everything</button>
     </form>
+    <h2 class="nb-h2">Account</h2>
+    <p class="hint2">Logs you out and removes your account and everything in it for good.</p>
+    <p style="margin-top:10px"><a class="btn danger" href="delete-account.php">Delete my account</a></p>
     <template id="coverTpl"><?php foreach (COVERS as $k => $x): ?><div data-cover="<?= $k ?>"><?= cover_html($me, false, $k) ?></div><?php endforeach; ?></template>
     <script>
     (function(){

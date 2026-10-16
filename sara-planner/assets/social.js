@@ -31,7 +31,7 @@ const PRESETS=[
 const SHARE_MSG='Only what you mark public ever shows.';
 
 let S=null,loading=false,loadErr='';
-const ui={del:false,nb:0,pg:'cover',panel:'',dd:null,dirty:false,sel:-1,post:null,pics:{},newList:false,newNb:false,marked:false};
+const ui={ptab:'notebooks',aud:'friend',nb:0,pg:'cover',panel:'',dd:null,dirty:false,sel:-1,post:null,pics:{},newList:false,newNb:false,marked:false};
 
 async function api(action,data={}){
   const res=await fetch('api.php?action='+encodeURIComponent(action),{method:'POST',credentials:'same-origin',headers:{'Content-Type':'application/json','X-CSRF-Token':CSRF},body:JSON.stringify(data)});
@@ -208,7 +208,7 @@ function settingsPanel(nb){
       <div class="secpick">${SECS.map(s=>`<label><input type="checkbox" name="sections" value="${s[0]}" ${nb.sections.includes(s[0])?'checked':''}><span><b>${s[1]} ${s[2]}</b><small>${s[3]}</small></span></label>`).join('')}</div>
       <div class="xrow"><button class="btn primary">Save</button></div></form>
     <div style="margin-top:10px">${sw('Show this notebook on my profile','People who may open your profile can read it. Items you keep private stay hidden.',nb.public,`data-xsw="nb-public"`)}</div>
-    ${S.profile.public?'':'<p class="hint2">Your profile itself is private right now. Turn on <b>Public profile</b> above for others to see your shared notebooks.</p>'}
+    ${S.profile.public?'':'<p class="hint2">Your profile itself is private right now. Turn on <b>Public profile</b> in <b>Edit profile &amp; settings</b> for others to see your shared notebooks.</p>'}
     <div class="xrow" style="margin-top:12px"><button class="btn danger sm" data-x="nb-del">Delete this notebook</button><span class="hint2">Also deletes its posts and lists.</span></div></section>`;
 }
 const swatch=(act,v,bg,label)=>`<button type="button" class="swatch${act==='cover'?' sq':''}" style="background:${bg}" data-x="${act}" data-v="${v}" aria-label="${label}" aria-pressed="false"></button>`;
@@ -266,19 +266,31 @@ function syncControls(){
   const rm=$('coverRm');if(rm)rm.hidden=!d.cover_url;
 }
 
-/* ---------- PROFILE: your page, your notebooks ---------- */
-function profileHtml(){
-  const p=S.profile,nb=cur();
+/* ---------- PROFILE: like an Instagram profile (header, stats, tabs). Editing lives in profile.php; "What others see" shows everything public ---------- */
+const hm=m=>String(Math.floor(m/60)).padStart(2,'0')+':'+String(m%60).padStart(2,'0');
+const avatarHtml=(p,cls='xl')=>p.avatar?`<img class="avatar ${cls}" src="${esc(p.avatar)}" alt="">`:`<span class="avatar ${cls} letter" aria-hidden="true">${esc(((p.name||'S')[0]||'S').toUpperCase())}</span>`;
+const AUD=[['visitor','🌐','Visitor','Someone with no account'],['user','👤','Signed-in person','Someone with an account, not a friend'],['friend','🤝','Friend','Someone you accepted']];
+const PTABS=[['notebooks','📓','Notebooks'],['posts','🖼️','Posts'],['friends','👥','Friends'],['preview','👁️','What others see']];
+
+function profileHead(){
+  const p=S.profile,likes=S.posts.reduce((n,x)=>n+x.likes,0);
   const link=`${location.origin}${location.pathname.replace(/[^/]*$/,'')}u.php?u=${p.slug}`;
-  const page=`<section class="xcard"><h3>Your profile</h3><p class="sub">A profile is just your notebooks. Choose who can open it, and which notebooks to show.</p>
-    <form class="xform" data-xform="profile" autocomplete="off">
-      <label class="l" for="pf-slug">Page name</label><div class="xrow" style="flex-wrap:nowrap"><span class="hint2">@</span><input type="text" id="pf-slug" name="slug" value="${esc(p.slug)}" maxlength="30" pattern="[A-Za-z0-9_]{3,30}" data-draft required></div>
-      <label class="l" for="pf-bio">Bio</label><textarea id="pf-bio" name="bio" maxlength="300" style="min-height:70px" data-draft placeholder="A few words about you">${esc(p.bio)}</textarea>
-      <div class="xrow"><button class="btn primary">Save</button><a class="btn" href="u.php?u=${esc(p.slug)}" target="_blank" rel="noopener">Open my profile ↗</a><button type="button" class="btn ghost" data-x="copy-link" data-link="${esc(link)}">Copy link</button><a class="btn editprof" href="profile.php" title="Edit profile" aria-label="Edit profile"><span aria-hidden="true">✎</span><span class="lbl">Edit profile</span></a></div>
-      <p class="hint2">${p.friends} friend${p.friends===1?'':'s'}</p></form>
-    ${sw('Public profile','Listed in Explore. Anyone with an account can open it and send you a friend request.',p.public,'data-xsw="public"')}
-    ${sw('Visible without logging in','Also show it to visitors who have no account. Needs a public profile.',p.guest,'data-xsw="guest"',!p.public)}</section>`;
-  const shelf=`<div class="nbe-shelf">${S.notebooks.map(n=>`<button class="nbchip${nb&&n.id===nb.id?' on':''}" data-x="nb-pick" data-id="${n.id}"${n.design.accent&&n.design.accent!=='violet'?` data-accent="${n.design.accent}"`:''}><i style="${coverCss({...n.design,cover_url:n.cover_url})}"></i><span translate="no">${esc(n.title)}</span> <small>${n.public?'🌍':'🔒'}</small></button>`).join('')}<button class="chipbtn${ui.newNb?' on':''}" data-x="nb-new">+ New notebook</button></div>`;
+  const stat=(n,l,t)=>`<button class="pstat" data-x="ptab" data-v="${t}"><b>${n}</b><span>${l}</span></button>`;
+  return `<header class="phead">
+    <div class="phead-av">${avatarHtml(p)}</div>
+    <div class="phead-main">
+      <div class="phead-top"><h2 translate="no">@${esc(p.slug)}</h2><span class="tag2 ${p.public?'':'priv'}">${p.public?'Public':'Private'}</span></div>
+      <div class="pstats">${stat(S.notebooks.length,S.notebooks.length===1?'notebook':'notebooks','notebooks')}${stat(S.posts.length,S.posts.length===1?'post':'posts','posts')}${stat(p.friends,p.friends===1?'friend':'friends','friends')}<span class="pstat"><b>${likes}</b><span>likes</span></span></div>
+      <p class="pname2" translate="no">${esc(p.name)}</p>
+      ${p.bio?`<p class="pbio2" translate="no">${esc(p.bio)}</p>`:'<p class="hint2">No bio yet. Add one in Edit profile.</p>'}
+    </div>
+    <div class="phead-btns"><a class="btn primary" href="profile.php">✎ Edit profile &amp; settings</a><button class="btn" data-x="ptab" data-v="preview">👁️ See what others see</button><button type="button" class="btn ghost" data-x="copy-link" data-link="${esc(link)}">Copy link</button></div>
+  </header>
+  <nav class="ptabs" role="tablist">${PTABS.map(t=>`<button role="tab" data-x="ptab" data-v="${t[0]}" aria-selected="${ui.ptab===t[0]}">${t[1]} ${t[2]}</button>`).join('')}</nav>`;
+}
+function notebooksTab(){
+  const nb=cur();
+  const tiles=`<div class="nbtiles">${S.notebooks.map(n=>`<button class="nbtile${nb&&n.id===nb.id?' on':''}" data-x="nb-pick" data-id="${n.id}"${n.design.accent&&n.design.accent!=='violet'?` data-accent="${n.design.accent}"`:''}><i style="${coverCss({...n.design,cover_url:n.cover_url})}"></i><span translate="no">${esc(n.title)}</span><small>${n.public?'🌍 Shown':'🔒 Private'}</small></button>`).join('')}<button class="nbtile add${ui.newNb?' on':''}" data-x="nb-new"><b>+</b><span>New notebook</span></button></div>`;
   const secs=SECS.map((s,i)=>`<label><input type="checkbox" name="sections" value="${s[0]}" ${i<2?'checked':''}><span><b>${s[1]} ${s[2]}</b><small>${s[3]}</small></span></label>`).join('');
   const newForm=ui.newNb?`<form class="xcard xform" data-xform="nbnew" autocomplete="off" style="margin:12px 0"><h3>New notebook</h3><p class="sub">One for your interests, one for your plans, one for your blog… make as many as you like.</p>
       <label class="l" for="nn-title">Name</label><input type="text" id="nn-title" name="title" maxlength="80" placeholder="e.g. Things I love" required>
@@ -288,21 +300,70 @@ function profileHtml(){
   let editor='';
   if(nb){
     const open=ui.panel?' panel-open':'';
-    editor=`<div class="nbe-bar"><button class="btn${ui.panel==='settings'?' on':''}" data-x="panel" data-v="settings">⚙️ Settings</button><button class="btn${ui.panel==='deco'?' on':''}" data-x="panel" data-v="deco">🎨 Decorate</button><span class="hint2">${nb.public?'Shown on your profile':'Private: only you can see it'}</span></div>
+    editor=`<div class="nbe-bar"><button class="btn${ui.panel==='settings'?' on':''}" data-x="panel" data-v="settings">⚙️ Settings</button><button class="btn${ui.panel==='deco'?' on':''}" data-x="panel" data-v="deco">🎨 Decorate</button><a class="btn" href="u.php?u=${esc(S.profile.slug)}&amp;nb=${nb.id}" target="_blank" rel="noopener">👁️ Open as a visitor ↗</a><span class="hint2">${nb.public?'Shown on your profile':'Private: only you can see it'}</span></div>
       <div class="nbe${open}"><div>${notebookHtml(nb)}</div>${ui.panel?`<div class="nbe-side">${ui.panel==='settings'?settingsPanel(nb):decoPanel(nb)}</div>`:''}</div>`;
   }else editor='<p class="empty">You have no notebooks yet. Press <b>+ New notebook</b> to make your first one.</p>';
-  const account=`<section class="xcard danger-zone"><h3>Account</h3>
-    ${sw('Alert when someone likes my post','Shows in the bell at the top of the page.',S.profile.notify.like,'data-xsw="notify" data-k="like"')}
-    <div class="xrow"><button type="button" class="btn danger" data-x="del-open">Delete my account</button></div>
-    <p class="hint2">Logs you out and removes your account and everything in it for good.</p></section>`;
-  const modal=ui.del?`<div class="modal-bg" data-x="del-close" role="presentation"><form class="modal" method="post" action="delete-account.php" role="alertdialog" aria-modal="true" aria-labelledby="dm-t" aria-describedby="dm-d">
-      <input type="hidden" name="csrf" value="${esc(CSRF)}"><div class="modal-ic" aria-hidden="true">⚠️</div>
-      <h3 id="dm-t">Delete your account?</h3>
-      <p id="dm-d">This logs you out and permanently removes your account, planner, notebooks, pictures, messages and friends. It cannot be undone.</p>
-      <label class="l" for="dm-pw">Type your password to confirm</label><input type="password" id="dm-pw" name="password" autocomplete="current-password" required>
-      <div class="xrow" style="justify-content:flex-end"><button type="button" class="btn ghost" data-x="del-close">Cancel</button><button class="btn danger">Delete for good</button></div></form></div>`:'';
-  return hdr('Your notebook','Profile','')+
-    `<div class="xcols1">${page}</div><h2 class="nb-h2">My notebooks</h2>${shelf}${newForm}${editor}<div class="xcols1" style="margin-top:22px">${account}</div>${modal}`;
+  return tiles+newForm+editor;
+}
+function postsTab(){
+  if(!S.posts.length)return '<p class="empty">No posts yet. Open a notebook with a Blog page and press <b>+ New post</b>.</p>';
+  const nbName=id=>(S.notebooks.find(n=>n.id===id)||{title:''}).title;
+  return `<div class="pgrid">${S.posts.map(p=>`<button class="ptile" data-x="post-open" data-id="${p.id}">${p.image?`<img src="${esc(p.image)}" alt="" loading="lazy">`:`<span class="ptxt" translate="no"><b>${esc(p.title)}</b>${esc(p.body.slice(0,120))}</span>`}<span class="pov"><span>♥ ${p.likes}</span><span>${p.public?'🌍':'🔒'}</span></span><small translate="no">${esc(nbName(p.nb))}</small></button>`).join('')}</div>`;
+}
+function friendsTab(){
+  const f=S.friends||[];
+  if(!f.length)return '<p class="empty">No friends yet. Find people in <a href="explore.php">Explore</a> and send a friend request.</p>';
+  return `<ul class="userlist">${f.map(x=>`<li><a class="ulink" href="friend.php?id=${x.id}">${avatarHtml(x,'')}<span class="un" translate="no">${esc(x.name)}</span></a></li>`).join('')}</ul>`;
+}
+/** Everything one kind of person can see, with a switch next to each thing so you decide what to show. */
+function previewTab(){
+  const p=S.profile,aud=ui.aud;
+  const canOpen=aud==='friend'||(p.public&&(aud==='user'||p.guest));
+  const row=(label,sub,on,sw,seen)=>`<div class="vrow${seen?'':' off'}"><span class="vdot" aria-hidden="true">${seen?'👁️':'🚫'}</span><span class="vt"><b>${label}</b><small>${sub}</small></span>${sw}</div>`;
+  const tog=(on,attr,dis)=>`<label class="sw-mini"><input type="checkbox" ${on?'checked':''} ${dis?'disabled':''} ${attr}><span class="tg"></span></label>`;
+  const seg=`<div class="pilltabs aud">${AUD.map(a=>`<button type="button" data-x="aud" data-v="${a[0]}" aria-pressed="${aud===a[0]}">${a[1]} ${a[2]}</button>`).join('')}</div><p class="hint2">${AUD.find(a=>a[0]===aud)[3]}. Switch the toggles to decide what they get to see.</p>`;
+  let out=`<section class="xcard"><h3>Who can open my profile</h3>${seg}
+    ${row('My profile page',canOpen?'They can open it, see your name, bio'+(aud==='visitor'?'':' and picture')+'.':aud==='visitor'?(p.public?'Visitors without an account are blocked.':'Your profile is private.'):'Your profile is private, they only see your name, picture and bio.',p.public,tog(p.public,'data-xsw="public"'),canOpen)}
+    ${row('Visitors without an account',p.guest&&p.public?'Anyone with the link can look.':'Only people who log in can look.',p.guest,tog(p.guest,'data-xsw="guest"',!p.public),aud==='visitor'?p.public&&p.guest:true)}
+    <p class="hint2" style="margin-top:6px">Friends can always open your shared notebooks, even if your profile is private.</p></section>`;
+  // my day: friends only
+  const dayOn=aud==='friend'&&p.day;
+  out+=`<section class="xcard"><h3>My day (today)</h3>
+    ${row('Hour-by-hour plan for today',aud==='friend'?(p.day?'Your friends see this. Nothing else of your planner.':'Hidden. Friends see "keeps their day private".'):'Only friends can ever see this. Nobody else.',p.day,tog(p.day,'data-xsw="day"'),dayOn)}
+    ${dayOn?dayList():''}${aud==='friend'?`<p class="hint2"><a href="friend.php?id=${S.me_id||''}">Open the full friend view ↗</a></p>`:''}</section>`;
+  // notebooks
+  out+=`<section class="xcard"><h3>Notebooks</h3>`+(S.notebooks.length?S.notebooks.map(n=>{
+    const seen=canOpen&&n.public;
+    const pg=seen?previewPages(n):'';
+    return `<div class="vnb">${row(`<span translate="no">${esc(n.title)}</span>`,n.public?`Shown to people who can open your profile`:'Private, only you',n.public,tog(n.public,'data-xsw="nb-public" data-id="'+n.id+'"'),seen)}${pg}</div>`;
+  }).join(''):'<p class="hint2">No notebooks yet.</p>')+`</section>`;
+  out+=`<p class="xrow"><a class="btn primary" href="u.php?u=${esc(p.slug)}" target="_blank" rel="noopener">Open my real profile as it looks to others ↗</a></p>`;
+  return out;
+}
+function dayList(){
+  const pl=S.plan||{items:[]};
+  return pl.items.length?`<ol class="nb-plan vday">${pl.items.map(e=>`<li class="${pl.now>=e.from&&pl.now<e.to?'now':pl.now>=e.to?'past':''}" style="--hc:var(--c-${esc(e.color)})"><span class="nb-time">${hm(e.from)}–${hm(e.to)}</span><span class="nb-mark"></span><span class="nb-what" translate="no">${esc(e.text)}</span><span class="nb-type">${esc(e.label)}</span></li>`).join('')}</ol>`:'<p class="hint2">Nothing planned today.</p>';
+}
+function previewPages(n){
+  const bits=[];
+  const tog=(on,attr)=>`<label class="sw-mini"><input type="checkbox" ${on?'checked':''} ${attr}><span class="tg"></span></label>`;
+  const item=(ic,label,on,attr,sub='')=>`<div class="vitem${on?'':' off'}"><span>${ic}</span><span class="vt"><b translate="no">${label}</b>${sub?`<small>${sub}</small>`:''}</span>${attr?tog(on,attr):''}</div>`;
+  bits.push(item('📕','Cover and intro',true,''));
+  if(n.sections.includes('blog')){
+    const ps=S.posts.filter(x=>x.nb===n.id);
+    bits.push(`<p class="opt-h">✍️ Blog</p>`+(ps.length?ps.map(x=>item(x.public?'📝':'🔒',esc(x.title),x.public,`data-xsw="post-public" data-id="${x.id}"`,x.public?`♥ ${x.likes} · shown`:'hidden')).join(''):'<p class="hint2">No posts.</p>'));
+  }
+  if(n.sections.includes('interests')){
+    const ls=S.lists.filter(x=>x.nb===n.id);
+    bits.push(`<p class="opt-h">⭐ Interests</p>`+(ls.length?ls.map(x=>item(esc(x.emoji)||'⭐',esc(x.title),x.public,`data-xsw="list-public" data-id="${x.id}"`,`${x.items.length} item${x.items.length===1?'':'s'} · ${x.public?'shown':'hidden'}`)).join(''):'<p class="hint2">No lists.</p>'));
+  }
+  if(n.sections.includes('timetable'))bits.push(`<p class="opt-h">🗓️ Timetable</p>`+item('🗓️','Your repeating weekly hours',true,'','Remove the page in notebook Settings to hide it'));
+  if(n.sections.includes('subjects'))bits.push(`<p class="opt-h">📚 Studying</p>`+item('📚','Subject names and progress (never notes)',true,'','Remove the page in notebook Settings to hide it'));
+  return `<div class="vpages">${bits.join('')}</div>`;
+}
+function profileHtml(){
+  const body=ui.ptab==='posts'?postsTab():ui.ptab==='friends'?friendsTab():ui.ptab==='preview'?previewTab():notebooksTab();
+  return hdr('Your notebook','Profile','')+profileHead()+`<div class="ptab-body">${body}</div>`;
 }
 
 /* ---------- entry point for app.js ---------- */
@@ -319,7 +380,6 @@ function html(tab){
   });
   return out;
 }
-document.addEventListener('keydown',e=>{if(e.key==='Escape'&&ui.del){ui.del=false;redraw()}});
 window.SPLX={html,setUnread:n=>{if(S){S.unread=n;S.notes.forEach(x=>x.read=true)}}};
 
 const markDirty=()=>{ui.dirty=true;const sv=$('saveDesign');if(sv)sv.disabled=false};
@@ -340,8 +400,9 @@ document.addEventListener('click',async e=>{
       case 'retry':loadErr='';S=null;redraw();return;
       // notebooks
       case 'nb-pick':if(ui.dirty)toast('Unsaved design changes were dropped.');pick(id);redraw();return;
-      case 'del-open':ui.del=true;redraw('dm-pw');return;
-      case 'del-close':if(e.target!==b&&b.classList.contains('modal-bg'))return;ui.del=false;redraw();return;
+      case 'ptab':ui.ptab=b.dataset.v;redraw();return;
+      case 'aud':ui.aud=b.dataset.v;redraw();return;
+      case 'post-open':{const p=S.posts.find(x=>x.id===id);if(!p)return;pick(p.nb);ui.pg='blog';ui.ptab='notebooks';redraw();return}
       case 'nb-new':ui.newNb=!ui.newNb;redraw(ui.newNb?'nn-title':'');return;
       case 'panel':ui.panel=ui.panel===b.dataset.v?'':b.dataset.v;ui.sel=-1;redraw();return;
       case 'pg':ui.pg=b.dataset.v;ui.sel=-1;ui.post=null;ui.newList=false;redraw();return;
@@ -424,9 +485,6 @@ document.addEventListener('submit',async e=>{
       const l=S.lists.find(y=>y.id===lid);l.items.push({id:r.id,text:d.text.trim(),note:(d.note||'').trim(),image:pic?pic.url:'',image_id:pic?pic.id:0});
       ui.pics[k]=null;clear(['ix-text-'+lid,'ix-note-'+lid]);redraw('ix-text-'+lid);
       document.querySelectorAll('[data-cleared]').forEach(el=>delete el.dataset.cleared);
-    }else if(x==='profile'){
-      await api('x.profile.save',{slug:d.slug,bio:d.bio});
-      S.profile.slug=d.slug.toLowerCase();S.profile.bio=d.bio.trim();toast('Saved.');redraw();
     }else if(x==='nb'){
       const nb=cur(),sections=new FormData(f).getAll('sections');
       const r=await api('x.nb.save',{id:nb.id,title:d.title,intro:d.intro||'',sections});
@@ -456,9 +514,11 @@ document.addEventListener('change',async e=>{
         const body={public:S.profile.public};if(k==='guest'||!on)body.guest=S.profile.guest;
         if(k==='guest')body.guest=on;
         await api('x.profile.save',body);redraw();
-      }else if(k==='nb-public'){const nb=cur();nb.public=on;await api('x.nb.save',{id:nb.id,public:on});redraw()}
+      }else if(k==='day'){S.profile.day=on;await api('x.profile.save',{day:on});redraw()}
+      else if(k==='post-public'){const p=S.posts.find(x=>x.id===+t.dataset.id);if(p)p.public=on;await api('x.post.public',{id:+t.dataset.id,public:on});redraw()}
+      else if(k==='nb-public'){const nb=S.notebooks.find(x=>x.id===+(t.dataset.id||ui.nb));nb.public=on;await api('x.nb.save',{id:nb.id,public:on});redraw()}
       else if(k==='notify'){S.profile.notify[t.dataset.k]=on;await api('x.profile.save',{notify:{[t.dataset.k]:on}})}
-      else if(k==='list-public'){const l=S.lists.find(x=>x.id===+t.dataset.id);if(l)l.public=on;await api('x.list.update',{id:+t.dataset.id,public:on})}
+      else if(k==='list-public'){const l=S.lists.find(x=>x.id===+t.dataset.id);if(l)l.public=on;await api('x.list.update',{id:+t.dataset.id,public:on});redraw()}
     }catch(err){t.checked=!on;toast(err.message)}
     return;
   }

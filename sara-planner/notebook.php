@@ -154,7 +154,7 @@ function ensure_profile(int $uid): array
 
 function profile_share(array $row): array
 {
-    return json_col($row['share'] ?? null, ['blog' => 1, 'interests' => 1, 'timetable' => 0, 'subjects' => 0]);
+    return json_col($row['share'] ?? null, ['blog' => 1, 'interests' => 1, 'timetable' => 0, 'subjects' => 0, 'day' => 1]);
 }
 
 function profile_design(array $row): array
@@ -425,9 +425,22 @@ function notebook_bootstrap(int $uid): array
     $p = ensure_profile($uid);
     ensure_notebooks($uid);
     $notify = json_col($p['notify'] ?? null, ['like' => 1]);
+    $me = person($uid);
+    $friends = [];
+    foreach (array_slice(friend_ids($uid), 0, 100) as $fid) {
+        if ($f = person($fid)) $friends[] = ['id' => $fid, 'name' => $f['name'], 'avatar' => $f['avatar_v'] ? 'avatar.php?id=' . $fid . '&v=' . $f['avatar_v'] : ''];
+    }
+    $plan = [];
+    foreach (day_schedule($uid, date('Y-m-d')) as $e) {
+        $t = isset(HOUR_COLORS[$e['type']]) ? $e['type'] : 'personal';
+        $plan[] = ['from' => $e['from'], 'to' => min($e['to'], 1440), 'text' => $e['text'], 'label' => HOUR_NAMES[$t], 'color' => HOUR_COLORS[$t]];
+    }
     return [
         'profile' => ['slug' => $p['slug'], 'bio' => $p['bio'], 'public' => (int)$p['is_public'] === 1, 'guest' => (int)$p['guest_view'] === 1,
-            'notify' => $notify, 'friends' => count(friend_ids($uid))],
+            'notify' => $notify, 'friends' => count($friends), 'name' => $me['name'], 'day' => !empty(profile_share($p)['day']),
+            'avatar' => $me['avatar_v'] ? 'avatar.php?id=' . $uid . '&v=' . $me['avatar_v'] : ''],
+        'friends' => $friends, 'me_id' => $uid,
+        'plan' => ['date' => date('l, j F'), 'now' => (int)date('G') * 60 + (int)date('i'), 'items' => $plan],
         'notebooks' => load_notebooks($uid),
         'styles' => load_styles($uid),
         'stickers_up' => array_map(fn($r) => ['id' => (int)$r['id'], 'url' => upload_url((int)$r['id'])],
@@ -502,6 +515,11 @@ function notebook_action(int $uid, string $action, array $in): void
         if (array_key_exists('bio', $in)) q('UPDATE profiles SET bio = ? WHERE user_id = ?', [mb_substr(trim((string)$in['bio']), 0, 300), $uid]);
         if (array_key_exists('public', $in)) q('UPDATE profiles SET is_public = ? WHERE user_id = ?', [!empty($in['public']) ? 1 : 0, $uid]);
         if (array_key_exists('guest', $in)) q('UPDATE profiles SET guest_view = ? WHERE user_id = ?', [!empty($in['guest']) ? 1 : 0, $uid]);
+        if (array_key_exists('day', $in)) {   // may friends see today's hour-by-hour plan?
+            $sh = profile_share($p);
+            $sh['day'] = !empty($in['day']) ? 1 : 0;
+            q('UPDATE profiles SET share = ? WHERE user_id = ?', [json_encode($sh), $uid]);
+        }
         if (isset($in['notify']) && is_array($in['notify'])) {
             $n = json_col($p['notify'] ?? null, ['like' => 1]);
             foreach (NOTIFY_KEYS as $k) if (array_key_exists($k, $in['notify'])) $n[$k] = !empty($in['notify'][$k]) ? 1 : 0;
