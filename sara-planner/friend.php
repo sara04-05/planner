@@ -21,10 +21,11 @@ if (!$p || (!$self && friendship($uid, $id) !== 'friends')) {
 }
 
 $today = date('Y-m-d');
-$plan = day_schedule($id, $today);
+$shared = $self || !empty(profile_share(ensure_profile($id))['day']);   // the owner can switch the day off for friends
+$plan = $shared ? day_schedule($id, $today) : [];
 $now = (int)date('G') * 60 + (int)date('i');
 
-$acts = '<a class="btn" href="explore.php">← Explore</a>';
+$acts = $self ? '<a class="btn" href="index.php?tab=profile">← My profile</a>' : '<a class="btn" href="explore.php">← Explore</a>';
 if ($ns = public_slug($p['id'], $uid)) $acts .= ' <a class="btn" href="u.php?u=' . h($ns) . '">Notebooks</a>';
 if (!$self) $acts .= ' <a class="btn primary" href="messages.php?with=' . $p['id'] . '">Message</a>';
 app_top($p['name'], ['active' => 'explore', 'covers' => true, 'eyebrow' => 'Friend\'s notebook', 'h1' => $p['name'], 'actions' => $acts]); ?>
@@ -36,7 +37,10 @@ app_top($p['name'], ['active' => 'explore', 'covers' => true, 'eyebrow' => 'Frie
         </div>
         <div class="eyebrow">Today</div>
         <h2 class="nb-date"><?= h(date('l, j F', strtotime($today))) ?></h2>
-        <?php if (!$plan): ?>
+        <?php if ($self): ?><p class="hint2">This is exactly what your friends see. Only friends can see it, and you can switch it off in Profile → What others see.</p><?php endif; ?>
+        <?php if (!$shared): ?>
+          <p class="nb-empty">🔒 <?= h($p['name']) ?> keeps their day private.</p>
+        <?php elseif (!$plan): ?>
           <p class="nb-empty">Nothing planned today.</p>
         <?php else: ?>
         <ol class="nb-plan">
