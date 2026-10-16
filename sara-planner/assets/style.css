@@ -1676,3 +1676,10 @@ a.nbcover-link:focus-visible{outline:3px solid var(--accent);outline-offset:6px;
 .rlrow p{margin:0;white-space:pre-wrap;overflow-wrap:anywhere;line-height:1.5}
 .rlhead{display:flex;gap:10px;flex-wrap:wrap;align-items:baseline;font-size:13px}
 .rlmail,.rlwhen{color:var(--muted)}
+
+/* visitors on a phone: the top bar buttons without an icon (Explore, Log in, Create free account) keep their words */
+@media (max-width:760px){
+  .top-r .btn:not(:has(svg)){font-size:13px;padding:0 12px;white-space:nowrap}
+  .top-r:has(a[href="register.php"]){display:flex;flex-wrap:wrap;gap:6px}
+  .top-r:has(a[href="register.php"]) .btn{height:38px;flex:1 1 auto}
+}
