@@ -1394,7 +1394,7 @@ a.nbtile{text-decoration:none}.nbtiles{margin-bottom:14px}.nbtile.on span{color:
 input[type=range][data-xrange]{flex:1;min-width:120px}
 
 /* Laptop fixes: the limit label no longer covers the heading above the chart, and the "I saved" tick sits level with its amount */
-.chart{margin-top:24px}
+.chart{margin-top:32px}
 .ytbl td[data-l="I saved"]{white-space:nowrap}
 .ytbl td[data-l="I saved"] input,.ytbl td[data-l="Income"] input{vertical-align:middle}
 .ytbl td[data-l="I saved"] input[type=checkbox]{margin:0 4px 0 0}
@@ -1439,3 +1439,11 @@ input[type=range][data-xrange]{flex:1;min-width:120px}
 .setup-skip{text-align:center;margin-top:16px}
 @media (max-width:480px){.look-extra{grid-template-columns:1fr 1fr}}
 .setup-nav .btn.primary{margin-left:auto}
+
+/* Hour by hour: rows are one ruled line (32px), or two when they show an end time, so the writing stays on the notebook lines and both columns line up */
+.page .hr{min-height:32px;height:32px;box-sizing:border-box;padding-block:0;line-height:1.25;align-items:center}
+.page .hr:has(.hl small){height:64px}
+.page .hr .hl{padding:0;line-height:1.2}
+.page .hr select,.page .hr input{height:28px;padding-block:0}
+.page .hcol-h{line-height:var(--lh);padding-bottom:0}
+@media (max-width:640px){.top-r .btn{width:auto;min-width:0}}
