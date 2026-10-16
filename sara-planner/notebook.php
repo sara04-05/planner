@@ -594,6 +594,32 @@ function notebook_action(int $uid, string $action, array $in): void
     }
 
     // ----- notebooks -----
+    case 'x.report': {   // a problem with the website, sent to the admins (the "!" button in the top bar opens a popup for it)
+        if (can_view_users($uid)) fail(400, 'Admins read the reports on the Users page.');
+        $details = trim((string)($in['details'] ?? ''));
+        if ($details === '') fail(400, 'Tell the admins what went wrong.');
+        if (mb_strlen($details) > 1000) fail(400, 'Keep it under 1000 characters.');
+        if ((int)q('SELECT COUNT(*) n FROM reports WHERE reporter_id = ? AND resolved = 0', [$uid])->fetch()['n'] >= 5) fail(429, 'You already have several open reports. The admins will look at them soon.');
+        // a problem report has no other account in it: the "reported" account is the sender themselves
+        q('INSERT INTO reports (reporter_id, target_id, reason, details) VALUES (?, ?, ?, ?)', [$uid, $uid, 'problem', $details]);
+        $admins = defined('ADMIN_EMAILS') ? ADMIN_EMAILS : [];
+        if ($admins) {
+            require_once __DIR__ . '/mail.php';
+            if (mail_configured()) {
+                $me = person($uid);
+                $text = "A user reported a problem on Splanner.\n\nFrom: " . $me['name'] . ' <' . $me['email'] . ">\nProblem: " . $details . "\n\nSee all reports on the Users page (admin.php).\n";
+                foreach ($admins as $email) {
+                    try {
+                        send_mail((string)$email, 'Splanner problem: ' . $me['name'], $text);
+                    } catch (RuntimeException $e) {
+                        error_log('Report email: ' . $e->getMessage());   // the report is still saved and shown on admin.php
+                    }
+                }
+            }
+        }
+        ok([]);
+    }
+
     case 'x.nb.add': {
         ensure_notebooks($uid);
         if ((int)q('SELECT COUNT(*) c FROM notebooks WHERE user_id = ?', [$uid])->fetch()['c'] >= MAX_NOTEBOOKS) fail(400, 'That is plenty of notebooks! Delete one first.');

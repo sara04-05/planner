@@ -23,7 +23,7 @@ function profile_head(array $person, string $slug, array $stats, string $actions
         . '</div>' . ($actions !== '' ? '<div class="phead-btns">' . $actions . '</div>' : '') . '</header>';
     return $out;
 }
-/** Profiles have no report button: problems with the website are reported to the admins from the top bar (report.php). */
+/** Profiles have no report button: problems with the website are reported to the admins from the top bar (the popup in assets/bell.js). */
 function report_btn(int $owner): string
 {
     return '';

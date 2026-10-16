@@ -1624,3 +1624,24 @@ a.nbcover-link:focus-visible{outline:3px solid var(--accent);outline-offset:6px;
 .setup h1{font-size:clamp(24px,5vw,30px);margin:0 0 6px}
 .setup .auth-sub{margin:0 0 6px}
 .setup-nav .btn{min-height:40px;padding:0 18px}
+
+/* report a problem: popup */
+.reportmodal{width:min(520px,100%);gap:12px}
+.reportmodal h3{font-family:var(--display);font-size:20px;margin:0}
+.reportmodal .reportbox{max-width:none;background:none;border:0;padding:0;box-shadow:none}
+.reportmodal .rpmsg{color:var(--bad);font-size:13px;font-weight:600;margin:0}
+.reportmodal .rpdone{margin:0;color:var(--muted)}
+
+/* profile heads: room between the details, the buttons and the notebook below */
+.page .phead-btns{margin-top:var(--lh);margin-bottom:var(--lh)}
+.page .pbio2,.page .pname2{margin-bottom:0}
+.page .phead{margin-bottom:var(--lh)}
+.page .phead+.nbtiles,.page .phead-btns+.nbtiles{margin-top:0}
+.nbv{margin-top:var(--lh)}
+.page .nbtiles{margin-bottom:var(--lh)}
+
+/* while you decorate, the notebook stays in view (sticky) as the long options panel scrolls */
+@media (min-width:981px){
+  .nbe.panel-open>div:first-child{position:sticky;top:16px;align-self:start;z-index:2}
+}
+.nbe.panel-open .nbe-side{position:static}
