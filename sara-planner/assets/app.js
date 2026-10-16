@@ -38,6 +38,11 @@ const save=()=>{try{localStorage.setItem(PREFS,JSON.stringify({tab:state.tab,tas
 function loadPrefs(){try{return JSON.parse(localStorage.getItem(PREFS))||{}}catch(e){return {}}}
 
 async function api(action,data={}){
+  // Visitor tour: the planner is filled with sample data and nothing can be saved
+  if(window.SPL_TOUR){
+    if(action==='bootstrap')return window.SPL_TOUR();
+    throw Object.assign(new Error('This is a preview, so nothing is saved. Log in or create a free account to use it.'),{status:403});
+  }
   const res=await fetch('api.php?action='+encodeURIComponent(action),{
     method:'POST',credentials:'same-origin',
     headers:{'Content-Type':'application/json','X-CSRF-Token':CSRF},
@@ -67,6 +72,7 @@ async function reload(){
     if(want&&(want==='profile'||document.querySelector('nav[aria-label="Planner sections"] .tab[data-tab="'+want+'"]'))){state.tab=want;history.replaceState(null,'',location.pathname)}
     if(state.tab==='blog'||state.tab==='interests')state.tab='profile';
     if(typeof V[state.tab]!=='function')state.tab='day';   // a tab saved by an older version (e.g. Alerts) no longer exists
+    if(window.SPL_TOUR&&state.tab==='profile')state.tab='day';
     render();
     if(state.google&&state.google.connected&&state.google.needsSync&&!gcalBusy)gcalRun(true);
   }catch(err){
@@ -1017,6 +1023,6 @@ V.profile=()=>window.SPLX?window.SPLX.html('profile'):'';
 window.SPL_RENDER=render;
 window.SPL_TAB=()=>state&&state.tab;
 document.getElementById('coil').innerHTML='<span></span>'.repeat(90);
-document.getElementById('todayChip').textContent=`${WDL[wdi(TODAY)]}, ${TODAY.getDate()} ${MON[TODAY.getMonth()]}`;
+{const tc=document.getElementById('todayChip');if(tc)tc.textContent=`${WDL[wdi(TODAY)]}, ${TODAY.getDate()} ${MON[TODAY.getMonth()]}`}
 reload();
 })();

@@ -171,7 +171,7 @@ function app_nav(?int $uid, string $active = '', bool $planner = false): void
       <a class="btn" href="login.php">Log in</a>
       <a class="btn primary" href="register.php">Create free account</a>
       <button class="btn" data-lang-btn>Shqip</button>
-      <button class="btn" data-theme-btn aria-label="Switch theme"></button>
+      <button class="btn"<?= $planner ? ' id="themeBtn" data-act="theme"' : ' data-theme-btn' ?> aria-label="Switch theme"></button>
     <?php endif; ?>
     </div>
   </header>
