@@ -100,9 +100,6 @@ function when(?string $ts): string
 app_top('Users', ['active' => 'admin', 'eyebrow' => 'Your notebook', 'h1' => 'Users']); ?>
     <?php if ($msg): ?><div class="formmsg ok" role="status"><?= h($msg) ?></div><?php endif; ?>
     <?php if ($err): ?><div class="formmsg err" role="alert"><?= h($err) ?></div><?php endif; ?>
-    <p class="auth-sub"><span class="admin-count"><?= count($users) ?></span> <?= count($users) === 1 ? 'account' : 'accounts' ?> in this database.
-      <?= $canEdit ? (is_owner($uid) ? 'You are the owner: you can edit accounts, give the verified tick and set roles.' : 'You are an admin: you can edit accounts, give the verified tick and set roles.') : 'You are a sub admin: you can look at the users but not change anything.' ?></p>
-    <p class="hint2">Roles: Admin changes everything on this page · Sub admin can only look at it · User is everybody else.</p>
     <div class="tbl-wrap">
       <table class="tbl">
         <thead><tr><th>Name</th><th>Email</th><th>Role</th><th>Signed up</th><th>Last login</th><?php if ($canEdit): ?><th></th><?php endif; ?></tr></thead>
