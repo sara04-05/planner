@@ -1446,6 +1446,15 @@ a.nbtile{text-decoration:none}.nbtiles{margin-bottom:14px}.nbtile.on span{color:
 .page .tbl td :is(.btn,form,.admin-acts){line-height:1.2;vertical-align:middle}
 .page .tbl td form{display:inline-flex;align-items:center;margin:0}
 
+/* year table on phones: the cards size to their content, so undo the one-ruled-line row height above */
+@media (max-width:760px){
+  .page .ytbl tr{height:auto}
+  .page .ytbl :is(th,td){height:auto;padding:0!important;line-height:1.3}
+  .page .ytbl td.mn{line-height:1.2}
+  .page .ytbl tfoot td{border-top:0}
+  .page .ytbl tr.off{min-height:0}
+}
+
 /* date headings in the expense list: one line tall, no line of their own, so the rows below stay on the ruled lines */
 .page .dgroup{height:var(--lh);min-height:var(--lh);padding:0;margin:0;border:0;align-items:center;box-sizing:border-box}
 .page .foot-note{margin-top:0;min-height:var(--lh);align-items:center}
