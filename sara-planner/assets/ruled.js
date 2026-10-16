@@ -2,7 +2,7 @@
    paper onto those lines: text blocks get a 32px line height and are moved down to the next line if they start between two lines,
    and boxes (cards, panels) end on a line. Things inside a box (it has its own background) are left alone, the rules don't show there. */
 (function(){
-  var LH=32,busy=false,timer=null;
+  var LH=40,busy=false,timer=null;
   var SKIP_TAG=/^(INPUT|SELECT|TEXTAREA|IMG|SVG|BR|OPTION|SCRIPT|STYLE|CANVAS)$/;
   // how see-through a computed colour is (0 = clear, 1 = solid); handles rgb(), rgba() and color(srgb … / a) from color-mix()
   function alphaOf(c){
