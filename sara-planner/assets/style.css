@@ -1382,9 +1382,11 @@ a.nbtile{text-decoration:none}.nbtiles{margin-bottom:14px}.nbtile.on span{color:
 /* day view: the money panel stays in its own column and never rides up over the header or down over the hours */
 .page .cols{align-items:start}
 .page .cols>.panel{position:static;margin:0;min-width:0;overflow:hidden}
-.page .cols>.panel .addform{grid-template-columns:minmax(0,1fr) minmax(0,1fr)}
-.page .cols>.panel .addform input[name=desc]{grid-column:1/-1}
-.page .cols>.panel .addform .btn{grid-column:1/-1;justify-content:center}
+@media (max-width:760px){
+  .page .cols>.panel .addform{grid-template-columns:minmax(0,1fr) minmax(0,1fr)}
+  .page .cols>.panel .addform input[name=desc]{grid-column:1/-1}
+  .page .cols>.panel .addform .btn{grid-column:1/-1;justify-content:center}
+}
 .page .cols>.stack{min-width:0}
 
 /* phones: section headings sit left, with their small note on the right; date header wraps cleanly */
@@ -1655,3 +1657,10 @@ a.nbcover-link:focus-visible{outline:3px solid var(--accent);outline-offset:6px;
 .nbv :is(.nb-text,.nb-what,.nb-intro,.nbp-toc a,.nbp-toc button,.post .txt,.ilist li,.tx){font-size:var(--nb-fs,15px)}
 .nbv .nbook .page h1{font-size:calc(var(--nb-fs,15px) * 1.9)}
 .lbrange b{font-weight:700;color:var(--ink);margin-left:6px}
+
+/* money panel: the add form in one row again (what, category, amount, date, Add) */
+@media (min-width:761px){
+  .page .panel .addform{grid-template-columns:minmax(0,1.1fr) minmax(0,.8fr) minmax(0,1.1fr) auto;align-items:center;margin-bottom:var(--lh)}
+  .page .panel .addform input[name=desc]{grid-column:1/-1}
+  .page .panel .addform .btn{grid-column:auto;justify-content:center;width:auto;padding:0 18px}
+}
