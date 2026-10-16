@@ -1063,3 +1063,17 @@ button.pstat:hover span{color:var(--accent)}
 .auth-form label.sw .t span{text-transform:none;letter-spacing:0;font-weight:400;color:var(--muted)}
 .auth-form label.sw .t b{text-transform:none;letter-spacing:0;font-size:14px;color:var(--ink)}
 a.nbtile{text-decoration:none}.nbtiles{margin-bottom:14px}.nbtile.on span{color:var(--accent)}
+/* hang out: when two friends are both free */
+.ho-days{display:flex;gap:6px;flex-wrap:wrap;margin:6px 0 14px}
+.ho-chart{margin:14px 0}
+.ho-row{display:grid;grid-template-columns:110px minmax(0,1fr);gap:10px;align-items:center;margin:6px 0;font-size:13px;font-weight:600}
+.ho-row>span{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.ho-bar{position:relative;height:22px;border-radius:6px;background:var(--line)}
+.ho-bar i{position:absolute;top:0;bottom:0;border-radius:6px;background:color-mix(in srgb,var(--accent) 45%,transparent)}
+.ho-bar i.both{background:var(--good,#2b8a5b)}
+.ho-axis{display:flex;justify-content:space-between;margin-left:120px;font-size:11px;color:var(--muted)}
+.ho-list{list-style:none;margin:8px 0;padding:0;display:flex;flex-direction:column;gap:8px}
+.ho-list li{display:flex;align-items:center;gap:12px;padding:10px 14px;border:1px solid var(--line);border-radius:14px;background:var(--paper-2)}
+.ho-list li span{color:var(--muted);font-size:13px;flex:1}
+@media (max-width:640px){.ho-row{grid-template-columns:70px minmax(0,1fr)}.ho-axis{margin-left:80px}}
+.daysel{font:inherit;font-size:13px;padding:7px 8px;border-radius:10px;border:1px solid var(--line);background:var(--paper);color:var(--ink);max-width:190px}

@@ -59,7 +59,7 @@ function clean_design(int $uid, array $d, bool $withStickers = true): array
             continue;
         }
         $page = (string)($s['p'] ?? 'cover');
-        if ($page !== 'cover' && !in_array($page, SECTIONS, true)) $page = 'cover';
+        if ($page !== 'cover' && !in_array($page, SECTIONS, true) && $page !== 'day') $page = 'cover';
         $out['stickers'][] = [
             'k' => $key, 'p' => $page,
             'x' => max(0, min(100, round((float)($s['x'] ?? 50), 1))),
@@ -155,6 +155,25 @@ function ensure_profile(int $uid): array
 function profile_share(array $row): array
 {
     return json_col($row['share'] ?? null, ['blog' => 1, 'interests' => 1, 'timetable' => 0, 'subjects' => 0, 'day' => 1]);
+}
+
+/** Who may see today's plan: 0 nobody, 1 friends, 2 anyone signed in who can open the profile, 3 everyone who can open it (visitors too). */
+function day_level(array $row): int
+{
+    return max(0, min(3, (int)(profile_share($row)['day'] ?? 1)));
+}
+
+/** May this viewer (null = not logged in) see this person's plan for today? */
+function can_see_day(int $owner, ?int $viewer): bool
+{
+    if ($viewer !== null && $viewer === $owner) return true;
+    $row = q('SELECT * FROM profiles WHERE user_id = ?', [$owner])->fetch();
+    $level = $row ? day_level($row) : 1;
+    if ($level === 0) return false;
+    if ($viewer !== null && friendship($viewer, $owner) === 'friends') return true;
+    if (!$row || $level < 2) return false;
+    if ($level === 2 && $viewer === null) return false;
+    return can_view_profile($row, $viewer);
 }
 
 function profile_design(array $row): array
@@ -437,7 +456,7 @@ function notebook_bootstrap(int $uid): array
     }
     return [
         'profile' => ['slug' => $p['slug'], 'bio' => $p['bio'], 'public' => (int)$p['is_public'] === 1, 'guest' => (int)$p['guest_view'] === 1,
-            'notify' => $notify, 'friends' => count($friends), 'name' => $me['name'], 'day' => !empty(profile_share($p)['day']),
+            'notify' => $notify, 'friends' => count($friends), 'name' => $me['name'], 'day' => day_level($p),
             'avatar' => $me['avatar_v'] ? 'avatar.php?id=' . $uid . '&v=' . $me['avatar_v'] : ''],
         'friends' => $friends, 'me_id' => $uid,
         'plan' => ['date' => date('l, j F'), 'now' => (int)date('G') * 60 + (int)date('i'), 'items' => $plan],
@@ -515,9 +534,9 @@ function notebook_action(int $uid, string $action, array $in): void
         if (array_key_exists('bio', $in)) q('UPDATE profiles SET bio = ? WHERE user_id = ?', [mb_substr(trim((string)$in['bio']), 0, 300), $uid]);
         if (array_key_exists('public', $in)) q('UPDATE profiles SET is_public = ? WHERE user_id = ?', [!empty($in['public']) ? 1 : 0, $uid]);
         if (array_key_exists('guest', $in)) q('UPDATE profiles SET guest_view = ? WHERE user_id = ?', [!empty($in['guest']) ? 1 : 0, $uid]);
-        if (array_key_exists('day', $in)) {   // may friends see today's hour-by-hour plan?
+        if (array_key_exists('day', $in)) {   // who may see today's hour-by-hour plan (0-3, see day_level)
             $sh = profile_share($p);
-            $sh['day'] = !empty($in['day']) ? 1 : 0;
+            $sh['day'] = max(0, min(3, (int)$in['day']));
             q('UPDATE profiles SET share = ? WHERE user_id = ?', [json_encode($sh), $uid]);
         }
         if (isset($in['notify']) && is_array($in['notify'])) {

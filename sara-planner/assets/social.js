@@ -17,7 +17,8 @@ const STICKERS=['⭐','💜','🌸','🎀','🦋','☁️','🌙','✨','🍓','
 const LIST_EMOJI=['🎬','🎤','👗','📚','🍕','🎮','🎧','✈️','🐾','💄','🎨','⭐'];
 const QUICK=[['🎬','Favourite movies','list'],['🎤','Favourite singers','list'],['👗','My clothes and style','grid'],['📚','Books I love','list'],['🍕','Favourite food','list'],['✈️','Places I want to visit','list']];
 const SECS=[['interests','⭐','Interests','Lists of things you love, with pictures.'],['blog','✍️','Blog','Posts you write.'],['timetable','🗓️','Timetable','Your repeating weekly hours (the ↻ ones).'],['subjects','📚','Studying','Subject names and how far you are, never your notes.']];
-const SECNAME=Object.fromEntries([['cover','Cover']].concat(SECS.map(s=>[s[0],s[2]])));
+const SECNAME=Object.fromEntries([['cover','Cover']].concat(SECS.map(s=>[s[0],s[2]]),[['day','Day']]));
+const DAYLV=['Nobody, only me','Friends only','Anyone signed in','Everyone, even visitors'];
 const BASE={cover:'dusk',cover_img:0,cover_c1:'',cover_c2:'',paper:'lined',paper_color:'white',paper_hex:'',accent:'violet',accent_hex:'',font:'modern',binding:'coil'};
 // ready-made looks (the user can also save their own)
 const PRESETS=[
@@ -68,7 +69,7 @@ function pick(id,keepPage){
   ui.dd=nb?Object.assign(clone(BASE),clone(nb.design)):null;
   if(ui.dd){ui.dd.cover_url=nb.cover_url;ui.dd.stickers=ui.dd.stickers||[]}
   ui.dirty=false;ui.sel=-1;ui.post=null;ui.newList=false;
-  if(!keepPage||!nb||(ui.pg!=='cover'&&!nb.sections.includes(ui.pg)))ui.pg='cover';
+  if(!keepPage||!nb||(ui.pg!=='cover'&&ui.pg!=='day'&&!nb.sections.includes(ui.pg)))ui.pg='cover';
 }
 
 /* ---------- small building blocks ---------- */
@@ -183,10 +184,15 @@ function coverPage(nb,d){
     (nb.sections.length?'':'<p class="hint2">This notebook has no pages yet. Add some in <b>Settings</b>.</p>');
 }
 
+function dayPage(){
+  const p=S.profile;
+  return `<p class="hint2" style="margin:-6px 0 12px;font-size:13px">Who sees this page: <b>${DAYLV[p.day]}</b>. <button class="linkbtn" data-x="ptab" data-v="preview">Change who sees it</button></p>`+dayList(true);
+}
+
 /* ---------- the notebook itself (cover, pages as side tabs, stickers inside) ---------- */
 function notebookHtml(nb){
-  const d=ui.dd,tabs=['cover'].concat(nb.sections);
-  const body=ui.pg==='cover'?coverPage(nb,d):ui.pg==='blog'?blogPage():ui.pg==='interests'?interestsPage():ui.pg==='timetable'?timetablePage():subjectsPage();
+  const d=ui.dd,tabs=['cover'].concat(nb.sections,['day']);
+  const body=ui.pg==='cover'?coverPage(nb,d):ui.pg==='day'?dayPage():ui.pg==='blog'?blogPage():ui.pg==='interests'?interestsPage():ui.pg==='timetable'?timetablePage():subjectsPage();
   return `<div class="nbv${ui.panel==='deco'?' deco':''}" id="nbv"${wrapAttrs(d)}>
     <div class="binder" id="nbBinder"${d.binding&&d.binding!=='coil'?` data-binding="${d.binding}"`:''}>
       <div class="coil" aria-hidden="true">${'<span></span>'.repeat(70)}</div>
@@ -313,7 +319,7 @@ function postsTab(){
 function friendsTab(){
   const f=S.friends||[];
   if(!f.length)return '<p class="empty">No friends yet. Find people in <a href="explore.php">Explore</a> and send a friend request.</p>';
-  return `<ul class="userlist">${f.map(x=>`<li><a class="ulink" href="friend.php?id=${x.id}">${avatarHtml(x,'')}<span class="un" translate="no">${esc(x.name)}</span></a></li>`).join('')}</ul>`;
+  return `<ul class="userlist">${f.map(x=>`<li><a class="ulink" href="friend.php?id=${x.id}">${avatarHtml(x,'')}<span class="un" translate="no">${esc(x.name)}</span></a><a class="btn sm" href="hangout.php?with=${x.id}" title="When are we both free?">🗓️ Find time</a></li>`).join('')}</ul>`;
 }
 /** Everything one kind of person can see, with a switch next to each thing so you decide what to show. */
 function previewTab(){
@@ -326,11 +332,12 @@ function previewTab(){
     ${row('My profile page',canOpen?'They can open it, see your name, bio'+(aud==='visitor'?'':' and picture')+'.':aud==='visitor'?(p.public?'Visitors without an account are blocked.':'Your profile is private.'):'Your profile is private, they only see your name, picture and bio.',p.public,tog(p.public,'data-xsw="public"'),canOpen)}
     ${row('Visitors without an account',p.guest&&p.public?'Anyone with the link can look.':'Only people who log in can look.',p.guest,tog(p.guest,'data-xsw="guest"',!p.public),aud==='visitor'?p.public&&p.guest:true)}
     <p class="hint2" style="margin-top:6px">Friends can always open your shared notebooks, even if your profile is private.</p></section>`;
-  // my day: friends only
-  const dayOn=aud==='friend'&&p.day;
+  // my day: you choose who sees it
+  const lv=p.day,dayOn=aud==='friend'?lv>=1:aud==='user'?lv>=2&&p.public:lv>=3&&p.public&&p.guest;
+  const dsel=`<select class="daysel" data-xday aria-label="Who can see my day">${DAYLV.map((l,i)=>`<option value="${i}"${i===lv?' selected':''}>${l}</option>`).join('')}</select>`;
   out+=`<section class="xcard"><h3>My day (today)</h3>
-    ${row('Hour-by-hour plan for today',aud==='friend'?(p.day?'Your friends see this. Nothing else of your planner.':'Hidden. Friends see "keeps their day private".'):'Only friends can ever see this. Nobody else.',p.day,tog(p.day,'data-xsw="day"'),dayOn)}
-    ${dayOn?dayList():''}${aud==='friend'?`<p class="hint2"><a href="friend.php?id=${S.me_id||''}">Open the full friend view ↗</a></p>`:''}</section>`;
+    ${row('Hour-by-hour plan for today',dayOn?'This audience sees it, on the Day page of your notebook. Nothing else of your planner.':lv===0?'Hidden from everyone.':'This audience cannot see it.',dayOn,dsel,dayOn)}
+    ${dayOn?dayList():''}</section>`;
   // notebooks
   out+=`<section class="xcard"><h3>Notebooks</h3>`+(S.notebooks.length?S.notebooks.map(n=>{
     const seen=canOpen&&n.public;
@@ -340,9 +347,9 @@ function previewTab(){
   out+=`<p class="xrow"><a class="btn primary" href="u.php?u=${esc(p.slug)}" target="_blank" rel="noopener">Open my real profile as it looks to others ↗</a></p>`;
   return out;
 }
-function dayList(){
+function dayList(head){
   const pl=S.plan||{items:[]};
-  return pl.items.length?`<ol class="nb-plan vday">${pl.items.map(e=>`<li class="${pl.now>=e.from&&pl.now<e.to?'now':pl.now>=e.to?'past':''}" style="--hc:var(--c-${esc(e.color)})"><span class="nb-time">${hm(e.from)}–${hm(e.to)}</span><span class="nb-mark"></span><span class="nb-what" translate="no">${esc(e.text)}</span><span class="nb-type">${esc(e.label)}</span></li>`).join('')}</ol>`:'<p class="hint2">Nothing planned today.</p>';
+  return (head?`<h2 class="nb-date">${esc(pl.date||'')}</h2>`:'')+(pl.items.length?`<ol class="nb-plan vday">${pl.items.map(e=>`<li class="${pl.now>=e.from&&pl.now<e.to?'now':pl.now>=e.to?'past':''}" style="--hc:var(--c-${esc(e.color)})"><span class="nb-time">${hm(e.from)}–${hm(e.to)}</span><span class="nb-mark"></span><span class="nb-what" translate="no">${esc(e.text)}</span><span class="nb-type">${esc(e.label)}</span></li>`).join('')}</ol>`:'<p class="hint2">Nothing planned today.</p>');
 }
 function previewPages(n){
   const bits=[];
@@ -489,7 +496,7 @@ document.addEventListener('submit',async e=>{
       const nb=cur(),sections=new FormData(f).getAll('sections');
       const r=await api('x.nb.save',{id:nb.id,title:d.title,intro:d.intro||'',sections});
       Object.assign(nb,{title:r.notebook.title,intro:r.notebook.intro,sections:r.notebook.sections});
-      if(ui.pg!=='cover'&&!nb.sections.includes(ui.pg))ui.pg='cover';
+      if(ui.pg!=='cover'&&ui.pg!=='day'&&!nb.sections.includes(ui.pg))ui.pg='cover';
       toast('Saved.');redraw();
     }else if(x==='nbnew'){
       const look=d.look!==''?PRESETS[+d.look][1]:{};
@@ -506,6 +513,11 @@ document.addEventListener('submit',async e=>{
 /* ---------- switches + uploads ---------- */
 document.addEventListener('change',async e=>{
   const t=e.target;
+  if(t.dataset&&t.hasAttribute('data-xday')){
+    const old=S.profile.day;S.profile.day=+t.value;
+    try{await api('x.profile.save',{day:S.profile.day});redraw()}catch(err){S.profile.day=old;t.value=old;toast(err.message)}
+    return;
+  }
   if(t.dataset&&t.dataset.xsw){
     const k=t.dataset.xsw,on=t.checked;
     try{
@@ -514,8 +526,7 @@ document.addEventListener('change',async e=>{
         const body={public:S.profile.public};if(k==='guest'||!on)body.guest=S.profile.guest;
         if(k==='guest')body.guest=on;
         await api('x.profile.save',body);redraw();
-      }else if(k==='day'){S.profile.day=on;await api('x.profile.save',{day:on});redraw()}
-      else if(k==='post-public'){const p=S.posts.find(x=>x.id===+t.dataset.id);if(p)p.public=on;await api('x.post.public',{id:+t.dataset.id,public:on});redraw()}
+      }else if(k==='post-public'){const p=S.posts.find(x=>x.id===+t.dataset.id);if(p)p.public=on;await api('x.post.public',{id:+t.dataset.id,public:on});redraw()}
       else if(k==='nb-public'){const nb=S.notebooks.find(x=>x.id===+(t.dataset.id||ui.nb));nb.public=on;await api('x.nb.save',{id:nb.id,public:on});redraw()}
       else if(k==='notify'){S.profile.notify[t.dataset.k]=on;await api('x.profile.save',{notify:{[t.dataset.k]:on}})}
       else if(k==='list-public'){const l=S.lists.find(x=>x.id===+t.dataset.id);if(l)l.public=on;await api('x.list.update',{id:+t.dataset.id,public:on});redraw()}

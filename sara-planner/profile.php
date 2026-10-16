@@ -65,7 +65,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             if ($slug !== '') q('UPDATE profiles SET slug = ? WHERE user_id = ?', [$slug, $uid]);
             $public = !empty($_POST['public']) ? 1 : 0;
             $share = profile_share($prof);
-            $share['day'] = !empty($_POST['day']) ? 1 : 0;
+            $share['day'] = max(0, min(3, (int)($_POST['day'] ?? 0)));
             $notify = json_col($prof['notify'] ?? null, ['like' => 1]);
             $notify['like'] = !empty($_POST['notify_like']) ? 1 : 0;
             q('UPDATE profiles SET is_public = ?, guest_view = ?, share = ?, notify = ? WHERE user_id = ?',
@@ -122,7 +122,13 @@ app_top('Edit profile & settings', ['tab' => 'profile', 'covers' => true, 'eyebr
       <h2 class="nb-h2">Who can see what</h2>
       <?= $switch('public', 'Public profile', 'Listed in Explore. Anyone with an account can open it and send you a friend request.', (int)$prof['is_public'] === 1) ?>
       <?= $switch('guest', 'Visible without logging in', 'Also show it to visitors who have no account. Needs a public profile.', (int)$prof['guest_view'] === 1) ?>
-      <?= $switch('day', 'Show my day to friends', 'Friends (only friends) can see today\'s hour-by-hour plan. Nothing else of your planner.', !empty($share['day'])) ?>
+      <?php $dl = day_level($prof); ?>
+      <label for="day">Who can see my day (today's hour-by-hour plan, nothing else of your planner)
+        <select id="day" name="day">
+          <?php foreach ([0 => 'Nobody, only me', 1 => 'Friends only', 2 => 'Anyone signed in who can open my profile', 3 => 'Everyone who can open my profile, even without an account'] as $v => $l): ?>
+            <option value="<?= $v ?>"<?= $dl === $v ? ' selected' : '' ?>><?= h($l) ?></option>
+          <?php endforeach; ?>
+        </select></label>
       <h2 class="nb-h2">Alerts</h2>
       <?= $switch('notify_like', 'Alert when someone likes my post', 'Shows in the bell at the top of the page.', !empty($notify['like'])) ?>
       <button class="btn primary">Save everything</button>
