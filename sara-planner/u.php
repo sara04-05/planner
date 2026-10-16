@@ -139,15 +139,17 @@ $base = ((string)$prof['slug'] !== '' ? 'u.php?u=' . rawurlencode($prof['slug'])
 $LABEL = ['cover' => 'Cover', 'interests' => 'Interests', 'blog' => 'Blog', 'timetable' => 'Timetable', 'subjects' => 'Studying', 'day' => 'Day'];
 $tabs = '';
 foreach ($pagesById as $k => $cp) $LABEL[$k] = trim($cp['emoji'] . ' ' . $cp['title']);
-foreach ($dayOnly ? ['day'] : array_merge(['cover'], $sections, array_keys($pagesById), $showDay ? ['day'] : []) as $k) {
+$toc = '';
+$bookPages = $dayOnly ? ['day'] : array_merge(['cover'], $sections, array_keys($pagesById), $showDay ? ['day'] : []);
+foreach ($bookPages as $i => $k) {
+    $toc .= '<li><a href="' . h($base . ($k === 'cover' ? '' : '&p=' . $k)) . '"' . ($k === $page ? ' aria-current="page"' : '') . '><span translate="no">' . h($LABEL[$k]) . '</span><i>' . ($i + 1) . '</i></a></li>';
     $tabs .= '<a class="tab" role="tab" data-tab="' . $k . '" href="' . h($base . ($k === 'cover' ? '' : '&p=' . $k)) . '"' . ($k === $page ? ' aria-selected="true"' : '') . '>' . h($LABEL[$k]) . '</a>';
 }
 
 $nPosts = 0;   // public posts in the notebooks this viewer can open
 foreach ($notebooks as $n) if (in_array('blog', $n['sections'], true)) $nPosts += count(load_posts($owner, !$isMe, null, $n['id']));
 $nFriends = count(friend_ids($owner));
-$topOpts = ['tab' => '', 'active' => $isMe ? '' : 'explore', 'design' => $design, 'tabs' => $tabs, 'covers' => true];
-if ($page !== 'cover') $topOpts += ['eyebrow' => $name . ' · ' . $nb['title'], 'h1' => $LABEL[$page]];
+$topOpts = ['tab' => '', 'active' => $isMe ? '' : 'explore', 'design' => $design, 'tabs' => '', 'covers' => true];   // the page tabs sit on the edge of the open notebook below
 app_top($nb['title'] . ' · ' . $name, $topOpts);
 echo profile_head($person, (string)$prof['slug'], [plural($dayOnly ? 0 : count($notebooks), 'notebook', 'notebooks') => $dayOnly ? 0 : count($notebooks), plural($nPosts, 'post', 'posts') => $nPosts, plural($nFriends, 'friend', 'friends') => $nFriends], $actions,
     $isMe ? '' : ((int)$prof['is_public'] ? '' : '<span class="tag2 priv">Private</span>'));
@@ -162,6 +164,15 @@ echo profile_head($person, (string)$prof['slug'], [plural($dayOnly ? 0 : count($
 
 
 
+  <div class="nbv" id="nbv"<?= design_attrs($design, 'accent') . design_style($design) ?>>
+    <div class="nbook"<?= ($design['binding'] ?? 'coil') !== 'coil' ? ' data-binding="' . h($design['binding']) . '"' : '' ?> style="<?= cover_css($design, $cover) ?>">
+      <div class="page nbp-left"<?= design_attrs($design, 'page') ?>>
+        <p class="eyebrow">Contents</p><h2 class="nbp-title" translate="no"><?= h($nb['title']) ?></h2>
+        <ol class="nbp-toc"><?= $toc ?></ol>
+      </div>
+      <div class="nbp-gutter" aria-hidden="true"></div>
+      <div class="page nbp-right"<?= design_attrs($design, 'page') ?>>
+        <div class="vh"><div><p class="eyebrow" translate="no"><?= h($nb['title']) ?></p><h1><?= h($LABEL[$page]) ?></h1></div></div>
   <?php if ($page === 'cover'): ?>
     <div class="nbcover" style="<?= cover_css($design, $cover) ?>">
       <div class="nbcover-in">
@@ -253,8 +264,12 @@ echo profile_head($person, (string)$prof['slug'], [plural($dayOnly ? 0 : count($
       <?php endforeach; ?>
     </div><?php else: ?><p class="empty">No subjects yet.</p><?php endif; ?>
   <?php endif; ?>
+        <?= stickers_html($design, $page) ?>
+      </div>
+      <nav class="tabs nbp-tabs" role="tablist" aria-label="Pages"><?= $tabs ?></nav>
+    </div>
+  </div>
 
-<?php app_inside(stickers_html($design, $page)); ?>
 <script>
 (function(){
   var csrf=(document.querySelector('meta[name="csrf-token"]')||{}).content||'';

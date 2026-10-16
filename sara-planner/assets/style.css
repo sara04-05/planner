@@ -1389,3 +1389,10 @@ a.nbtile{text-decoration:none}.nbtiles{margin-bottom:14px}.nbtile.on span{color:
 .top-r .btn{font-size:0;gap:0;padding:0;width:42px;height:42px;justify-content:center;position:relative}
 .top-r .btn svg{width:19px;height:19px}
 .top-r .badge{font-size:10.5px}
+
+/* someone else's open notebook: the contents are links, not buttons */
+.nbp-toc a{display:flex;justify-content:space-between;align-items:center;gap:8px;min-height:32px;font-size:15px;color:inherit;text-decoration:none}
+.nbp-toc a:hover{color:var(--accent)}
+.nbp-toc a i{font-style:normal;font-weight:700;color:var(--accent)}
+.nbp-toc a[aria-current="page"]{color:var(--accent);font-weight:700}
+.nbp-toc a[aria-current="page"] span::before{content:"▸ "}
