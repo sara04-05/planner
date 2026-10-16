@@ -1379,19 +1379,8 @@ a.nbtile{text-decoration:none}.nbtiles{margin-bottom:14px}.nbtile.on span{color:
   .nbv .nbook .nbp-right{margin-top:0}
 }
 
-/* tighter spacing: less empty space between sections */
-.page{padding-top:20px}
-.page .vh{height:auto;min-height:48px;margin-bottom:6px}
-.page .stack,.page .cols,.page .cols.wide-l{gap:14px}
-.page .sec-h{min-height:28px}
-.page :is(p,li,.s,.meta,.hint,.hint2,.empty,.legend,.sub){line-height:24px}
-.page .row{min-height:28px}
-.page .addform{margin-bottom:6px}
-.page .nbtiles{margin-bottom:12px;gap:12px 14px}
-@media (max-width:760px){.page{padding-top:16px}.tabs{margin-bottom:0}}
-
 /* day view: the money panel stays in its own column and never rides up over the header or down over the hours */
-.page .cols{margin-top:12px;align-items:start}
+.page .cols{align-items:start}
 .page .cols>.panel{position:static;margin:0;min-width:0;overflow:hidden}
 .page .cols>.panel .addform{grid-template-columns:minmax(0,1fr) minmax(0,1fr)}
 .page .cols>.panel .addform input[name=desc]{grid-column:1/-1}
@@ -1402,6 +1391,29 @@ a.nbtile{text-decoration:none}.nbtiles{margin-bottom:14px}.nbtile.on span{color:
 @media (max-width:760px){
   .page .sec-h{flex-direction:row;flex-wrap:wrap;align-items:baseline;justify-content:space-between;gap:0 10px}
   .page .vh{flex-wrap:wrap;gap:4px 10px;align-items:flex-end}
-  .page .vh h1{font-size:clamp(22px,7vw,28px);line-height:34px}
-  .page .cols>.panel{margin-top:4px}
+  .page .vh{height:auto;min-height:64px}
+  .page .vh h1{font-size:clamp(22px,7vw,28px);line-height:32px}
 }
+
+/* chart: the limit label ("daily €17") sits under its dashed line and the chart starts below the heading row, so it never covers the status pill */
+.chart{margin-top:32px}
+.plot{height:160px;padding-top:26px}
+.plot .lim em{bottom:auto;top:3px}
+
+
+/* every row is exactly one ruled line tall with its text centred, so writing sits between the lines */
+.page .catrow{height:32px;min-height:32px;padding:0;align-items:center;box-sizing:border-box}
+.page .total-line{min-height:32px;margin:0;padding:0;align-items:center;box-sizing:border-box}
+.page .xl{height:32px;align-items:center}
+.page .legend{min-height:32px}
+.page .addform{gap:4px 8px;row-gap:4px}
+.page .row .t,.page .row .s{line-height:32px}
+
+/* only the notebook's own ruled lines: no extra separator lines between rows (the bold total line stays) */
+.page :is(.row,.ch,.subj-row,.vrow,.vitem,.hr,.dgroup,.sw){border-top-color:transparent;border-bottom-color:transparent}
+.page .ilist li{border-top:0}
+.page .tbl :is(th,td){border-top:0;border-bottom:0;padding-block:0;height:32px}
+.page .tbl tfoot td{border-top:2px solid var(--ink)}
+.page .wd .foot{border-top:0}
+.page .ptabs{border-bottom:0}
+.page .plot{border-bottom:0}
