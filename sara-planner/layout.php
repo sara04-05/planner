@@ -160,7 +160,7 @@ function app_nav(?int $uid, string $active = '', bool $planner = false): void
         <?php else: ?><a class="hello" href="index.php?tab=profile" title="My profile"><?= $hello ?></a><?php endif; ?>
       <?php endif; ?>
     </div>
-    <div class="top-r">
+    <div class="top-r<?= $uid ? '' : ' guest' ?>">
     <?php if ($uid):
         $unread = unread_count($uid); $chatUnread = chat_unread($uid); $requests = friend_requests_count($uid); ?>
       <span class="date-pill" title="<?= h(date('l, j F')) ?>"><?= $ic('<rect x="3" y="5" width="18" height="16" rx="3"/><path d="M3 10h18M8 3v4M16 3v4"/>') ?><span class="chip-date" id="todayChip"><?= h(date('l, j F')) ?></span></span>

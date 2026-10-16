@@ -431,37 +431,16 @@ table.ex tr:last-child td{border-bottom:0}
 .wd[data-act]{cursor:pointer}
 .wd[data-act]:hover{border-color:var(--accent)}
 
-/* Year table on phones: each month becomes a card (name + status on top, then the numbers) */
+/* Year table on phones: same table as on the laptop, just tighter; it scrolls sideways and the month name stays pinned */
 @media (max-width:760px){
-  .ytbl{min-width:0}
-  .ytbl thead{display:none}
-  .ytbl,.ytbl tbody,.ytbl tfoot{display:block}
-  .ytbl tbody{display:grid;gap:10px}
-  .ytbl tr{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));grid-template-areas:"mn mn mn" "st st st" "sp inc lo" "tg sv sv";gap:12px 10px;align-items:start;padding:14px;background:var(--paper-2);border:1px solid var(--line);border-radius:16px}
-  .ytbl td{display:block;border:0!important;padding:0!important;text-align:left!important;font-size:15px!important;font-weight:600;min-width:0;background:none!important}
-  .ytbl tr.now{background:var(--accent-soft);border-color:var(--accent)}
-  .ytbl tr.fut{opacity:.7}
-  .ytbl td[data-l]::before{content:attr(data-l);display:block;font-size:10px;text-transform:uppercase;letter-spacing:.08em;color:var(--muted);font-weight:700;margin-bottom:4px}
-  .ytbl td.mn{grid-area:mn;font-family:var(--display);font-weight:700;font-size:18px!important;align-self:center}
-  .ytbl td.st{grid-area:st;justify-self:start;font-size:12px!important;margin-top:-6px}
-  .ytbl td[data-l="Spent"]{grid-area:sp}
-  .ytbl td[data-l="Income"]{grid-area:inc}
-  .ytbl td[data-l="Left over"]{grid-area:lo}
-  .ytbl td[data-l="Target"]{grid-area:tg}
-  .ytbl td[data-l="I saved"]{grid-area:sv}
-  .ytbl td[data-l="Income"],.ytbl td[data-l="I saved"]{display:flex;flex-wrap:wrap;align-items:center;gap:6px}
-  .ytbl td[data-l]::before{flex:0 0 100%;margin-bottom:0}
-  .ytbl td .cellin,.ytbl .r .cellin{flex:1 1 0;width:auto!important;min-width:0;max-width:110px;text-align:left!important;background:var(--paper);border:1px solid var(--line);border-radius:10px;padding:8px 10px;font-weight:600}
-  .ytbl td .cellin:focus{border-color:var(--accent);outline:0}
-  .ytbl td input[type=checkbox]{width:22px;height:22px;margin:0;accent-color:var(--accent)}
-  .ytbl tfoot tr{margin-top:14px;background:transparent;border:0;border-top:2px solid var(--ink);border-radius:0;padding:14px 4px 4px;grid-template-areas:"mn mn mn" "sp inc lo" "tg sv sv";row-gap:12px}
-  .ytbl tfoot td.st{display:none}
-  .ytbl tr.off{grid-template-columns:minmax(0,1fr) auto;grid-template-areas:"mn inc";align-items:center;padding:10px 14px;opacity:.75}
-  .ytbl tr.off td[data-l]:not([data-l="Income"]),.ytbl tr.off td.st{display:none}
-  .ytbl tr.off td.mn{font-size:16px!important}
-  .ytbl tr.off td[data-l="Income"]{flex-wrap:nowrap}
-  .ytbl tr.off td[data-l="Income"]::before{flex:0 0 auto;margin:0 2px 0 0}
-  .ytbl tr.off td .cellin{max-width:90px;flex:0 1 90px}
+  .ytbl{min-width:640px;font-size:13px}
+  .ytbl th{padding:8px 6px;font-size:10px}
+  .ytbl td{padding:8px 6px}
+  .ytbl .cellin{width:64px!important;padding:4px 6px;font-size:13px}
+  .ytbl td.mn,.ytbl th:first-child{position:sticky;left:0;z-index:1;background:var(--paper)}
+  .ytbl tr.now td.mn{background:var(--accent-soft)}
+  .ytbl td.st .pill{white-space:nowrap}
+  .ytbl td input[type=checkbox]{width:18px;height:18px;accent-color:var(--accent)}
 }
 
 /* ================= Notebook sharing: design choices, blog, interests, public pages ================= */
@@ -1445,6 +1424,7 @@ a.nbtile{text-decoration:none}.nbtiles{margin-bottom:14px}.nbtile.on span{color:
 .page .tbl td small,.page .tbl td .s{line-height:var(--lh)}
 .page .tbl td :is(.btn,form,.admin-acts){line-height:1.2;vertical-align:middle}
 .page .tbl td form{display:inline-flex;align-items:center;margin:0}
+}
 
 /* date headings in the expense list: one line tall, no line of their own, so the rows below stay on the ruled lines */
 .page .dgroup{height:var(--lh);min-height:var(--lh);padding:0;margin:0;border:0;align-items:center;box-sizing:border-box}
@@ -1676,3 +1656,136 @@ a.nbcover-link:focus-visible{outline:3px solid var(--accent);outline-offset:6px;
 .rlrow p{margin:0;white-space:pre-wrap;overflow-wrap:anywhere;line-height:1.5}
 .rlhead{display:flex;gap:10px;flex-wrap:wrap;align-items:baseline;font-size:13px}
 .rlmail,.rlwhen{color:var(--muted)}
+
+/* phones: more room for the content (smaller side margins) and less cramped forms, filters and rows */
+@media (max-width:640px){
+  body{padding-inline:6px}
+  .page{padding-inline:12px}
+  .page .addform{gap:10px 8px;margin-block:8px 12px}
+  .page .addform :is(input,select,.btn),.page .field{height:40px;font-size:15px}
+  .page .addform .btn{width:100%}
+  .page .filters{gap:8px;flex-wrap:wrap;padding-block:6px;min-height:0}
+  .page .fbtn{padding:6px 14px}
+  .page .row{padding-block:6px;gap:12px}
+  .page .row .t{line-height:1.4}
+  .page .row .grow{row-gap:4px}
+  .page .legend{padding-top:8px;gap:12px}
+}
+
+/* phones: Expenses (and the other planner tabs that share these parts) get the same roomy dark-notebook look */
+@media (max-width:640px){
+  .page .cols,.page .cols.wide-l,.page .stack{gap:22px}
+  .page .tiles{grid-template-columns:repeat(2,minmax(0,1fr));gap:10px;margin-block:12px 18px}
+  .page .tile{padding:12px 14px;border-radius:14px}
+  .page .tile p{line-height:1.3;margin:0}
+  .page .tile .v{font-size:22px;margin-block:4px}
+  .page .seg{display:grid;grid-auto-flow:column;grid-auto-columns:1fr;width:100%}
+  .page .seg button{padding:9px 6px}
+  .page .panel{padding:16px 14px;border-radius:14px}
+  .page .sec-h{margin-bottom:6px;gap:8px;flex-wrap:wrap}
+  .page .dgroup{min-height:44px;padding-top:12px;align-items:flex-end}
+  .page .catrow{height:auto;min-height:40px;padding:8px 0;gap:10px;grid-template-columns:96px minmax(0,1fr) 72px}
+  .page .catrow .track{height:10px}
+  .page .total-line{min-height:48px;padding-top:6px}
+}
+
+/* phones: Tasks, a compact form and each task as its own card */
+@media (max-width:640px){
+  .page .addform.task{grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:8px;margin:10px 0 14px}
+  .page .addform.task input[name=title]{grid-column:1/-1}
+  .page .addform.task input[type=date]{grid-column:1;min-width:0}
+  .page .addform.task select{grid-column:2}
+  .page .addform.task input[name=tag]{grid-column:1}
+  .page .addform.task .btn{grid-column:2;width:100%}
+  .page .filters{margin-bottom:12px;gap:6px}
+  .page .fbtn{padding:5px 12px;font-size:13px}
+  .page .row{flex-wrap:wrap;align-items:center;gap:6px 10px;min-height:0;padding:10px 12px;margin-bottom:8px;background:var(--paper-2);border:1px solid var(--line);border-radius:14px;box-sizing:border-box}
+  .page .row:last-child{border:1px solid var(--line)}
+  .page .row.done{opacity:.65}
+  .page .row>input[type=checkbox]{width:20px;height:20px;margin:0;flex:none}
+  .page .row .grow{flex:1 1 0;min-width:0}
+  .page .row .t{line-height:1.35;overflow-wrap:anywhere}
+  .page .row .x{margin-left:auto;font-size:20px;padding:2px 8px}
+  .page .row>.pill,.page .row>.tag{font-size:11.5px;line-height:1.3;padding:3px 9px;white-space:nowrap}
+  .page .row>.pill{margin-left:0}
+  .page .legend{margin-top:14px!important}
+}
+
+/* shared notebooks: the cover is a link wrapping the cover, laid out like your own closed notebook */
+.nbclosed-hit .nbcover-link{display:block;color:inherit;text-decoration:none}
+
+/* first-time setup: the preview is the whole notebook (cover + the opened pages), in the paper, binding and colour you pick */
+.setup .look-pvh{margin:14px 0 6px;font-size:12px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--muted)}
+.setup .setup-preview{display:flex;flex-wrap:wrap;align-items:center;justify-content:center;gap:18px;background-image:none!important;padding:18px 14px}
+.setup .setup-preview .nbcover{width:104px;margin:0;flex:none}
+.setup .setup-preview .nbcover .nbcover-in{left:24%;right:8%;padding:8px 6px}
+.setup .setup-preview .nbcover .nbcover-in h2{font-size:11px}
+.setup-preview .spread{--lh:26px;--sp-paper:#fff;--sp-ink:#2A2338;--sp-rule:rgba(60,40,90,.14);--sp-ac:var(--accent);flex:1 1 280px;max-width:420px;position:relative;display:grid;grid-template-columns:minmax(0,1fr) 22px minmax(0,1fr);min-height:170px;padding:10px;border-radius:10px;box-shadow:0 14px 22px -14px rgba(20,12,40,.6)}
+.setup-preview .spread .sp-page{padding:14px 12px 12px;min-height:150px}
+.setup-preview .spread .sp-eyebrow{font-size:9px}
+.setup-preview .spread h3{font-size:14px;margin:0 0 8px}
+.setup-preview .spread ol li{font-size:12px;line-height:20px}
+.setup-preview .spread .sp-intro{font-size:12px;line-height:20px}
+.setup-preview .spread[data-paper="lined"] .sp-page{background-image:repeating-linear-gradient(to bottom,transparent 0 19px,var(--sp-rule) 19px 20px);background-position:0 6px}
+.setup-preview .spread[data-paper="grid"] .sp-page{background-image:repeating-linear-gradient(to bottom,transparent 0 15px,var(--sp-rule) 15px 16px),repeating-linear-gradient(to right,transparent 0 15px,var(--sp-rule) 15px 16px)}
+.setup-preview .spread[data-paper="dots"] .sp-page{background-image:radial-gradient(var(--sp-rule) 1.6px,transparent 2px);background-size:16px 16px}
+.setup-preview .spread[data-paper="plain"] .sp-page{background-image:none}
+.setup-preview .spread[data-binding="none"] .sp-gutter,.setup-preview .spread[data-binding="plain"] .sp-gutter{background:linear-gradient(90deg,rgba(0,0,0,.14),rgba(0,0,0,.02) 50%,rgba(0,0,0,.14))}
+@media (max-width:480px){.setup-preview .spread{grid-template-columns:minmax(0,1fr) 14px minmax(0,1fr);padding:8px}.setup-preview .spread .sp-page{padding:12px 9px 10px}}
+@media (max-width:760px){
+  .setup-preview .spread .sp-gutter{display:block}
+  .setup-preview .spread .sp-page.left{border-radius:6px 0 0 6px;box-shadow:inset -14px 0 16px -14px rgba(0,0,0,.35)}
+  .setup-preview .spread .sp-page.right{border-radius:0 6px 6px 0;margin-top:0;box-shadow:inset 14px 0 16px -14px rgba(0,0,0,.35)}
+}
+
+/* setup: smaller look cards on phones, three to a row */
+@media (max-width:640px){
+  .setup .look-grid{grid-template-columns:repeat(3,minmax(0,1fr));gap:8px;margin:10px 0}
+  .setup .look{padding:6px;gap:4px}
+  .setup .look-cover{max-height:70px}
+  .setup .look b{font-size:11.5px;text-align:center}
+  .setup .look-extra{grid-template-columns:repeat(3,minmax(0,1fr));gap:8px}
+  .setup .look-extra select{min-height:38px;padding:6px;font-size:13px}
+}
+@media (max-width:400px){.setup .look-grid{grid-template-columns:repeat(2,minmax(0,1fr))}.setup .look-extra{grid-template-columns:1fr 1fr}}
+
+/* setup: with many looks, the picker scrolls instead of making the page endless */
+.setup .look-grid{max-height:340px;overflow-y:auto;padding:4px;margin-inline:-4px;scrollbar-width:thin}
+
+/* messages: the name at the top of a chat opens that person's profile */
+.chat-head h2 a.chat-name{color:inherit;text-decoration:none;border-bottom:2px solid transparent;transition:border-color .15s,color .15s}
+.chat-head h2 a.chat-name:hover,.chat-head h2 a.chat-name:focus-visible{color:var(--accent);border-bottom-color:var(--accent);outline:0}
+
+/* messages on phones: tight bubbles, one-row header, the conversation gets most of the screen */
+@media (max-width:640px){
+  .page .chat{margin-top:8px;gap:10px}
+  .page .chat-find label{line-height:1.3;margin-bottom:4px}
+  .page .chat-find .chat-row .btn{height:42px}
+  .page .chat-row input{height:42px;padding-block:0}
+  .page .chat-people{padding-bottom:4px}
+  .page .chat-person{line-height:1.3;min-width:130px;padding:8px 12px}
+  .page .chat-pname,.page .chat-plast{line-height:1.35}
+  .page .chat-main{border-radius:16px;overflow:hidden}
+  .page .chat-head{display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:6px 10px;padding:10px 12px}
+  .page .chat-head h2{font-size:17px;line-height:1.3;margin:0;min-width:0;overflow-wrap:anywhere}
+  .page .chat-head .pmail{flex:1 0 100%;line-height:1.3;margin-top:-4px}
+  .page .chat-tools{display:flex;gap:6px;flex-wrap:nowrap}
+  .page .chat-tools .btn{height:34px;padding:0 10px;font-size:12.5px;white-space:nowrap}
+  .page .chat-log{padding:12px 10px;gap:6px;min-height:240px;max-height:calc(100dvh - 330px)}
+  .page .msg{max-width:86%;padding:7px 11px 6px;line-height:1.35}
+  .page .msg-body{line-height:1.4;font-size:15px}
+  .page .msg-at{line-height:1.2;margin-top:3px;font-size:10.5px}
+  .page .chat-send{padding:8px;gap:6px;align-items:center}
+  .page .chat-send textarea{line-height:1.3;padding:10px 12px;border-radius:14px}
+  .page .chat-send .btn{border-radius:14px}
+  .page .chat-empty{line-height:1.4}
+}
+
+/* logged-out top bar on phones (welcome, tour, explore): text buttons with their labels showing, not the icon-only row of a signed-in user */
+@media (max-width:640px){
+  .top-r.guest{grid-auto-flow:row;grid-auto-columns:unset;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}
+  .top-r.guest .btn{font-size:14px;font-weight:600;height:42px;padding:0 10px;white-space:nowrap;justify-content:center}
+  .top-r.guest .btn.primary{grid-column:1/-1}
+  .top-r.guest .btn[data-lang-btn],.top-r.guest .btn[data-theme-btn]{font-size:14px}
+  .top-r.guest .btn svg{width:18px;height:18px}
+}

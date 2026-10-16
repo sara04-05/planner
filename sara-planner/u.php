@@ -177,7 +177,12 @@ echo profile_head($person, (string)$prof['slug'], [plural($dayOnly ? 0 : count($
       <div class="vh"><div><p class="eyebrow"><?= h($nb['title']) ?></p><h1><?= h($LABEL[$page]) ?></h1></div></div>
 <?php endif; ?>
   <?php if ($page === 'cover'): ?>
-    <?php $firstPg = $sections[0] ?? (array_key_first($pagesById) ?? ($showDay ? 'day' : null)); ?>
+    <?php $firstPg = $sections[0] ?? (array_key_first($pagesById) ?? ($showDay ? 'day' : null));
+      $lblShape = in_array($design['label'] ?? 'box', ['round', 'oval', 'arch', 'pill', 'ticket', 'band', 'hexagon', 'diamond', 'tag', 'stamp', 'custom', 'none'], true) ? ' data-label="' . h($design['label']) . '"' : '';
+      if ((int)($design['label_w'] ?? 0) > 0 && ($design['label'] ?? 'box') !== 'none') $lblShape .= ' data-lbw="1"'; ?>
+    <div class="nbv" id="nbv"<?= design_attrs($design, 'accent') . $lblShape . design_style($design) ?>>
+    <div class="nbclosed" id="nbBinder"<?= ($design['binding'] ?? 'coil') !== 'coil' ? ' data-binding="' . h($design['binding']) . '"' : '' ?>>
+    <div class="nbclosed-hit">
     <?php if ($firstPg !== null): ?><a class="nbcover-link" href="<?= h($base . '&p=' . $firstPg) ?>" title="Open the notebook" aria-label="Open the notebook"><?php endif; ?>
     <div class="nbcover" style="<?= cover_css($design, $cover) ?>">
       <div class="nbcover-in">
@@ -189,6 +194,9 @@ echo profile_head($person, (string)$prof['slug'], [plural($dayOnly ? 0 : count($
     <?php if ($firstPg !== null): ?></a><?php endif; ?>
     <?php if ($nb['intro'] !== ''): ?><p class="nb-intro" translate="no"><?= nl2br(h($nb['intro'])) ?></p><?php endif; ?>
     <?php if (!$sections): ?><p class="hint2" style="margin-top:14px">No pages in this notebook yet.</p><?php endif; ?>
+    </div>
+    <div class="nbclosed-go"><?= stickers_html($design, 'cover') ?></div>
+    </div></div>
 
   <?php elseif (isset($pagesById[$page])): ?>
     <div class="nb-text" translate="no"><?= nl2br(h($pagesById[$page]['body'])) ?></div>
@@ -276,27 +284,38 @@ echo profile_head($person, (string)$prof['slug'], [plural($dayOnly ? 0 : count($
     </div>
     <nav class="tabs nbp-tabs" role="tablist" aria-label="Pages"><?= $tabs ?></nav>
   </div></div>
-<?php else: app_inside(stickers_html($design, $page)); endif; ?>
+<?php endif; ?>
 <script>
 (function(){
   var csrf=(document.querySelector('meta[name="csrf-token"]')||{}).content||'';
   function call(action,data){return fetch('api.php?action='+action,{method:'POST',credentials:'same-origin',headers:{'Content-Type':'application/json','X-CSRF-Token':csrf},body:JSON.stringify(data)}).then(function(r){return r.json().then(function(b){if(!r.ok)throw new Error(b.error||'Something went wrong.');return b})})}
-  // Pages of the notebook change without reloading the whole site: only the open book is swapped
+  // The notebook opens, turns its pages and closes without reloading the site (same as on your own page): only the notebook (#nbv) is swapped
+  var busy=false,anim=function(){return window.NBANIM&&!NBANIM.calm()};
   function swapBook(url,push){
+    if(busy)return Promise.resolve();busy=true;
     return fetch(url,{credentials:'same-origin'}).then(function(r){return r.text()}).then(function(html){
       var doc=new DOMParser().parseFromString(html,'text/html');
-      var nb=doc.querySelector('.nbook'),old=document.querySelector('.nbook');
-      if(!nb||!old){location.href=url;return}
-      old.replaceWith(nb);
-      document.title=doc.title;
-      if(push)history.pushState({u:1},'',url);
-    }).catch(function(){location.href=url});
+      var nv=doc.getElementById('nbv'),old=document.getElementById('nbv');
+      if(!nv||!old){location.href=url;return}
+      var oldBook=old.querySelector('.nbook'),newBook=nv.querySelector('.nbook');
+      var oldPg=oldBook&&oldBook.querySelector('.nbp-right'),snap=oldPg&&newBook&&anim()?oldPg.cloneNode(true):null;
+      var closing=oldBook&&!newBook&&anim();
+      var done=function(){
+        old.replaceWith(nv);
+        document.title=doc.title;
+        if(push)history.pushState({u:1},'',url);
+        if(!oldBook&&newBook&&anim()){newBook.setAttribute('data-anim','open');NBANIM.flip('cover','open')}   // cover -> open book
+        else if(snap)NBANIM.flip(snap,'turn');                                                                // page -> page
+      };
+      if(closing){oldBook.classList.add('shut');return new Promise(function(r){setTimeout(function(){done();r()},400)})}
+      done();
+    }).catch(function(){location.href=url}).then(function(){busy=false});
   }
   document.addEventListener('click',function(e){
-    var a=e.target.closest('.nbook .nbp-tabs a, .nbook .nbp-toc a');
+    var a=e.target.closest('.nbcover-link, .nbook .nbp-tabs a, .nbook .nbp-toc a');
     if(!a||e.ctrlKey||e.metaKey||e.shiftKey||e.button)return;
     var u=new URL(a.href,location.href);
-    if(u.pathname!==location.pathname||(u.searchParams.get('p')||'cover')==='cover')return;   // the cover is a different layout: load it normally
+    if(u.pathname!==location.pathname)return;
     e.preventDefault();swapBook(a.href,true);
   });
   window.addEventListener('popstate',function(){location.reload()});
@@ -306,4 +325,5 @@ echo profile_head($person, (string)$prof['slug'], [plural($dayOnly ? 0 : count($
   });
 })();
 </script>
+<script src="assets/nbanim.js?v=<?= filemtime(__DIR__ . '/assets/nbanim.js') ?>"></script>
 <?php app_bottom();

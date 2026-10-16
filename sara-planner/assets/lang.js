@@ -299,7 +299,7 @@ Object.assign(T,{'📖 Open the notebook':'📖 Hap fletoren','Pages':'Faqet','A
 'Delete for everyone':'Fshije për të gjithë',
 'Delete this message for you? The other person will still see it.':'Ta fshij këtë mesazh për ty? Personi tjetër do ta shohë prapë.',
 'Delete this message for everyone?':'Ta fshij këtë mesazh për të gjithë?',
-'Contact name':'Emri i kontaktit',
+'Contact name':'Emri i kontaktit','View profile':'Shiko profilin',
 'Delete chat':'Fshi bisedën',
 'A name only you will see for this contact (leave empty to use their own name):':'Një emër që e sheh vetëm ti për këtë kontakt (lëre bosh për të përdorur emrin e tyre):',
 'Delete this whole conversation for you? The other person keeps their copy.':'Ta fshij gjithë bisedën për ty? Personi tjetër e mban kopjen e tij.',
