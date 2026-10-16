@@ -52,7 +52,7 @@ async function upload(file,kind){
 }
 const toast=m=>{const t=$('toast');if(!t)return;t.textContent=m;t.hidden=false;clearTimeout(toast.t);toast.t=setTimeout(()=>{t.hidden=true},4500)};
 const redraw=id=>window.SPL_RENDER&&window.SPL_RENDER(id);
-const clone=o=>JSON.parse(JSON.stringify(o));
+const clone=o=>o==null?{}:JSON.parse(JSON.stringify(o));
 const mediaUrl=id=>id?'media.php?id='+id:'';
 
 function load(){
