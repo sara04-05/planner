@@ -1497,3 +1497,7 @@ body:not(.tour) .page p.hint2,body:not(.tour) .page .xcard>p.sub,body:not(.tour)
 .nbcover-edit:hover{filter:brightness(1.04)}
 .nbcover-pen{position:absolute;top:6px;right:8px;font-size:14px;opacity:.55}
 .nbcover-edit:hover .nbcover-pen{opacity:1}
+
+/* the closed notebook opens when you press it */
+.nbclosed-hit{cursor:pointer}
+.nbclosed-hit:focus-visible{outline:3px solid var(--accent);outline-offset:6px;border-radius:12px}

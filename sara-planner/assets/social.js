@@ -241,8 +241,8 @@ function notebookHtml(nb){
   const isOpen=ui.nbOpen||ui.pageEdit,an=ui.anim||'';ui.anim='';   // an animation plays once, on the redraw that follows the click
   if(!isOpen)return `<div class="nbv${ui.panel==='deco'?' deco':''}" id="nbv"${wrapAttrs(d)}>
     <div class="nbclosed" id="nbBinder" data-anim="${an}"${d.binding&&d.binding!=='coil'?` data-binding="${d.binding}"`:''}>
-      ${coverPage(nb,d)}
-      <div class="nbclosed-go"><button type="button" class="btn primary" data-x="nb-open">📖 Open the notebook</button>${stkLayer(d,'cover')}</div>
+      <div class="nbclosed-hit" data-x="nb-open" role="button" tabindex="0" title="Open the notebook" aria-label="Open the notebook">${coverPage(nb,d)}</div>
+      <div class="nbclosed-go">${stkLayer(d,'cover')}</div>
     </div></div>`;
   return `<div class="nbv${ui.panel==='deco'?' deco':''}" id="nbv"${wrapAttrs(d)}>
     <div class="nbook" id="nbBinder" data-anim="${an}"${d.binding&&d.binding!=='coil'?` data-binding="${d.binding}"`:''} style="${coverCss(d)}">
@@ -534,6 +534,7 @@ function applyLook(look){   // a ready-made or saved look: replaces colours/pape
 }
 
 /* ---------- clicks ---------- */
+document.addEventListener('keydown',e=>{if((e.key==='Enter'||e.key===' ')&&e.target.matches&&e.target.matches('[role=button][data-x]')){e.preventDefault();e.target.click()}});
 document.addEventListener('click',async e=>{
   const b=e.target.closest('[data-x]');if(!b)return;
   const a=b.dataset.x,id=+b.dataset.id,nb=S&&cur();
