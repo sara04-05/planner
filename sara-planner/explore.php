@@ -36,12 +36,17 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {   // friend buttons (here, on profi
         $msg = 'Your session expired. Please try again.';
     } elseif ($other && $other !== $viewer && person($other)) {
         $state = friendship($viewer, $other);
+        $myName = (string)(person($viewer)['name'] ?? 'Someone');
         if ($do === 'add' && $state === 'none') {
             q('INSERT INTO friends (from_id, to_id, accepted, sent_at) VALUES (?, ?, 0, ?)', [$viewer, $other, time()]);
+            notify_replace($other, 'friend:' . $viewer, $myName . ' sent you a friend request.', 'explore.php');
         } elseif (($do === 'add' || $do === 'accept') && $state === 'received') {
             q('UPDATE friends SET accepted = 1 WHERE from_id = ? AND to_id = ?', [$other, $viewer]);
+            q('DELETE FROM notifications WHERE user_id = ? AND ref = ?', [$viewer, 'friend:' . $other]);   // the request is answered
+            notify_replace($other, 'accepted:' . $viewer, $myName . ' accepted your friend request.', 'u.php?id=' . $viewer);
         } elseif (in_array($do, ['decline', 'cancel', 'remove'], true)) {
             q('DELETE FROM friends WHERE (from_id = ? AND to_id = ?) OR (from_id = ? AND to_id = ?)', [$viewer, $other, $other, $viewer]);
+            q('DELETE FROM notifications WHERE (user_id = ? AND ref = ?) OR (user_id = ? AND ref = ?)', [$other, 'friend:' . $viewer, $viewer, 'friend:' . $other]);   // a withdrawn or declined request disappears
         }
     }
     if (!$msg) {

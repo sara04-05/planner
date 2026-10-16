@@ -305,6 +305,17 @@ function notify(int $to, string $ref, string $text, string $link): void
     }
 }
 
+/** Like notify(), but a newer event of the same kind replaces the older one and shows as unread again (friend requests, messages). */
+function notify_replace(int $to, string $ref, string $text, string $link): void
+{
+    try {
+        q('DELETE FROM notifications WHERE user_id = ? AND ref = ?', [$to, $ref]);
+    } catch (PDOException $e) {
+        return;
+    }
+    notify($to, $ref, $text, $link);
+}
+
 function wants_notice(int $uid, string $type): bool
 {
     $row = ensure_profile($uid);

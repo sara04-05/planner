@@ -746,6 +746,7 @@ try {
         $msgs = array_map(fn($m) => ['id' => (int)$m['id'], 'mine' => (int)$m['from_id'] === $uid,
             'body' => $m['body'], 'at' => (int)$m['sent_at']], array_reverse($rows));
         q('UPDATE messages SET is_read = 1 WHERE to_id = ? AND from_id = ? AND is_read = 0', [$uid, $other]);
+        q('UPDATE notifications SET is_read = 1 WHERE user_id = ? AND ref = ?', [$uid, 'msg:' . $other]);   // you have read that chat
         ok(['person' => ['id' => (int)$u['id'], 'name' => $u['name'], 'tag' => name_tag($u['name'], $u['email'])], 'messages' => $msgs, 'unread' => chat_unread($uid)]);
     }
 
@@ -758,6 +759,8 @@ try {
         $recent = (int)q('SELECT COUNT(*) AS n FROM messages WHERE from_id = ? AND sent_at > ?', [$uid, time() - 60])->fetch()['n'];
         if ($recent >= 20) fail(429, 'You are sending messages too fast. Wait a minute and try again.');
         q('INSERT INTO messages (from_id, to_id, body, sent_at) VALUES (?, ?, ?, ?)', [$uid, $to, $body, time()]);
+        $me = person($uid);
+        notify_replace($to, 'msg:' . $uid, ($me['name'] ?? 'Someone') . ' sent you a message: “' . mb_substr($body, 0, 80) . (mb_strlen($body) > 80 ? '…' : '') . '”', 'messages.php?with=' . $uid);
         ok(['message' => ['id' => (int)db()->lastInsertId(), 'mine' => true, 'body' => $body, 'at' => time()]]);
     }
 
