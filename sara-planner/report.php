@@ -1,6 +1,6 @@
 <?php
 // Report an account to the site's admins: report.php?id=<user id>.
-// The report is saved (admins see it on admin.php) and emailed to the addresses in ADMIN_EMAILS (config.php). Nobody else sees it.
+// The report is saved (admins see it on reports.php) and emailed to the addresses in ADMIN_EMAILS (config.php). Nobody else sees it.
 declare(strict_types=1);
 require __DIR__ . '/db.php';
 require __DIR__ . '/social.php';
@@ -41,7 +41,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $rid = (int)db()->lastInsertId();
         $me = person($uid);
 
-        // Only the admins get the report: emailed to the ADMIN_EMAILS in config.php and listed on admin.php. It is never shown as a message or notification to anyone else.
+        // Only the admins get the report: emailed to the ADMIN_EMAILS in config.php and listed on reports.php. It is never shown as a message or notification to anyone else.
         $admins = defined('ADMIN_EMAILS') ? ADMIN_EMAILS : [];
         if ($admins && mail_configured()) {
             $text = "A user reported an account on Splanner.\n\n"
@@ -54,7 +54,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 try {
                     send_mail((string)$email, 'Splanner report: ' . $person['name'], $text);
                 } catch (RuntimeException $e) {
-                    error_log('Report email: ' . $e->getMessage());   // the report is still saved and shown on admin.php
+                    error_log('Report email: ' . $e->getMessage());   // the report is still saved and shown on reports.php
                 }
             }
         }
