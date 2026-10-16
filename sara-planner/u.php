@@ -163,6 +163,8 @@ echo profile_head($person, (string)$prof['slug'], [plural($dayOnly ? 0 : count($
 
 
   <?php if ($page === 'cover'): ?>
+    <?php $firstPg = $sections[0] ?? (array_key_first($pagesById) ?? ($showDay ? 'day' : null)); ?>
+    <?php if ($firstPg !== null): ?><a class="nbcover-link" href="<?= h($base . '&p=' . $firstPg) ?>" title="Open the notebook" aria-label="Open the notebook"><?php endif; ?>
     <div class="nbcover" style="<?= cover_css($design, $cover) ?>">
       <div class="nbcover-in">
         <?= avatar_html($person, 'xl') ?>
@@ -170,6 +172,7 @@ echo profile_head($person, (string)$prof['slug'], [plural($dayOnly ? 0 : count($
         <p class="by" translate="no">by <?= h($name) ?> · @<?= h($prof['slug']) ?></p>
       </div>
     </div>
+    <?php if ($firstPg !== null): ?></a><?php endif; ?>
     <?php if ($nb['intro'] !== ''): ?><p class="nb-intro" translate="no"><?= nl2br(h($nb['intro'])) ?></p><?php endif; ?>
     <?php if (!$sections): ?><p class="hint2" style="margin-top:14px">No pages in this notebook yet.</p><?php endif; ?>
 
