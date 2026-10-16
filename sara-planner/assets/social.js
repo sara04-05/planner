@@ -21,7 +21,7 @@ const SECS=[['interests','⭐','Interests','Lists of things you love, with pictu
 const SECNAME=Object.fromEntries([['cover','Cover']].concat(SECS.map(s=>[s[0],s[2]]),[['day','Day']]));
 const PAGE_EMOJI=['📝','📖','🌸','✈️','🍳','💡','🎨','🏋️','🎵','🐾','🧘','💌'];
 const DAYLV=['Nobody, only me','Friends only','Anyone signed in','Everyone, even visitors'];
-const BASE={cover:'dusk',cover_img:0,cover_c1:'',cover_c2:'',paper:'lined',paper_color:'white',paper_hex:'',accent:'violet',accent_hex:'',font:'modern',binding:'coil'};
+const BASE={cover:'dusk',cover_img:0,cover_c1:'',cover_c2:'',paper:'lined',paper_color:'white',paper_hex:'',accent:'violet',accent_hex:'',font:'modern',binding:'coil',label:'box',label_hex:''};
 // ready-made looks (the user can also save their own)
 const PRESETS=[
   ['Dreamy lilac',{cover:'dusk',paper:'dots',paper_color:'lilac',accent:'violet',font:'hand'}],
@@ -115,6 +115,8 @@ function wrapAttrs(d){   // goes on the notebook wrapper: accent colour + the co
   if(d.accent&&d.accent!=='violet')a+=` data-accent="${d.accent}"`;
   if(d.accent==='custom'&&d.accent_hex)v+=`--c-accent:${d.accent_hex};--c-on:${lum(d.accent_hex)>.55?'#17121F':'#FFFFFF'};`;
   if(d.paper_color==='custom'&&d.paper_hex)v+=`--c-paper:${d.paper_hex};`;
+  if(d.label==='none')a+=' data-label="none"';
+  if(d.label_hex)v+=`--c-label:${d.label_hex};--c-label-ink:${lum(d.label_hex)>.5?'#2B2118':'#FFFFFF'};`;
   return a+(v?` style="${v}"`:'');
 }
 function pageAttrs(d){
@@ -281,6 +283,7 @@ function decoPanel(nb){
     <p class="opt-h">Cover</p><div class="swatches">${Object.keys(COVERS).map(c=>swatch('cover',c,`linear-gradient(135deg,${COVERS[c][0]},${COVERS[c][1]})`,'Cover '+c)).join('')}${Object.keys(ART).map(c=>swatch('cover',c,`var(--cov-${c})`,ART[c])).join('')}</div>
     <div class="colorrow"><span>Your own colours</span><input type="color" data-xcolor="cover_c1" value="${d.cover_c1||'#6a4dc4'}" aria-label="Cover colour 1"><input type="color" data-xcolor="cover_c2" value="${d.cover_c2||'#e0609a'}" aria-label="Cover colour 2"></div>
     <div class="pic-pick" style="margin-top:10px"><label class="btn sm"><input type="file" accept="image/*" data-xfile="cover" data-kind="cover">🖼️ Use my own cover picture</label><button type="button" class="btn sm ghost" id="coverRm" data-x="cover-rm" ${d.cover_url?'':'hidden'}>Remove my picture</button><span class="hint2" data-pic-msg></span></div>
+    <p class="opt-h">Label on the cover</p><div class="pilltabs">${[['box','Box'],['none','No box']].map(x=>`<button type="button" data-x="label" data-v="${x[0]}" aria-pressed="false">${x[1]}</button>`).join('')}<input type="color" class="colorpick" data-xcolor="label_hex" value="${d.label_hex||'#efe2c8'}" aria-label="Your own label colour"></div>
     <p class="opt-h">Paper</p><div class="pilltabs">${PAPERS.map(x=>`<button type="button" data-x="paper" data-v="${x[0]}" aria-pressed="false">${x[1]}</button>`).join('')}</div>
     <p class="opt-h">Paper colour</p><div class="swatches">${Object.keys(PAPER_COLORS).map(c=>swatch('pcolor',c,PAPER_COLORS[c],'Paper '+c)).join('')}<input type="color" class="colorpick" data-xcolor="paper_hex" value="${d.paper_hex||'#ffffff'}" aria-label="Your own paper colour"></div>
     <p class="opt-h">Accent colour</p><div class="swatches">${Object.keys(ACCENTS).map(c=>swatch('accent',c,ACCENTS[c],'Accent '+c)).join('')}<input type="color" class="colorpick" data-xcolor="accent_hex" value="${d.accent_hex||'#6a4dc4'}" aria-label="Your own accent colour"></div>
@@ -302,7 +305,7 @@ function stkCtl(){
 /** Update the live notebook and the controls without redrawing the panel (so a colour picker stays open). */
 function paintPreview(){
   const d=ui.dd,w=$('nbv'),pg=$('nbPage'),bd=$('nbBinder');if(!w||!d)return;
-  [...w.attributes].forEach(a=>{if(a.name==='data-accent'||a.name==='style')w.removeAttribute(a.name)});
+  [...w.attributes].forEach(a=>{if(a.name==='data-accent'||a.name==='data-label'||a.name==='style')w.removeAttribute(a.name)});
   const t=document.createElement('div');t.innerHTML=`<i${wrapAttrs(d)}></i>`;[...t.firstChild.attributes].forEach(a=>w.setAttribute(a.name,a.value));
   const p=document.createElement('div');p.innerHTML=`<i${pageAttrs(d)}></i>`;
   [pg,$('nbPageL')].filter(Boolean).forEach(el=>{['data-paper','data-pcolor','data-font','data-ptone'].forEach(a=>el.removeAttribute(a));[...p.firstChild.attributes].forEach(a=>el.setAttribute(a.name,a.value))});
@@ -316,6 +319,7 @@ function syncControls(){
   const d=ui.dd;if(!d)return;
   const on=(sel,fn)=>document.querySelectorAll(sel).forEach(b=>b.setAttribute('aria-pressed',String(fn(b))));
   on('[data-x="cover"]',b=>!d.cover_url&&b.dataset.v===d.cover);
+  on('[data-x="label"]',b=>b.dataset.v===(d.label||'box'));
   on('[data-x="paper"]',b=>b.dataset.v===d.paper);
   on('[data-x="pcolor"]',b=>b.dataset.v===d.paper_color);
   on('[data-x="accent"]',b=>b.dataset.v===d.accent);
@@ -521,7 +525,7 @@ window.SPLX={html,setUnread:n=>{if(S){S.unread=n;S.notes.forEach(x=>x.read=true)
 
 const markDirty=()=>{ui.dirty=true;const sv=$('saveDesign');if(sv)sv.disabled=false};
 const designOut=()=>{const d=clone(ui.dd);delete d.cover_url;return d};
-const DESIGN_ACTS=['cover','cover-rm','paper','pcolor','accent','font','binding','stk-add','stk-size','stk-rot','stk-del','preset','style-apply'];
+const DESIGN_ACTS=['cover','cover-rm','paper','pcolor','accent','font','binding','label','stk-add','stk-size','stk-rot','stk-del','preset','style-apply'];
 function applyLook(look){   // a ready-made or saved look: replaces colours/paper/font/binding/cover, keeps your stickers
   const keep=ui.dd.stickers;
   ui.dd=Object.assign(clone(BASE),clone(look),{stickers:keep});
@@ -586,6 +590,7 @@ document.addEventListener('click',async e=>{
       case 'accent':ui.dd.accent=b.dataset.v;break;
       case 'font':ui.dd.font=b.dataset.v;break;
       case 'binding':ui.dd.binding=b.dataset.v;break;
+      case 'label':ui.dd.label=b.dataset.v;if(b.dataset.v==='none')ui.dd.label_hex='';break;
       case 'preset':applyLook(PRESETS[+b.dataset.i][1]);break;
       case 'style-apply':{const s=S.styles.find(x=>x.id===id);if(!s)return;applyLook(s.design);break}
       case 'stk-add':if(ui.dd.stickers.length>=30){toast('That is plenty of stickers!');return}ui.dd.stickers.push({k:b.dataset.k,p:ui.pg,x:20+Math.random()*60,y:25+Math.random()*50,s:1,r:0});ui.sel=ui.dd.stickers.length-1;break;
@@ -622,6 +627,7 @@ document.addEventListener('input',e=>{
   if(k==='cover_c1'||k==='cover_c2'){ui.dd.cover='custom';ui.dd.cover_img=0;ui.dd.cover_url='';if(!ui.dd.cover_c1)ui.dd.cover_c1='#6a4dc4';if(!ui.dd.cover_c2)ui.dd.cover_c2='#e0609a'}
   if(k==='paper_hex')ui.dd.paper_color='custom';
   if(k==='accent_hex')ui.dd.accent='custom';
+  if(k==='label_hex')ui.dd.label='box';
   markDirty();paintPreview();
 });
 
