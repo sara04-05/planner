@@ -1443,3 +1443,9 @@ a.nbtile{text-decoration:none}.nbtiles{margin-bottom:14px}.nbtile.on span{color:
 .page .tbl td small,.page .tbl td .s{line-height:32px}
 .page .tbl td :is(.btn,form,.admin-acts){line-height:1.2;vertical-align:middle}
 .page .tbl td form{display:inline-flex;align-items:center;margin:0}
+
+/* date headings in the expense list: one line tall, no line of their own, so the rows below stay on the ruled lines */
+.page .dgroup{height:32px;min-height:32px;padding:0;margin:0;border:0;align-items:center;box-sizing:border-box}
+.page .foot-note{margin-top:0;min-height:32px;align-items:center}
+.page .row{box-sizing:border-box;height:32px;align-items:center}
+.page .row .grow{min-width:0}
