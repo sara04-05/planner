@@ -10,7 +10,8 @@ $uid = require_login();
 $id = isset($_GET['id']) && ctype_digit((string)$_GET['id']) ? (int)$_GET['id'] : 0;
 $p = $id ? person($id) : null;
 $self = $id === $uid;
-if (!$p || (!$self && friendship($uid, $id) !== 'friends')) {
+$shared = $p ? can_see_day($id, $uid) : false;
+if (!$p || (!$self && friendship($uid, $id) !== 'friends' && !$shared)) {
     http_response_code(403);
     app_top('Not friends', ['active' => 'explore', 'eyebrow' => 'Your notebook', 'h1' => 'Not friends yet']); ?>
     <p class="auth-sub">You can see someone's day once you're friends. Send them a friend request on the People page.</p>
@@ -21,13 +22,12 @@ if (!$p || (!$self && friendship($uid, $id) !== 'friends')) {
 }
 
 $today = date('Y-m-d');
-$shared = $self || !empty(profile_share(ensure_profile($id))['day']);   // the owner can switch the day off for friends
 $plan = $shared ? day_schedule($id, $today) : [];
 $now = (int)date('G') * 60 + (int)date('i');
 
 $acts = $self ? '<a class="btn" href="index.php?tab=profile">← My profile</a>' : '<a class="btn" href="explore.php">← Explore</a>';
 if ($ns = public_slug($p['id'], $uid)) $acts .= ' <a class="btn" href="u.php?u=' . h($ns) . '">Notebooks</a>';
-if (!$self) $acts .= ' <a class="btn primary" href="messages.php?with=' . $p['id'] . '">Message</a>';
+if (!$self) $acts .= ' <a class="btn" href="hangout.php?with=' . $p['id'] . '">🗓️ Find time together</a> <a class="btn primary" href="messages.php?with=' . $p['id'] . '">Message</a>';
 app_top($p['name'], ['active' => 'explore', 'covers' => true, 'eyebrow' => 'Friend\'s notebook', 'h1' => $p['name'], 'actions' => $acts]); ?>
     <div class="friend-day">
       <section>

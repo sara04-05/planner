@@ -150,3 +150,34 @@ function hm(int $min): string
 {
     return sprintf('%02d:%02d', intdiv($min, 60), $min % 60);
 }
+
+const FREE_FROM = 8 * 60;    // free time is only counted between 08:00 and 23:00
+const FREE_TO   = 23 * 60;
+
+/** The minutes of a day when someone has nothing planned, as [[from, to], ...] between 08:00 and 23:00 (from $after on, for today). */
+function free_slots(int $uid, string $date, int $after = 0): array
+{
+    $free = [[max(FREE_FROM, $after), FREE_TO]];
+    foreach (day_schedule($uid, $date) as $e) {
+        $next = [];
+        foreach ($free as [$a, $b]) {
+            if ($e['to'] <= $a || $e['from'] >= $b) { $next[] = [$a, $b]; continue; }
+            if ($e['from'] > $a) $next[] = [$a, $e['from']];
+            if ($e['to'] < $b) $next[] = [$e['to'], $b];
+        }
+        $free = $next;
+    }
+    return array_values(array_filter($free, fn($s) => $s[1] > $s[0]));
+}
+
+/** The stretches of time that are in both lists, at least $min minutes long. */
+function common_slots(array $a, array $b, int $min = 30): array
+{
+    $out = [];
+    foreach ($a as [$a1, $a2]) foreach ($b as [$b1, $b2]) {
+        $from = max($a1, $b1); $to = min($a2, $b2);
+        if ($to - $from >= $min) $out[] = [$from, $to];
+    }
+    usort($out, fn($x, $y) => $x[0] <=> $y[0]);
+    return $out;
+}
