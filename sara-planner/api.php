@@ -5,6 +5,8 @@ declare(strict_types=1);
 
 require __DIR__ . '/db.php';
 require __DIR__ . '/gcal.php';
+require __DIR__ . '/social.php';
+require __DIR__ . '/notebook.php';
 
 header('Content-Type: application/json; charset=utf-8');
 header('Cache-Control: no-store');
@@ -243,10 +245,11 @@ function bootstrap(int $uid): array
 
     // Per-month changes, keyed "year-month" (month 0 = January)
     $months = new stdClass();
-    foreach (q('SELECT year, month, income, save_target FROM month_money WHERE user_id = ?', [$uid]) as $r) {
+    foreach (q('SELECT year, month, income, save_target, saved_actual FROM month_money WHERE user_id = ?', [$uid]) as $r) {
         $months->{$r['year'] . '-' . $r['month']} = [
             'income' => $r['income'] === null ? null : (float)$r['income'],
             'save'   => $r['save_target'] === null ? null : (float)$r['save_target'],
+            'actual' => $r['saved_actual'] === null ? null : (float)$r['saved_actual'],
         ];
     }
 
@@ -306,7 +309,7 @@ try {
         // Change one month's income or savings target. An empty value (null) goes back to the normal one.
         $year  = int_in($in, 'year', 2000, 2100);
         $month = int_in($in, 'month', 0, 11);
-        $cols  = ['income' => 'income', 'save' => 'save_target'];
+        $cols  = ['income' => 'income', 'save' => 'save_target', 'actual' => 'saved_actual'];
         if (!q('SELECT 1 FROM month_money WHERE user_id = ? AND year = ? AND month = ?', [$uid, $year, $month])->fetch()) {
             q('INSERT INTO month_money (user_id, year, month) VALUES (?, ?, ?)', [$uid, $year, $month]);
         }
@@ -319,7 +322,7 @@ try {
             }
             q("UPDATE month_money SET $col = ? WHERE user_id = ? AND year = ? AND month = ?", [$v, $uid, $year, $month]);
         }
-        q('DELETE FROM month_money WHERE user_id = ? AND year = ? AND month = ? AND income IS NULL AND save_target IS NULL',
+        q('DELETE FROM month_money WHERE user_id = ? AND year = ? AND month = ? AND income IS NULL AND save_target IS NULL AND saved_actual IS NULL',
             [$uid, $year, $month]);
         ok();
     }
@@ -704,6 +707,60 @@ try {
         ok();
     }
 
+    // ---------- chat between users ----------
+    case 'msg.list': {
+        // Everyone this user has written with, newest first, with the last message and how many are unread
+        $rows = q('SELECT CASE WHEN from_id = ? THEN to_id ELSE from_id END AS other, MAX(id) AS last_id,
+                          SUM(CASE WHEN to_id = ? AND is_read = 0 THEN 1 ELSE 0 END) AS unread
+                   FROM messages WHERE from_id = ? OR to_id = ?
+                   GROUP BY other ORDER BY last_id DESC LIMIT 100', [$uid, $uid, $uid, $uid])->fetchAll();
+        $people = [];
+        foreach ($rows as $r) {
+            $u = q('SELECT id, name, email FROM users WHERE id = ?', [(int)$r['other']])->fetch();
+            $m = q('SELECT from_id, body, sent_at FROM messages WHERE id = ?', [(int)$r['last_id']])->fetch();
+            if (!$u || !$m) continue;
+            $people[] = ['id' => (int)$u['id'], 'name' => $u['name'], 'tag' => name_tag($u['name'], $u['email']), 'last' => mb_substr($m['body'], 0, 80),
+                'mine' => (int)$m['from_id'] === $uid, 'at' => (int)$m['sent_at'], 'unread' => (int)$r['unread']];
+        }
+        ok(['people' => $people, 'unread' => chat_unread($uid)]);
+    }
+
+    case 'msg.find': {
+        // Start a chat by typing someone's exact email, so nobody can browse the list of users
+        $email = strtolower(str_in($in, 'email', 190));
+        $u = q('SELECT id, name FROM users WHERE LOWER(email) = ?', [$email])->fetch();
+        if (!$u) fail(404, 'Nobody has a Splanner account with that email.');
+        if ((int)$u['id'] === $uid) fail(400, "That's your own email.");
+        ok(['person' => ['id' => (int)$u['id'], 'name' => $u['name']]]);
+    }
+
+    case 'msg.messages': {
+        // The chat with one person. "after" = the last message id the page already has, so polling only gets new ones.
+        $other = id_in($in, 'with');
+        $u = q('SELECT id, name, email FROM users WHERE id = ?', [$other])->fetch();
+        if (!$u) fail(404, 'That account no longer exists.');
+        $after = isset($in['after']) && is_numeric($in['after']) ? max(0, (int)$in['after']) : 0;
+        $rows = q('SELECT id, from_id, body, sent_at FROM messages
+                   WHERE ((from_id = ? AND to_id = ?) OR (from_id = ? AND to_id = ?)) AND id > ?
+                   ORDER BY id DESC LIMIT 200', [$uid, $other, $other, $uid, $after])->fetchAll();
+        $msgs = array_map(fn($m) => ['id' => (int)$m['id'], 'mine' => (int)$m['from_id'] === $uid,
+            'body' => $m['body'], 'at' => (int)$m['sent_at']], array_reverse($rows));
+        q('UPDATE messages SET is_read = 1 WHERE to_id = ? AND from_id = ? AND is_read = 0', [$uid, $other]);
+        ok(['person' => ['id' => (int)$u['id'], 'name' => $u['name'], 'tag' => name_tag($u['name'], $u['email'])], 'messages' => $msgs, 'unread' => chat_unread($uid)]);
+    }
+
+    case 'msg.send': {
+        $to = id_in($in, 'to');
+        if ($to === $uid) fail(400, "You can't message yourself.");
+        if (!q('SELECT id FROM users WHERE id = ?', [$to])->fetch()) fail(404, 'That account no longer exists.');
+        $body = str_in($in, 'message', 2000);
+        // A small brake against spam: at most 20 messages a minute
+        $recent = (int)q('SELECT COUNT(*) AS n FROM messages WHERE from_id = ? AND sent_at > ?', [$uid, time() - 60])->fetch()['n'];
+        if ($recent >= 20) fail(429, 'You are sending messages too fast. Wait a minute and try again.');
+        q('INSERT INTO messages (from_id, to_id, body, sent_at) VALUES (?, ?, ?, ?)', [$uid, $to, $body, time()]);
+        ok(['message' => ['id' => (int)db()->lastInsertId(), 'mine' => true, 'body' => $body, 'at' => time()]]);
+    }
+
     case 'gcal.sync': {
         // Send hours to Google Calendar. "dates" = days that were just edited; the same weekday in the next two
         // weeks is sent too, because an edit can change a weekly hour. "full" = the whole next two weeks.
@@ -728,6 +785,7 @@ try {
     }
 
     default:
+        if (str_starts_with($action, 'x.')) notebook_action($uid, $action, $in);
         fail(404, 'Unknown action.');
     }
 } catch (PDOException $e) {

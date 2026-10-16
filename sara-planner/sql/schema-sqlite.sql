@@ -25,6 +25,7 @@ CREATE TABLE IF NOT EXISTS month_money (
   month       TINYINTEGER NOT NULL,
   income      DECIMAL(10,2) NULL,
   save_target DECIMAL(10,2) NULL,
+  saved_actual DECIMAL(10,2) NULL,  -- what the user confirmed they really saved (NULL = not confirmed yet)
   PRIMARY KEY (user_id, year, month),
   FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
 );
@@ -165,6 +166,135 @@ CREATE TABLE IF NOT EXISTS email_codes (
   FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
 );
 
+-- Chat between users. sent_at is a Unix time, so it shows right in every time zone.
+CREATE TABLE IF NOT EXISTS messages (
+  id       INTEGER PRIMARY KEY AUTOINCREMENT,
+  from_id  INTEGER NOT NULL,
+  to_id    INTEGER NOT NULL,
+  body     TEXT NOT NULL,
+  sent_at  INTEGER NOT NULL,
+  is_read  TINYINTEGER NOT NULL DEFAULT 0,
+  FOREIGN KEY (from_id) REFERENCES users(id) ON DELETE CASCADE,
+  FOREIGN KEY (to_id) REFERENCES users(id) ON DELETE CASCADE
+);
+
+-- What other people see about you: a short bio, a profile picture and the colour of your notebook cover.
+CREATE TABLE IF NOT EXISTS profiles (
+  user_id   INTEGER PRIMARY KEY,
+  bio       VARCHAR(300) NOT NULL DEFAULT '',
+  cover     VARCHAR(20)  NOT NULL DEFAULT 'meadow',
+  words     VARCHAR(60)  NOT NULL DEFAULT '',
+  avatar    MEDIUMTEXT NULL,
+  avatar_v  INTEGER NOT NULL DEFAULT 0,
+  slug       VARCHAR(40) NULL,
+  is_public  TINYINT(1) NOT NULL DEFAULT 0,
+  guest_view TINYINT(1) NOT NULL DEFAULT 0,
+  share      TEXT NULL,
+  design     TEXT NULL,
+  notify     TEXT NULL,
+  nb_ready   TINYINT(1) NOT NULL DEFAULT 0,
+  FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+);
+
+-- Friends. from_id asked to_id; accepted = 1 once to_id said yes.
+CREATE TABLE IF NOT EXISTS friends (
+  from_id   INTEGER NOT NULL,
+  to_id     INTEGER NOT NULL,
+  accepted  TINYINTEGER NOT NULL DEFAULT 0,
+  sent_at   INTEGER NOT NULL,
+  PRIMARY KEY (from_id, to_id),
+  FOREIGN KEY (from_id) REFERENCES users(id) ON DELETE CASCADE,
+  FOREIGN KEY (to_id) REFERENCES users(id) ON DELETE CASCADE
+);
+
 CREATE INDEX IF NOT EXISTS idx_exp_user_date ON expenses(user_id,date);
 CREATE INDEX IF NOT EXISTS idx_task_user_due ON tasks(user_id,due);
 CREATE INDEX IF NOT EXISTS idx_gcal_user_date ON gcal_events(user_id,date);
+
+CREATE INDEX IF NOT EXISTS idx_msg_to ON messages(to_id,from_id);
+CREATE INDEX IF NOT EXISTS idx_msg_from ON messages(from_id,to_id);
+CREATE INDEX IF NOT EXISTS idx_friend_to ON friends(to_id);
+
+-- ---- Notebook sharing: pictures, blog, interest lists, likes, alerts ----
+-- Pictures are kept in the database (like profile pictures), so no upload folder is needed on the host.
+CREATE TABLE IF NOT EXISTS uploads (
+  id         INTEGER PRIMARY KEY AUTOINCREMENT,
+  user_id    INTEGER NOT NULL,
+  kind       VARCHAR(10) NOT NULL,
+  mime       VARCHAR(30) NOT NULL,
+  data       MEDIUMTEXT NOT NULL,
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+);
+
+CREATE TABLE IF NOT EXISTS posts (
+  id         INTEGER PRIMARY KEY AUTOINCREMENT,
+  user_id    INTEGER NOT NULL,
+  title      VARCHAR(150) NOT NULL,
+  body       TEXT NOT NULL,
+  image_id   INTEGER NULL,
+  notebook_id INTEGER NULL,
+  is_public  TINYINT(1) NOT NULL DEFAULT 0,
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+);
+
+CREATE TABLE IF NOT EXISTS post_likes (
+  post_id INTEGER NOT NULL,
+  user_id INTEGER NOT NULL,
+  PRIMARY KEY (post_id, user_id),
+  FOREIGN KEY (post_id) REFERENCES posts(id) ON DELETE CASCADE,
+  FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+);
+
+CREATE TABLE IF NOT EXISTS interest_lists (
+  id        INTEGER PRIMARY KEY AUTOINCREMENT,
+  user_id   INTEGER NOT NULL,
+  title     VARCHAR(80) NOT NULL,
+  emoji     VARCHAR(16) NOT NULL DEFAULT '',
+  layout    VARCHAR(8) NOT NULL DEFAULT 'list',
+  notebook_id INTEGER NULL,
+  is_public TINYINT(1) NOT NULL DEFAULT 0,
+  FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+);
+
+CREATE TABLE IF NOT EXISTS interest_items (
+  id       INTEGER PRIMARY KEY AUTOINCREMENT,
+  list_id  INTEGER NOT NULL,
+  text     VARCHAR(150) NOT NULL,
+  note     VARCHAR(300) NOT NULL DEFAULT '',
+  image_id INTEGER NULL,
+  FOREIGN KEY (list_id) REFERENCES interest_lists(id) ON DELETE CASCADE
+);
+
+CREATE TABLE IF NOT EXISTS notifications (
+  id         INTEGER PRIMARY KEY AUTOINCREMENT,
+  user_id    INTEGER NOT NULL,
+  ref        VARCHAR(60) NOT NULL,
+  text       VARCHAR(250) NOT NULL,
+  link       VARCHAR(120) NOT NULL DEFAULT '',
+  is_read    TINYINT(1) NOT NULL DEFAULT 0,
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  UNIQUE (user_id, ref),
+  FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+);
+
+CREATE TABLE IF NOT EXISTS notebooks (
+  id         INTEGER PRIMARY KEY AUTOINCREMENT,
+  user_id    INTEGER NOT NULL,
+  title      VARCHAR(80) NOT NULL,
+  intro      VARCHAR(300) NOT NULL DEFAULT '',
+  sections   VARCHAR(120) NOT NULL DEFAULT '',
+  design     TEXT NULL,
+  is_public  TINYINT(1) NOT NULL DEFAULT 0,
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+);
+
+CREATE TABLE IF NOT EXISTS notebook_styles (
+  id      INTEGER PRIMARY KEY AUTOINCREMENT,
+  user_id INTEGER NOT NULL,
+  name    VARCHAR(60) NOT NULL,
+  design  TEXT NOT NULL,
+  FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+);
