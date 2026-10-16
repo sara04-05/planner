@@ -475,7 +475,7 @@ function quickLook(nb){
 function settingsTab(){
   const p=S.profile,nb=cur();
   const dsel=`<select class="daysel" data-xday aria-label="Who can see my day">${DAYLV.map((l,i)=>`<option value="${i}"${i===p.day?' selected':''}>${l}</option>`).join('')}</select>`;
-  const nav=[['st-account','Account'],['st-privacy','Privacy'],['st-notebooks','Notebooks and Explore card'],['st-danger','Delete account']].map(x=>`<a class="chipbtn" href="#${x[0]}">${x[1]}</a>`).join('');
+  const nav=[['st-account','Account'],['st-privacy','Privacy'],['st-notebooks','Notebooks and Explore card'],['st-password','Password'],['st-danger','Delete account']].map(x=>`<a class="chipbtn" href="#${x[0]}">${x[1]}</a>`).join('');
   const covers=(p.covers||[]).map(c=>coverMini(c,p.cover===c[0])).join('')+
     `<label class="cover-opt own${p.cover==='custom'?' on':''}" title="Your own picture"><input type="file" accept="image/*" data-xfile="ecover" data-kind="cover"><span class="nbc mini own-pic" aria-hidden="true" style="${p.cover_url?`background-image:url('${esc(p.cover_url)}');background-size:cover`:''}">${p.cover_url?'':'＋'}</span><span>Your own picture</span></label>`;
   const nbTiles=S.notebooks.length?`<div class="nbtiles">${S.notebooks.map(n=>`<button class="nbtile${nb&&n.id===nb.id?' on':''}" data-x="nb-pick-st" data-id="${n.id}"><i style="${coverCss({...n.design,cover_url:n.cover_url})}"></i><span translate="no">${esc(n.title)}</span><small>${n.public?'🌍 Shown':'🔒 Private'}</small></button>`).join('')}</div>`:'<p class="empty">You have no notebooks yet. Make one in the Notebooks tab.</p>';
@@ -496,6 +496,7 @@ function settingsTab(){
     ${sw('Alert when someone likes my post','Shows in the bell at the top of the page.',!!(p.notify&&p.notify.like),'data-xsw="notify" data-k="like"')}</section>
   <section class="xcard st-sec" id="st-notebooks"><h3>Notebooks and Explore card</h3><p class="sub">Pick a notebook to change its look, name, pages and who sees it. Your first notebook is also your card on Explore, so its cover is what people see there.</p>${nbTiles}
     ${nb?`<div class="st-nb">${quickLook(nb)}${settingsPanel(nb)}${pages}<div class="xrow" style="margin-top:12px"><button class="btn" data-x="st-deco">🎨 Look, colours and stickers</button><span class="hint2">Make your own cover colours, use your own picture, and make stickers from your pictures.</span></div></div>`:''}</section>
+  <section class="xcard st-sec" id="st-password"><h3>Password</h3><p class="sub">Change your password. You will need your current one.</p><a class="btn" href="change-password.php">Change my password</a></section>
   <section class="xcard st-sec" id="st-danger"><h3>Delete account</h3><p class="sub">Logs you out and removes your account and everything in it for good.</p><a class="btn danger" href="delete-account.php">Delete my account</a></section>`;
 }
 function profileHtml(){
