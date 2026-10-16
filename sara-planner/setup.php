@@ -7,6 +7,13 @@ require __DIR__ . '/social.php';
 require __DIR__ . '/notebook.php';
 
 $uid = require_login();
+// the "finished the intro" flag: add the column here if this database does not have it yet, so this page never fails on a missing column
+try {
+    $have = DB_DRIVER === 'sqlite' ? array_column(db()->query('PRAGMA table_info(profiles)')->fetchAll(), 'name') : array_column(db()->query('SHOW COLUMNS FROM profiles')->fetchAll(), 'Field');
+    if (!in_array('onboarded', $have, true)) db()->exec('ALTER TABLE profiles ADD COLUMN onboarded TINYINT(1) NOT NULL DEFAULT 1');
+} catch (Throwable $e) {
+    error_log('setup.php could not check the onboarded column: ' . $e->getMessage());
+}
 $prof = ensure_profile($uid);
 if ((int)($prof['onboarded'] ?? 1) === 1 && $_SERVER['REQUEST_METHOD'] !== 'POST') {
     header('Location: index.php');
