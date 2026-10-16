@@ -1713,3 +1713,41 @@ a.nbcover-link:focus-visible{outline:3px solid var(--accent);outline-offset:6px;
 
 /* shared notebooks: the cover is a link wrapping the cover, laid out like your own closed notebook */
 .nbclosed-hit .nbcover-link{display:block;color:inherit;text-decoration:none}
+
+/* first-time setup: the preview is the whole notebook (cover + the opened pages), in the paper, binding and colour you pick */
+.setup .look-pvh{margin:14px 0 6px;font-size:12px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--muted)}
+.setup .setup-preview{display:flex;flex-wrap:wrap;align-items:center;justify-content:center;gap:18px;background-image:none!important;padding:18px 14px}
+.setup .setup-preview .nbcover{width:104px;margin:0;flex:none}
+.setup .setup-preview .nbcover .nbcover-in{left:24%;right:8%;padding:8px 6px}
+.setup .setup-preview .nbcover .nbcover-in h2{font-size:11px}
+.setup-preview .spread{--lh:26px;--sp-paper:#fff;--sp-ink:#2A2338;--sp-rule:rgba(60,40,90,.14);--sp-ac:var(--accent);flex:1 1 280px;max-width:420px;position:relative;display:grid;grid-template-columns:minmax(0,1fr) 22px minmax(0,1fr);min-height:170px;padding:10px;border-radius:10px;box-shadow:0 14px 22px -14px rgba(20,12,40,.6)}
+.setup-preview .spread .sp-page{padding:14px 12px 12px;min-height:150px}
+.setup-preview .spread .sp-eyebrow{font-size:9px}
+.setup-preview .spread h3{font-size:14px;margin:0 0 8px}
+.setup-preview .spread ol li{font-size:12px;line-height:20px}
+.setup-preview .spread .sp-intro{font-size:12px;line-height:20px}
+.setup-preview .spread[data-paper="lined"] .sp-page{background-image:repeating-linear-gradient(to bottom,transparent 0 19px,var(--sp-rule) 19px 20px);background-position:0 6px}
+.setup-preview .spread[data-paper="grid"] .sp-page{background-image:repeating-linear-gradient(to bottom,transparent 0 15px,var(--sp-rule) 15px 16px),repeating-linear-gradient(to right,transparent 0 15px,var(--sp-rule) 15px 16px)}
+.setup-preview .spread[data-paper="dots"] .sp-page{background-image:radial-gradient(var(--sp-rule) 1.6px,transparent 2px);background-size:16px 16px}
+.setup-preview .spread[data-paper="plain"] .sp-page{background-image:none}
+.setup-preview .spread[data-binding="none"] .sp-gutter,.setup-preview .spread[data-binding="plain"] .sp-gutter{background:linear-gradient(90deg,rgba(0,0,0,.14),rgba(0,0,0,.02) 50%,rgba(0,0,0,.14))}
+@media (max-width:480px){.setup-preview .spread{grid-template-columns:minmax(0,1fr) 14px minmax(0,1fr);padding:8px}.setup-preview .spread .sp-page{padding:12px 9px 10px}}
+@media (max-width:760px){
+  .setup-preview .spread .sp-gutter{display:block}
+  .setup-preview .spread .sp-page.left{border-radius:6px 0 0 6px;box-shadow:inset -14px 0 16px -14px rgba(0,0,0,.35)}
+  .setup-preview .spread .sp-page.right{border-radius:0 6px 6px 0;margin-top:0;box-shadow:inset 14px 0 16px -14px rgba(0,0,0,.35)}
+}
+
+/* setup: smaller look cards on phones, three to a row */
+@media (max-width:640px){
+  .setup .look-grid{grid-template-columns:repeat(3,minmax(0,1fr));gap:8px;margin:10px 0}
+  .setup .look{padding:6px;gap:4px}
+  .setup .look-cover{max-height:70px}
+  .setup .look b{font-size:11.5px;text-align:center}
+  .setup .look-extra{grid-template-columns:repeat(3,minmax(0,1fr));gap:8px}
+  .setup .look-extra select{min-height:38px;padding:6px;font-size:13px}
+}
+@media (max-width:400px){.setup .look-grid{grid-template-columns:repeat(2,minmax(0,1fr))}.setup .look-extra{grid-template-columns:1fr 1fr}}
+
+/* setup: with many looks, the picker scrolls instead of making the page endless */
+.setup .look-grid{max-height:340px;overflow-y:auto;padding:4px;margin-inline:-4px;scrollbar-width:thin}

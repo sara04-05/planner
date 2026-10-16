@@ -104,6 +104,41 @@ if (current_user_id()) {
       .demo .tab[aria-selected="true"]{width:auto}
       .demo-badge{position:static;display:inline-block;margin:0 0 10px 6px}
     }
+    /* phones: everything scales down with the screen so it fits any width (320px and up) */
+    @media (max-width:640px){
+      .land{padding-inline:2px}
+      .lnav{padding:12px 0;gap:8px}
+      .lnav .brand b{font-size:20px}
+      .hero{gap:28px;padding:14px 0 36px}
+      .hero h1{font-size:clamp(26px,8.4vw,36px);line-height:1.1}
+      .hero .lead{font-size:clamp(15px,4.2vw,17px);margin:14px 0 20px}
+      .cta{gap:8px}
+      .hero .cta .btn{flex:1 1 100%;text-align:center;justify-content:center;padding:12px 14px}
+      .trust{margin-top:18px;gap:6px 14px;font-size:12.5px}
+      .demo .page{padding:16px 14px;min-height:0}
+      .demo h2.dh{font-size:22px}
+      .demo .tab{padding:7px 10px 10px;font-size:12.5px}
+      section.blk{padding:34px 0}
+      .sh{margin-bottom:20px}
+      .sh h2,.final h2{font-size:clamp(22px,6.4vw,28px)}
+      .sh p{font-size:15px}
+      .feat{grid-template-columns:1fr 1fr;gap:10px}
+      .fc{padding:14px 14px 16px;border-radius:14px}
+      .fc h3{font-size:16px}
+      .fc p{font-size:13px}
+      .step{padding:16px}
+      .safe{gap:16px}
+      .safe-card{padding:18px}
+      .faq details{padding:12px 14px}
+      .faq summary{font-size:15.5px}
+      .final{padding:34px 16px;margin:12px 0;border-radius:20px}
+      .final .cta .btn{flex:1 1 100%;text-align:center}
+      .lfoot{padding:18px 0 28px}
+    }
+    @media (max-width:380px){
+      .feat{grid-template-columns:1fr}
+      .trust{font-size:12px}
+    }
   </style>
 <script src="assets/lang.js?v=<?= filemtime(__DIR__ . '/assets/lang.js') ?>"></script>
 </head>
