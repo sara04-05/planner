@@ -90,6 +90,22 @@ function picInner(key){
 const picPick=key=>`<div class="pic-pick" data-pic="${key}">${picInner(key)}</div>`;
 const sleep=ms=>new Promise(r=>setTimeout(r,ms));
 const calm=()=>window.matchMedia&&matchMedia('(prefers-reduced-motion: reduce)').matches;
+const flipLeaf=(front,cls)=>{   // a page that swings over the spine, like turning a real page
+  const bk=document.querySelector('.nbook'),R=bk&&bk.querySelector('.nbp-right'),L=bk&&bk.querySelector('.nbp-left'),G=bk&&bk.querySelector('.nbp-gutter');
+  if(!bk||!R||!L||!G||calm())return;
+  const b=bk.getBoundingClientRect(),r=R.getBoundingClientRect(),l=L.getBoundingClientRect(),g=G.getBoundingClientRect();
+  if(r.left<l.right-4)return;   // phone layout: pages are stacked, nothing to turn
+  const hx=g.left+g.width/2,w=r.right-hx,leaf=document.createElement('div');
+  leaf.className='nbleaf '+cls;
+  leaf.style.cssText=`left:${hx-b.left}px;top:${r.top-b.top}px;width:${w}px;height:${r.height}px;--sx:${((hx-l.left)/w).toFixed(3)}`;
+  const f=document.createElement('div');f.className='nbleaf-f';
+  if(front==='cover'){f.setAttribute('style',bk.getAttribute('style')||'');f.classList.add('isCover')}
+  else if(front){front.removeAttribute('id');front.classList.add('nbleaf-pg');f.appendChild(front)}
+  const k=document.createElement('div');k.className='nbleaf-b';
+  const back=L.cloneNode(false);back.removeAttribute('id');back.className=L.className+' nbleaf-pg';k.appendChild(back);
+  leaf.append(f,k);bk.appendChild(leaf);
+  leaf.addEventListener('animationend',()=>leaf.remove());setTimeout(()=>leaf.remove(),1500);
+};
 const armed=b=>{if(b.dataset.armed)return true;b.dataset.armed='1';b.textContent='Sure?';return false};
 
 /* ---------- design: how a draft turns into attributes, colours and a cover ---------- */
@@ -538,9 +554,9 @@ document.addEventListener('click',async e=>{
       case 'post-open':{const p=S.posts.find(x=>x.id===id);if(!p)return;pick(p.nb);ui.pg='blog';ui.nbOpen=true;ui.ptab='notebooks';redraw();return}
       case 'nb-new':ui.newNb=!ui.newNb;redraw(ui.newNb?'nn-title':'');return;
       case 'panel':ui.panel=ui.panel===b.dataset.v?'':b.dataset.v;ui.sel=-1;redraw();return;
-      case 'pg':if(ui.nbOpen&&b.dataset.v!==ui.pg&&!calm())ui.anim='turn';ui.pg=b.dataset.v;ui.nbOpen=ui.pg!=='cover';ui.sel=-1;ui.post=null;ui.newList=false;ui.pageEdit=null;redraw();return;
-      case 'nb-open':{const cv=document.querySelector('.nbclosed .nbcover');if(cv&&!calm()){cv.classList.add('flip-open');await sleep(520);ui.anim='open'}}ui.nbOpen=true;if(ui.pg==='cover')ui.pg=(cur().sections[0]||(cur().pages[0]&&'pg:'+cur().pages[0].id)||'day');redraw();return;
-      case 'nb-close':{const bk=document.querySelector('.nbook');if(bk&&!calm()){bk.classList.add('shut');await sleep(300);ui.anim='close'}}ui.nbOpen=false;ui.pg='cover';ui.pageEdit=null;redraw();return;
+      case 'pg':{const old=ui.nbOpen&&b.dataset.v!==ui.pg&&document.getElementById('nbPage');const snap=old&&old.cloneNode(true);ui.pg=b.dataset.v;ui.nbOpen=ui.pg!=='cover';ui.sel=-1;ui.post=null;ui.newList=false;ui.pageEdit=null;redraw();if(snap)flipLeaf(snap,'turn');return}
+      case 'nb-open':{const had=!!document.querySelector('.nbclosed')&&!calm();if(had)ui.anim='open';ui.nbOpen=true;if(ui.pg==='cover')ui.pg=(cur().sections[0]||(cur().pages[0]&&'pg:'+cur().pages[0].id)||'day');redraw();if(had)flipLeaf('cover','open');return}
+      case 'nb-close':{const bk=document.querySelector('.nbook');if(bk&&!calm()){bk.classList.add('shut');await sleep(260)}}ui.nbOpen=false;ui.pg='cover';ui.pageEdit=null;redraw();return;
       case 'page-new':ui.pageEdit={id:0,title:'',emoji:PAGE_EMOJI[0],body:''};ui.nbOpen=true;redraw('pg-title');return;
       case 'page-edit':{const p=nb.pages.find(x=>x.id===id);if(!p)return;ui.pageEdit={id:p.id,title:p.title,emoji:p.emoji||PAGE_EMOJI[0],body:p.body};ui.nbOpen=true;redraw('pg-title');return}
       case 'page-cancel':ui.pageEdit=null;redraw();return;
