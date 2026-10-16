@@ -1377,3 +1377,18 @@ a.nbtile{text-decoration:none}.nbtiles{margin-bottom:14px}.nbtile.on span{color:
   .nbv .nbook .nbp-left{display:none}
   .nbv .nbook .nbp-right{margin-top:0}
 }
+
+/* ---------- cover name plate: shape, place and colours (design.label / layout / label_hex / text_hex) ---------- */
+.nbcover-in{background:var(--lbl-bg,#EFE2C8);color:var(--lbl-fg,#4A3426);box-shadow:0 0 0 3px var(--lbl-bg,#EFE2C8),0 0 0 4px rgba(74,52,38,.5),0 5px 12px rgba(0,0,0,.25)}
+.nbcover[data-layout="top"] .nbcover-in{top:9%;transform:none}
+.nbcover[data-layout="bottom"] .nbcover-in{top:auto;bottom:9%;transform:none}
+.nbcover[data-label="round"] .nbcover-in{aspect-ratio:1;border-radius:50%;justify-content:center;padding:12px;left:24%;right:11%}
+.nbcover[data-label="round"] .nbcover-in .avatar{width:44px;height:44px;font-size:20px}
+.nbcover[data-label="oval"] .nbcover-in{border-radius:50%/42%;justify-content:center;padding:26px 14px}
+.nbcover[data-label="arch"] .nbcover-in{border-radius:999px 999px 6px 6px;padding:34px 12px 18px}
+.nbcover[data-label="pill"] .nbcover-in{border-radius:999px;flex-direction:row;flex-wrap:wrap;justify-content:center;padding:14px 18px}
+.nbcover[data-label="ticket"] .nbcover-in{border-radius:2px;box-shadow:0 0 0 3px var(--lbl-bg,#EFE2C8),0 0 0 5px var(--lbl-fg,#4A3426),0 5px 12px rgba(0,0,0,.25);outline:2px dashed var(--lbl-fg,#4A3426);outline-offset:-8px}
+.nbcover[data-label="band"] .nbcover-in{left:14%;right:0;border-radius:0;box-shadow:0 4px 10px rgba(0,0,0,.25);padding:18px 14px}
+.nbcover[data-label="none"] .nbcover-in{background:transparent;box-shadow:none;color:var(--lbl-fg,#fff);text-shadow:0 1px 8px rgba(0,0,0,.5)}
+.nbcover[data-noavatar] .nbcover-in .avatar{display:none}
+input[type=range][data-xrange]{flex:1;min-width:120px}

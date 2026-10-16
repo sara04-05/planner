@@ -8,7 +8,7 @@ const $=id=>document.getElementById(id);
 const hdr=(eyebrow,title,right='')=>`<div class="vh"><div><p class="eyebrow">${eyebrow}</p><h1>${title}</h1></div><div class="nav">${right}</div></div>`;
 
 const ART={hearts:'Hearts',rainbow:'Rainbows',mountains:'Mountains',pinstripe:'Pinstripe',monstera:'Monstera',blossom:'Cherry blossom',library:'Dark academia',gingham:'Gingham',coquette:'Bows',stars:'Starry night',clouds:'Clouds',lavender:'Lavender',daisy:'Daisies',checker:'Checkerboard',strawberry:'Strawberries',terrazzo:'Terrazzo',waves:'Waves',dots:'Polka dots',sunsetgrain:'Sunset',matcha:'Matcha'};   // patterned covers: name by key, drawn by --cov-* in style.css
-const COVERS={dusk:['#6A4DC4','#E0609A'],peach:['#F9A826','#F36B7F'],ocean:['#1F77C9','#3FC1C9'],mint:['#4FA36B','#B6E3C9'],berry:['#8E2DE2','#C2185B'],sunny:['#FFD452','#FF9966'],night:['#1B1740','#4B3A8F'],cloud:['#BFD7F5','#E8DDF8']};
+const COVERS={sunset:['#FF5E62','#FF9966'],forest:['#134E5E','#71B280'],candy:['#FF9A9E','#FAD0C4'],gold:['#F7B733','#FC4A1A'],slate:['#485563','#29323C'],aurora:['#00C9A7','#845EC2'],coral:['#FF6F91','#FFC75F'],mist:['#C9D6FF','#E2E2E2'],ink:['#0F2027','#2C5364'],lagoon:['#2193B0','#6DD5ED'],dusk:['#6A4DC4','#E0609A'],peach:['#F9A826','#F36B7F'],ocean:['#1F77C9','#3FC1C9'],mint:['#4FA36B','#B6E3C9'],berry:['#8E2DE2','#C2185B'],sunny:['#FFD452','#FF9966'],night:['#1B1740','#4B3A8F'],cloud:['#BFD7F5','#E8DDF8']};
 const PAPER_COLORS={white:'#FFFFFF',cream:'#FFF8E8',blush:'#FFF0F3',mint:'#EEF9F2',sky:'#EEF5FD',lilac:'#F4EFFC'};
 const ACCENTS={violet:'#6A4DC4',rose:'#C93A72',ocean:'#1F77C9',forest:'#2B8A5B',sunset:'#D2661E',graphite:'#4A4F5C',white:'#FFFFFF'};
 const PAPERS=[['lined','Lined'],['grid','Grid'],['dots','Dots'],['plain','Plain']];
@@ -21,7 +21,11 @@ const SECS=[['interests','⭐','Interests','Lists of things you love, with pictu
 const SECNAME=Object.fromEntries([['cover','Cover']].concat(SECS.map(s=>[s[0],s[2]]),[['day','Day']]));
 const PAGE_EMOJI=['📝','📖','🌸','✈️','🍳','💡','🎨','🏋️','🎵','🐾','🧘','💌'];
 const DAYLV=['Nobody, only me','Friends only','Anyone signed in','Everyone, even visitors'];
-const BASE={cover:'dusk',cover_img:0,cover_c1:'',cover_c2:'',paper:'lined',paper_color:'white',paper_hex:'',accent:'violet',accent_hex:'',font:'modern',binding:'coil'};
+const BASE={cover:'dusk',cover_img:0,cover_c1:'',cover_c2:'',paper:'lined',paper_color:'white',paper_hex:'',accent:'violet',accent_hex:'',font:'modern',binding:'coil',label:'box',layout:'center',pattern:'none',angle:135,label_hex:'',text_hex:'',avatar:1};
+const LABELS=[['box','▭ Box'],['round','⬤ Circle'],['arch','⌓ Arch'],['oval','⬭ Oval'],['pill','💊 Pill'],['ticket','🎟️ Ticket'],['band','▬ Band'],['none','✕ No plate']];
+const LAYOUTS=[['top','Top'],['center','Middle'],['bottom','Bottom']];
+const PATTERNS=[['none','None'],['stripes','Stripes'],['dots','Dots'],['grid','Grid'],['waves','Waves'],['checker','Checks']];
+const PAT_CSS={stripes:'repeating-linear-gradient(45deg,rgba(255,255,255,.18) 0 10px,transparent 10px 20px)',dots:'radial-gradient(rgba(255,255,255,.4) 2px,transparent 2.6px) 0 0/18px 18px',grid:'linear-gradient(rgba(255,255,255,.22) 1px,transparent 1px) 0 0/22px 22px,linear-gradient(90deg,rgba(255,255,255,.22) 1px,transparent 1px) 0 0/22px 22px',waves:'repeating-radial-gradient(circle at 0 100%,transparent 0 14px,rgba(255,255,255,.22) 14px 16px)',checker:'conic-gradient(rgba(255,255,255,.18) 25%,transparent 0 50%,rgba(255,255,255,.18) 0 75%,transparent 0) 0 0/28px 28px'};
 // ready-made looks (the user can also save their own)
 const PRESETS=[
   ['Dreamy lilac',{cover:'dusk',paper:'dots',paper_color:'lilac',accent:'violet',font:'hand'}],
@@ -126,11 +130,16 @@ function pageAttrs(d){
   return a;
 }
 function coverCss(d){
-  if(d.cover_url)return `background:url('${esc(d.cover_url)}') center/cover`;
-  if(d.cover==='custom'&&d.cover_c1&&d.cover_c2)return `background:linear-gradient(135deg,${d.cover_c1},${d.cover_c2})`;
-  if(ART[d.cover])return `background:var(--cov-${d.cover})`;
-  const g=COVERS[d.cover]||COVERS.dusk;return `background:linear-gradient(135deg,${g[0]},${g[1]})`;
+  const ang=Math.max(0,Math.min(360,+d.angle||135));
+  let bg;
+  if(d.cover_url)bg=`url('${esc(d.cover_url)}') center/cover`;
+  else if(d.cover==='custom'&&d.cover_c1&&d.cover_c2)bg=`linear-gradient(${ang}deg,${d.cover_c1},${d.cover_c2})`;
+  else if(ART[d.cover])bg=`var(--cov-${d.cover})`;
+  else{const g=COVERS[d.cover]||COVERS.dusk;bg=`linear-gradient(${ang}deg,${g[0]},${g[1]})`}
+  const hex=v=>/^#[0-9a-f]{6}$/i.test(v||'')?v:'';
+  return `background:${PAT_CSS[d.pattern]?PAT_CSS[d.pattern]+',':''}${bg}`+(hex(d.label_hex)?`;--lbl-bg:${d.label_hex}`:'')+(hex(d.text_hex)?`;--lbl-fg:${d.text_hex}`:'');
 }
+const coverAttrs=d=>` data-label="${esc(d.label||'box')}" data-layout="${esc(d.layout||'center')}"${d.avatar===0||d.avatar===false?' data-noavatar="1"':''}`;
 const stkImg=id=>{const u=S.stickers_up.find(s=>s.id===id);return u?u.url:mediaUrl(id)};
 function stkLayer(d,pg){
   return `<div class="stk-layer" id="stkLayer">`+d.stickers.map((s,i)=>{
@@ -205,7 +214,7 @@ function subjectsPage(){
 }
 function coverPage(nb,d){
   const name=(document.querySelector('.hello span:last-child')||{textContent:'You'}).textContent.replace(/^Hi,\s*/,'');
-  return `<div class="nbcover" id="pvCover" style="${coverCss(d)}"><div class="nbcover-in"><span class="avatar xl letter" aria-hidden="true">${esc((name[0]||'S').toUpperCase())}</span><h2 translate="no">${esc(nb.title)}</h2><p class="by" translate="no">by ${esc(name)} · @${esc(S.profile.slug)}</p></div></div>`+
+  return `<div class="nbcover" id="pvCover"${coverAttrs(d)} style="${coverCss(d)}"><div class="nbcover-in"><span class="avatar xl letter" aria-hidden="true">${esc((name[0]||'S').toUpperCase())}</span><h2 translate="no">${esc(nb.title)}</h2><p class="by" translate="no">by ${esc(name)} · @${esc(S.profile.slug)}</p></div></div>`+
     (nb.intro?`<p class="nb-intro" translate="no">${esc(nb.intro)}</p>`:'<p class="hint2" style="margin-top:12px">Add a few words about this notebook in <b>Settings</b>.</p>')+
     (nb.sections.length?'':'<p class="hint2">This notebook has no pages yet. Add some in <b>Settings</b>.</p>');
 }
@@ -280,6 +289,11 @@ function decoPanel(nb){
     <form class="xrow" data-xform="style" style="margin-top:8px" autocomplete="off"><input type="text" name="name" maxlength="60" placeholder="Name this look" aria-label="Style name" required style="flex:1;min-width:0"><button class="btn sm">Save as my style</button></form>
     <p class="opt-h">Cover</p><div class="swatches">${Object.keys(COVERS).map(c=>swatch('cover',c,`linear-gradient(135deg,${COVERS[c][0]},${COVERS[c][1]})`,'Cover '+c)).join('')}${Object.keys(ART).map(c=>swatch('cover',c,`var(--cov-${c})`,ART[c])).join('')}</div>
     <div class="colorrow"><span>Your own colours</span><input type="color" data-xcolor="cover_c1" value="${d.cover_c1||'#6a4dc4'}" aria-label="Cover colour 1"><input type="color" data-xcolor="cover_c2" value="${d.cover_c2||'#e0609a'}" aria-label="Cover colour 2"></div>
+    <div class="colorrow"><span>Angle</span><input type="range" min="0" max="360" step="5" data-xrange="angle" value="${d.angle||135}" aria-label="Colour angle"></div>
+    <p class="opt-h">Pattern on the cover</p><div class="pilltabs">${PATTERNS.map(x=>`<button type="button" data-x="pattern" data-v="${x[0]}" aria-pressed="false">${x[1]}</button>`).join('')}</div>
+    <p class="opt-h">Name plate shape</p><div class="pilltabs">${LABELS.map(x=>`<button type="button" data-x="label" data-v="${x[0]}" aria-pressed="false">${x[1]}</button>`).join('')}</div>
+    <p class="opt-h">Name plate place</p><div class="pilltabs">${LAYOUTS.map(x=>`<button type="button" data-x="layout" data-v="${x[0]}" aria-pressed="false">${x[1]}</button>`).join('')}<button type="button" data-x="avatar" aria-pressed="false">My letter / picture</button></div>
+    <div class="colorrow"><span>Plate colour</span><input type="color" data-xcolor="label_hex" value="${d.label_hex||'#efe2c8'}" aria-label="Plate colour"><span>Text</span><input type="color" data-xcolor="text_hex" value="${d.text_hex||'#4a3426'}" aria-label="Plate text colour"><button type="button" class="btn sm ghost" data-x="label-reset">Reset</button></div>
     <div class="pic-pick" style="margin-top:10px"><label class="btn sm"><input type="file" accept="image/*" data-xfile="cover" data-kind="cover">🖼️ Use my own cover picture</label><button type="button" class="btn sm ghost" id="coverRm" data-x="cover-rm" ${d.cover_url?'':'hidden'}>Remove my picture</button><span class="hint2" data-pic-msg></span></div>
     <p class="opt-h">Paper</p><div class="pilltabs">${PAPERS.map(x=>`<button type="button" data-x="paper" data-v="${x[0]}" aria-pressed="false">${x[1]}</button>`).join('')}</div>
     <p class="opt-h">Paper colour</p><div class="swatches">${Object.keys(PAPER_COLORS).map(c=>swatch('pcolor',c,PAPER_COLORS[c],'Paper '+c)).join('')}<input type="color" class="colorpick" data-xcolor="paper_hex" value="${d.paper_hex||'#ffffff'}" aria-label="Your own paper colour"></div>
@@ -308,7 +322,7 @@ function paintPreview(){
   [pg,$('nbPageL')].filter(Boolean).forEach(el=>{['data-paper','data-pcolor','data-font','data-ptone'].forEach(a=>el.removeAttribute(a));[...p.firstChild.attributes].forEach(a=>el.setAttribute(a.name,a.value))});
   if(bd.classList.contains('nbook'))bd.style.cssText=coverCss(d).replace(/&#39;/g,"'");
   if(d.binding&&d.binding!=='coil')bd.setAttribute('data-binding',d.binding);else bd.removeAttribute('data-binding');
-  const cv=$('pvCover');if(cv)cv.style.cssText=coverCss(d).replace(/&#39;/g,"'");
+  const cv=$('pvCover');if(cv){cv.style.cssText=coverCss(d).replace(/&#39;/g,"'");cv.dataset.label=d.label||'box';cv.dataset.layout=d.layout||'center';if(d.avatar===0)cv.dataset.noavatar='1';else delete cv.dataset.noavatar}
   const sl=$('stkLayer');if(sl)sl.outerHTML=stkLayer(d,ui.pg);
   syncControls();
 }
@@ -321,6 +335,10 @@ function syncControls(){
   on('[data-x="accent"]',b=>b.dataset.v===d.accent);
   on('[data-x="font"]',b=>b.dataset.v===d.font);
   on('[data-x="binding"]',b=>b.dataset.v===(d.binding||'coil'));
+  on('[data-x="label"]',b=>b.dataset.v===(d.label||'box'));
+  on('[data-x="layout"]',b=>b.dataset.v===(d.layout||'center'));
+  on('[data-x="pattern"]',b=>b.dataset.v===(d.pattern||'none'));
+  on('[data-x="avatar"]',b=>d.avatar!==0);
   const sc=$('stkCtl');if(sc)sc.innerHTML=stkCtl();
   const sv=$('saveDesign');if(sv)sv.disabled=!ui.dirty;
   const rm=$('coverRm');if(rm)rm.hidden=!d.cover_url;
@@ -522,7 +540,7 @@ window.SPLX={html,setUnread:n=>{if(S){S.unread=n;S.notes.forEach(x=>x.read=true)
 
 const markDirty=()=>{ui.dirty=true;const sv=$('saveDesign');if(sv)sv.disabled=false};
 const designOut=()=>{const d=clone(ui.dd);delete d.cover_url;return d};
-const DESIGN_ACTS=['cover','cover-rm','paper','pcolor','accent','font','binding','stk-add','stk-size','stk-rot','stk-del','preset','style-apply'];
+const DESIGN_ACTS=['label','layout','pattern','avatar','label-reset','cover','cover-rm','paper','pcolor','accent','font','binding','stk-add','stk-size','stk-rot','stk-del','preset','style-apply'];
 function applyLook(look){   // a ready-made or saved look: replaces colours/paper/font/binding/cover, keeps your stickers
   const keep=ui.dd.stickers;
   ui.dd=Object.assign(clone(BASE),clone(look),{stickers:keep});
@@ -586,6 +604,11 @@ document.addEventListener('click',async e=>{
       case 'pcolor':ui.dd.paper_color=b.dataset.v;break;
       case 'accent':ui.dd.accent=b.dataset.v;break;
       case 'font':ui.dd.font=b.dataset.v;break;
+      case 'label':ui.dd.label=b.dataset.v;break;
+      case 'layout':ui.dd.layout=b.dataset.v;break;
+      case 'pattern':ui.dd.pattern=b.dataset.v;break;
+      case 'avatar':ui.dd.avatar=ui.dd.avatar===0?1:0;break;
+      case 'label-reset':ui.dd.label_hex='';ui.dd.text_hex='';break;
       case 'binding':ui.dd.binding=b.dataset.v;break;
       case 'preset':applyLook(PRESETS[+b.dataset.i][1]);break;
       case 'style-apply':{const s=S.styles.find(x=>x.id===id);if(!s)return;applyLook(s.design);break}
@@ -624,6 +647,11 @@ document.addEventListener('input',e=>{
   if(k==='paper_hex')ui.dd.paper_color='custom';
   if(k==='accent_hex')ui.dd.accent='custom';
   markDirty();paintPreview();
+});
+
+document.addEventListener('input',e=>{
+  const t=e.target;if(!t.dataset||!t.dataset.xrange||!ui.dd)return;
+  ui.dd[t.dataset.xrange]=+t.value;markDirty();paintPreview();
 });
 
 /* ---------- forms ---------- */
