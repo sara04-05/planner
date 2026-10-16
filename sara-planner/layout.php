@@ -111,7 +111,7 @@ function person_card(array $r, array $nbs): string
     $d = $first['design'];
     $titles = implode(' · ', array_map(fn($n) => h($n['title']), array_slice($nbs, 0, 4)));
     return '<a class="person" href="u.php?u=' . h($r['slug']) . '"' . design_attrs($d, 'accent') . design_style($d) . '>'
-        . '<div class="nb-cover-bar" style="' . cover_css($d, $first['cover_url']) . '"></div>'
+        . '<div class="nb-banner" style="' . cover_css($d, $first['cover_url']) . '"></div>'
         . '<div class="pb"><div class="av" aria-hidden="true">' . h(mb_strtoupper(mb_substr($r['name'], 0, 1))) . '</div>'
         . '<h3 translate="no">' . h($r['name']) . '</h3>'
         . '<p translate="no">' . ($r['bio'] !== '' ? h($r['bio']) : '@' . h($r['slug'])) . '</p>'

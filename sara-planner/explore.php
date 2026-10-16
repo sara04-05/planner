@@ -9,10 +9,20 @@ require __DIR__ . '/layout.php';
 $viewer = current_user_id();
 if ($viewer && !is_verified($viewer)) $viewer = null;
 
-if (!$viewer) {
-    app_top('Explore', ['active' => 'explore', 'eyebrow' => 'Your notebook', 'h1' => 'Explore']); ?>
-  <p class="auth-sub">Log in to see who else is on Splanner.</p>
-  <p style="margin-top:16px"><a class="btn primary" href="login.php">Log in</a> <a class="btn" href="register.php">Create free account</a></p>
+if (!$viewer) {   // visitors can look around, but only at notebooks whose owners made them visible without logging in
+    $term = trim((string)($_GET['q'] ?? ''));
+    $people = guest_people(60, $term);
+    app_top('Explore', ['active' => 'explore', 'covers' => true, 'eyebrow' => 'Look inside', 'h1' => 'Explore']); ?>
+  <p class="auth-sub">You are looking as a visitor. You can read the notebooks that people chose to show to everyone. To add friends, like, message or make your own, <a href="register.php">create a free account</a> or <a href="login.php">log in</a>.</p>
+  <form class="searchbar" method="get" action="explore.php">
+    <input type="search" name="q" value="<?= h($term) ?>" placeholder="Search by name" aria-label="Search people">
+    <button class="btn primary">Search</button>
+  </form>
+  <?php if (!$people): ?>
+    <div class="pub-note"><?= $term !== '' ? 'Nobody matches that search.' : 'Nobody has made a notebook visible to visitors yet.' ?></div>
+  <?php else: ?>
+    <div class="people"><?php foreach ($people as $r) echo person_card($r, $r['nbs']); ?></div>
+  <?php endif; ?>
 <?php
     app_bottom();
     exit;

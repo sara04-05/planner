@@ -181,3 +181,28 @@ function common_slots(array $a, array $b, int $min = 30): array
     usort($out, fn($x, $y) => $x[0] <=> $y[0]);
     return $out;
 }
+
+
+/**
+ * People whose notebooks a visitor without an account may open: a public profile with "visible without logging in" switched on,
+ * a page name, and at least one notebook shared. Returns [ ['name','slug','bio','nbs'=>[notebook...]], ... ].
+ */
+function guest_people(int $limit = 12, string $term = ''): array
+{
+    $sql = 'SELECT u.id, u.name, p.slug, p.bio FROM users u JOIN profiles p ON p.user_id = u.id
+            WHERE u.email_verified = 1 AND p.is_public = 1 AND p.guest_view = 1 AND p.slug IS NOT NULL AND p.slug <> \'\'';
+    $args = [];
+    if ($term !== '') {
+        $sql .= " AND u.name LIKE ? ESCAPE '|'";
+        $args[] = '%' . str_replace(['|', '%', '_'], ['||', '|%', '|_'], $term) . '%';
+    }
+    $out = [];
+    foreach (q($sql . ' ORDER BY u.name LIMIT 200', $args)->fetchAll() as $r) {
+        $nbs = load_notebooks((int)$r['id'], true);   // only the notebooks the owner shared
+        if (!$nbs) continue;
+        $r['nbs'] = $nbs;
+        $out[] = $r;
+        if (count($out) >= $limit) break;
+    }
+    return $out;
+}
