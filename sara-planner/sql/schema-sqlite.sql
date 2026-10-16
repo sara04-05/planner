@@ -298,3 +298,16 @@ CREATE TABLE IF NOT EXISTS notebook_styles (
   design  TEXT NOT NULL,
   FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
 );
+
+-- Reports: someone reports another account. They are emailed to the ADMIN_EMAILS in config.php and listed on admin.php.
+CREATE TABLE IF NOT EXISTS reports (
+  id          INTEGER PRIMARY KEY AUTOINCREMENT,
+  reporter_id INTEGER NOT NULL,
+  target_id   INTEGER NOT NULL,
+  reason      VARCHAR(40) NOT NULL,
+  details     VARCHAR(1000) NOT NULL DEFAULT '',
+  resolved    TINYINT(1) NOT NULL DEFAULT 0,
+  created_at  TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  FOREIGN KEY (reporter_id) REFERENCES users(id) ON DELETE CASCADE,
+  FOREIGN KEY (target_id) REFERENCES users(id) ON DELETE CASCADE
+);
