@@ -1397,3 +1397,11 @@ a.nbtile{text-decoration:none}.nbtiles{margin-bottom:14px}.nbtile.on span{color:
 .page .cols>.panel .addform input[name=desc]{grid-column:1/-1}
 .page .cols>.panel .addform .btn{grid-column:1/-1;justify-content:center}
 .page .cols>.stack{min-width:0}
+
+/* phones: section headings sit left, with their small note on the right; date header wraps cleanly */
+@media (max-width:760px){
+  .page .sec-h{flex-direction:row;flex-wrap:wrap;align-items:baseline;justify-content:space-between;gap:0 10px}
+  .page .vh{flex-wrap:wrap;gap:4px 10px;align-items:flex-end}
+  .page .vh h1{font-size:clamp(22px,7vw,28px);line-height:34px}
+  .page .cols>.panel{margin-top:4px}
+}
