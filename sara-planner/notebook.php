@@ -621,6 +621,23 @@ function notebook_action(int $uid, string $action, array $in): void
         ok([]);
     }
 
+    case 'x.reports': {   // the problems people reported: admins and sub admins read them in a popup
+        if (!can_view_users($uid)) fail(403, 'Only admins can read the reports.');
+        try {
+            $rows = q('SELECT r.id, r.details, r.resolved, r.created_at, f.name AS fname, f.email AS femail
+                FROM reports r JOIN users f ON f.id = r.reporter_id ORDER BY r.resolved, r.id DESC LIMIT 100')->fetchAll();
+        } catch (PDOException $e) {
+            $rows = [];
+        }
+        ok(['reports' => array_map(fn($r) => ['id' => (int)$r['id'], 'details' => (string)$r['details'], 'resolved' => (int)$r['resolved'], 'when' => (string)$r['created_at'], 'name' => (string)$r['fname'], 'email' => (string)$r['femail']], $rows), 'can_edit' => is_admin($uid)]);
+    }
+
+    case 'x.report.resolve': {   // admins only: mark a report done or open it again
+        if (!is_admin($uid)) fail(403, 'Only admins can change reports.');
+        q('UPDATE reports SET resolved = ? WHERE id = ?', [!empty($in['on']) ? 1 : 0, id_in($in)]);
+        ok([]);
+    }
+
     case 'x.nb.add': {
         ensure_notebooks($uid);
         if ((int)q('SELECT COUNT(*) c FROM notebooks WHERE user_id = ?', [$uid])->fetch()['c'] >= MAX_NOTEBOOKS) fail(400, 'That is plenty of notebooks! Delete one first.');

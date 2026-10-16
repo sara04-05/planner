@@ -1667,3 +1667,12 @@ a.nbcover-link:focus-visible{outline:3px solid var(--accent);outline-offset:6px;
 
 /* chart limit label ("budget €658", "daily €17") sits above its dashed line at the left end, clear of the bars and their amounts */
 .plot .lim em{top:auto;bottom:3px;left:0;right:auto;background:none;padding:0 2px}
+
+/* reported problems list (admins, sub admins): popup */
+.reportlist{width:min(640px,100%);max-height:min(80vh,640px)}
+.reportlist .rlbody{overflow:auto;display:flex;flex-direction:column;gap:10px;min-height:60px}
+.rlrow{border:1px solid var(--line);border-radius:12px;padding:12px 14px;background:var(--paper-2);display:flex;flex-direction:column;gap:6px;align-items:flex-start}
+.rlrow.done{opacity:.55}
+.rlrow p{margin:0;white-space:pre-wrap;overflow-wrap:anywhere;line-height:1.5}
+.rlhead{display:flex;gap:10px;flex-wrap:wrap;align-items:baseline;font-size:13px}
+.rlmail,.rlwhen{color:var(--muted)}

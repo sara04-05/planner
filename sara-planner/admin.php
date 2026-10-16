@@ -27,12 +27,6 @@ $editId = isset($_GET['edit']) && ctype_digit((string)$_GET['edit']) ? (int)$_GE
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && !$canEdit) {
     http_response_code(403);
     $err = 'A sub admin can only look at the users.';
-} elseif ($_SERVER['REQUEST_METHOD'] === 'POST' && ($_POST['do'] ?? '') === 'resolve') {
-    if (!check_csrf($_POST['csrf'] ?? null)) $err = 'Your session expired. Please try again.';
-    else {
-        q('UPDATE reports SET resolved = ? WHERE id = ?', [!empty($_POST['on']) ? 1 : 0, (int)($_POST['report'] ?? 0)]);
-        $msg = !empty($_POST['on']) ? 'Report marked as done.' : 'Report reopened.';
-    }
 } elseif ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $do = (string)($_POST['do'] ?? '');
     $target = isset($_POST['id']) && ctype_digit((string)$_POST['id']) ? (int)$_POST['id'] : 0;
@@ -80,13 +74,6 @@ try {
     $users = q('SELECT id, name, email, created_at, last_login, role, verified_badge FROM users ORDER BY created_at DESC, id DESC')->fetchAll();
 } catch (PDOException $e) {   // last_login column couldn't be added on this host
     $users = q('SELECT id, name, email, created_at, NULL AS last_login, \'user\' AS role, 0 AS verified_badge FROM users ORDER BY created_at DESC, id DESC')->fetchAll();
-}
-
-try {
-    $reports = q('SELECT r.id, r.reason, r.details, r.resolved, r.created_at, r.target_id, t.name AS tname, t.email AS temail, f.name AS fname, f.email AS femail
-        FROM reports r JOIN users t ON t.id = r.target_id JOIN users f ON f.id = r.reporter_id ORDER BY r.resolved, r.id DESC LIMIT 100')->fetchAll();
-} catch (PDOException $e) {   // reports table couldn't be made on this host
-    $reports = [];
 }
 
 function when(?string $ts): string
@@ -152,27 +139,4 @@ app_top('Users', ['active' => 'admin', 'eyebrow' => 'Your notebook', 'h1' => 'Us
         </tbody>
       </table>
     </div>
-    <h2 id="reports" style="margin-top:28px">Reports</h2>
-    <?php if (!$reports): ?><p class="hint2">No problems reported.</p><?php else: ?>
-    <div class="tbl-wrap">
-      <table class="tbl">
-        <thead><tr><th>From</th><th>Problem</th><th>When</th><?php if ($canEdit): ?><th></th><?php endif; ?></tr></thead>
-        <tbody>
-        <?php foreach ($reports as $r): $labels = ['spam' => 'Spam or fake account', 'harassment' => 'Harassment or bullying', 'inappropriate' => 'Inappropriate content', 'impersonation' => 'Pretending to be someone else', 'other' => 'Something else']; ?>
-          <tr<?= (int)$r['resolved'] ? ' style="opacity:.55"' : '' ?>>
-            <td><?= h($r['fname']) ?><br><span class="email"><?= h($r['femail']) ?></span></td>
-            <td><?= h($r['details'] !== '' ? $r['details'] : ($labels[$r['reason']] ?? $r['reason'])) ?></td>
-            <td><?= h(when($r['created_at'])) ?></td>
-            <?php if ($canEdit): ?>
-            <td class="admin-acts"><form method="post" class="inline">
-              <input type="hidden" name="csrf" value="<?= h(csrf_token()) ?>"><input type="hidden" name="do" value="resolve"><input type="hidden" name="report" value="<?= (int)$r['id'] ?>"><input type="hidden" name="on" value="<?= (int)$r['resolved'] ? 0 : 1 ?>">
-              <button class="btn sm"><?= (int)$r['resolved'] ? 'Reopen' : 'Done' ?></button>
-            </form></td>
-            <?php endif; ?>
-          </tr>
-        <?php endforeach; ?>
-        </tbody>
-      </table>
-    </div>
-    <?php endif; ?>
 <?php app_bottom();
