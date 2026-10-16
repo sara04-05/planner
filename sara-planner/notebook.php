@@ -28,7 +28,7 @@ const MAX_STYLES    = 20;
 function default_design(): array
 {
     return ['cover' => 'dusk', 'cover_img' => 0, 'cover_c1' => '', 'cover_c2' => '', 'paper' => 'lined', 'paper_color' => 'white', 'paper_hex' => '',
-        'accent' => 'violet', 'accent_hex' => '', 'font' => 'modern', 'binding' => 'coil', 'stickers' => []];
+        'accent' => 'violet', 'accent_hex' => '', 'font' => 'modern', 'binding' => 'coil', 'label' => 'box', 'label_hex' => '', 'stickers' => []];
 }
 
 function clean_hex($v): string
@@ -43,7 +43,8 @@ function clean_design(int $uid, array $d, bool $withStickers = true): array
     foreach (['paper' => PAPERS, 'font' => FONTS, 'binding' => BINDINGS] as $k => $allowed) {
         if (isset($d[$k]) && in_array($d[$k], $allowed, true)) $out[$k] = $d[$k];
     }
-    foreach (['cover_c1', 'cover_c2', 'paper_hex', 'accent_hex'] as $k) $out[$k] = clean_hex($d[$k] ?? '');
+    foreach (['cover_c1', 'cover_c2', 'paper_hex', 'accent_hex', 'label_hex'] as $k) $out[$k] = clean_hex($d[$k] ?? '');
+    if (($d['label'] ?? '') === 'none') $out['label'] = 'none';
     $c = $d['cover'] ?? '';
     if (in_array($c, BANNERS, true) || ($c === 'custom' && $out['cover_c1'] !== '' && $out['cover_c2'] !== '')) $out['cover'] = $c;
     $c = $d['paper_color'] ?? '';
