@@ -1,9 +1,6 @@
 <?php
 declare(strict_types=1);
 require __DIR__ . '/db.php';
-require __DIR__ . '/social.php';
-require __DIR__ . '/notebook.php';
-require __DIR__ . '/layout.php';
 
 // The public front page. Logged-in visitors go straight to their planner.
 if (current_user_id()) {
@@ -118,7 +115,6 @@ if (current_user_id()) {
     <a class="logo" href="welcome.php">Splanner</a>
     <nav aria-label="Main">
       <a href="tour.php">Look inside</a>
-      <a href="explore.php">Browse notebooks</a>
       <a href="#features">Features</a>
       <a href="#safety">Is it safe?</a>
       <a href="#faq">FAQ</a>
@@ -138,7 +134,7 @@ if (current_user_id()) {
       <p class="lead">Plan your day hour by hour, count down to exams, tick off chapters and see exactly where your money goes each week. Try it right here before you sign up.</p>
       <div class="cta">
         <a class="btn primary" href="tour.php">Look inside the planner</a>
-        <a class="btn" href="explore.php">Browse people's notebooks</a>
+        <a class="btn" href="register.php">Create free account</a>
       </div>
       <div class="trust">
         <span><svg viewBox="0 0 20 20" fill="currentColor"><path d="M8 13.2 4.8 10l-1.4 1.4L8 16l9-9-1.4-1.4z"/></svg>No ads or tracking</span>
@@ -165,19 +161,13 @@ if (current_user_id()) {
     </div>
   </section>
 
-  <!-- SHARED NOTEBOOKS: view only, and only what each owner chose to show to visitors -->
-  <?php $shown = guest_people(6); ?>
-  <section class="blk" id="notebooks">
+  <!-- LOOK INSIDE -->
+  <section class="blk" id="look">
     <div class="sh">
-      <h2>Peek inside real notebooks</h2>
-      <p>You can read these without an account. Each person decides in their own settings whether visitors, people with an account, friends or nobody can open their notebooks.</p>
+      <h2>Look inside the planner</h2>
+      <p>Open the real planner with sample data and click through every page: Day, Week, Month, Year, Study, Tasks and Expenses. It is view only, so nothing is saved until you have an account.</p>
     </div>
-    <?php if ($shown): ?>
-      <div class="people"><?php foreach ($shown as $r) echo person_card($r, $r['nbs']); ?></div>
-      <p class="demo-note"><a href="explore.php">See everyone who is sharing</a> · view only, log in to like, message or add friends.</p>
-    <?php else: ?>
-      <p class="demo-note">Nobody is sharing a notebook with visitors yet. <a href="explore.php">Open Explore</a> to look around.</p>
-    <?php endif; ?>
+    <div class="cta"><a class="btn primary" href="tour.php">Look inside the planner</a></div>
   </section>
 
   <!-- FEATURES -->
