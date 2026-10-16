@@ -336,7 +336,7 @@ function hourSection(d){
   const di=iso(d),rows=(a,b)=>{let o='';for(let h=a;h<=b;h++)o+=hourRow(di,h);return o};
   return `<section style="margin-top:34px"><div class="sec-h" style="flex-wrap:wrap"><h2>Hour by hour</h2><div class="hsum" id="hsum">${hourSum(di)}</div></div>${toolBar(di)}
     <p style="font-size:13px;color:var(--muted);margin-bottom:12px">Write your uni, work and everything else for each hour, and pick a type to colour it. Click a time to set when it starts and ends, like 17:15–19:45. Click ↻ to repeat an hour every ${WDL[wdi(d)]}, so your weekly timetable fills itself in.</p>
-    <div class="hours"><div><p class="hcol-h">Night and morning · 00–11</p>${rows(0,11)}</div><div><p class="hcol-h">Afternoon and evening · 12–23</p>${rows(12,23)}</div></div></section>`;
+    <div class="hours"><div><p class="hcol-h">Night and morning · 00:00–12:00</p>${rows(0,11)}</div><div><p class="hcol-h">Afternoon and evening · 12:00–24:00</p>${rows(12,23)}</div></div></section>`;
 }
 
 /* ---------- import a planner file (Excel, PDF, Word) ---------- */

@@ -59,7 +59,7 @@ const T={
 'Food':'Ushqim','Coffee':'Kafe','Transport':'Transport','Groceries':'Pazar','School':'Shkollë','Phone':'Telefon','Fun':'Argëtim','Clothes':'Rroba','Gifts':'Dhurata','Work':'Punë','Other':'Tjetër',
 'Within allowance':'Brenda buxhetit','Over daily allowance':'Mbi buxhetin ditor','Within budget':'Brenda buxhetit','Over budget':'Mbi buxhet',
 // hour by hour
-'Hour by hour':'Orë pas ore','Night and morning · 00–11':'Nata dhe mëngjesi · 00–11','Afternoon and evening · 12–23':'Pasditja dhe mbrëmja · 12–23',
+'Hour by hour':'Orë pas ore','Night and morning · 00:00–12:00':'Nata dhe mëngjesi · 00:00–12:00','Afternoon and evening · 12:00–24:00':'Pasditja dhe mbrëmja · 12:00–24:00',
 'Type':'Lloji','Uni':'Uni','Personal':'Personale','Health':'Shëndet','Sleep':'Gjumë','Free':'E lirë','Now':'Tani',
 'Set the minutes (e.g. 08:15–08:45)':'Vendos minutat (p.sh. 08:15–08:45)','Write something first, then click here to set the minutes':'Shkruaj diçka fillimisht, pastaj kliko këtu për të vendosur minutat',
 'Stop repeating':'Mos e përsërit më','Lasts':'Zgjat','Starts':'Fillon','Ends':'Mbaron','1 hour':'1 orë','2 hours':'2 orë','3 hours':'3 orë',
