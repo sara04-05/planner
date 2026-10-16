@@ -1437,3 +1437,9 @@ a.nbtile{text-decoration:none}.nbtiles{margin-bottom:14px}.nbtile.on span{color:
 .page .tbl tfoot td{border-top:2px solid var(--ink)}
 .page .tbl .btn{padding-block:3px;font-size:12px}
 .page .tbl .admin-acts{align-items:center}
+
+/* table cells: every cell lines up on the same row, text sits on the ruled lines */
+.page .tbl td{vertical-align:middle;line-height:32px}
+.page .tbl td small,.page .tbl td .s{line-height:32px}
+.page .tbl td :is(.btn,form,.admin-acts){line-height:1.2;vertical-align:middle}
+.page .tbl td form{display:inline-flex;align-items:center;margin:0}
