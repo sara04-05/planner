@@ -35,6 +35,8 @@ if (!is_file(__DIR__ . '/config.php')) {
     show_site_error('config.php is missing. Upload your own config.php (with your database login) next to db.php.', __FILE__, __LINE__);
     exit;
 }
+// Kosovo / Prishtina time unless config.php says otherwise (hosts usually run on UTC)
+date_default_timezone_set('Europe/Belgrade');
 require __DIR__ . '/config.php';
 
 // Safer session cookies

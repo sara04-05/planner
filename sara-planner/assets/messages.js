@@ -20,6 +20,12 @@ function when(ts){
 }
 function setUnread(n){
   document.title=(n?'('+n+') ':'')+T('Messages')+' · Splanner';
+  // keep the number on the Messages button in the top bar in step with what has been read
+  const btn=document.getElementById('msgBtn');if(!btn)return;
+  let b=btn.querySelector('.badge');
+  if(!n){if(b)b.remove();return}
+  if(!b){b=el('span','badge');btn.append(b)}
+  b.textContent=String(n);
 }
 
 /* ---------- list of chats ---------- */

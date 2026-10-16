@@ -38,6 +38,11 @@ const save=()=>{try{localStorage.setItem(PREFS,JSON.stringify({tab:state.tab,tas
 function loadPrefs(){try{return JSON.parse(localStorage.getItem(PREFS))||{}}catch(e){return {}}}
 
 async function api(action,data={}){
+  // Visitor tour: the planner is filled with sample data and nothing can be saved
+  if(window.SPL_TOUR){
+    if(action==='bootstrap')return window.SPL_TOUR();
+    throw Object.assign(new Error('This is a preview, so nothing is saved. Log in or create a free account to use it.'),{status:403});
+  }
   const res=await fetch('api.php?action='+encodeURIComponent(action),{
     method:'POST',credentials:'same-origin',
     headers:{'Content-Type':'application/json','X-CSRF-Token':CSRF},
@@ -67,8 +72,9 @@ async function reload(){
     if(want&&(want==='profile'||document.querySelector('nav[aria-label="Planner sections"] .tab[data-tab="'+want+'"]'))){state.tab=want;history.replaceState(null,'',location.pathname)}
     if(state.tab==='blog'||state.tab==='interests')state.tab='profile';
     if(typeof V[state.tab]!=='function')state.tab='day';   // a tab saved by an older version (e.g. Alerts) no longer exists
+    if(window.SPL_TOUR&&state.tab==='profile')state.tab='day';
     render();
-    if(state.google&&state.google.connected&&state.google.needsSync&&!gcalBusy)gcalRun(true);
+    if(GCAL_ON&&state.google&&state.google.connected&&state.google.needsSync&&!gcalBusy)gcalRun(true);
   }catch(err){
     view.innerHTML=`<p class="empty">Couldn't load your planner: ${esc(err.message)} <button class="linkbtn" onclick="location.reload()">Try again</button></p>`;
   }
@@ -145,7 +151,7 @@ function barChart(items,limit,{vals=true,limitLabel='limit'}={}){
   return `<div class="chart"><div class="plot${vals?' show-vals':''}" style="${cols}">
     ${items.map(i=>`<div class="b ${i.cls||''}" style="height:${Math.max(1.5,i.v/max*100).toFixed(1)}%" title="${i.label}: ${eur(i.v)}">${i.v?`<span>${eur0(i.v)}</span>`:''}</div>`).join('')}
     ${limit?`<div class="lim" style="bottom:${(limit/max*100).toFixed(1)}%"><em>${limitLabel} ${eur0(limit)}</em></div>`:''}
-  </div><div class="xl" style="${cols}">${items.map(i=>`<span class="${i.today?'today':''}">${i.label}</span>`).join('')}</div></div>`;
+  </div><div class="xl" style="${cols}">${items.map(i=>`<span class="${i.today?'today':''}">${items.length>7?String(i.label).slice(0,3):i.label}</span>`).join('')}</div></div>`;
 }
 const statusPill=(spent,allow)=>{if(!allow)return '';const r=spent/allow;return r>1?`<span class="pill bad">${eur(spent-allow)} over</span>`:r>.85?`<span class="pill warn">${eur(allow-spent)} left</span>`:`<span class="pill good">${eur(allow-spent)} left</span>`};
 const meterCls=(spent,allow)=>spent>allow?'bad':spent>allow*.85?'warn':'good';
@@ -381,7 +387,7 @@ function importHelp(){
       ${tbl(['Time',WDL[0],WDL[1],WDL[2]],[['08:00–09:30','Lecture','','Gym'],['10:00–11:30','','Study','']])}
       <p class="ex-h">PDF, Word or text: one line per activity</p>
       <pre class="ex-txt">${sq?'E Hënë\nora 8 Mëngjes\n8:15–9:45 Ligjërata\nnga 10 deri në 12 Mësim\n3 pasdite Palestër':'Monday\n08:00 Breakfast\n8:15–9:45 Lecture\n10:00 to 12:00 Study\n3 pm Gym'}</pre>
-      <p class="dlg-s">A time on its own (08:00) lasts until the next activity. A range (08:15–09:45) sets both ends. Days can be columns or headings like <b>Monday</b> or <b>E Hënë</b>.</p>
+      <p class="dlg-s">A time on its own (08:00) lasts until the next activity. A range (08:15–09:45) sets both ends. Days can be columns or headings like <b translate="no">Monday</b> or <b translate="no">E Hënë</b>.</p>
       <p class="dlg-s">Times can be written in English or Albanian, for example 8:30, 8 am, ora 8, 8 e gjysmë or 3 pasdite.</p>
     </div>
     <p class="dlg-s">Download an example as:</p>
@@ -464,23 +470,26 @@ async function importSave(btn){
 
 /* ---------- Google Calendar ---------- */
 // Changed days wait a moment, so typing several hours sends one update instead of many
+/** Google Calendar is switched off for now: set to true once the Google API is set up again. */
+const GCAL_ON=false;
 let gcalTimer=null,gcalBusy=false,gcalFull=false,gcalMsg='';
 const gcalDates=new Set();
 /** One line above the hours: import a planner file, and Google Calendar (when the site has it set up). */
 function toolBar(di){
   const g=state.google,on=g&&g.configured&&g.connected;
   const imp=`<label class="btn" title="Excel, CSV, PDF or Word (.docx)">${IMPORT_ICON}Import a planner<input type="file" id="impFile" data-date="${di}" accept=".xlsx,.xls,.xlsm,.ods,.csv,.pdf,.docx,.doc,.txt" hidden></label><button type="button" class="linkbtn" data-act="imp-help">What should my file look like?</button>`;
+  if(!GCAL_ON)return `<div class="gcal"><span>Already have your day planned in Excel, a PDF or Word? Bring it in.</span>${imp}</div>`;
   if(on)return `<div class="gcal on"><span>${GCAL_ICON}<span id="gcalMsg">${gcalMsg||`In Google Calendar${g.email?` (${esc(g.email)})`:''}, in the calendar called <b>Splanner</b>`}</span></span>
     <button class="linkbtn" data-act="gcal-sync">Sync now</button>
     <form method="post" action="calendar.php" class="inline"><input type="hidden" name="csrf" value="${esc(CSRF)}"><button class="linkbtn" title="Stop sending hours to Google. What's already there stays until you delete the Splanner calendar.">Disconnect</button></form><span class="tb-gap"></span>${imp}</div>`;
-  const cal=g&&g.configured?`<a class="btn" href="calendar.php?start=1">${GCAL_ICON}Show in Google Calendar</a>`:'';
+  const cal=`<a class="btn" href="calendar.php?start=1">${GCAL_ICON}Show in Google Calendar</a>`;
   return `<div class="gcal"><span>${cal?'Bring in a planner you already have, or show these hours in Google Calendar.':'Already have your day planned in Excel, a PDF or Word? Bring it in.'}</span>${imp}${cal}</div>`;
 }
 const GCAL_ICON='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/></svg>';
 function gcalStatus(msg){gcalMsg=msg;const el=document.getElementById('gcalMsg');if(el)el.innerHTML=msg}
 /** After an hour is saved, send that day (and the same weekday in the next two weeks) to Google. */
 function gcalLater(di){
-  if(!state.google||!state.google.connected)return;
+  if(!GCAL_ON||!state.google||!state.google.connected)return;
   if(di)gcalDates.add(di);
   clearTimeout(gcalTimer);gcalTimer=setTimeout(()=>gcalRun(false),2500);
 }
@@ -1017,6 +1026,6 @@ V.profile=()=>window.SPLX?window.SPLX.html('profile'):'';
 window.SPL_RENDER=render;
 window.SPL_TAB=()=>state&&state.tab;
 document.getElementById('coil').innerHTML='<span></span>'.repeat(90);
-document.getElementById('todayChip').textContent=`${WDL[wdi(TODAY)]}, ${TODAY.getDate()} ${MON[TODAY.getMonth()]}`;
+{const tc=document.getElementById('todayChip');if(tc)tc.textContent=`${WDL[wdi(TODAY)]}, ${TODAY.getDate()} ${MON[TODAY.getMonth()]}`}
 reload();
 })();

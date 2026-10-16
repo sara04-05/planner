@@ -280,6 +280,23 @@ const P=[
 ];
 
 const cache=new Map();
+/* ---------- look inside (visitor tour), welcome page, guest Explore, new covers ---------- */
+Object.assign(T,{
+'Look inside':'Shiko brenda','Look inside the planner':'Shiko brenda planerit','Look inside · Splanner':'Shiko brenda · Splanner',
+'Open the real planner with sample data and click through every page: Day, Week, Month, Year, Study, Tasks and Expenses. It is view only, so nothing is saved until you have an account.':'Hap planerin e vërtetë me të dhëna shembull dhe kalo nëpër çdo faqe: Dita, Java, Muaji, Viti, Studimi, Detyrat dhe Shpenzimet. Është vetëm për shikim, ndaj asgjë nuk ruhet derisa të kesh llogari.',
+'Open the full planner preview':'Hap pamjen e plotë të planerit',
+"with every page. Click the tabs. Tick a task. It is view only: nothing is saved, and you can't change anything until you log in.":"me çdo faqe. Kliko skedat. Shëno një detyrë. Është vetëm për shikim: asgjë nuk ruhet dhe nuk mund të ndryshosh asgjë derisa të kyçesh.",
+'You are looking around.':'Po shikon përreth.',
+'This is the real planner with sample data, view only. Nothing can be added or saved.':'Ky është planeri i vërtetë me të dhëna shembull, vetëm për shikim. Asgjë nuk mund të shtohet ose ruhet.',
+'Create a free account':'Krijo një llogari falas','log in':'kyçu','to use it.':'për ta përdorur.',
+'This is a preview, so nothing is saved. Log in or create a free account to use it.':'Kjo është vetëm një pamje paraprake, ndaj asgjë nuk ruhet. Kyçu ose krijo një llogari falas për ta përdorur.',
+'You are looking as a visitor. You can read the notebooks that people chose to show to everyone. To add friends, like, message or make your own,':'Po shikon si vizitor. Mund të lexosh fletoret që njerëzit zgjodhën t\'i shfaqin për të gjithë. Për të shtuar miq, pëlqyer, dërguar mesazhe ose bërë të tuat,',
+'create a free account':'krijo një llogari falas',
+'Nobody has made a notebook visible to visitors yet.':'Askush nuk ka bërë ende një fletore të dukshme për vizitorët.',
+'Nobody matches that search.':'Askush nuk përputhet me këtë kërkim.',
+'Search by name':'Kërko sipas emrit',
+'Cherry blossom':'Lulëzim qershie','Dark academia':'Akademi e errët','Gingham':'Katrorë gingham','Bows':'Fjongo','Starry night':'Natë me yje','Clouds':'Re','Lavender':'Livando','Daisies':'Margarita','Checkerboard':'Tabelë shahu','Strawberries':'Luleshtrydhe','Terrazzo':'Terrazo','Waves':'Valë','Polka dots':'Pika','Sunset':'Perëndim dielli'
+});
 function tr(s){
   if(lang!=='sq'||!s)return s;
   const m=/^(\s*)([\s\S]*?)(\s*)$/.exec(s),core=m[2];
