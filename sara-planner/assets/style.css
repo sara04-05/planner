@@ -1521,3 +1521,25 @@ a.nbcover-link:focus-visible{outline:3px solid var(--accent);outline-offset:6px;
 .page .vh{margin-bottom:var(--lh)}
 .page .tiles{margin-bottom:var(--lh)}
 .page .sec-h{margin-top:0}
+
+/* more label shapes */
+[data-label="hexagon"] .nbcover-in{clip-path:polygon(25% 0,75% 0,100% 50%,75% 100%,25% 100%,0 50%);box-shadow:none;padding:30px 30px;border-radius:0}
+[data-label="diamond"] .nbcover-in{clip-path:polygon(50% 0,100% 50%,50% 100%,0 50%);box-shadow:none;padding:60px 18px;border-radius:0;left:24%;right:12%}
+[data-label="tag"] .nbcover-in{clip-path:polygon(0 0,86% 0,100% 50%,86% 100%,0 100%);box-shadow:none;padding:18px 34px 18px 14px;border-radius:0 0 0 0}
+[data-label="stamp"] .nbcover-in{border-radius:4px;box-shadow:none;outline:3px dashed var(--c-label-ink,#4A3426);outline-offset:-9px;padding:24px 18px}
+[data-label="hexagon"] .nbcover-in .avatar,[data-label="diamond"] .nbcover-in .avatar{width:64px;height:64px;min-width:64px;min-height:64px;max-width:64px;max-height:64px;flex-basis:64px}
+[data-label="diamond"] .nbcover-in h2{font-size:16px}
+/* the shape you make yourself: corners, width and height from the sliders */
+[data-label="custom"] .nbcover-in{border-radius:var(--lb-r,6%);width:var(--lb-w,69%);left:calc(14% + (86% - var(--lb-w,69%)) / 2);right:auto;min-height:var(--lb-h,0%)}
+[data-label="custom"] .nbcover-in{justify-content:center}
+.lbrange{display:flex;gap:10px;flex-wrap:wrap;margin-top:8px}
+.lbrange label{display:flex;flex-direction:column;gap:2px;font-size:12px;font-weight:600;color:var(--muted);flex:1 1 90px}
+.lbrange input[type=range]{width:100%;accent-color:var(--accent)}
+.lbsw{margin-top:8px}
+
+/* the day plan inside the open notebook: the text gets the room, words never break letter by letter */
+.nb-what{overflow-wrap:break-word;word-break:normal;min-width:0}
+.nbook .nb-plan{margin-top:0}
+.nbook .nb-plan li{grid-template-columns:auto 6px minmax(0,1fr);gap:4px 10px;min-height:var(--lh);padding:0}
+.nbook .nb-time{white-space:nowrap}
+.nbook .nb-type{grid-column:3;margin-top:-6px}

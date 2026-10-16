@@ -21,7 +21,7 @@ const SECS=[['interests','⭐','Interests','Lists of things you love, with pictu
 const SECNAME=Object.fromEntries([['cover','Cover']].concat(SECS.map(s=>[s[0],s[2]]),[['day','Day']]));
 const PAGE_EMOJI=['📝','📖','🌸','✈️','🍳','💡','🎨','🏋️','🎵','🐾','🧘','💌'];
 const DAYLV=['Nobody, only me','Friends only','Anyone signed in','Everyone, even visitors'];
-const BASE={cover:'dusk',cover_img:0,cover_c1:'',cover_c2:'',paper:'lined',paper_color:'white',paper_hex:'',accent:'violet',accent_hex:'',font:'modern',binding:'coil',label:'box',label_hex:''};
+const BASE={cover:'dusk',cover_img:0,cover_c1:'',cover_c2:'',paper:'lined',paper_color:'white',paper_hex:'',accent:'violet',accent_hex:'',font:'modern',binding:'coil',label:'box',label_hex:'',label_r:0,label_w:0,label_h:0};
 // ready-made looks (the user can also save their own)
 const PRESETS=[
   ['Dreamy lilac',{cover:'dusk',paper:'dots',paper_color:'lilac',accent:'violet',font:'hand'}],
@@ -117,6 +117,7 @@ function wrapAttrs(d){   // goes on the notebook wrapper: accent colour + the co
   if(d.paper_color==='custom'&&d.paper_hex)v+=`--c-paper:${d.paper_hex};`;
   if(d.label&&d.label!=='box')a+=` data-label="${d.label}"`;
   if(d.label_hex)v+=`--c-label:${d.label_hex};--c-label-ink:${lum(d.label_hex)>.5?'#2B2118':'#FFFFFF'};`;
+  if(d.label==='custom'){v+=`--lb-r:${+d.label_r||0}%;`;if(+d.label_w>0)v+=`--lb-w:${+d.label_w}%;`;if(+d.label_h>0)v+=`--lb-h:${+d.label_h}%;`}
   return a+(v?` style="${v}"`:'');
 }
 function pageAttrs(d){
@@ -283,7 +284,9 @@ function decoPanel(nb){
     <p class="opt-h">Cover</p><div class="swatches">${Object.keys(COVERS).map(c=>swatch('cover',c,`linear-gradient(135deg,${COVERS[c][0]},${COVERS[c][1]})`,'Cover '+c)).join('')}${Object.keys(ART).map(c=>swatch('cover',c,`var(--cov-${c})`,ART[c])).join('')}</div>
     <div class="colorrow"><span>Your own colours</span><input type="color" data-xcolor="cover_c1" value="${d.cover_c1||'#6a4dc4'}" aria-label="Cover colour 1"><input type="color" data-xcolor="cover_c2" value="${d.cover_c2||'#e0609a'}" aria-label="Cover colour 2"></div>
     <div class="pic-pick" style="margin-top:10px"><label class="btn sm"><input type="file" accept="image/*" data-xfile="cover" data-kind="cover">🖼️ Use my own cover picture</label><button type="button" class="btn sm ghost" id="coverRm" data-x="cover-rm" ${d.cover_url?'':'hidden'}>Remove my picture</button><span class="hint2" data-pic-msg></span></div>
-    <p class="opt-h">Label on the cover</p><div class="pilltabs">${[['box','▭ Box'],['round','⬤ Circle'],['oval','⬭ Oval'],['arch','⌓ Arch'],['pill','💊 Pill'],['ticket','🎟️ Ticket'],['band','▬ Band'],['none','✕ No box']].map(x=>`<button type="button" data-x="label" data-v="${x[0]}" aria-pressed="false">${x[1]}</button>`).join('')}<input type="color" class="colorpick" data-xcolor="label_hex" value="${d.label_hex||'#efe2c8'}" aria-label="Your own label colour"></div>
+    <p class="opt-h">Label on the cover</p><div class="pilltabs">${[['box','▭ Box'],['round','⬤ Circle'],['oval','⬭ Oval'],['arch','⌓ Arch'],['pill','💊 Pill'],['ticket','🎟️ Ticket'],['band','▬ Band'],['hexagon','⬡ Hexagon'],['diamond','◆ Diamond'],['tag','🏷️ Tag'],['stamp','▣ Stamp'],['custom','✎ My own shape'],['none','✕ No box']].map(x=>`<button type="button" data-x="label" data-v="${x[0]}" aria-pressed="false">${x[1]}</button>`).join('')}<input type="color" class="colorpick" data-xcolor="label_hex" value="${d.label_hex||'#efe2c8'}" aria-label="Your own label colour"></div>
+    <div class="swatches lbsw">${['#efe2c8','#ffffff','#111111','#f8c8dc','#ffd9b8','#fff2a8','#c9e8c3','#bfe3f5','#d8ccf3','#ef9a9a','#e0609a','#6a4dc4','#2f6f5e','#b0bec5'].map(c=>`<button type="button" class="swatch" style="background:${c}" data-x="label-color" data-v="${c}" aria-label="Label colour ${c}"></button>`).join('')}</div>
+    <div class="lbrange"><label>Corners<input type="range" min="0" max="50" step="1" data-xrange="label_r" value="${d.label_r||0}"></label><label>Width<input type="range" min="30" max="100" step="1" data-xrange="label_w" value="${d.label_w||69}"></label><label>Height<input type="range" min="15" max="80" step="1" data-xrange="label_h" value="${d.label_h||40}"></label></div>
     <p class="opt-h">Paper</p><div class="pilltabs">${PAPERS.map(x=>`<button type="button" data-x="paper" data-v="${x[0]}" aria-pressed="false">${x[1]}</button>`).join('')}</div>
     <p class="opt-h">Paper colour</p><div class="swatches">${Object.keys(PAPER_COLORS).map(c=>swatch('pcolor',c,PAPER_COLORS[c],'Paper '+c)).join('')}<input type="color" class="colorpick" data-xcolor="paper_hex" value="${d.paper_hex||'#ffffff'}" aria-label="Your own paper colour"></div>
     <p class="opt-h">Accent colour</p><div class="swatches">${Object.keys(ACCENTS).map(c=>swatch('accent',c,ACCENTS[c],'Accent '+c)).join('')}<input type="color" class="colorpick" data-xcolor="accent_hex" value="${d.accent_hex||'#6a4dc4'}" aria-label="Your own accent colour"></div>
@@ -592,6 +595,7 @@ document.addEventListener('click',async e=>{
       case 'accent':ui.dd.accent=b.dataset.v;break;
       case 'font':ui.dd.font=b.dataset.v;break;
       case 'binding':ui.dd.binding=b.dataset.v;break;
+      case 'label-color':ui.dd.label_hex=b.dataset.v;if(ui.dd.label==='none')ui.dd.label='box';markDirty();paintPreview();return;
       case 'label':ui.dd.label=b.dataset.v;if(b.dataset.v==='none')ui.dd.label_hex='';break;
       case 'preset':applyLook(PRESETS[+b.dataset.i][1]);break;
       case 'style-apply':{const s=S.styles.find(x=>x.id===id);if(!s)return;applyLook(s.design);break}
@@ -630,6 +634,12 @@ document.addEventListener('input',e=>{
   if(k==='paper_hex')ui.dd.paper_color='custom';
   if(k==='accent_hex')ui.dd.accent='custom';
   if(k==='label_hex')ui.dd.label='box';
+  markDirty();paintPreview();
+});
+document.addEventListener('input',e=>{
+  const t=e.target;if(!t.dataset||!t.dataset.xrange||!ui.dd)return;
+  ui.dd[t.dataset.xrange]=+t.value;
+  if(ui.dd.label!=='custom'){ui.dd.label='custom';if(!ui.dd.label_w)ui.dd.label_w=+(document.querySelector('[data-xrange=label_w]')||{}).value||69;if(!ui.dd.label_h)ui.dd.label_h=+(document.querySelector('[data-xrange=label_h]')||{}).value||40}
   markDirty();paintPreview();
 });
 

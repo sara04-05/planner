@@ -28,7 +28,7 @@ const MAX_STYLES    = 20;
 function default_design(): array
 {
     return ['cover' => 'dusk', 'cover_img' => 0, 'cover_c1' => '', 'cover_c2' => '', 'paper' => 'lined', 'paper_color' => 'white', 'paper_hex' => '',
-        'accent' => 'violet', 'accent_hex' => '', 'font' => 'modern', 'binding' => 'coil', 'label' => 'box', 'label_hex' => '', 'stickers' => []];
+        'accent' => 'violet', 'accent_hex' => '', 'font' => 'modern', 'binding' => 'coil', 'label' => 'box', 'label_hex' => '', 'label_r' => 0, 'label_w' => 0, 'label_h' => 0, 'stickers' => []];
 }
 
 function clean_hex($v): string
@@ -44,7 +44,11 @@ function clean_design(int $uid, array $d, bool $withStickers = true): array
         if (isset($d[$k]) && in_array($d[$k], $allowed, true)) $out[$k] = $d[$k];
     }
     foreach (['cover_c1', 'cover_c2', 'paper_hex', 'accent_hex', 'label_hex'] as $k) $out[$k] = clean_hex($d[$k] ?? '');
-    if (in_array($d['label'] ?? '', ['round', 'oval', 'arch', 'pill', 'ticket', 'band', 'none'], true)) $out['label'] = $d['label'];
+    if (in_array($d['label'] ?? '', ['round', 'oval', 'arch', 'pill', 'ticket', 'band', 'hexagon', 'diamond', 'tag', 'stamp', 'custom', 'none'], true)) $out['label'] = $d['label'];
+    // the shape you shape yourself: roundness of the corners (0-50 %), width (30-100 % of the cover, 0 = automatic) and height (0 = automatic, else 15-80 % of the cover)
+    $out['label_r'] = max(0, min(50, (int)($d['label_r'] ?? 0)));
+    $out['label_w'] = ($w = (int)($d['label_w'] ?? 0)) > 0 ? max(30, min(100, $w)) : 0;
+    $out['label_h'] = ($hh = (int)($d['label_h'] ?? 0)) > 0 ? max(15, min(80, $hh)) : 0;
     $c = $d['cover'] ?? '';
     if (in_array($c, BANNERS, true) || ($c === 'custom' && $out['cover_c1'] !== '' && $out['cover_c2'] !== '')) $out['cover'] = $c;
     $c = $d['paper_color'] ?? '';

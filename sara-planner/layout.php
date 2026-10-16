@@ -63,7 +63,7 @@ function design_attrs(array $d, string $part = 'all'): string
     $acc = ($d['accent'] ?? 'violet') !== 'violet' ? ' data-accent="' . h($d['accent']) . '"' : '';
     if ($part === 'accent') return $acc;
     if ($part === 'all') $o .= $acc;
-    if (in_array($d['label'] ?? 'box', ['round', 'oval', 'arch', 'pill', 'ticket', 'band', 'none'], true)) $o .= ' data-label="' . h($d['label']) . '"';
+    if (in_array($d['label'] ?? 'box', ['round', 'oval', 'arch', 'pill', 'ticket', 'band', 'hexagon', 'diamond', 'tag', 'stamp', 'custom', 'none'], true)) $o .= ' data-label="' . h($d['label']) . '"';
     if (($d['paper'] ?? 'lined') !== 'lined') $o .= ' data-paper="' . h($d['paper']) . '"';
     if (($d['paper_color'] ?? 'white') !== 'white') $o .= ' data-pcolor="' . h($d['paper_color']) . '"';
     if (($d['font'] ?? 'modern') !== 'modern') $o .= ' data-font="' . h($d['font']) . '"';
@@ -78,6 +78,11 @@ function design_style(array $d): string
     if (($d['accent'] ?? '') === 'custom' && !empty($d['accent_hex'])) $v .= '--c-accent:' . h($d['accent_hex']) . ';--c-on:' . (hex_lum($d['accent_hex']) > 0.55 ? '#17121F' : '#FFFFFF') . ';';
     if (($d['paper_color'] ?? '') === 'custom' && !empty($d['paper_hex'])) $v .= '--c-paper:' . h($d['paper_hex']) . ';';
     if (!empty($d['label_hex'])) $v .= '--c-label:' . h($d['label_hex']) . ';--c-label-ink:' . (hex_lum($d['label_hex']) > 0.5 ? '#2B2118' : '#FFFFFF') . ';';
+    if (($d['label'] ?? '') === 'custom') {
+        $v .= '--lb-r:' . max(0, min(50, (int)($d['label_r'] ?? 0))) . '%;';
+        if ((int)($d['label_w'] ?? 0) > 0) $v .= '--lb-w:' . max(30, min(100, (int)$d['label_w'])) . '%;';
+        if ((int)($d['label_h'] ?? 0) > 0) $v .= '--lb-h:' . max(15, min(80, (int)$d['label_h'])) . '%;';
+    }
     return $v !== '' ? ' style="' . $v . '"' : '';
 }
 
