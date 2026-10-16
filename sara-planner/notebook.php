@@ -16,7 +16,7 @@ const COVER_GRADIENTS = [
 ];
 const PAPERS       = ['lined', 'grid', 'dots', 'plain'];
 const PAPER_COLORS = ['white', 'cream', 'blush', 'mint', 'sky', 'lilac'];
-const ACCENTS      = ['violet', 'rose', 'ocean', 'forest', 'sunset', 'graphite'];
+const ACCENTS      = ['violet', 'rose', 'ocean', 'forest', 'sunset', 'graphite', 'white'];
 const FONTS        = ['modern', 'hand', 'serif', 'mono'];
 const BINDINGS     = ['coil', 'stitch', 'none'];
 const STICKERS     = ['⭐', '💜', '🌸', '🎀', '🦋', '☁️', '🌙', '✨', '🍓', '🎧', '📚', '☕', '🐱', '🌈', '🔥', '🍒', '🎬', '🎵', '👗', '👠', '🧸', '🌷', '🍀', '💌', '📌', '✏️', '🎨', '🪩', '💫', '🍑', '🌻', '🧿'];

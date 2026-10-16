@@ -472,6 +472,7 @@ table.ex tr:last-child td{border-bottom:0}
 [data-accent="forest"]{--ac-l:#2B8A5B;--ac-d:#6FD0A0;--ac-on-l:#fff;--ac-on-d:#08201A}
 [data-accent="sunset"]{--ac-l:#D2661E;--ac-d:#F5A15E;--ac-on-l:#fff;--ac-on-d:#2A1406}
 [data-accent="graphite"]{--ac-l:#4A4F5C;--ac-d:#B8BDCB;--ac-on-l:#fff;--ac-on-d:#14161C}
+[data-accent="white"]{--ac-l:#FFFFFF;--ac-d:#FFFFFF;--ac-on-l:#17121F;--ac-on-d:#17121F}
 [data-accent]{--accent:var(--ac-l);--on-accent:var(--ac-on-l);--accent-soft:color-mix(in srgb,var(--ac-l) 13%,var(--paper))}
 @media (prefers-color-scheme: dark){
   :root:not([data-theme="light"]) [data-accent],:root:not([data-theme="light"])[data-accent]{--accent:var(--ac-d);--on-accent:var(--ac-on-d);--accent-soft:color-mix(in srgb,var(--ac-d) 22%,var(--paper))}
@@ -1280,3 +1281,56 @@ a.nbtile{text-decoration:none}.nbtiles{margin-bottom:14px}.nbtile.on span{color:
 .spread .sp-by{font-size:14px;line-height:32px;margin:6px 0 0;color:var(--sp-ac);font-weight:600}
 .spread .sp-stk{position:absolute;font-size:28px;line-height:1}
 @media (max-width:760px){.st-inside .spread{grid-template-columns:minmax(0,1fr);}.spread .sp-gutter{display:none}.spread .sp-page.left,.spread .sp-page.right{border-radius:6px;box-shadow:none}.spread .sp-page.right{margin-top:10px}}
+
+/* ===== the notebook editor: opened flat like a real notebook (contents on the left, the page you are on at the right) ===== */
+.nbv .nbook{position:relative;display:grid;grid-template-columns:minmax(0,1fr) 40px minmax(0,1.35fr);align-items:stretch;padding:16px;border-radius:12px;box-shadow:0 20px 30px -18px rgba(20,12,40,.65)}
+.nbv .nbook .page{min-height:520px;padding:26px 26px 28px 30px;border:0;box-shadow:none;box-sizing:border-box;min-width:0}
+.nbv .nbook .nbp-left{border-radius:8px 0 0 8px;box-shadow:inset -24px 0 26px -24px rgba(0,0,0,.38)}
+.nbv .nbook .nbp-right{border-radius:0 8px 8px 0;box-shadow:inset 24px 0 26px -24px rgba(0,0,0,.38)}
+.nbv .nbook .page .vh h1{font-size:28px}
+.nbp-title{font-family:var(--display);font-size:24px;line-height:1.1;margin:0 0 14px;overflow-wrap:anywhere}
+.nbp-toc{list-style:none;margin:0;padding:0}
+.nbp-toc li{border-bottom:1px dotted var(--rule)}
+.nbp-toc button{display:flex;justify-content:space-between;align-items:center;gap:8px;width:100%;border:0;background:none;font:inherit;font-size:15px;color:inherit;text-align:left;padding:0;min-height:32px;cursor:pointer;border-radius:6px}
+.nbp-toc button:hover{color:var(--accent)}
+.nbp-toc button i{font-style:normal;font-weight:700;color:var(--accent)}
+.nbp-toc button[aria-current="page"]{color:var(--accent);font-weight:700}
+.nbp-toc button[aria-current="page"] span::before{content:"▸ "}
+.nbp-toc .nbp-add{color:var(--muted);font-weight:600;font-size:14px}
+/* the binding in the middle */
+.nbp-gutter{position:relative;background:linear-gradient(90deg,rgba(0,0,0,.16),rgba(0,0,0,.03) 40%,rgba(0,0,0,.03) 60%,rgba(0,0,0,.16))}
+.nbook:not([data-binding]) .nbp-gutter::before,.nbook[data-binding="coil"] .nbp-gutter::before{content:"";position:absolute;left:-10px;right:-10px;top:0;bottom:0;background:radial-gradient(ellipse 16px 6px at 50% 50%,#d9d6e2 0 55%,#8d8999 56% 100%) 0 0/100% 26px repeat-y;filter:drop-shadow(0 2px 2px rgba(0,0,0,.4))}
+.nbook[data-binding="stitch"] .nbp-gutter::before{content:"";position:absolute;left:50%;top:10px;bottom:10px;border-left:3px dashed var(--accent);transform:translateX(-50%)}
+@media (max-width:900px){
+  .nbv .nbook{grid-template-columns:minmax(0,1fr);padding:10px}
+  .nbp-gutter{display:none}
+  .nbv .nbook .nbp-left,.nbv .nbook .nbp-right{border-radius:8px;box-shadow:none;min-height:0}
+  .nbv .nbook .nbp-right{margin-top:10px}
+}
+
+/* white accent: keep text readable on a light page (the white shows on buttons, tabs and borders) */
+:root:not([data-theme="dark"]) [data-accent="white"] .page :is(.eyebrow,.sp-eyebrow){color:var(--muted)}
+.swatch[data-v="white"]{box-shadow:0 0 0 1px var(--line),inset 0 0 0 1px rgba(0,0,0,.12)}
+.st-anycolor{display:inline-flex;align-items:center;gap:8px;font-size:13px;font-weight:600;margin-left:6px}
+.st-anycolor input[type=color]{width:38px;height:34px;padding:0;border:2px solid var(--line);border-radius:10px;background:none;cursor:pointer}
+.st-anycolor.on input[type=color]{border-color:var(--accent);box-shadow:0 0 0 2px var(--accent)}
+
+/* ===== closed notebook: a rectangular book with a label, a stitched spine and an elastic band ===== */
+.nbcover{width:min(100%,320px);aspect-ratio:3/4;min-height:0;margin:10px auto 0;border-radius:6px 18px 18px 6px;display:grid;padding:0;box-sizing:border-box;overflow:hidden;box-shadow:0 22px 30px -16px rgba(20,12,40,.65),inset -4px 0 8px rgba(0,0,0,.18)}
+.nbcover::before{content:"";position:absolute;left:0;top:0;bottom:0;width:14%;z-index:1;background:radial-gradient(circle,rgba(255,255,255,.75) 2px,transparent 2.6px) 50% 0/100% 22px,linear-gradient(90deg,rgba(0,0,0,.4),rgba(0,0,0,.1))}
+.nbcover::after{z-index:1;pointer-events:none;background:linear-gradient(90deg,transparent 80%,rgba(0,0,0,.3) 80%,rgba(0,0,0,.3) 85%,transparent 85%),linear-gradient(135deg,rgba(255,255,255,.2),transparent 45%)}
+.nbcover-in{position:absolute;left:22%;right:9%;top:50%;transform:translateY(-50%);z-index:2;box-sizing:border-box;background:#EFE2C8;color:#4A3426;text-shadow:none;border-radius:4px;padding:16px 12px;gap:8px;box-shadow:0 0 0 3px #EFE2C8,0 0 0 4px rgba(74,52,38,.5),0 5px 12px rgba(0,0,0,.25)}
+.nbcover-in h2{font-size:22px;overflow-wrap:anywhere}
+.nbcover-in .by{font-size:12px;opacity:.8;overflow-wrap:anywhere}
+.nbcover .avatar{border:3px solid var(--accent)}
+.nbclosed[data-binding="stitch"] .nbcover::before{background:linear-gradient(90deg,transparent 0 8%,transparent) ,repeating-linear-gradient(to bottom,var(--accent) 0 9px,transparent 9px 17px) 62% 0/3px 100% no-repeat}
+.nbclosed[data-binding="none"] .nbcover::before{background:linear-gradient(90deg,rgba(0,0,0,.35),rgba(0,0,0,.05))}
+.nbclosed{position:relative;padding:6px 0 10px}
+.nbclosed-go{position:relative;text-align:center;margin-top:16px}
+/* tabs on the edge of the opened notebook, one for each page */
+.nbv .nbook{margin-right:48px;position:relative}
+.nbook .nbp-tabs{position:absolute;right:-46px;top:26px;display:flex;flex-direction:column;gap:6px;z-index:3;padding:0}
+.nbook .nbp-tabs .tab{width:38px;min-height:76px;padding:12px 6px;margin:0;border-radius:0 12px 12px 0;white-space:nowrap}
+.nbook .nbp-tabs .tab[aria-selected="true"]{width:46px;margin-right:-8px;position:relative}
+.nbook .nbp-tabs .tab.add-page{min-height:70px}
+@media (max-width:900px){.nbook .nbp-tabs{display:none}.nbv .nbook{margin-right:0}}

@@ -10,7 +10,7 @@ const hdr=(eyebrow,title,right='')=>`<div class="vh"><div><p class="eyebrow">${e
 const ART={hearts:'Hearts',rainbow:'Rainbows',mountains:'Mountains',pinstripe:'Pinstripe',monstera:'Monstera',blossom:'Cherry blossom',library:'Dark academia',gingham:'Gingham',coquette:'Bows',stars:'Starry night',clouds:'Clouds',lavender:'Lavender',daisy:'Daisies',checker:'Checkerboard',strawberry:'Strawberries',terrazzo:'Terrazzo',waves:'Waves',dots:'Polka dots',sunsetgrain:'Sunset',matcha:'Matcha'};   // patterned covers: name by key, drawn by --cov-* in style.css
 const COVERS={dusk:['#6A4DC4','#E0609A'],peach:['#F9A826','#F36B7F'],ocean:['#1F77C9','#3FC1C9'],mint:['#4FA36B','#B6E3C9'],berry:['#8E2DE2','#C2185B'],sunny:['#FFD452','#FF9966'],night:['#1B1740','#4B3A8F'],cloud:['#BFD7F5','#E8DDF8']};
 const PAPER_COLORS={white:'#FFFFFF',cream:'#FFF8E8',blush:'#FFF0F3',mint:'#EEF9F2',sky:'#EEF5FD',lilac:'#F4EFFC'};
-const ACCENTS={violet:'#6A4DC4',rose:'#C93A72',ocean:'#1F77C9',forest:'#2B8A5B',sunset:'#D2661E',graphite:'#4A4F5C'};
+const ACCENTS={violet:'#6A4DC4',rose:'#C93A72',ocean:'#1F77C9',forest:'#2B8A5B',sunset:'#D2661E',graphite:'#4A4F5C',white:'#FFFFFF'};
 const PAPERS=[['lined','Lined'],['grid','Grid'],['dots','Dots'],['plain','Plain']];
 const FONTS=[['modern','Modern',''],['hand','Handwritten','Caveat,cursive'],['serif','Classic','Lora,Georgia,serif'],['mono','Typewriter','ui-monospace,Menlo,monospace']];
 const BINDINGS=[['coil','Spiral'],['stitch','Stitched'],['none','Plain edge']];
@@ -34,7 +34,7 @@ const PRESETS=[
 const SHARE_MSG='Only what you mark public ever shows.';
 
 let S=null,loading=false,loadErr='';
-const ui={ptab:(new URLSearchParams(location.search).get('ptab')==='settings'?'settings':'notebooks'),aud:'friend',nb:0,pg:'cover',panel:'',dd:null,dirty:false,sel:-1,post:null,pics:{},newList:false,newNb:false,marked:false};
+const ui={nbOpen:false,ptab:(new URLSearchParams(location.search).get('ptab')==='settings'?'settings':'notebooks'),aud:'friend',nb:0,pg:'cover',panel:'',dd:null,dirty:false,sel:-1,post:null,pics:{},newList:false,newNb:false,marked:false};
 
 async function api(action,data={}){
   const res=await fetch('api.php?action='+encodeURIComponent(action),{method:'POST',credentials:'same-origin',headers:{'Content-Type':'application/json','X-CSRF-Token':CSRF},body:JSON.stringify(data)});
@@ -75,7 +75,7 @@ function pick(id,keepPage){
   ui.nb=id;const nb=cur();
   ui.dd=nb?Object.assign(clone(BASE),clone(nb.design)):null;
   if(ui.dd){ui.dd.cover_url=nb.cover_url;ui.dd.stickers=ui.dd.stickers||[]}
-  ui.dirty=false;ui.sel=-1;ui.post=null;ui.newList=false;
+  ui.dirty=false;ui.sel=-1;ui.post=null;ui.newList=false;ui.nbOpen=false;
   if(!keepPage||!nb||!hasPage(nb,ui.pg))ui.pg='cover';
 }
 
@@ -216,14 +216,26 @@ function dayPage(){
 function notebookHtml(nb){
   const d=ui.dd,tabs=['cover'].concat(nb.sections,nb.pages.map(p=>'pg:'+p.id),['day']);
   const body=ui.pageEdit?pageForm():ui.pg==='cover'?coverPage(nb,d):ui.pg==='day'?dayPage():ui.pg==='blog'?blogPage():ui.pg==='interests'?interestsPage():ui.pg==='timetable'?timetablePage():ui.pg.startsWith('pg:')?customPage(nb):subjectsPage();
+  // the notebook opened flat: contents on the left page, the page you are on on the right, the binding in the middle, the cover around it
+  const toc=tabs.map((k,i)=>`<li><button type="button" data-x="${k==='cover'?'nb-close':'pg'}" data-v="${k}" data-tab="${k}"${k===ui.pg&&!ui.pageEdit?' aria-current="page"':''}><span translate="no">${esc(secName(k))}</span><i>${i+1}</i></button></li>`).join('');
+  const isOpen=ui.nbOpen||ui.pageEdit;
+  if(!isOpen)return `<div class="nbv${ui.panel==='deco'?' deco':''}" id="nbv"${wrapAttrs(d)}>
+    <div class="nbclosed" id="nbBinder"${d.binding&&d.binding!=='coil'?` data-binding="${d.binding}"`:''}>
+      ${coverPage(nb,d)}
+      <div class="nbclosed-go"><button type="button" class="btn primary" data-x="nb-open">📖 Open the notebook</button>${stkLayer(d,'cover')}</div>
+    </div></div>`;
   return `<div class="nbv${ui.panel==='deco'?' deco':''}" id="nbv"${wrapAttrs(d)}>
-    <div class="binder" id="nbBinder"${d.binding&&d.binding!=='coil'?` data-binding="${d.binding}"`:''}>
-      <div class="coil" aria-hidden="true">${'<span></span>'.repeat(70)}</div>
-      <div class="page" id="nbPage"${pageAttrs(d)}>
+    <div class="nbook" id="nbBinder"${d.binding&&d.binding!=='coil'?` data-binding="${d.binding}"`:''} style="${coverCss(d)}">
+      <div class="page nbp-left" id="nbPageL"${pageAttrs(d)}>
+        <p class="eyebrow">Contents</p><h2 class="nbp-title" translate="no">${esc(nb.title)}</h2>
+        <ol class="nbp-toc">${toc}<li><button type="button" class="nbp-add" data-x="page-new">+ Page</button></li></ol>
+      </div>
+      <div class="nbp-gutter" aria-hidden="true"></div>
+      <div class="page nbp-right" id="nbPage"${pageAttrs(d)}>
         <div class="vh"><div><p class="eyebrow">${esc(nb.title)}</p><h1>${esc(secName(ui.pg))}</h1></div></div>
         ${body}${stkLayer(d,ui.pg)}
       </div>
-      <nav class="tabs" role="tablist">${tabs.map(k=>`<button class="tab" role="tab" data-x="pg" data-v="${k}" data-tab="${k}" aria-selected="${k===ui.pg}">${esc(secName(k))}</button>`).join('')}<button class="tab add-page" role="tab" data-x="page-new" title="Add a page">+ Page</button></nav>
+      <nav class="tabs nbp-tabs" role="tablist" aria-label="Pages">${tabs.map(k=>`<button class="tab" role="tab" data-x="${k==='cover'?'nb-close':'pg'}" data-v="${k}" data-tab="${k}" aria-selected="${k===ui.pg&&!ui.pageEdit}">${esc(secName(k))}</button>`).join('')}<button class="tab add-page" role="tab" data-x="page-new" title="Add a page">+ Page</button></nav>
     </div></div>`;
 }
 
@@ -274,8 +286,9 @@ function paintPreview(){
   const d=ui.dd,w=$('nbv'),pg=$('nbPage'),bd=$('nbBinder');if(!w||!d)return;
   [...w.attributes].forEach(a=>{if(a.name==='data-accent'||a.name==='style')w.removeAttribute(a.name)});
   const t=document.createElement('div');t.innerHTML=`<i${wrapAttrs(d)}></i>`;[...t.firstChild.attributes].forEach(a=>w.setAttribute(a.name,a.value));
-  ['data-paper','data-pcolor','data-font','data-ptone'].forEach(a=>pg.removeAttribute(a));
-  const p=document.createElement('div');p.innerHTML=`<i${pageAttrs(d)}></i>`;[...p.firstChild.attributes].forEach(a=>pg.setAttribute(a.name,a.value));
+  const p=document.createElement('div');p.innerHTML=`<i${pageAttrs(d)}></i>`;
+  [pg,$('nbPageL')].filter(Boolean).forEach(el=>{['data-paper','data-pcolor','data-font','data-ptone'].forEach(a=>el.removeAttribute(a));[...p.firstChild.attributes].forEach(a=>el.setAttribute(a.name,a.value))});
+  if(bd.classList.contains('nbook'))bd.style.cssText=coverCss(d).replace(/&#39;/g,"'");
   if(d.binding&&d.binding!=='coil')bd.setAttribute('data-binding',d.binding);else bd.removeAttribute('data-binding');
   const cv=$('pvCover');if(cv)cv.style.cssText=coverCss(d).replace(/&#39;/g,"'");
   const sl=$('stkLayer');if(sl)sl.outerHTML=stkLayer(d,ui.pg);
@@ -413,7 +426,7 @@ function coverFull(p){
 function notebookSpread(nb){
   const d=nb.design||{},fam=(FONTS.find(f=>f[0]===d.font)||[])[2]||'',paper=d.paper_color==='custom'&&d.paper_hex?d.paper_hex:(PAPER_COLORS[d.paper_color]||'#FFFFFF');
   const ink=lum(paper)<.4?'#EDE9F5':'#2A2338',rule=lum(paper)<.4?'rgba(255,255,255,.12)':'rgba(60,40,90,.14)';
-  const ac=d.accent==='custom'&&d.accent_hex?d.accent_hex:(ACCENTS[d.accent]||ACCENTS.violet);
+  let ac=d.accent==='custom'&&d.accent_hex?d.accent_hex:(ACCENTS[d.accent]||ACCENTS.violet);if(lum(ac)>.8&&lum(paper)>.5)ac='#9A93AB';
   const pages=nb.sections.map(k=>SECNAME[k]).concat((nb.pages||[]).map(p=>(p.emoji?p.emoji+' ':'')+p.title),['Day']);
   const name=(document.querySelector('.hello span:last-child')||{textContent:''}).textContent.replace(/^Hi,\s*/,'');
   const sticks=(d.stickers||[]).filter(x=>(x.p||'cover')==='cover').slice(0,4).map((x,i)=>`<span class="sp-stk" style="left:${12+i*22}%;top:${70+(i%2)*12}%">${x.k.startsWith('up:')?'':esc(x.k)}</span>`).join('');
@@ -437,7 +450,7 @@ function quickLook(nb){
     <div class="st-lookrow"><div class="st-prev"><i style="${coverCss({...d,cover_url:nb.cover_url})}"></i></div>
     <div class="st-page" data-binding="${esc(d.binding||'coil')}" data-paper="${esc(d.paper||'lined')}" style="--ac:${d.accent==='custom'&&d.accent_hex?esc(d.accent_hex):(ACCENTS[d.accent]||ACCENTS.violet)}" aria-hidden="true"><b translate="no">${esc(nb.title)}</b><span></span><span></span><span></span></div>
     <div class="st-lookopts"><p class="opt-h">Cover</p><div class="swatches">${covers}</div>
-    <p class="opt-h">Binding</p>${pills('binding',BINDINGS)}<p class="opt-h">Paper</p>${pills('paper',PAPERS)}<p class="opt-h">Accent colour</p><div class="swatches">${acc}</div></div></div>
+    <p class="opt-h">Binding</p>${pills('binding',BINDINGS)}<p class="opt-h">Paper</p>${pills('paper',PAPERS)}<p class="opt-h">Accent colour</p><div class="swatches">${acc}<label class="st-anycolor${d.accent==='custom'?' on':''}" title="Pick any colour"><input type="color" data-qcolor value="${esc(d.accent_hex||'#6a4dc4')}" aria-label="Any accent colour"> Any colour</label></div></div></div>
     <p class="opt-h" style="margin-top:18px">Inside the notebook</p><p class="hint2">Your notebook opened, with your choices.</p>
     <div class="st-inside">${notebookSpread(nb)}</div></section>`;
 }
@@ -514,18 +527,20 @@ document.addEventListener('click',async e=>{
         const r=await api('x.nb.design',{id:nb.id,design:d});nb.design=r.design;nb.cover_url=r.cover_url;
         ui.dd=Object.assign(clone(BASE),clone(r.design));ui.dd.cover_url=r.cover_url;ui.dirty=false;redraw();return}
       case 'st-deco':ui.ptab='notebooks';ui.panel='deco';redraw();return;
-      case 'st-page-new':ui.ptab='notebooks';ui.panel='';ui.pageEdit={id:0,title:'',emoji:PAGE_EMOJI[0],body:''};redraw('pg-title');return;
-      case 'st-page-edit':{const g=nb.pages.find(x=>x.id===id);if(!g)return;ui.ptab='notebooks';ui.panel='';ui.pg='pg:'+g.id;ui.pageEdit={id:g.id,title:g.title,emoji:g.emoji||PAGE_EMOJI[0],body:g.body};redraw('pg-title');return}
+      case 'st-page-new':ui.ptab='notebooks';ui.panel='';ui.nbOpen=true;ui.pageEdit={id:0,title:'',emoji:PAGE_EMOJI[0],body:''};redraw('pg-title');return;
+      case 'st-page-edit':{const g=nb.pages.find(x=>x.id===id);if(!g)return;ui.ptab='notebooks';ui.panel='';ui.nbOpen=true;ui.pg='pg:'+g.id;ui.pageEdit={id:g.id,title:g.title,emoji:g.emoji||PAGE_EMOJI[0],body:g.body};redraw('pg-title');return}
       case 'st-page-del':{if(!armed(b))return;const r=await api('x.page.delete',{id});nb.pages=r.pages;redraw();return}
       case 'cover-pick':{await api('x.profile.save',{cover:b.dataset.v});S.profile.cover=b.dataset.v;redraw();return}
       case 'avatar-rm':{await api('x.profile.save',{remove_avatar:true});S.profile.avatar='';redraw();return}
       case 'aud':ui.aud=b.dataset.v;redraw();return;
-      case 'post-open':{const p=S.posts.find(x=>x.id===id);if(!p)return;pick(p.nb);ui.pg='blog';ui.ptab='notebooks';redraw();return}
+      case 'post-open':{const p=S.posts.find(x=>x.id===id);if(!p)return;pick(p.nb);ui.pg='blog';ui.nbOpen=true;ui.ptab='notebooks';redraw();return}
       case 'nb-new':ui.newNb=!ui.newNb;redraw(ui.newNb?'nn-title':'');return;
       case 'panel':ui.panel=ui.panel===b.dataset.v?'':b.dataset.v;ui.sel=-1;redraw();return;
-      case 'pg':ui.pg=b.dataset.v;ui.sel=-1;ui.post=null;ui.newList=false;ui.pageEdit=null;redraw();return;
-      case 'page-new':ui.pageEdit={id:0,title:'',emoji:PAGE_EMOJI[0],body:''};redraw('pg-title');return;
-      case 'page-edit':{const p=nb.pages.find(x=>x.id===id);if(!p)return;ui.pageEdit={id:p.id,title:p.title,emoji:p.emoji||PAGE_EMOJI[0],body:p.body};redraw('pg-title');return}
+      case 'pg':ui.pg=b.dataset.v;ui.nbOpen=ui.pg!=='cover';ui.sel=-1;ui.post=null;ui.newList=false;ui.pageEdit=null;redraw();return;
+      case 'nb-open':ui.nbOpen=true;if(ui.pg==='cover')ui.pg=(cur().sections[0]||(cur().pages[0]&&'pg:'+cur().pages[0].id)||'day');redraw();return;
+      case 'nb-close':ui.nbOpen=false;ui.pg='cover';ui.pageEdit=null;redraw();return;
+      case 'page-new':ui.pageEdit={id:0,title:'',emoji:PAGE_EMOJI[0],body:''};ui.nbOpen=true;redraw('pg-title');return;
+      case 'page-edit':{const p=nb.pages.find(x=>x.id===id);if(!p)return;ui.pageEdit={id:p.id,title:p.title,emoji:p.emoji||PAGE_EMOJI[0],body:p.body};ui.nbOpen=true;redraw('pg-title');return}
       case 'page-cancel':ui.pageEdit=null;redraw();return;
       case 'page-del':{if(!armed(b))return;const r=await api('x.page.delete',{id});nb.pages=r.pages;ui.pg='cover';redraw();return}
       case 'nb-del':{if(!armed(b))return;await api('x.nb.delete',{id:nb.id});S.notebooks=S.notebooks.filter(n=>n.id!==nb.id);S.posts=S.posts.filter(p=>p.nb!==nb.id);S.lists=S.lists.filter(l=>l.nb!==nb.id);ui.panel='';pick(S.notebooks[0]?S.notebooks[0].id:0);toast('Notebook deleted.');redraw();return}
@@ -575,6 +590,14 @@ document.addEventListener('click',async e=>{
 function load2(){S=null;loading=false;loadErr='';redraw()}
 
 /* sticker clicks on the live page + colour pickers */
+document.addEventListener('change',async e=>{
+  const t=e.target;if(!(t.dataset&&t.hasAttribute('data-qcolor'))||!S)return;
+  const nb=cur();if(!nb)return;
+  try{
+    const r=await api('x.nb.design',{id:nb.id,design:{...nb.design,accent:'custom',accent_hex:t.value}});
+    nb.design=r.design;nb.cover_url=r.cover_url;ui.dd=Object.assign(clone(BASE),clone(r.design));ui.dd.cover_url=r.cover_url;ui.dirty=false;redraw();
+  }catch(err){toast(err.message)}
+});
 document.addEventListener('input',e=>{
   const t=e.target;if(!t.dataset||!t.dataset.xcolor||!ui.dd)return;
   const k=t.dataset.xcolor;ui.dd[k]=t.value;
