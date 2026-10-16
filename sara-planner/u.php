@@ -7,6 +7,27 @@ require __DIR__ . '/social.php';
 require __DIR__ . '/notebook.php';
 require __DIR__ . '/layout.php';
 
+
+/** The Instagram-style top of a profile: picture, @page name, stats, name, bio and the buttons. $stats = [label => number]. */
+function profile_head(array $person, string $slug, array $stats, string $actions, string $badge = ''): string
+{
+    $out = '<header class="phead"><div class="phead-av">' . avatar_html($person, 'xl') . '</div><div class="phead-main">'
+        . '<div class="phead-top"><h2 translate="no">' . ($slug !== '' ? '@' . h($slug) : h($person['name'])) . '</h2>' . $badge . '</div>';
+    if ($stats) {
+        $out .= '<div class="pstats">';
+        foreach ($stats as $label => $n) $out .= '<span class="pstat"><b>' . (int)$n . '</b><span>' . h($label) . '</span></span>';
+        $out .= '</div>';
+    }
+    $out .= '<p class="pname2" translate="no">' . h($person['name']) . '</p>'
+        . ($person['bio'] !== '' ? '<p class="pbio2" translate="no">' . h($person['bio']) . '</p>' : '')
+        . '</div>' . ($actions !== '' ? '<div class="phead-btns">' . $actions . '</div>' : '') . '</header>';
+    return $out;
+}
+function plural(int $n, string $one, string $many): string
+{
+    return $n === 1 ? $one : $many;
+}
+
 $viewer = current_user_id();
 if ($viewer && !is_verified($viewer)) $viewer = null;
 $slug = strtolower(trim((string)($_GET['u'] ?? '')));
@@ -29,8 +50,9 @@ if ($prof && $viewer && !can_view_profile($prof, $viewer)) {
     elseif ($state === 'sent') $actions = $btn('cancel', 'Requested · cancel', 'btn ghost');
     elseif ($state === 'received') $actions = $btn('accept', 'Accept friend request', 'btn primary');
     else $actions = $btn('add', 'Add friend', 'btn primary');
-    app_top($person['name'] . "'s profile", ['active' => 'explore', 'eyebrow' => 'Private account', 'h1' => $person['name'], 'actions' => $actions]);
-    echo '<div class="who-line">' . avatar_html($person, 'lg') . ($prof['bio'] !== '' ? '<p class="bio" translate="no">' . nl2br(h($prof['bio'])) . '</p>' : '') . '</div>';
+    app_top($person['name'] . "'s profile", ['active' => 'explore']);
+    $nf = count(friend_ids($owner));
+    echo profile_head($person, '', [plural($nf, 'friend', 'friends') => $nf], $actions, '<span class="tag2 priv">Private</span>');
     echo '<div class="pub-note">🔒 This account is private.</div>';
     app_bottom();
     exit;
@@ -77,8 +99,9 @@ if ($isMe) {
 }
 
 if (!$notebooks) {
-    app_top($name . "'s profile", ['tab' => $isMe ? 'profile' : '', 'active' => 'explore', 'eyebrow' => '@' . $prof['slug'], 'h1' => $name, 'actions' => $actions]);
-    echo '<div class="who-line">' . avatar_html($person, 'lg') . ($prof['bio'] !== '' ? '<p class="bio" translate="no">' . nl2br(h($prof['bio'])) . '</p>' : '') . '</div>';
+    app_top($name . "'s profile", ['tab' => $isMe ? 'profile' : '', 'active' => 'explore']);
+    $nf = count(friend_ids($owner));
+    echo profile_head($person, (string)$prof['slug'], ['notebooks' => 0, plural($nf, 'friend', 'friends') => $nf], $actions);
     echo '<div class="pub-note">' . ($isMe ? 'You have no notebooks yet. Make one in the Profile tab of your planner.' : 'No notebooks are shared here yet.') . '</div>';
     app_bottom();
     exit;
@@ -100,23 +123,27 @@ foreach (array_merge(['cover'], $sections) as $k) {
     $tabs .= '<a class="tab" role="tab" data-tab="' . $k . '" href="' . h($base . ($k === 'cover' ? '' : '&p=' . $k)) . '"' . ($k === $page ? ' aria-selected="true"' : '') . '>' . $LABEL[$k] . '</a>';
 }
 
-app_top($nb['title'] . ' · ' . $name, ['tab' => '', 'active' => $isMe ? '' : 'explore', 'design' => $design, 'tabs' => $tabs, 'covers' => true,
-    'eyebrow' => ($page === 'cover' ? '@' . $prof['slug'] . ' · notebook' : $name . ' · ' . $nb['title']), 'h1' => $page === 'cover' ? $nb['title'] : $LABEL[$page], 'actions' => $actions]);
+$nPosts = 0;   // public posts in the notebooks this viewer can open
+foreach ($notebooks as $n) if (in_array('blog', $n['sections'], true)) $nPosts += count(load_posts($owner, !$isMe, null, $n['id']));
+$nFriends = count(friend_ids($owner));
+$topOpts = ['tab' => '', 'active' => $isMe ? '' : 'explore', 'design' => $design, 'tabs' => $tabs, 'covers' => true];
+if ($page !== 'cover') $topOpts += ['eyebrow' => $name . ' · ' . $nb['title'], 'h1' => $LABEL[$page]];
+app_top($nb['title'] . ' · ' . $name, $topOpts);
+echo profile_head($person, (string)$prof['slug'], [plural(count($notebooks), 'notebook', 'notebooks') => count($notebooks), plural($nPosts, 'post', 'posts') => $nPosts, plural($nFriends, 'friend', 'friends') => $nFriends], $actions,
+    $isMe ? '' : ((int)$prof['is_public'] ? '' : '<span class="tag2 priv">Private</span>'));
 ?>
+  <nav class="nbtiles" aria-label="Notebooks">
+    <?php foreach ($notebooks as $n): ?>
+      <a class="nbtile<?= $n['id'] === $nb['id'] ? ' on' : '' ?>" href="u.php?u=<?= h(rawurlencode($prof['slug'])) ?>&amp;nb=<?= $n['id'] ?>"<?= design_attrs($n['design'], 'accent') . design_style($n['design']) ?>>
+        <i style="<?= cover_css($n['design'], $n['cover_url']) ?>"></i><span translate="no"><?= h($n['title']) ?></span><?php if ($isMe): ?><small><?= $n['public'] ? '🌍 Shown' : '🔒 Private' ?></small><?php endif; ?>
+      </a>
+    <?php endforeach; ?>
+  </nav>
   <?php if ($isMe): ?>
     <p class="hint2" style="font-size:13px;margin:-8px 0 14px">This is how <?= $nb['public'] ? ((int)$prof['is_public'] ? ((int)$prof['guest_view'] ? 'everyone, even visitors without an account,' : 'people with an account') : 'nobody but you (your profile is private)') : 'nobody but you' ?> sees this notebook.
       <?= $nb['public'] ? '' : 'It is private right now. Switch it on in the Profile tab.' ?></p>
   <?php endif; ?>
 
-  <?php if (count($notebooks) > 1): ?>
-    <nav class="nbshelf" aria-label="Notebooks">
-      <?php foreach ($notebooks as $n): ?>
-        <a class="nbchip<?= $n['id'] === $nb['id'] ? ' on' : '' ?>" href="u.php?u=<?= h(rawurlencode($prof['slug'])) ?>&amp;nb=<?= $n['id'] ?>"<?= design_attrs($n['design'], 'accent') . design_style($n['design']) ?>>
-          <i style="<?= cover_css($n['design'], $n['cover_url']) ?>"></i><span translate="no"><?= h($n['title']) ?></span><?= $n['public'] ? '' : ' <small>🔒</small>' ?>
-        </a>
-      <?php endforeach; ?>
-    </nav>
-  <?php endif; ?>
 
   <?php if ($page === 'cover'): ?>
     <div class="nbcover" style="<?= cover_css($design, $cover) ?>">
@@ -127,7 +154,6 @@ app_top($nb['title'] . ' · ' . $name, ['tab' => '', 'active' => $isMe ? '' : 'e
       </div>
     </div>
     <?php if ($nb['intro'] !== ''): ?><p class="nb-intro" translate="no"><?= nl2br(h($nb['intro'])) ?></p><?php endif; ?>
-    <?php if ($prof['bio'] !== ''): ?><p class="bio" translate="no"><?= nl2br(h($prof['bio'])) ?></p><?php endif; ?>
     <?php if (!$sections): ?><p class="hint2" style="margin-top:14px">No pages in this notebook yet.</p><?php endif; ?>
 
   <?php elseif ($page === 'blog'):
