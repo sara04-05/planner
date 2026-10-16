@@ -1242,3 +1242,7 @@ a.nbtile{text-decoration:none}.nbtiles{margin-bottom:14px}.nbtile.on span{color:
 .userlist.cards .ucover{width:58px;height:78px}
 .shelf-book{display:block;width:100%;aspect-ratio:3/4;max-width:150px}
 .shelf-book .bk{height:100%}
+/* messages: the Delete chat button is an outlined red button (text was the same colour as the background) */
+.chat-tools .btn.del{background:transparent;color:var(--bad);border-color:color-mix(in srgb,var(--bad) 55%,transparent)}
+.chat-tools .btn.del:hover{background:color-mix(in srgb,var(--bad) 12%,transparent)}
+.chat-log{scroll-padding-bottom:140px}

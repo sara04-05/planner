@@ -71,13 +71,15 @@ function toggleMenu(d,m){
   if(m.mine&&!m.deleted)add('Delete for everyone',async()=>{if(!confirm(T('Delete this message for everyone?')))return;
     try{await api('msg.delete',{id:m.id,scope:'all'});await refresh();loadList()}catch(err){alert(T(err.message))}},'danger');
   d.append(menu);
+  // keep the whole menu in view: scroll the chat up just enough
+  requestAnimationFrame(()=>menu.scrollIntoView({block:'nearest',behavior:'smooth'}));
 }
 function editMsg(d,m){
   const body=d.querySelector('.msg-body'),old=body.textContent;
   const ta=el('textarea','msg-edit');ta.value=old;ta.maxLength=2000;ta.rows=2;ta.setAttribute('aria-label',T('Edit message'));
   const save=el('button','btn sm primary',T('Save')),cancel=el('button','btn sm ghost',T('Cancel'));save.type=cancel.type='button';
   const row=el('div','msg-edit-row');row.append(save,cancel);
-  body.replaceChildren(ta);body.append(row);ta.focus();
+  body.replaceChildren(ta);body.append(row);ta.focus();ta.scrollIntoView({block:'nearest'});
   cancel.onclick=()=>{body.textContent=old};
   save.onclick=async()=>{const t=ta.value.trim();if(!t)return;
     try{await api('msg.edit',{id:m.id,message:t});await refresh();loadList()}catch(err){alert(T(err.message))}};
@@ -92,7 +94,7 @@ async function open(id){
   const head=el('div','chat-head');const h2=el('h2',null,current.name);if(current.verified)h2.append(tick());head.append(h2);
   if(current.tag)head.append(el('div','pmail',current.tag));
   const tools=el('div','chat-tools');
-  const ren=el('button','btn sm ghost','✏️ '+T('Contact name')),del=el('button','btn sm ghost danger','🗑 '+T('Delete chat'));ren.type=del.type='button';
+  const ren=el('button','btn sm ghost','✏️ '+T('Contact name')),del=el('button','btn sm ghost del','🗑 '+T('Delete chat'));ren.type=del.type='button';
   ren.onclick=async()=>{
     const n=prompt(T('A name only you will see for this contact (leave empty to use their own name):'),current.nick||'');if(n===null)return;
     try{await api('msg.rename',{with:current.id,name:n});await open(current.id);loadList()}catch(err){alert(T(err.message))}};
