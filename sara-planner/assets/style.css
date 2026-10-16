@@ -4,7 +4,7 @@ img{max-width:100%}
 
 :root{
   --bg:#E9E4F1; --paper:#FFFFFF; --paper-2:#F6F3FA; --ink:#2A2338; --muted:#6F6781; --line:#E4DDEC;
-  --accent:#6A4DC4; --accent-soft:#ECE6FB; --on-accent:#FFFFFF;
+  --accent:#6A4DC4; --accent-soft:#ECE6FB; --on-accent:#FFFFFF; --brand:#6A4DC4;
   --t-day:#FBE7B0; --t-week:#CBEBDA; --t-month:#F7D3DD; --t-year:#DAD1F5; --t-study:#F9D2BC; --t-tasks:#CDDCF5; --t-money:#E7DACA;
   --good:#23804D; --good-soft:#DDF2E6; --warn:#A86C06; --warn-soft:#FBEFD2; --bad:#BF3651; --bad-soft:#F9DDE3;
   --c-food:#E07A5F; --c-coffee:#A47148; --c-transport:#3D8FD1; --c-groceries:#4FA36B; --c-school:#8B6AD8; --c-phone:#D9A21B; --c-fun:#E0609A; --c-clothes:#179C95; --c-gifts:#8FA31E; --c-work:#4C5FA8; --c-other:#8A8F99;
@@ -19,7 +19,7 @@ img{max-width:100%}
   :root:not([data-theme="light"]){
     color-scheme:dark;
     --bg:#14111B; --paper:#1E1A27; --paper-2:#27222F; --ink:#EDE9F5; --muted:#A49CB5; --line:#352E42;
-    --accent:#A98FF6; --accent-soft:#302849; --on-accent:#17121F;
+    --accent:#A98FF6; --accent-soft:#302849; --on-accent:#17121F; --brand:#A98FF6;
     --t-day:#4D4222; --t-week:#1F4032; --t-month:#4A2A3B; --t-year:#372D5C; --t-study:#4D3022; --t-tasks:#243655; --t-money:#40362B;
     --good:#62C98E; --good-soft:#1B3526; --warn:#E8B656; --warn-soft:#3A2F16; --bad:#F2819A; --bad-soft:#3F1F2A;
     --c-food:#EE8E74; --c-coffee:#C79468; --c-transport:#5DA9E8; --c-groceries:#66C084; --c-school:#A88EEE; --c-phone:#EABB3E; --c-fun:#EF80B3; --c-clothes:#45C4BC; --c-gifts:#B5C93F; --c-work:#8C9CE0; --c-other:#A1A6B0;
@@ -32,7 +32,7 @@ img{max-width:100%}
 :root[data-theme="dark"]{
   color-scheme:dark;
   --bg:#14111B; --paper:#1E1A27; --paper-2:#27222F; --ink:#EDE9F5; --muted:#A49CB5; --line:#352E42;
-  --accent:#A98FF6; --accent-soft:#302849; --on-accent:#17121F;
+  --accent:#A98FF6; --accent-soft:#302849; --on-accent:#17121F; --brand:#A98FF6;
   --t-day:#4D4222; --t-week:#1F4032; --t-month:#4A2A3B; --t-year:#372D5C; --t-study:#4D3022; --t-tasks:#243655; --t-money:#40362B;
   --good:#62C98E; --good-soft:#1B3526; --warn:#E8B656; --warn-soft:#3A2F16; --bad:#F2819A; --bad-soft:#3F1F2A;
   --c-food:#EE8E74; --c-coffee:#C79468; --c-transport:#5DA9E8; --c-groceries:#66C084; --c-school:#A88EEE; --c-phone:#EABB3E; --c-fun:#EF80B3; --c-clothes:#45C4BC; --c-gifts:#B5C93F; --c-work:#8C9CE0; --c-other:#A1A6B0;
@@ -383,10 +383,10 @@ td>.cellin{width:calc(100% - 16px);max-width:110px}
 .auth-alt a{color:var(--accent);font-weight:700}
 
 /* logo */
-.logo{display:inline-block;color:var(--accent);text-decoration:none;font-family:"Pacifico",cursive;font-weight:400;font-size:28px;line-height:1.3;letter-spacing:0;white-space:nowrap}
+.logo{display:inline-block;color:var(--brand);text-decoration:none;font-family:"Pacifico",cursive;font-weight:400;font-size:28px;line-height:1.3;letter-spacing:0;white-space:nowrap}
 .logo.sm{font-size:20px}
 .auth-card .logo{display:block;width:max-content;margin-bottom:14px}
-.brand .logo{font-size:28px;color:var(--accent);font-weight:400}
+.brand .logo{font-size:28px;color:var(--brand);font-weight:400}
 
 /* Per-month income / savings target you changed by hand */
 .tbl .r .cellin{text-align:right;width:96px;font-weight:inherit;color:inherit;border:1px dashed var(--line)}

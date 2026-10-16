@@ -479,14 +479,14 @@ function quickLook(nb){
   const d=nb.design||{},btn=(k,v,bg,label,on)=>`<button type="button" class="swatch sq" style="background:${bg}" data-x="st-look" data-k="${k}" data-v="${v}" aria-pressed="${on}" aria-label="${esc(label)}" title="${esc(label)}"></button>`;
   const covers=Object.keys(COVERS).map(c=>btn('cover',c,`linear-gradient(135deg,${COVERS[c][0]},${COVERS[c][1]})`,'Cover '+c,!nb.cover_url&&d.cover===c)).join('')
     +Object.keys(ART).map(c=>btn('cover',c,`var(--cov-${c})`,ART[c],!nb.cover_url&&d.cover===c)).join('');
-  const pills=(k,list)=>`<div class="pilltabs">${list.map(x=>`<button type="button" data-x="st-look" data-k="${k}" data-v="${x[0]}" aria-pressed="${d[k]===x[0]}">${x[1]}</button>`).join('')}</div>`;
+  const pills=(k,list)=>`<div class="pilltabs">${list.map(x=>`<button type="button" data-x="st-look" data-k="${k}" data-v="${x[0]}" aria-pressed="${(d[k]||{label:'box',layout:'center',pattern:'none',binding:'coil',paper:'lined'}[k])===x[0]}">${x[1]}</button>`).join('')}</div>`;
   const acc=Object.keys(ACCENTS).map(c=>btn('accent',c,ACCENTS[c],'Accent '+c,d.accent===c)).join('');
   const first=S.notebooks[0]&&S.notebooks[0].id===nb.id;
   return `<section class="xcard"><h3>Quick look${first?' · your Explore card':''}</h3><p class="sub">${first?'This is your first notebook, so this cover is also your card on Explore. ':''}Click to change this notebook's look. It saves straight away; open “Look, colours and stickers” below for your own colours, pictures and stickers.</p>
     <div class="st-lookrow"><div class="st-prev"><i style="${coverCss({...d,cover_url:nb.cover_url})}"></i></div>
     <div class="st-page" data-binding="${esc(d.binding||'coil')}" data-paper="${esc(d.paper||'lined')}" style="--ac:${d.accent==='custom'&&d.accent_hex?esc(d.accent_hex):(ACCENTS[d.accent]||ACCENTS.violet)}" aria-hidden="true"><b translate="no">${esc(nb.title)}</b><span></span><span></span><span></span></div>
     <div class="st-lookopts"><p class="opt-h">Cover</p><div class="swatches">${covers}</div>
-    <p class="opt-h">Binding</p>${pills('binding',BINDINGS)}<p class="opt-h">Paper</p>${pills('paper',PAPERS)}<p class="opt-h">Accent colour</p><div class="swatches">${acc}<label class="st-anycolor${d.accent==='custom'?' on':''}" title="Pick any colour"><input type="color" data-qcolor value="${esc(d.accent_hex||'#6a4dc4')}" aria-label="Any accent colour"> Any colour</label></div></div></div>
+    <p class="opt-h">Binding</p>${pills('binding',BINDINGS)}<p class="opt-h">Paper</p>${pills('paper',PAPERS)}<p class="opt-h">Name plate shape</p>${pills('label',LABELS)}<p class="opt-h">Name plate place</p>${pills('layout',LAYOUTS)}<p class="opt-h">Pattern on the cover</p>${pills('pattern',PATTERNS)}<p class="opt-h">Accent colour</p><div class="swatches">${acc}<label class="st-anycolor${d.accent==='custom'?' on':''}" title="Pick any colour"><input type="color" data-qcolor value="${esc(d.accent_hex||'#6a4dc4')}" aria-label="Any accent colour"> Any colour</label></div></div></div>
     <p class="opt-h" style="margin-top:18px">Inside the notebook</p><p class="hint2">Your notebook opened, with your choices.</p>
     <div class="st-inside">${notebookSpread(nb)}</div></section>`;
 }
@@ -560,7 +560,7 @@ document.addEventListener('click',async e=>{
       case 'nb-settings':ui.ptab='settings';redraw();setTimeout(()=>{const el=$('st-notebooks');if(el)el.scrollIntoView({behavior:'smooth'})},50);return;
       case 'nb-pick-st':if(ui.dirty)toast('Unsaved design changes were dropped.');pick(id);redraw();setTimeout(()=>{const el=$('st-notebooks');if(el)el.scrollIntoView()},20);return;
       case 'st-look':{
-        const d={...nb.design,[b.dataset.k]:b.dataset.v};if(b.dataset.k==='cover')d.cover_img=0;
+        const d={...(ui.dirty&&ui.dd?designOut():nb.design),[b.dataset.k]:b.dataset.v};if(b.dataset.k==='cover')d.cover_img=0;
         const r=await api('x.nb.design',{id:nb.id,design:d});nb.design=r.design;nb.cover_url=r.cover_url;
         ui.dd=Object.assign(clone(BASE),clone(r.design));ui.dd.cover_url=r.cover_url;ui.dirty=false;redraw();return}
       case 'st-deco':ui.ptab='notebooks';ui.panel='deco';redraw();return;
