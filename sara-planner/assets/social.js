@@ -409,6 +409,22 @@ function coverFull(p){
     :`<span class="nbc-label">${av}<span class="nbc-name" translate="no">${name}</span><span class="nbc-orn"></span><span class="nbc-dots"></span></span>`;
   return `<span class="${cls}" aria-hidden="true"><span class="nbc-art"${art}></span><span class="nbc-spine${light}"></span>${inner}</span>`;
 }
+/** The notebook opened flat: two pages with the binding in the middle, on its cover, in the paper, writing and colours chosen. */
+function notebookSpread(nb){
+  const d=nb.design||{},fam=(FONTS.find(f=>f[0]===d.font)||[])[2]||'',paper=d.paper_color==='custom'&&d.paper_hex?d.paper_hex:(PAPER_COLORS[d.paper_color]||'#FFFFFF');
+  const ink=lum(paper)<.4?'#EDE9F5':'#2A2338',rule=lum(paper)<.4?'rgba(255,255,255,.12)':'rgba(60,40,90,.14)';
+  const ac=d.accent==='custom'&&d.accent_hex?d.accent_hex:(ACCENTS[d.accent]||ACCENTS.violet);
+  const pages=nb.sections.map(k=>SECNAME[k]).concat((nb.pages||[]).map(p=>(p.emoji?p.emoji+' ':'')+p.title),['Day']);
+  const name=(document.querySelector('.hello span:last-child')||{textContent:''}).textContent.replace(/^Hi,\s*/,'');
+  const sticks=(d.stickers||[]).filter(x=>(x.p||'cover')==='cover').slice(0,4).map((x,i)=>`<span class="sp-stk" style="left:${12+i*22}%;top:${70+(i%2)*12}%">${x.k.startsWith('up:')?'':esc(x.k)}</span>`).join('');
+  return `<div class="spread" data-binding="${esc(d.binding||'coil')}" data-paper="${esc(d.paper||'lined')}" style="${coverCss({...d,cover_url:nb.cover_url})};--sp-paper:${paper};--sp-ink:${ink};--sp-rule:${rule};--sp-ac:${ac};${fam?`--sp-font:${fam};`:''}" aria-hidden="true">
+    <div class="sp-page left"><p class="sp-eyebrow">Contents</p><h3 translate="no">${esc(nb.title)}</h3>
+      <ol>${pages.map((t,i)=>`<li><span translate="no">${esc(t)}</span><i>${i+1}</i></li>`).join('')}</ol></div>
+    <div class="sp-gutter"></div>
+    <div class="sp-page right"><p class="sp-eyebrow">Welcome</p><h3 translate="no">${esc(nb.title)}</h3>
+      <p class="sp-intro" translate="no">${nb.intro?esc(nb.intro):'A few words about this notebook will show up here.'}</p>
+      ${name?`<p class="sp-by" translate="no">by ${esc(name)}</p>`:''}${sticks}</div></div>`;
+}
 /** Change how a notebook looks without opening the decorator: cover, binding, paper and accent colour, saved as you click. */
 function quickLook(nb){
   const d=nb.design||{},btn=(k,v,bg,label,on)=>`<button type="button" class="swatch sq" style="background:${bg}" data-x="st-look" data-k="${k}" data-v="${v}" aria-pressed="${on}" aria-label="${esc(label)}" title="${esc(label)}"></button>`;
@@ -419,8 +435,11 @@ function quickLook(nb){
   const first=S.notebooks[0]&&S.notebooks[0].id===nb.id;
   return `<section class="xcard"><h3>Quick look${first?' · your Explore card':''}</h3><p class="sub">${first?'This is your first notebook, so this cover is also your card on Explore. ':''}Click to change this notebook's look. It saves straight away; open “Look, colours and stickers” below for your own colours, pictures and stickers.</p>
     <div class="st-lookrow"><div class="st-prev"><i style="${coverCss({...d,cover_url:nb.cover_url})}"></i></div>
+    <div class="st-page" data-binding="${esc(d.binding||'coil')}" data-paper="${esc(d.paper||'lined')}" style="--ac:${d.accent==='custom'&&d.accent_hex?esc(d.accent_hex):(ACCENTS[d.accent]||ACCENTS.violet)}" aria-hidden="true"><b translate="no">${esc(nb.title)}</b><span></span><span></span><span></span></div>
     <div class="st-lookopts"><p class="opt-h">Cover</p><div class="swatches">${covers}</div>
-    <p class="opt-h">Binding</p>${pills('binding',BINDINGS)}<p class="opt-h">Paper</p>${pills('paper',PAPERS)}<p class="opt-h">Accent colour</p><div class="swatches">${acc}</div></div></div></section>`;
+    <p class="opt-h">Binding</p>${pills('binding',BINDINGS)}<p class="opt-h">Paper</p>${pills('paper',PAPERS)}<p class="opt-h">Accent colour</p><div class="swatches">${acc}</div></div></div>
+    <p class="opt-h" style="margin-top:18px">Inside the notebook</p><p class="hint2">Your notebook opened, with your choices.</p>
+    <div class="st-inside">${notebookSpread(nb)}</div></section>`;
 }
 function settingsTab(){
   const p=S.profile,nb=cur();
