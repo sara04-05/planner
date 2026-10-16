@@ -155,7 +155,7 @@ echo profile_head($person, (string)$prof['slug'], [plural($dayOnly ? 0 : count($
 
 
   <?php if ($page === 'cover'): ?>
-    <div class="nbcover" style="<?= cover_css($design, $cover) ?>">
+    <div class="nbcover"<?= cover_attrs($design) ?> style="<?= cover_css($design, $cover) ?>">
       <div class="nbcover-in">
         <?= avatar_html($person, 'xl') ?>
         <h2 translate="no"><?= h($nb['title']) ?></h2>
