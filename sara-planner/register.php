@@ -37,6 +37,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         }
         $uid = (int)$pdo->lastInsertId();
         create_user_defaults($uid);
+        q('INSERT INTO profiles (user_id, onboarded) VALUES (?, 0)', [$uid]);   // new accounts pick their notebook style and see the intro once (setup.php)
         $pdo->commit();
         login_user($uid);
         if (mail_configured()) {

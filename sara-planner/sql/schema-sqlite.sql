@@ -193,6 +193,7 @@ CREATE TABLE IF NOT EXISTS profiles (
   design     TEXT NULL,
   notify     TEXT NULL,
   nb_ready   TINYINT(1) NOT NULL DEFAULT 0,
+  onboarded  TINYINT(1) NOT NULL DEFAULT 1,
   FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
 );
 

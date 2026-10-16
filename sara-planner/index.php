@@ -13,6 +13,10 @@ if (!$user) {            // account was deleted
     exit;
 }
 $prof = ensure_profile($uid);
+if ((int)($prof['onboarded'] ?? 1) === 0) {   // first time here: choose the notebook style, then the intro
+    header('Location: setup.php');
+    exit;
+}
 $design = profile_design($prof);
 $unread = unread_count($uid);
 ?>
