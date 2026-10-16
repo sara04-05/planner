@@ -34,7 +34,7 @@ const PRESETS=[
 const SHARE_MSG='Only what you mark public ever shows.';
 
 let S=null,loading=false,loadErr='';
-const ui={ptab:(new URLSearchParams(location.search).get('ptab')==='settings'?'settings':'notebooks'),aud:'friend',nb:0,pg:'cover',panel:'',dd:null,dirty:false,sel:-1,post:null,pics:{},newList:false,newNb:false,marked:false};
+const ui={nbOpen:false,ptab:(new URLSearchParams(location.search).get('ptab')==='settings'?'settings':'notebooks'),aud:'friend',nb:0,pg:'cover',panel:'',dd:null,dirty:false,sel:-1,post:null,pics:{},newList:false,newNb:false,marked:false};
 
 async function api(action,data={}){
   const res=await fetch('api.php?action='+encodeURIComponent(action),{method:'POST',credentials:'same-origin',headers:{'Content-Type':'application/json','X-CSRF-Token':CSRF},body:JSON.stringify(data)});
@@ -75,7 +75,7 @@ function pick(id,keepPage){
   ui.nb=id;const nb=cur();
   ui.dd=nb?Object.assign(clone(BASE),clone(nb.design)):null;
   if(ui.dd){ui.dd.cover_url=nb.cover_url;ui.dd.stickers=ui.dd.stickers||[]}
-  ui.dirty=false;ui.sel=-1;ui.post=null;ui.newList=false;
+  ui.dirty=false;ui.sel=-1;ui.post=null;ui.newList=false;ui.nbOpen=false;
   if(!keepPage||!nb||!hasPage(nb,ui.pg))ui.pg='cover';
 }
 
@@ -217,7 +217,13 @@ function notebookHtml(nb){
   const d=ui.dd,tabs=['cover'].concat(nb.sections,nb.pages.map(p=>'pg:'+p.id),['day']);
   const body=ui.pageEdit?pageForm():ui.pg==='cover'?coverPage(nb,d):ui.pg==='day'?dayPage():ui.pg==='blog'?blogPage():ui.pg==='interests'?interestsPage():ui.pg==='timetable'?timetablePage():ui.pg.startsWith('pg:')?customPage(nb):subjectsPage();
   // the notebook opened flat: contents on the left page, the page you are on on the right, the binding in the middle, the cover around it
-  const toc=tabs.map((k,i)=>`<li><button type="button" data-x="pg" data-v="${k}" data-tab="${k}"${k===ui.pg&&!ui.pageEdit?' aria-current="page"':''}><span translate="no">${esc(secName(k))}</span><i>${i+1}</i></button></li>`).join('');
+  const toc=tabs.map((k,i)=>`<li><button type="button" data-x="${k==='cover'?'nb-close':'pg'}" data-v="${k}" data-tab="${k}"${k===ui.pg&&!ui.pageEdit?' aria-current="page"':''}><span translate="no">${esc(secName(k))}</span><i>${i+1}</i></button></li>`).join('');
+  const isOpen=ui.nbOpen||ui.pageEdit;
+  if(!isOpen)return `<div class="nbv${ui.panel==='deco'?' deco':''}" id="nbv"${wrapAttrs(d)}>
+    <div class="nbclosed" id="nbBinder"${d.binding&&d.binding!=='coil'?` data-binding="${d.binding}"`:''}>
+      ${coverPage(nb,d)}
+      <div class="nbclosed-go"><button type="button" class="btn primary" data-x="nb-open">📖 Open the notebook</button>${stkLayer(d,'cover')}</div>
+    </div></div>`;
   return `<div class="nbv${ui.panel==='deco'?' deco':''}" id="nbv"${wrapAttrs(d)}>
     <div class="nbook" id="nbBinder"${d.binding&&d.binding!=='coil'?` data-binding="${d.binding}"`:''} style="${coverCss(d)}">
       <div class="page nbp-left" id="nbPageL"${pageAttrs(d)}>
@@ -229,6 +235,7 @@ function notebookHtml(nb){
         <div class="vh"><div><p class="eyebrow">${esc(nb.title)}</p><h1>${esc(secName(ui.pg))}</h1></div></div>
         ${body}${stkLayer(d,ui.pg)}
       </div>
+      <nav class="tabs nbp-tabs" role="tablist" aria-label="Pages">${tabs.map(k=>`<button class="tab" role="tab" data-x="${k==='cover'?'nb-close':'pg'}" data-v="${k}" data-tab="${k}" aria-selected="${k===ui.pg&&!ui.pageEdit}">${esc(secName(k))}</button>`).join('')}<button class="tab add-page" role="tab" data-x="page-new" title="Add a page">+ Page</button></nav>
     </div></div>`;
 }
 
@@ -281,7 +288,7 @@ function paintPreview(){
   const t=document.createElement('div');t.innerHTML=`<i${wrapAttrs(d)}></i>`;[...t.firstChild.attributes].forEach(a=>w.setAttribute(a.name,a.value));
   const p=document.createElement('div');p.innerHTML=`<i${pageAttrs(d)}></i>`;
   [pg,$('nbPageL')].filter(Boolean).forEach(el=>{['data-paper','data-pcolor','data-font','data-ptone'].forEach(a=>el.removeAttribute(a));[...p.firstChild.attributes].forEach(a=>el.setAttribute(a.name,a.value))});
-  bd.style.cssText=coverCss(d).replace(/&#39;/g,"'");
+  if(bd.classList.contains('nbook'))bd.style.cssText=coverCss(d).replace(/&#39;/g,"'");
   if(d.binding&&d.binding!=='coil')bd.setAttribute('data-binding',d.binding);else bd.removeAttribute('data-binding');
   const cv=$('pvCover');if(cv)cv.style.cssText=coverCss(d).replace(/&#39;/g,"'");
   const sl=$('stkLayer');if(sl)sl.outerHTML=stkLayer(d,ui.pg);
@@ -520,18 +527,20 @@ document.addEventListener('click',async e=>{
         const r=await api('x.nb.design',{id:nb.id,design:d});nb.design=r.design;nb.cover_url=r.cover_url;
         ui.dd=Object.assign(clone(BASE),clone(r.design));ui.dd.cover_url=r.cover_url;ui.dirty=false;redraw();return}
       case 'st-deco':ui.ptab='notebooks';ui.panel='deco';redraw();return;
-      case 'st-page-new':ui.ptab='notebooks';ui.panel='';ui.pageEdit={id:0,title:'',emoji:PAGE_EMOJI[0],body:''};redraw('pg-title');return;
-      case 'st-page-edit':{const g=nb.pages.find(x=>x.id===id);if(!g)return;ui.ptab='notebooks';ui.panel='';ui.pg='pg:'+g.id;ui.pageEdit={id:g.id,title:g.title,emoji:g.emoji||PAGE_EMOJI[0],body:g.body};redraw('pg-title');return}
+      case 'st-page-new':ui.ptab='notebooks';ui.panel='';ui.nbOpen=true;ui.pageEdit={id:0,title:'',emoji:PAGE_EMOJI[0],body:''};redraw('pg-title');return;
+      case 'st-page-edit':{const g=nb.pages.find(x=>x.id===id);if(!g)return;ui.ptab='notebooks';ui.panel='';ui.nbOpen=true;ui.pg='pg:'+g.id;ui.pageEdit={id:g.id,title:g.title,emoji:g.emoji||PAGE_EMOJI[0],body:g.body};redraw('pg-title');return}
       case 'st-page-del':{if(!armed(b))return;const r=await api('x.page.delete',{id});nb.pages=r.pages;redraw();return}
       case 'cover-pick':{await api('x.profile.save',{cover:b.dataset.v});S.profile.cover=b.dataset.v;redraw();return}
       case 'avatar-rm':{await api('x.profile.save',{remove_avatar:true});S.profile.avatar='';redraw();return}
       case 'aud':ui.aud=b.dataset.v;redraw();return;
-      case 'post-open':{const p=S.posts.find(x=>x.id===id);if(!p)return;pick(p.nb);ui.pg='blog';ui.ptab='notebooks';redraw();return}
+      case 'post-open':{const p=S.posts.find(x=>x.id===id);if(!p)return;pick(p.nb);ui.pg='blog';ui.nbOpen=true;ui.ptab='notebooks';redraw();return}
       case 'nb-new':ui.newNb=!ui.newNb;redraw(ui.newNb?'nn-title':'');return;
       case 'panel':ui.panel=ui.panel===b.dataset.v?'':b.dataset.v;ui.sel=-1;redraw();return;
-      case 'pg':ui.pg=b.dataset.v;ui.sel=-1;ui.post=null;ui.newList=false;ui.pageEdit=null;redraw();return;
-      case 'page-new':ui.pageEdit={id:0,title:'',emoji:PAGE_EMOJI[0],body:''};redraw('pg-title');return;
-      case 'page-edit':{const p=nb.pages.find(x=>x.id===id);if(!p)return;ui.pageEdit={id:p.id,title:p.title,emoji:p.emoji||PAGE_EMOJI[0],body:p.body};redraw('pg-title');return}
+      case 'pg':ui.pg=b.dataset.v;ui.nbOpen=ui.pg!=='cover';ui.sel=-1;ui.post=null;ui.newList=false;ui.pageEdit=null;redraw();return;
+      case 'nb-open':ui.nbOpen=true;if(ui.pg==='cover')ui.pg=(cur().sections[0]||(cur().pages[0]&&'pg:'+cur().pages[0].id)||'day');redraw();return;
+      case 'nb-close':ui.nbOpen=false;ui.pg='cover';ui.pageEdit=null;redraw();return;
+      case 'page-new':ui.pageEdit={id:0,title:'',emoji:PAGE_EMOJI[0],body:''};ui.nbOpen=true;redraw('pg-title');return;
+      case 'page-edit':{const p=nb.pages.find(x=>x.id===id);if(!p)return;ui.pageEdit={id:p.id,title:p.title,emoji:p.emoji||PAGE_EMOJI[0],body:p.body};ui.nbOpen=true;redraw('pg-title');return}
       case 'page-cancel':ui.pageEdit=null;redraw();return;
       case 'page-del':{if(!armed(b))return;const r=await api('x.page.delete',{id});nb.pages=r.pages;ui.pg='cover';redraw();return}
       case 'nb-del':{if(!armed(b))return;await api('x.nb.delete',{id:nb.id});S.notebooks=S.notebooks.filter(n=>n.id!==nb.id);S.posts=S.posts.filter(p=>p.nb!==nb.id);S.lists=S.lists.filter(l=>l.nb!==nb.id);ui.panel='';pick(S.notebooks[0]?S.notebooks[0].id:0);toast('Notebook deleted.');redraw();return}
