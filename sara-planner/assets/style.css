@@ -2,7 +2,7 @@ html,body{margin:0}
 img{max-width:100%}
 [hidden]{display:none!important}
 
-:root{
+:root{--lh:40px;
   --bg:#E9E4F1; --paper:#FFFFFF; --paper-2:#F6F3FA; --ink:#2A2338; --muted:#6F6781; --line:#E4DDEC;
   --accent:#6A4DC4; --accent-soft:#ECE6FB; --on-accent:#FFFFFF;
   --t-day:#FBE7B0; --t-week:#CBEBDA; --t-month:#F7D3DD; --t-year:#DAD1F5; --t-study:#F9D2BC; --t-tasks:#CDDCF5; --t-money:#E7DACA;
@@ -79,7 +79,7 @@ button,input,select,textarea{font:inherit;color:inherit}
 .page{position:relative;background-color:var(--paper);border-radius:6px 20px 20px 6px;padding:28px 30px 32px 62px;min-height:640px;transition:background-color .25s;
   background-image:linear-gradient(90deg,transparent 50px,var(--margin) 50px,var(--margin) 51.5px,transparent 51.5px,transparent 54px,var(--margin) 54px,var(--margin) 55px,transparent 55px),
     linear-gradient(var(--paper) 0 96px,transparent 96px),
-    repeating-linear-gradient(to bottom,transparent 0 31px,var(--rule) 31px 32px);
+    repeating-linear-gradient(to bottom,transparent 0 calc(var(--lh,40px) - 1px),var(--rule) calc(var(--lh,40px) - 1px) var(--lh,40px));
   box-shadow:4px 4px 0 -1px var(--edge),4px 4px 0 0 var(--line),8px 8px 0 -1px var(--edge2),8px 8px 0 0 var(--line),var(--shadow)}
 .coil{position:absolute;left:-17px;top:24px;bottom:24px;width:46px;overflow:hidden;display:flex;flex-direction:column;gap:17px;pointer-events:none;z-index:2}
 .coil span{flex:0 0 auto;position:relative;height:13px}
@@ -333,7 +333,7 @@ input[type=checkbox]{accent-color:var(--accent);width:18px;height:18px;cursor:po
   .tab-gap{display:none}
   .page{padding:22px 18px 26px;border-radius:18px}
   .coil{display:none}
-  .page{padding:22px 18px 26px;border-radius:18px;background-image:linear-gradient(var(--paper) 0 84px,transparent 84px),repeating-linear-gradient(to bottom,transparent 0 31px,var(--rule) 31px 32px);box-shadow:3px 3px 0 -1px var(--edge),3px 3px 0 0 var(--line),var(--shadow)}
+  .page{padding:22px 18px 26px;border-radius:18px;background-image:linear-gradient(var(--paper) 0 84px,transparent 84px),repeating-linear-gradient(to bottom,transparent 0 calc(var(--lh,40px) - 1px),var(--rule) calc(var(--lh,40px) - 1px) var(--lh,40px));box-shadow:3px 3px 0 -1px var(--edge),3px 3px 0 0 var(--line),var(--shadow)}
   .addform,.addform.task{grid-template-columns:repeat(2,minmax(0,1fr))}
   .addform input[name=desc],.addform input[name=title],.addform input[name=name]{grid-column:1/-1}
   .hr{grid-template-columns:42px 86px minmax(0,1fr) 28px;padding-left:6px}
@@ -372,7 +372,7 @@ td>.cellin{width:calc(100% - 16px);max-width:110px}
 /* login / sign-up */
 .auth{min-height:100vh;display:grid;place-items:center;padding-block:48px}
 .auth-card{width:100%;max-width:420px;background-color:var(--paper);border-radius:6px 20px 20px 6px;padding:32px 30px;box-shadow:4px 4px 0 -1px var(--edge),4px 4px 0 0 var(--line),var(--shadow);
-  background-image:linear-gradient(var(--paper) 0 70px,transparent 70px),repeating-linear-gradient(to bottom,transparent 0 31px,var(--rule) 31px 32px)}
+  background-image:linear-gradient(var(--paper) 0 70px,transparent 70px),repeating-linear-gradient(to bottom,transparent 0 calc(var(--lh,40px) - 1px),var(--rule) calc(var(--lh,40px) - 1px) var(--lh,40px))}
 .auth-card h1{margin-bottom:6px}
 .auth-sub{color:var(--muted);font-size:14px;margin:10px 0 18px}
 .auth-form{display:flex;flex-direction:column;gap:14px}
@@ -490,7 +490,7 @@ table.ex tr:last-child td{border-bottom:0}
 }
 :root[data-theme="dark"] [data-pcolor]{--paper:var(--pc-d);--paper-2:color-mix(in srgb,var(--pc-d) 90%,#fff)}
 
-.page[data-paper="grid"],.nbx-page[data-paper="grid"]{background-image:repeating-linear-gradient(to bottom,transparent 0 31px,var(--rule) 31px 32px),repeating-linear-gradient(to right,transparent 0 31px,var(--rule) 31px 32px)}
+.page[data-paper="grid"],.nbx-page[data-paper="grid"]{background-image:repeating-linear-gradient(to bottom,transparent 0 calc(var(--lh,40px) - 1px),var(--rule) calc(var(--lh,40px) - 1px) var(--lh,40px)),repeating-linear-gradient(to right,transparent 0 calc(var(--lh,40px) - 1px),var(--rule) calc(var(--lh,40px) - 1px) var(--lh,40px))}
 .page[data-paper="dots"],.nbx-page[data-paper="dots"]{background-image:radial-gradient(var(--rule) 1.6px,transparent 1.8px);background-size:24px 24px}
 .page[data-paper="plain"],.nbx-page[data-paper="plain"]{background-image:none}
 [data-font="hand"]{--body:"Caveat","Segoe Print",cursive;--display:"Caveat","Segoe Print",cursive;font-size:18px}
@@ -914,7 +914,7 @@ a.tab{display:block;text-decoration:none;box-sizing:border-box}
 /* binding styles */
 .binder[data-binding="stitch"]>.coil,.binder[data-binding="none"]>.coil{display:none}
 .binder[data-binding="stitch"]>.page{border-left:4px dashed var(--wire)}
-.binder[data-binding="none"]>.page{padding-left:36px;background-image:repeating-linear-gradient(to bottom,transparent 0 31px,var(--rule) 31px 32px)}
+.binder[data-binding="none"]>.page{padding-left:36px;background-image:repeating-linear-gradient(to bottom,transparent 0 calc(var(--lh,40px) - 1px),var(--rule) calc(var(--lh,40px) - 1px) var(--lh,40px))}
 
 /* a notebook's cover page and the shelf of notebooks */
 .nbcover{border-radius:6px 18px 18px 6px;min-height:320px;display:grid;place-items:center;padding:28px;color:#fff;position:relative;overflow:hidden;box-shadow:inset 10px 0 0 rgba(0,0,0,.18),var(--shadow);isolation:isolate}
@@ -1100,10 +1100,10 @@ a.nbtile{text-decoration:none}.nbtiles{margin-bottom:14px}.nbtile.on span{color:
 }
 
 /* ---------- writing on the lines ----------
-   The page is ruled every 32px (--lh). Text, headings, rows and fields are sized in whole lines, so every line of writing sits
+   The page is ruled every var(--lh) (--lh). Text, headings, rows and fields are sized in whole lines, so every line of writing sits
    on a rule and the rules never run through letters. Boxes (panels, cards) are snapped to whole lines by assets/ruled.js. */
-.page{--lh:32px;line-height:var(--lh);padding-top:32px}
-.page .vh{height:64px;margin:0;flex-wrap:nowrap;align-items:flex-end}
+.page{--lh:40px;line-height:var(--lh);padding-top:var(--lh)}
+.page .vh{height:calc(var(--lh)*2);margin:0;flex-wrap:nowrap;align-items:flex-end}
 .page .vh>*{min-width:0}
 .page .vh .eyebrow{line-height:24px;margin:0}
 .page .vh h1{line-height:40px;padding-block:0}
@@ -1132,24 +1132,24 @@ a.nbtile{text-decoration:none}.nbtiles{margin-bottom:14px}.nbtile.on span{color:
 .page p[style],.page .s[style]{margin-block:0 !important}
 .page .gcal,.page .onboard,.page .soon{margin-block:0}
 /* pages people add to a notebook themselves */
-.nb-text{white-space:pre-wrap;font-size:15px;line-height:var(--lh,32px);overflow-wrap:anywhere}
+.nb-text{white-space:pre-wrap;font-size:15px;line-height:var(--lh);overflow-wrap:anywhere}
 .tab.add-page{--tc:var(--line);opacity:.85;font-weight:700}
-.pagebar{display:flex;gap:8px;flex-wrap:wrap;min-height:32px;align-items:center}
+.pagebar{display:flex;gap:8px;flex-wrap:wrap;min-height:var(--lh);align-items:center}
 
 /* profile header written on the lines: avatar = 4 lines, name / numbers / full name / bio = one line each */
 .page .phead{gap:0 28px;margin:0;align-items:start}
 .page .phead-av .avatar.xl{width:128px;height:128px;font-size:50px;box-sizing:border-box}
 .page .phead-main{min-height:128px}
-.page .phead-top{min-height:32px;gap:10px}
-.page .phead-top h2{line-height:32px}
+.page .phead-top{min-height:var(--lh);gap:10px}
+.page .phead-top h2{line-height:var(--lh)}
 .page .phead-top .tag2{line-height:18px}
-.page .pstats{min-height:32px;margin:0;gap:22px;align-items:center}
-.page .pstat{line-height:32px;align-items:center}
-.page .pname2,.page .pbio2{margin:0;line-height:32px}
-.page .phead-btns{min-height:32px;align-items:center;margin-bottom:0}
+.page .pstats{min-height:var(--lh);margin:0;gap:22px;align-items:center}
+.page .pstat{line-height:var(--lh);align-items:center}
+.page .pname2,.page .pbio2{margin:0;line-height:var(--lh)}
+.page .phead-btns{min-height:var(--lh);align-items:center;margin-bottom:0}
 .page .phead-btns .btn{height:28px;padding-block:0}
-.page .ptabs{border-top:0;border-bottom:1px solid var(--line);margin:32px 0 32px;height:32px;overflow-y:hidden}
-.page .ptabs button{border-top:0;margin:0;height:31px;padding:0 14px;line-height:30px;box-sizing:border-box}
+.page .ptabs{border-top:0;border-bottom:1px solid var(--line);margin:var(--lh) 0 var(--lh);height:var(--lh);overflow-y:hidden}
+.page .ptabs button{border-top:0;margin:0;height:calc(var(--lh) - 1px);padding:0 14px;line-height:calc(var(--lh) - 2px);box-sizing:border-box}
 .page .ptabs button[aria-selected="true"]{box-shadow:inset 0 -2px 0 var(--ink)}
 .page .nbtiles{margin-bottom:var(--lh)}
 .page .nbtile i{aspect-ratio:auto;height:160px}
@@ -1173,9 +1173,9 @@ a.nbtile{text-decoration:none}.nbtiles{margin-bottom:14px}.nbtile.on span{color:
 .chat-tools .danger{color:var(--bad)}
 
 /* Settings: account and notebooks on one page */
-.st-nav{display:flex;gap:8px;flex-wrap:wrap;margin:0 0 var(--lh,32px)}
+.st-nav{display:flex;gap:8px;flex-wrap:wrap;margin:0 0 var(--lh)}
 .st-nav .chipbtn{text-decoration:none;color:inherit}
-.st-sec{margin-bottom:var(--lh,32px)}
+.st-sec{margin-bottom:var(--lh)}
 .st-sec h3{font-size:20px}
 .st-avatar{display:flex;align-items:center;gap:16px;margin-bottom:12px}
 .st-avatar .avatar.xl{width:96px;height:96px;font-size:38px}
@@ -1193,7 +1193,7 @@ a.nbtile{text-decoration:none}.nbtiles{margin-bottom:14px}.nbtile.on span{color:
 .st-sec .userlist .un{flex:1;min-width:0;overflow-wrap:anywhere}
 /* chips keep their own height (the page's 32px line height is only for writing) */
 .page .hsum span,.page .chipbtn,.page .tag2,.page .stk-lib button,.page .swatch{line-height:1.3}
-.page .hsum{align-items:center;min-height:var(--lh,32px)}
+.page .hsum{align-items:center;min-height:var(--lh)}
 
 /* ===== cards that look like real notebooks ===== */
 /* notebook tiles (profile, settings, someone's profile): a book with a stitched spine, an elastic band and a shadow */
@@ -1203,7 +1203,7 @@ a.nbtile{text-decoration:none}.nbtiles{margin-bottom:14px}.nbtile.on span{color:
 .nbtile:hover i{transform:translateY(-5px) rotate(-1.2deg)}
 .nbtile.on i{outline:3px solid var(--accent);outline-offset:3px}
 .nbtile span{margin-top:6px;font-family:var(--display);font-weight:700}
-.nbtile.add{aspect-ratio:auto;height:160px;border:2px dashed var(--line);border-radius:4px 14px 14px 4px;background:repeating-linear-gradient(to bottom,transparent 0 31px,var(--rule) 31px 32px),var(--paper)}
+.nbtile.add{aspect-ratio:auto;height:160px;border:2px dashed var(--line);border-radius:4px 14px 14px 4px;background:repeating-linear-gradient(to bottom,transparent 0 calc(var(--lh,40px) - 1px),var(--rule) calc(var(--lh,40px) - 1px) var(--lh,40px)),var(--paper)}
 /* people on Explore: a card with their cover */
 .userlist.cards{display:grid;grid-template-columns:repeat(auto-fill,minmax(230px,1fr));gap:16px}
 .userlist.cards li{display:flex;flex-direction:column;align-items:stretch;gap:10px;padding:14px;background:var(--paper);border:1px solid var(--line);border-radius:6px 16px 16px 6px;box-shadow:4px 4px 0 -1px var(--edge),4px 4px 0 0 var(--line);transition:transform .15s}
@@ -1262,7 +1262,7 @@ a.nbtile{text-decoration:none}.nbtiles{margin-bottom:14px}.nbtile.on span{color:
 .spread .sp-page{position:relative;background-color:var(--sp-paper);color:var(--sp-ink);padding:22px 20px 20px;min-width:0;overflow:hidden}
 .spread .sp-page.left{border-radius:6px 0 0 6px;box-shadow:inset -22px 0 24px -22px rgba(0,0,0,.35)}
 .spread .sp-page.right{border-radius:0 6px 6px 0;box-shadow:inset 22px 0 24px -22px rgba(0,0,0,.35)}
-.spread[data-paper="lined"] .sp-page{background-image:repeating-linear-gradient(to bottom,transparent 0 31px,var(--sp-rule) 31px 32px);background-position:0 18px}
+.spread[data-paper="lined"] .sp-page{background-image:repeating-linear-gradient(to bottom,transparent 0 31px,var(--sp-rule) 31px var(--lh));background-position:0 18px}
 .spread[data-paper="grid"] .sp-page{background-image:repeating-linear-gradient(to bottom,transparent 0 23px,var(--sp-rule) 23px 24px),repeating-linear-gradient(to right,transparent 0 23px,var(--sp-rule) 23px 24px)}
 .spread[data-paper="dots"] .sp-page{background-image:radial-gradient(var(--sp-rule) 1.8px,transparent 2.2px);background-size:24px 24px}
 .spread .sp-gutter{position:relative;background:linear-gradient(90deg,rgba(0,0,0,.18),rgba(0,0,0,.05) 35%,rgba(0,0,0,.05) 65%,rgba(0,0,0,.18))}
@@ -1272,10 +1272,10 @@ a.nbtile{text-decoration:none}.nbtiles{margin-bottom:14px}.nbtile.on span{color:
 .spread .sp-eyebrow{font-size:11px;letter-spacing:.1em;text-transform:uppercase;font-weight:700;color:var(--sp-ac);margin:0 0 4px}
 .spread h3{font-size:22px;line-height:1.1;margin:0 0 14px;color:var(--sp-ink);overflow-wrap:anywhere}
 .spread ol{list-style:none;margin:0;padding:0}
-.spread ol li{display:flex;justify-content:space-between;gap:8px;font-size:15px;line-height:32px;border-bottom:1px dotted var(--sp-rule)}
+.spread ol li{display:flex;justify-content:space-between;gap:8px;font-size:15px;line-height:var(--lh);border-bottom:1px dotted var(--sp-rule)}
 .spread ol li i{font-style:normal;color:var(--sp-ac);font-weight:700}
-.spread .sp-intro{font-size:15px;line-height:32px;margin:0;white-space:pre-wrap;overflow-wrap:anywhere}
-.spread .sp-by{font-size:14px;line-height:32px;margin:6px 0 0;color:var(--sp-ac);font-weight:600}
+.spread .sp-intro{font-size:15px;line-height:var(--lh);margin:0;white-space:pre-wrap;overflow-wrap:anywhere}
+.spread .sp-by{font-size:14px;line-height:var(--lh);margin:6px 0 0;color:var(--sp-ac);font-weight:600}
 .spread .sp-stk{position:absolute;font-size:28px;line-height:1}
 @media (max-width:760px){.st-inside .spread{grid-template-columns:minmax(0,1fr);}.spread .sp-gutter{display:none}.spread .sp-page.left,.spread .sp-page.right{border-radius:6px;box-shadow:none}.spread .sp-page.right{margin-top:10px}}
 
@@ -1288,7 +1288,7 @@ a.nbtile{text-decoration:none}.nbtiles{margin-bottom:14px}.nbtile.on span{color:
 .nbp-title{font-family:var(--display);font-size:24px;line-height:1.1;margin:0 0 14px;overflow-wrap:anywhere}
 .nbp-toc{list-style:none;margin:0;padding:0}
 .nbp-toc li{border-bottom:1px dotted var(--rule)}
-.nbp-toc button{display:flex;justify-content:space-between;align-items:center;gap:8px;width:100%;border:0;background:none;font:inherit;font-size:15px;color:inherit;text-align:left;padding:0;min-height:32px;cursor:pointer;border-radius:6px}
+.nbp-toc button{display:flex;justify-content:space-between;align-items:center;gap:8px;width:100%;border:0;background:none;font:inherit;font-size:15px;color:inherit;text-align:left;padding:0;min-height:var(--lh);cursor:pointer;border-radius:6px}
 .nbp-toc button:hover{color:var(--accent)}
 .nbp-toc button i{font-style:normal;font-weight:700;color:var(--accent)}
 .nbp-toc button[aria-current="page"]{color:var(--accent);font-weight:700}
@@ -1361,7 +1361,7 @@ a.nbtile{text-decoration:none}.nbtiles{margin-bottom:14px}.nbtile.on span{color:
   .tabs{flex-wrap:nowrap;overflow-x:auto;overflow-y:hidden;padding:0 4px;gap:4px;-webkit-overflow-scrolling:touch}
   .tab{flex:0 0 auto;margin:0 0 -6px;border-radius:12px 12px 0 0;padding:9px 14px 12px;font-size:14px;white-space:nowrap}
   .tab[aria-selected="true"]{padding-top:12px}
-  .onboard{flex-direction:column;align-items:flex-start;height:auto!important;min-height:0!important;margin-bottom:32px!important}
+  .onboard{flex-direction:column;align-items:flex-start;height:auto!important;min-height:0!important;margin-bottom:var(--lh)!important}
   .onboard .btn{align-self:flex-start}
 }
 @media (max-width:640px){
@@ -1391,28 +1391,28 @@ a.nbtile{text-decoration:none}.nbtiles{margin-bottom:14px}.nbtile.on span{color:
 @media (max-width:760px){
   .page .sec-h{flex-direction:row;flex-wrap:wrap;align-items:baseline;justify-content:space-between;gap:0 10px}
   .page .vh{flex-wrap:wrap;gap:4px 10px;align-items:flex-end}
-  .page .vh{height:auto;min-height:64px}
-  .page .vh h1{font-size:clamp(22px,7vw,28px);line-height:32px}
+  .page .vh{height:auto;min-height:calc(var(--lh)*2)}
+  .page .vh h1{font-size:clamp(22px,7vw,28px);line-height:var(--lh)}
 }
 
 /* chart: the limit label ("daily €17") sits under its dashed line and the chart starts below the heading row, so it never covers the status pill */
-.chart{margin-top:32px}
+.chart{margin-top:var(--lh)}
 .plot{height:160px;padding-top:26px}
 .plot .lim em{bottom:auto;top:3px}
 
 
 /* every row is exactly one ruled line tall with its text centred, so writing sits between the lines */
-.page .catrow{height:32px;min-height:32px;padding:0;align-items:center;box-sizing:border-box}
-.page .total-line{min-height:32px;margin:0;padding:0;align-items:center;box-sizing:border-box}
-.page .xl{height:32px;align-items:center}
-.page .legend{min-height:32px}
+.page .catrow{height:var(--lh);min-height:var(--lh);padding:0;align-items:center;box-sizing:border-box}
+.page .total-line{min-height:var(--lh);margin:0;padding:0;align-items:center;box-sizing:border-box}
+.page .xl{height:var(--lh);align-items:center}
+.page .legend{min-height:var(--lh)}
 .page .addform{gap:4px 8px;row-gap:4px}
-.page .row .t,.page .row .s{line-height:32px}
+.page .row .t,.page .row .s{line-height:var(--lh)}
 
 /* only the notebook's own ruled lines: no extra separator lines between rows (the bold total line stays) */
 .page :is(.row,.ch,.subj-row,.vrow,.vitem,.hr,.dgroup,.sw){border-top-color:transparent;border-bottom-color:transparent}
 .page .ilist li{border-top:0}
-.page .tbl :is(th,td){border-top:0;border-bottom:0;padding-block:0;height:32px}
+.page .tbl :is(th,td){border-top:0;border-bottom:0;padding-block:0;height:var(--lh)}
 .page .tbl tfoot td{border-top:2px solid var(--ink)}
 .page .wd .foot{border-top:0}
 .page .ptabs{border-bottom:0}
@@ -1432,40 +1432,40 @@ a.nbtile{text-decoration:none}.nbtiles{margin-bottom:14px}.nbtile.on span{color:
 
 /* tables (admin lists, year table): one row = one ruled line, and no separator lines of their own */
 .page .tbl{border-collapse:collapse}
-.page .tbl tr{height:32px;border:0}
-.page .tbl :is(th,td){border:0;padding-block:0;height:32px;line-height:1.2}
+.page .tbl tr{height:var(--lh);border:0}
+.page .tbl :is(th,td){border:0;padding-block:0;height:var(--lh);line-height:1.2}
 .page .tbl tfoot td{border-top:2px solid var(--ink)}
 .page .tbl .btn{padding-block:3px;font-size:12px}
 .page .tbl .admin-acts{align-items:center}
 
 /* table cells: every cell lines up on the same row, text sits on the ruled lines */
-.page .tbl td{vertical-align:middle;line-height:32px}
-.page .tbl td small,.page .tbl td .s{line-height:32px}
+.page .tbl td{vertical-align:middle;line-height:var(--lh)}
+.page .tbl td small,.page .tbl td .s{line-height:var(--lh)}
 .page .tbl td :is(.btn,form,.admin-acts){line-height:1.2;vertical-align:middle}
 .page .tbl td form{display:inline-flex;align-items:center;margin:0}
 
 /* date headings in the expense list: one line tall, no line of their own, so the rows below stay on the ruled lines */
-.page .dgroup{height:32px;min-height:32px;padding:0;margin:0;border:0;align-items:center;box-sizing:border-box}
-.page .foot-note{margin-top:0;min-height:32px;align-items:center}
-.page .row{box-sizing:border-box;height:32px;align-items:center}
+.page .dgroup{height:var(--lh);min-height:var(--lh);padding:0;margin:0;border:0;align-items:center;box-sizing:border-box}
+.page .foot-note{margin-top:0;min-height:var(--lh);align-items:center}
+.page .row{box-sizing:border-box;height:var(--lh);align-items:center}
 .page .row .grow{min-width:0}
 
 /* opened notebook: tidy spread. The planner's own ruled paper is hidden behind the book, each page has one margin line clear of the text, and the contents list sits on the lines */
 .page:has(>.nbook),.binder:has(.nbook)>.page{background-image:none}
-.nbv .nbook .page:not([data-paper]){background-image:linear-gradient(90deg,transparent 24px,var(--margin) 24px,var(--margin) 25.5px,transparent 25.5px),repeating-linear-gradient(to bottom,transparent 0 31px,var(--rule) 31px 32px)}
-.nbv .nbook .page{padding:32px 26px 32px 44px}
-.nbv .nbook .page .eyebrow{line-height:32px;margin:0}
-.nbv .nbook .page .vh{height:auto;min-height:64px;margin:0}
+.nbv .nbook .page:not([data-paper]){background-image:linear-gradient(90deg,transparent 24px,var(--margin) 24px,var(--margin) 25.5px,transparent 25.5px),repeating-linear-gradient(to bottom,transparent 0 calc(var(--lh,40px) - 1px),var(--rule) calc(var(--lh,40px) - 1px) var(--lh,40px))}
+.nbv .nbook .page{padding:var(--lh) 26px var(--lh) 44px}
+.nbv .nbook .page .eyebrow{line-height:var(--lh);margin:0}
+.nbv .nbook .page .vh{height:auto;min-height:calc(var(--lh)*2);margin:0}
 .nbv .nbook .page h1{font-size:28px;line-height:40px}
-.nbp-title{line-height:32px;margin:0 0 32px;font-size:24px}
+.nbp-title{line-height:var(--lh);margin:0 0 var(--lh);font-size:24px}
 .nbp-toc li{border-bottom:0;margin:0}
-.nbp-toc button,.nbp-toc a{display:flex;justify-content:space-between;align-items:center;width:100%;min-height:32px;height:32px;padding:0;color:var(--ink);text-decoration:none;font:inherit;font-size:15px}
+.nbp-toc button,.nbp-toc a{display:flex;justify-content:space-between;align-items:center;width:100%;min-height:var(--lh);height:var(--lh);padding:0;color:var(--ink);text-decoration:none;font:inherit;font-size:15px}
 .nbp-toc button i,.nbp-toc a i{font-style:normal;font-weight:700;color:var(--accent);font-size:13px}
 .nbp-toc button:hover,.nbp-toc a:hover{color:var(--accent)}
 
 /* a little air between a profile's action buttons and the notebook tiles under them */
-.page .phead-btns{margin-bottom:32px}
-.page .nbtiles{margin-top:32px}
+.page .phead-btns{margin-bottom:var(--lh)}
+.page .nbtiles{margin-top:var(--lh)}
 
 /* how-to text lives only in the visitor tour: the planner and profile pages show none of it */
 body:not(.tour) .page p.hint2,body:not(.tour) .page .xcard>p.sub,body:not(.tour) .page .xform>p.sub,body:not(.tour) .page p.hint{display:none}
@@ -1483,7 +1483,7 @@ body:not(.tour) .page p.hint2,body:not(.tour) .page .xcard>p.sub,body:not(.tour)
 /* page tabs sit inside the notebook, on the edge of the page, not out on the table */
 @media (min-width:901px){
   .nbv .nbook{margin-right:0}
-  .nbook .nbp-tabs{right:16px;top:32px}
+  .nbook .nbp-tabs{right:16px;top:var(--lh)}
   .nbook .nbp-tabs .tab,.nbook .nbp-tabs .tab[aria-selected="true"]{border-radius:12px;margin-right:0}
   .nbv .nbook .nbp-right{padding-right:76px}
 }
@@ -1514,5 +1514,10 @@ a.nbcover-link:focus-visible{outline:3px solid var(--accent);outline-offset:6px;
 [data-label="pill"] .nbcover-in{border-radius:999px;padding:22px 20px}
 [data-label="ticket"] .nbcover-in{border-radius:6px;box-shadow:none;-webkit-mask:radial-gradient(circle 9px at 0 50%,#0000 97%,#000) left/51% 100% no-repeat,radial-gradient(circle 9px at 100% 50%,#0000 97%,#000) right/51% 100% no-repeat;mask:radial-gradient(circle 9px at 0 50%,#0000 97%,#000) left/51% 100% no-repeat,radial-gradient(circle 9px at 100% 50%,#0000 97%,#000) right/51% 100% no-repeat}
 [data-label="band"] .nbcover-in{left:14%;right:0;border-radius:0;box-shadow:0 0 0 1px rgba(74,52,38,.4)}
-[data-label="round"] .nbcover-in .avatar,[data-label="oval"] .nbcover-in .avatar,[data-label="pill"] .nbcover-in .avatar{width:64px;height:64px;min-width:64px;min-height:64px;max-width:64px;max-height:64px;flex-basis:64px}
+[data-label="round"] .nbcover-in .avatar,[data-label="oval"] .nbcover-in .avatar,[data-label="pill"] .nbcover-in .avatar{width:calc(var(--lh)*2);height:calc(var(--lh)*2);min-width:calc(var(--lh)*2);min-height:calc(var(--lh)*2);max-width:calc(var(--lh)*2);max-height:calc(var(--lh)*2);flex-basis:calc(var(--lh)*2)}
 [data-label="round"] .nbcover-in h2,[data-label="oval"] .nbcover-in h2{font-size:18px}
+
+/* breathing room: a full line between the page heading and what follows, and between blocks */
+.page .vh{margin-bottom:var(--lh)}
+.page .tiles{margin-bottom:var(--lh)}
+.page .sec-h{margin-top:0}
