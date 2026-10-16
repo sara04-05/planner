@@ -167,7 +167,7 @@ function upgrade_schema(PDO $pdo): void
     // Chat, profiles and friends: same tables as in the schema file.
     try {
         $sql = file_get_contents(__DIR__ . (DB_DRIVER === 'sqlite' ? '/sql/schema-sqlite.sql' : '/sql/schema.sql'));
-        foreach (['messages', 'profiles', 'friends'] as $t) {
+        foreach (['messages', 'profiles', 'friends', 'reports'] as $t) {
             if (preg_match("/CREATE TABLE IF NOT EXISTS $t \\(.*?\\n\\)[^;]*;/s", $sql, $m)) $pdo->exec($m[0]);
         }
         if (DB_DRIVER === 'sqlite') {

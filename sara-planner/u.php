@@ -50,6 +50,7 @@ if ($prof && $viewer && !can_view_profile($prof, $viewer)) {
     elseif ($state === 'sent') $actions = $btn('cancel', 'Requested · cancel', 'btn ghost');
     elseif ($state === 'received') $actions = $btn('accept', 'Accept friend request', 'btn primary');
     else $actions = $btn('add', 'Add friend', 'btn primary');
+    $actions .= ' <a class="btn ghost" href="report.php?id=' . $owner . '">Report</a>';
     app_top($person['name'] . "'s profile", ['active' => 'explore']);
     $nf = count(friend_ids($owner));
     echo profile_head($person, '', [plural($nf, 'friend', 'friends') => $nf], $actions, '<span class="tag2 priv">Private</span>');
@@ -94,6 +95,7 @@ if ($isMe) {
     elseif ($state === 'sent') $actions = friend_btn('cancel', $owner, 'Requested · cancel', 'btn ghost', $back);
     elseif ($state === 'received') $actions = friend_btn('accept', $owner, 'Accept friend request', 'btn primary', $back);
     else $actions = friend_btn('add', $owner, 'Add friend', 'btn primary', $back);
+    $actions .= ' <a class="btn ghost" href="report.php?id=' . $owner . '">Report</a>';
 } else {
     $actions = '<a class="btn primary" href="login.php">Log in to add friend</a>';
 }
