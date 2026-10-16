@@ -56,6 +56,14 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {   // friend buttons (here, on profi
     }
 }
 
+/** A person's first notebook as a little book (the same look as their notebook, so the card on Explore matches it). */
+function first_book(?string $designJson): string
+{
+    $bd = json_col($designJson, default_design());
+    $bu = !empty($bd['cover_img']) ? (string)upload_url((int)$bd['cover_img']) : '';
+    return '<i class="bk" style="' . cover_css($bd, $bu) . '"></i>';
+}
+
 /** One small form button that posts an action about a person. */
 function act(string $do, int $id, string $label, string $cls, string $back): string
 {
@@ -71,7 +79,7 @@ usort($friends, fn($a, $b) => strcasecmp($a['name'], $b['name']));
 
 $term = trim((string)($_GET['q'] ?? ''));
 // Only people who switched "Show me in Explore" on are listed (everybody else just uses the app), and never you yourself.
-$sql = 'SELECT u.id, u.name, p.slug, p.is_public, u.verified_badge, p.cover, p.cover_img, p.words, p.avatar_v FROM users u LEFT JOIN profiles p ON p.user_id = u.id WHERE u.email_verified = 1 AND u.id <> ? AND COALESCE(p.in_explore, 0) = 1';
+$sql = 'SELECT u.id, u.name, p.slug, p.is_public, u.verified_badge, (SELECT n.design FROM notebooks n WHERE n.user_id = u.id ORDER BY n.id LIMIT 1) AS nb_design FROM users u LEFT JOIN profiles p ON p.user_id = u.id WHERE u.email_verified = 1 AND u.id <> ? AND COALESCE(p.in_explore, 0) = 1';
 $args = [$viewer];
 if ($term !== '') {
     $sql .= " AND u.name LIKE ? ESCAPE '|'";
@@ -99,7 +107,7 @@ app_top('Explore', ['active' => 'explore', 'covers' => true, 'eyebrow' => 'Your 
     <p class="auth-sub">Open a notebook to see that friend's plan for today.</p>
     <div class="shelf">
       <?php foreach ($friends as $p): ?>
-        <a class="nb" href="friend.php?id=<?= $p['id'] ?>"><?= cover_html($p) ?><span class="nb-title"><?= h($p['name']) ?></span></a>
+        <a class="nb" href="friend.php?id=<?= $p['id'] ?>"><span class="shelf-book"><?= first_book(q('SELECT design FROM notebooks WHERE user_id = ? ORDER BY id LIMIT 1', [(int)$p['id']])->fetch()['design'] ?? null) ?></span><span class="nb-title"><?= h($p['name']) ?></span></a>
       <?php endforeach; ?>
     </div>
   </section>
@@ -117,7 +125,7 @@ app_top('Explore', ['active' => 'explore', 'covers' => true, 'eyebrow' => 'Your 
     <?php foreach ($rows as $r): ?>
       <?php $isMe = (int)$r['id'] === $viewer; $st = $isMe ? '' : friendship($viewer, (int)$r['id']); $back = 'explore.php' . ($term !== '' ? '?q=' . rawurlencode($term) : ''); ?>
       <?php $href = (int)$r['is_public'] && (string)$r['slug'] !== '' ? 'u.php?u=' . rawurlencode((string)$r['slug']) : 'u.php?id=' . (int)$r['id']; ?>
-      <li translate="no"><a class="ulink" href="<?= h($href) ?>"><span class="ucover" aria-hidden="true"><?= cover_html(['cover' => $r['cover'] ?: DEFAULT_COVER, 'cover_img' => $r['cover_img'], 'words' => (string)$r['words'], 'name' => $r['name'], 'avatar_v' => 0, 'id' => (int)$r['id']], true) ?></span><span class="un"><?= h($r['name']) ?><?= vbadge((int)$r['verified_badge'] === 1) ?></span><?php if (!(int)$r['is_public']): ?><small title="Private account">🔒</small><?php endif; ?></a>
+      <li translate="no"><a class="ulink" href="<?= h($href) ?>"><span class="ucover" aria-hidden="true"><?= first_book($r['nb_design'] ?? null) ?></span><span class="un"><?= h($r['name']) ?><?= vbadge((int)$r['verified_badge'] === 1) ?></span><?php if (!(int)$r['is_public']): ?><small title="Private account">🔒</small><?php endif; ?></a>
         <?php if ($st === 'friends'): ?><span class="hint2">Friends ✓</span>
         <?php elseif ($st === 'sent'): ?><?= act('cancel', (int)$r['id'], 'Requested', 'btn sm ghost', $back) ?>
         <?php elseif ($st === 'received'): ?><?= act('accept', (int)$r['id'], 'Accept', 'btn sm primary', $back) ?>

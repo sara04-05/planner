@@ -416,7 +416,8 @@ function quickLook(nb){
     +Object.keys(ART).map(c=>btn('cover',c,`var(--cov-${c})`,ART[c],!nb.cover_url&&d.cover===c)).join('');
   const pills=(k,list)=>`<div class="pilltabs">${list.map(x=>`<button type="button" data-x="st-look" data-k="${k}" data-v="${x[0]}" aria-pressed="${d[k]===x[0]}">${x[1]}</button>`).join('')}</div>`;
   const acc=Object.keys(ACCENTS).map(c=>btn('accent',c,ACCENTS[c],'Accent '+c,d.accent===c)).join('');
-  return `<section class="xcard"><h3>Quick look</h3><p class="sub">Click to change this notebook's look. It saves straight away; open “Look, colours and stickers” below for your own colours, pictures and stickers.</p>
+  const first=S.notebooks[0]&&S.notebooks[0].id===nb.id;
+  return `<section class="xcard"><h3>Quick look${first?' · your Explore card':''}</h3><p class="sub">${first?'This is your first notebook, so this cover is also your card on Explore. ':''}Click to change this notebook's look. It saves straight away; open “Look, colours and stickers” below for your own colours, pictures and stickers.</p>
     <div class="st-lookrow"><div class="st-prev"><i style="${coverCss({...d,cover_url:nb.cover_url})}"></i></div>
     <div class="st-lookopts"><p class="opt-h">Cover</p><div class="swatches">${covers}</div>
     <p class="opt-h">Binding</p>${pills('binding',BINDINGS)}<p class="opt-h">Paper</p>${pills('paper',PAPERS)}<p class="opt-h">Accent colour</p><div class="swatches">${acc}</div></div></div></section>`;
@@ -424,7 +425,7 @@ function quickLook(nb){
 function settingsTab(){
   const p=S.profile,nb=cur();
   const dsel=`<select class="daysel" data-xday aria-label="Who can see my day">${DAYLV.map((l,i)=>`<option value="${i}"${i===p.day?' selected':''}>${l}</option>`).join('')}</select>`;
-  const nav=[['st-account','Account'],['st-privacy','Privacy'],['st-explore','Explore'],['st-notebooks','Notebooks'],['st-danger','Delete account']].map(x=>`<a class="chipbtn" href="#${x[0]}">${x[1]}</a>`).join('');
+  const nav=[['st-account','Account'],['st-privacy','Privacy'],['st-notebooks','Notebooks and Explore card'],['st-danger','Delete account']].map(x=>`<a class="chipbtn" href="#${x[0]}">${x[1]}</a>`).join('');
   const covers=(p.covers||[]).map(c=>coverMini(c,p.cover===c[0])).join('')+
     `<label class="cover-opt own${p.cover==='custom'?' on':''}" title="Your own picture"><input type="file" accept="image/*" data-xfile="ecover" data-kind="cover"><span class="nbc mini own-pic" aria-hidden="true" style="${p.cover_url?`background-image:url('${esc(p.cover_url)}');background-size:cover`:''}">${p.cover_url?'':'＋'}</span><span>Your own picture</span></label>`;
   const nbTiles=S.notebooks.length?`<div class="nbtiles">${S.notebooks.map(n=>`<button class="nbtile${nb&&n.id===nb.id?' on':''}" data-x="nb-pick-st" data-id="${n.id}"><i style="${coverCss({...n.design,cover_url:n.cover_url})}"></i><span translate="no">${esc(n.title)}</span><small>${n.public?'🌍 Shown':'🔒 Private'}</small></button>`).join('')}</div>`:'<p class="empty">You have no notebooks yet. Make one in the Notebooks tab.</p>';
@@ -443,11 +444,7 @@ function settingsTab(){
     ${sw('Show me in Explore','Off by default: Explore only lists people who switch this on. Friends and your link work either way.',p.explore,'data-xsw="explore"')}
     <label class="l">Who can see my day (today’s hour-by-hour plan, nothing else of your planner)</label>${dsel}
     ${sw('Alert when someone likes my post','Shows in the bell at the top of the page.',!!(p.notify&&p.notify.like),'data-xsw="notify" data-k="like"')}</section>
-  <section class="xcard st-sec" id="st-explore"><h3>My card on Explore</h3><p class="sub">The cover people see next to your name. Pick one or use your own picture.</p>
-    <div class="cover-pick"><div class="cover-preview" id="coverPreview"><p class="opt-h" style="margin:0 0 8px">Preview</p>${coverFull(p)}</div>
-      <div class="cover-side"><div class="covers">${covers}</div>
-      <label class="l" for="ac-words">Words on a spiral cover</label><input type="text" id="ac-words" data-xwords maxlength="60" value="${esc(p.words||'')}" placeholder="e.g. she is fearless"><p class="hint2">Shown in handwriting on the spiral covers. Empty shows your name.</p></div></div></section>
-  <section class="xcard st-sec" id="st-notebooks"><h3>Notebooks</h3><p class="sub">Pick a notebook to change its name, pages and who sees it.</p>${nbTiles}
+  <section class="xcard st-sec" id="st-notebooks"><h3>Notebooks and Explore card</h3><p class="sub">Pick a notebook to change its look, name, pages and who sees it. Your first notebook is also your card on Explore, so its cover is what people see there.</p>${nbTiles}
     ${nb?`<div class="st-nb">${quickLook(nb)}${settingsPanel(nb)}${pages}<div class="xrow" style="margin-top:12px"><button class="btn" data-x="st-deco">🎨 Look, colours and stickers</button><span class="hint2">Make your own cover colours, use your own picture, and make stickers from your pictures.</span></div></div>`:''}</section>
   <section class="xcard st-sec" id="st-danger"><h3>Delete account</h3><p class="sub">Logs you out and removes your account and everything in it for good.</p><a class="btn danger" href="delete-account.php">Delete my account</a></section>`;
 }
