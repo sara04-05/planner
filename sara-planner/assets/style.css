@@ -1378,3 +1378,14 @@ a.nbtile{text-decoration:none}.nbtiles{margin-bottom:14px}.nbtile.on span{color:
   .nbv .nbook .nbp-left{display:none}
   .nbv .nbook .nbp-right{margin-top:0}
 }
+
+/* tighter spacing: less empty space between sections */
+.page{padding-top:20px}
+.page .vh{height:auto;min-height:48px;margin-bottom:6px}
+.page .stack,.page .cols,.page .cols.wide-l{gap:14px}
+.page .sec-h{min-height:28px}
+.page :is(p,li,.s,.meta,.hint,.hint2,.empty,.legend,.sub){line-height:24px}
+.page .row{min-height:28px}
+.page .addform{margin-bottom:6px}
+.page .nbtiles{margin-bottom:12px;gap:12px 14px}
+@media (max-width:760px){.page{padding-top:16px}.tabs{margin-bottom:0}}
