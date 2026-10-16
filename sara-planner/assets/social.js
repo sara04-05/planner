@@ -34,7 +34,7 @@ const PRESETS=[
 const SHARE_MSG='Only what you mark public ever shows.';
 
 let S=null,loading=false,loadErr='';
-const ui={nbOpen:false,ptab:(new URLSearchParams(location.search).get('ptab')==='settings'?'settings':'notebooks'),aud:'friend',nb:0,pg:'cover',panel:'',dd:null,dirty:false,sel:-1,post:null,pics:{},newList:false,newNb:false,marked:false};
+const ui={nbShown:false,nbOpen:false,ptab:(new URLSearchParams(location.search).get('ptab')==='settings'?'settings':'notebooks'),aud:'friend',nb:0,pg:'cover',panel:'',dd:null,dirty:false,sel:-1,post:null,pics:{},newList:false,newNb:false,marked:false};
 
 async function api(action,data={}){
   const res=await fetch('api.php?action='+encodeURIComponent(action),{method:'POST',credentials:'same-origin',headers:{'Content-Type':'application/json','X-CSRF-Token':CSRF},body:JSON.stringify(data)});
@@ -52,7 +52,7 @@ async function upload(file,kind){
 }
 const toast=m=>{const t=$('toast');if(!t)return;t.textContent=m;t.hidden=false;clearTimeout(toast.t);toast.t=setTimeout(()=>{t.hidden=true},4500)};
 const redraw=id=>window.SPL_RENDER&&window.SPL_RENDER(id);
-const clone=o=>JSON.parse(JSON.stringify(o));
+const clone=o=>o==null?{}:JSON.parse(JSON.stringify(o));
 const mediaUrl=id=>id?'media.php?id='+id:'';
 
 function load(){
@@ -115,7 +115,7 @@ function wrapAttrs(d){   // goes on the notebook wrapper: accent colour + the co
   if(d.accent&&d.accent!=='violet')a+=` data-accent="${d.accent}"`;
   if(d.accent==='custom'&&d.accent_hex)v+=`--c-accent:${d.accent_hex};--c-on:${lum(d.accent_hex)>.55?'#17121F':'#FFFFFF'};`;
   if(d.paper_color==='custom'&&d.paper_hex)v+=`--c-paper:${d.paper_hex};`;
-  if(d.label==='none')a+=' data-label="none"';
+  if(d.label&&d.label!=='box')a+=` data-label="${d.label}"`;
   if(d.label_hex)v+=`--c-label:${d.label_hex};--c-label-ink:${lum(d.label_hex)>.5?'#2B2118':'#FFFFFF'};`;
   return a+(v?` style="${v}"`:'');
 }
@@ -207,7 +207,7 @@ function subjectsPage(){
 }
 function coverPage(nb,d){
   const name=(document.querySelector('.hello span:last-child')||{textContent:'You'}).textContent.replace(/^Hi,\s*/,'');
-  return `<div class="nbcover" id="pvCover" style="${coverCss(d)}"><div class="nbcover-in">${avatarHtml({avatar:S.profile.avatar,name})}<h2 translate="no">${esc(nb.title)}</h2><p class="by" translate="no">by ${esc(name)} · @${esc(S.profile.slug)}</p></div></div>`+
+  return `<div class="nbcover" id="pvCover" style="${coverCss(d)}"><div class="nbcover-in nbcover-edit" data-x="panel" data-v="deco" role="button" tabindex="0" title="Edit the box" aria-label="Edit the box on the cover"><span class="nbcover-pen" aria-hidden="true">✎</span>${avatarHtml({avatar:S.profile.avatar,name})}<h2 translate="no">${esc(nb.title)}</h2><p class="by" translate="no">by ${esc(name)} · @${esc(S.profile.slug)}</p></div></div>`+
     (nb.intro?`<p class="nb-intro" translate="no">${esc(nb.intro)}</p>`:'<p class="hint2" style="margin-top:12px">Add a few words about this notebook in <b>Settings</b>.</p>')+
     (nb.sections.length?'':'<p class="hint2">This notebook has no pages yet. Add some in <b>Settings</b>.</p>');
 }
@@ -241,8 +241,8 @@ function notebookHtml(nb){
   const isOpen=ui.nbOpen||ui.pageEdit,an=ui.anim||'';ui.anim='';   // an animation plays once, on the redraw that follows the click
   if(!isOpen)return `<div class="nbv${ui.panel==='deco'?' deco':''}" id="nbv"${wrapAttrs(d)}>
     <div class="nbclosed" id="nbBinder" data-anim="${an}"${d.binding&&d.binding!=='coil'?` data-binding="${d.binding}"`:''}>
-      ${coverPage(nb,d)}
-      <div class="nbclosed-go"><button type="button" class="btn primary" data-x="nb-open">📖 Open the notebook</button>${stkLayer(d,'cover')}</div>
+      <div class="nbclosed-hit" data-x="nb-open" role="button" tabindex="0" title="Open the notebook" aria-label="Open the notebook">${coverPage(nb,d)}</div>
+      <div class="nbclosed-go">${stkLayer(d,'cover')}</div>
     </div></div>`;
   return `<div class="nbv${ui.panel==='deco'?' deco':''}" id="nbv"${wrapAttrs(d)}>
     <div class="nbook" id="nbBinder" data-anim="${an}"${d.binding&&d.binding!=='coil'?` data-binding="${d.binding}"`:''} style="${coverCss(d)}">
@@ -283,7 +283,7 @@ function decoPanel(nb){
     <p class="opt-h">Cover</p><div class="swatches">${Object.keys(COVERS).map(c=>swatch('cover',c,`linear-gradient(135deg,${COVERS[c][0]},${COVERS[c][1]})`,'Cover '+c)).join('')}${Object.keys(ART).map(c=>swatch('cover',c,`var(--cov-${c})`,ART[c])).join('')}</div>
     <div class="colorrow"><span>Your own colours</span><input type="color" data-xcolor="cover_c1" value="${d.cover_c1||'#6a4dc4'}" aria-label="Cover colour 1"><input type="color" data-xcolor="cover_c2" value="${d.cover_c2||'#e0609a'}" aria-label="Cover colour 2"></div>
     <div class="pic-pick" style="margin-top:10px"><label class="btn sm"><input type="file" accept="image/*" data-xfile="cover" data-kind="cover">🖼️ Use my own cover picture</label><button type="button" class="btn sm ghost" id="coverRm" data-x="cover-rm" ${d.cover_url?'':'hidden'}>Remove my picture</button><span class="hint2" data-pic-msg></span></div>
-    <p class="opt-h">Label on the cover</p><div class="pilltabs">${[['box','Box'],['none','No box']].map(x=>`<button type="button" data-x="label" data-v="${x[0]}" aria-pressed="false">${x[1]}</button>`).join('')}<input type="color" class="colorpick" data-xcolor="label_hex" value="${d.label_hex||'#efe2c8'}" aria-label="Your own label colour"></div>
+    <p class="opt-h">Label on the cover</p><div class="pilltabs">${[['box','▭ Box'],['round','⬤ Circle'],['oval','⬭ Oval'],['arch','⌓ Arch'],['pill','💊 Pill'],['ticket','🎟️ Ticket'],['band','▬ Band'],['none','✕ No box']].map(x=>`<button type="button" data-x="label" data-v="${x[0]}" aria-pressed="false">${x[1]}</button>`).join('')}<input type="color" class="colorpick" data-xcolor="label_hex" value="${d.label_hex||'#efe2c8'}" aria-label="Your own label colour"></div>
     <p class="opt-h">Paper</p><div class="pilltabs">${PAPERS.map(x=>`<button type="button" data-x="paper" data-v="${x[0]}" aria-pressed="false">${x[1]}</button>`).join('')}</div>
     <p class="opt-h">Paper colour</p><div class="swatches">${Object.keys(PAPER_COLORS).map(c=>swatch('pcolor',c,PAPER_COLORS[c],'Paper '+c)).join('')}<input type="color" class="colorpick" data-xcolor="paper_hex" value="${d.paper_hex||'#ffffff'}" aria-label="Your own paper colour"></div>
     <p class="opt-h">Accent colour</p><div class="swatches">${Object.keys(ACCENTS).map(c=>swatch('accent',c,ACCENTS[c],'Accent '+c)).join('')}<input type="color" class="colorpick" data-xcolor="accent_hex" value="${d.accent_hex||'#6a4dc4'}" aria-label="Your own accent colour"></div>
@@ -362,11 +362,12 @@ function notebooksTab(){
       <label class="l" for="nn-look">Look</label><select id="nn-look" name="look"><option value="">Plain to start (you can decorate it next)</option>${PRESETS.map((x,i)=>`<option value="${i}">${x[0]}</option>`).join('')}</select>
       <div class="xrow"><button class="btn primary">Create notebook</button><button type="button" class="btn ghost" data-x="nb-new">Cancel</button></div></form>`:'';
   let editor='';
-  if(nb){
+  if(nb&&(ui.nbShown||ui.nbOpen||ui.panel||ui.pageEdit)){
     const open=ui.panel?' panel-open':'';
     editor=`<div class="nbe-bar"><button class="btn${ui.panel==='deco'?' on':''}" data-x="panel" data-v="deco">🎨 Decorate</button><a class="btn" href="u.php?u=${esc(S.profile.slug)}&amp;nb=${nb.id}" target="_blank" rel="noopener">👁️ Open as a visitor ↗</a><span class="hint2">${nb.public?'Shown on your profile':'Private: only you can see it'}</span></div>
       <div class="nbe${open}"><div>${notebookHtml(nb)}</div>${ui.panel?`<div class="nbe-side">${ui.panel==='settings'?settingsPanel(nb):decoPanel(nb)}</div>`:''}</div>`;
-  }else editor='<p class="empty">You have no notebooks yet. Press <b>+ New notebook</b> to make your first one.</p>';
+  }else if(nb)editor='<p class="hint2" style="margin-top:12px">Press a notebook above to open it.</p>';
+  else editor='<p class="empty">You have no notebooks yet. Press <b>+ New notebook</b> to make your first one.</p>';
   return tiles+newForm+editor;
 }
 function postsTab(){
@@ -533,6 +534,7 @@ function applyLook(look){   // a ready-made or saved look: replaces colours/pape
 }
 
 /* ---------- clicks ---------- */
+document.addEventListener('keydown',e=>{if((e.key==='Enter'||e.key===' ')&&e.target.matches&&e.target.matches('[role=button][data-x]')){e.preventDefault();e.target.click()}});
 document.addEventListener('click',async e=>{
   const b=e.target.closest('[data-x]');if(!b)return;
   const a=b.dataset.x,id=+b.dataset.id,nb=S&&cur();
@@ -540,7 +542,7 @@ document.addEventListener('click',async e=>{
     switch(a){
       case 'retry':loadErr='';S=null;redraw();return;
       // notebooks
-      case 'nb-pick':if(ui.dirty)toast('Unsaved design changes were dropped.');pick(id);redraw();return;
+      case 'nb-pick':if(ui.dirty)toast('Unsaved design changes were dropped.');pick(id);ui.nbShown=true;redraw();return;
       case 'ptab':ui.ptab=b.dataset.v;redraw();return;
       case 'nb-settings':ui.ptab='settings';redraw();setTimeout(()=>{const el=$('st-notebooks');if(el)el.scrollIntoView({behavior:'smooth'})},50);return;
       case 'nb-pick-st':if(ui.dirty)toast('Unsaved design changes were dropped.');pick(id);redraw();setTimeout(()=>{const el=$('st-notebooks');if(el)el.scrollIntoView()},20);return;

@@ -37,6 +37,9 @@ let blockMsg=null;
 const save=()=>{try{localStorage.setItem(PREFS,JSON.stringify({tab:state.tab,taskFilter:state.taskFilter,expPeriod:state.expPeriod}))}catch(e){}};
 function loadPrefs(){try{return JSON.parse(localStorage.getItem(PREFS))||{}}catch(e){return {}}}
 
+/* How-to text only belongs in the visitor tour (Look inside); the real planner shows none of it */
+const TOUR=!!window.SPL_TOUR,tip=s=>TOUR?s:'';
+
 async function api(action,data={}){
   // Visitor tour: the planner is filled with sample data and nothing can be saved
   if(window.SPL_TOUR){
@@ -134,14 +137,14 @@ const expForm=def=>`<form class="addform" data-form="exp" autocomplete="off">
 function expRows(list,{showDate=true,limit=0}={}){
   const l=[...list].sort((a,b)=>b.date.localeCompare(a.date));
   const shown=limit?l.slice(0,limit):l;
-  if(!shown.length)return `<p class="empty">No expenses here yet.</p>`;
+  if(!shown.length)return tip(`<p class="empty">No expenses here yet.</p>`);
   return shown.map(e=>`<div class="row"><span class="dot" style="background:${cv(e.cat)}"></span><div class="grow"><div class="t">${esc(e.desc)}</div><div class="s">${e.cat}${showDate?' · '+short(parse(e.date)):''}</div></div><span class="amt">${eur(e.amount)}</span><button class="x" data-act="del-exp" data-id="${e.id}" aria-label="Delete ${esc(e.desc)}">×</button></div>`).join('')
    +(limit&&l.length>limit?`<p class="s" style="padding-top:8px"><button class="linkbtn" data-act="tab" data-tab="money">See all ${l.length} in Expenses →</button></p>`:'');
 }
 function catBars(list){
   const g={};list.forEach(e=>g[e.cat]=(g[e.cat]||0)+e.amount);
   const rows=Object.entries(g).sort((a,b)=>b[1]-a[1]);
-  if(!rows.length)return `<p class="empty">Nothing spent in this period.</p>`;
+  if(!rows.length)return tip(`<p class="empty">Nothing spent in this period.</p>`);
   const max=rows[0][1];
   return rows.map(([c,v])=>`<div class="catrow"><span class="lbl"><span class="dot" style="background:${cv(c)}"></span>${c}</span><span class="track"><span style="width:${(v/max*100).toFixed(1)}%;background:${cv(c)}"></span></span><span class="amt">${eur(v)}</span></div>`).join('');
 }
@@ -178,7 +181,7 @@ function studyBlocks(di){
   return out;
 }
 function blockRows(list){
-  if(!list.length)return `<p class="empty">No study blocks yet. Mark an hour as Study in Hour by hour, or add a block below.</p>`;
+  if(!list.length)return tip(`<p class="empty">No study blocks yet. Mark an hour as Study in Hour by hour, or add a block below.</p>`);
   return list.map(b=>`<div class="row ${b.done?'done':''}"><span class="time">${hm(b.from)}–${hm(b.to)}</span><span class="bar-mark" style="background:var(--c-${subjColor(b.title)})"></span><div class="grow"><div class="t">${esc(b.title)}</div><div class="s">${durTxt(b.to-b.from)}${b.rep?` · ↻ every ${WDL[wdi(parse(b.date))]}`:''}</div></div><input type="checkbox" data-chk="block" data-key="${esc(b.key)}" ${b.done?'checked':''} aria-label="Done: ${esc(b.title)}"><button class="x" data-act="del-block" data-date="${b.date}" data-start="${b.start}" data-end="${b.end}" data-confirm aria-label="Delete ${esc(b.title)}">×</button></div>`).join('');
 }
 function freeRanges(di){
@@ -335,7 +338,7 @@ function hourSum(di){
 function hourSection(d){
   const di=iso(d),rows=(a,b)=>{let o='';for(let h=a;h<=b;h++)o+=hourRow(di,h);return o};
   return `<section style="margin-top:34px"><div class="sec-h" style="flex-wrap:wrap"><h2>Hour by hour</h2><div class="hsum" id="hsum">${hourSum(di)}</div></div>${toolBar(di)}
-    <p style="font-size:13px;color:var(--muted);margin-bottom:12px">Write your uni, work and everything else for each hour, and pick a type to colour it. Click a time to set when it starts and ends, like 17:15–19:45. Click ↻ to repeat an hour every ${WDL[wdi(d)]}, so your weekly timetable fills itself in.</p>
+    ${tip(`<p style="font-size:13px;color:var(--muted);margin-bottom:12px">Write your uni, work and everything else for each hour, and pick a type to colour it. Click a time to set when it starts and ends, like 17:15–19:45. Click ↻ to repeat an hour every ${WDL[wdi(d)]}, so your weekly timetable fills itself in.</p>`)}
     <div class="hours"><div><p class="hcol-h">Night and morning · 00–11</p>${rows(0,11)}</div><div><p class="hcol-h">Afternoon and evening · 12–23</p>${rows(12,23)}</div></div></section>`;
 }
 
@@ -478,12 +481,12 @@ const gcalDates=new Set();
 function toolBar(di){
   const g=state.google,on=g&&g.configured&&g.connected;
   const imp=`<label class="btn" title="Excel, CSV, PDF or Word (.docx)">${IMPORT_ICON}Import a planner<input type="file" id="impFile" data-date="${di}" accept=".xlsx,.xls,.xlsm,.ods,.csv,.pdf,.docx,.doc,.txt" hidden></label><button type="button" class="linkbtn" data-act="imp-help">What should my file look like?</button>`;
-  if(!GCAL_ON)return `<div class="gcal"><span>Already have your day planned in Excel, a PDF or Word? Bring it in.</span>${imp}</div>`;
+  if(!GCAL_ON)return `<div class="gcal"><span>${tip('Already have your day planned in Excel, a PDF or Word? Bring it in.')}</span>${imp}</div>`;
   if(on)return `<div class="gcal on"><span>${GCAL_ICON}<span id="gcalMsg">${gcalMsg||`In Google Calendar${g.email?` (${esc(g.email)})`:''}, in the calendar called <b>Splanner</b>`}</span></span>
     <button class="linkbtn" data-act="gcal-sync">Sync now</button>
     <form method="post" action="calendar.php" class="inline"><input type="hidden" name="csrf" value="${esc(CSRF)}"><button class="linkbtn" title="Stop sending hours to Google. What's already there stays until you delete the Splanner calendar.">Disconnect</button></form><span class="tb-gap"></span>${imp}</div>`;
   const cal=`<a class="btn" href="calendar.php?start=1">${GCAL_ICON}Show in Google Calendar</a>`;
-  return `<div class="gcal"><span>${cal?'Bring in a planner you already have, or show these hours in Google Calendar.':'Already have your day planned in Excel, a PDF or Word? Bring it in.'}</span>${imp}${cal}</div>`;
+  return `<div class="gcal"><span>${tip(cal?'Bring in a planner you already have, or show these hours in Google Calendar.':'Already have your day planned in Excel, a PDF or Word? Bring it in.')}</span>${imp}${cal}</div>`;
 }
 const GCAL_ICON='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/></svg>';
 function gcalStatus(msg){gcalMsg=msg;const el=document.getElementById('gcalMsg');if(el)el.innerHTML=msg}
@@ -545,7 +548,7 @@ function subjectsSection(){
   }).join('');
   return `<section style="margin-top:36px"><div class="sec-h"><h2>Subjects and chapters</h2><span class="meta">${allDone} of ${all.length} things learned</span></div>
     <form class="addform subjform" data-form="subject" autocomplete="off"><input id="sb-name" name="name" placeholder="Add a subject, e.g. Linear Algebra" required aria-label="Subject name"><input id="sb-exam" name="exam" type="date" aria-label="Exam date (optional)" title="Exam date (optional)"><button class="btn primary">Add subject</button></form>
-    ${state.subjects.length?`<div class="subjects">${cards}</div>`:'<p class="empty">No subjects yet. Add your first one above.</p>'}</section>`;
+    ${state.subjects.length?`<div class="subjects">${cards}</div>`:tip('<p class="empty">No subjects yet. Add your first one above.</p>')}</section>`;
 }
 
 function revisedPanel(){
@@ -563,15 +566,15 @@ V.day=()=>{
   tasks.sort((a,b)=>a.done-b.done||a.due.localeCompare(b.due));
   const rel=dayDiff(d,TODAY);
   const isNew=!state.exps.length&&!state.tasks.length&&!Object.keys(state.hours).length&&!state.weekly.some(w=>Object.keys(w).length);
-  const welcome=isNew?`<div class="onboard"><span><b>Welcome, ${esc(state.user.name)}!</b> Start by adding your uni and work hours in Hour by hour below, and click ↻ to repeat them every week. Then set your income and savings goal in the Year tab.</span><button class="btn" data-act="tab" data-tab="year">Set up money</button></div>`:'';
+  const welcome=isNew&&TOUR?`<div class="onboard"><span><b>Welcome, ${esc(state.user.name)}!</b> Start by adding your uni and work hours in Hour by hour below, and click ↻ to repeat them every week. Then set your income and savings goal in the Year tab.</span><button class="btn" data-act="tab" data-tab="year">Set up money</button></div>`:'';
   return welcome+hdr(WDL[wdi(d)]+(rel===0?' · Today':rel===1?' · Tomorrow':rel===-1?' · Yesterday':''),`${d.getDate()} ${MON[d.getMonth()]} ${d.getFullYear()}`,navBtns())+
   `<div class="cols"><div class="stack">
     <section><div class="sec-h"><h2>Study blocks</h2><span class="meta">${blocks.filter(b=>b.done).length} of ${blocks.length} done</span></div><div id="blocklist">${blockRows(blocks)}</div>${blockForm(di,false)}</section>
-    <section><div class="sec-h"><h2>Tasks</h2><button class="linkbtn" data-act="tab" data-tab="tasks">All tasks →</button></div>${tasks.length?tasks.map(taskRow).join(''):'<p class="empty">Nothing due on this day.</p>'}</section>
+    <section><div class="sec-h"><h2>Tasks</h2><button class="linkbtn" data-act="tab" data-tab="tasks">All tasks →</button></div>${tasks.length?tasks.map(taskRow).join(''):tip('<p class="empty">Nothing due on this day.</p>')}</section>
   </div>
   <section class="panel"><div class="sec-h"><h2>Money today</h2>${statusPill(spent,allow)}</div>
     <div class="meter ${meterCls(spent,allow)}" style="margin:6px 0 8px"><span style="width:${Math.min(100,spent/(allow||1)*100).toFixed(1)}%"></span></div>
-    <p class="s" style="font-size:13px;color:var(--muted);margin-bottom:16px">${state.settings.income?`Spent <b class="num" style="color:var(--ink)">${eur(spent)}</b> of your daily allowance of ${eur(allow)}.`:`Spent <b class="num" style="color:var(--ink)">${eur(spent)}</b> today. Set your income in the Year tab to get a daily allowance.`}</p>
+    <p class="s" style="font-size:13px;color:var(--muted);margin-bottom:16px">${state.settings.income?`Spent <b class="num" style="color:var(--ink)">${eur(spent)}</b> of your daily allowance of ${eur(allow)}.`:`Spent <b class="num" style="color:var(--ink)">${eur(spent)}</b> today.${tip(' Set your income in the Year tab to get a daily allowance.')}`}</p>
     ${expForm(di)}${expRows(list,{showDate:false})}
     <div class="total-line"><span>Total for the day</span><span class="amt">${eur(spent)}</span></div>
   </section></div>`+hourSection(d);
@@ -615,7 +618,7 @@ V.month=()=>{
   <div class="stack"><section class="panel"><div class="sec-h"><h2>Money this month</h2>${isNow?statusPill(spent,allow):spent>allow?'<span class="pill bad">Over budget</span>':'<span class="pill good">Within budget</span>'}</div>
     <div class="meter ${meterCls(spent,allow)}" style="margin:6px 0 16px"><span style="width:${Math.min(100,spent/(allow||1)*100).toFixed(1)}%"></span></div>
     <dl class="kv"><dt>Income</dt><dd>${eur(income)}</dd><dt>Spent${isNow?' so far':''}</dt><dd>${eur(spent)}</dd><dt>Spending allowance</dt><dd>${eur(allow)}</dd><dt><label for="m-save">Savings target</label>${tg.custom?` <button class="linkbtn" data-act="msave-reset" data-y="${y}" data-m="${m}" title="Go back to the automatic amount">reset</button>`:''}</dt><dd>€ <input class="cellin num${tg.custom?' edited':''}" id="m-save" type="number" min="0" step="1" value="${+tg.t.toFixed(2)}" data-mf="save" data-y="${y}" data-m="${m}" aria-label="Savings target for ${MON[m]}"></dd><dt>Left over</dt><dd style="color:${saved>=0?'var(--good)':'var(--bad)'}">${eur(saved)}</dd>${!tg.active?'<dt>Savings</dt><dd style="color:var(--muted)">No income this month</dd>':monthStatus(y,m)==='future'?'':`<dt><label for="m-actual">I saved</label></dt><dd><input type="checkbox" data-chk="msaved" data-y="${y}" data-m="${m}" ${tg.actual!=null&&tg.actual>=tg.t-0.005?'checked':''} aria-label="I saved ${eur(tg.t)} in ${MON[m]}" title="Tick if you saved the target"> € <input class="cellin num${tg.actual!=null?' edited':''}" id="m-actual" type="number" min="0" step="1" value="${tg.actual==null?'':tg.actual}" placeholder="${+tg.t.toFixed(2)}" data-mf="actual" data-y="${y}" data-m="${m}" aria-label="Amount saved in ${MON[m]}" title="Type what you really saved. Clear to undo."></dd>`}</dl>
-    <p class="hint">Tick or type what you really saved in the Year tab. Whatever is missing is added to next month's target.</p>
+    ${tip(`<p class="hint">Tick or type what you really saved in the Year tab. Whatever is missing is added to next month's target.</p>`)}
     <div style="margin-top:16px">${catBars(list)}</div>
     <div class="total-line"><span>Month total</span><span class="amt">${eur(spent)}</span></div>
   </section>
@@ -645,7 +648,7 @@ V.year=()=>{
     <div class="inputs"><label for="s-income">Usual monthly income<input class="field num" id="s-income" type="number" min="0" step="10" value="${income}" data-set="income"></label><label for="s-goal">Savings goal for ${y}<input class="field num" id="s-goal" type="number" min="0" step="50" value="${goal}" data-set="goal"></label></div>
     <p class="eyebrow">${p.left?(p.cur.status==='now'?'Save this month':'Next to save · '+MON[p.cur.m]):'Nothing left to save'}</p>
     <p class="save-big">${eur(p.need)}<span style="font-size:18px;color:var(--muted);font-weight:600"> / month</span></p>
-    <p style="font-size:14px;color:var(--muted);margin:10px 0 16px">to reach ${eur0(goal)} by December. That leaves <b style="color:var(--ink)">${eur(Math.max(0,p.cur.income-p.need))}</b> for spending in ${MON[p.cur.m]} (${eur(Math.max(0,p.cur.income-p.need)/dim(y,p.cur.m))} a day). Months without income are skipped, and anything you did not save moves to the next month.</p>
+    <p style="font-size:14px;color:var(--muted);margin:10px 0 16px">to reach ${eur0(goal)} by December. That leaves <b style="color:var(--ink)">${eur(Math.max(0,p.cur.income-p.need))}</b> for spending in ${MON[p.cur.m]} (${eur(Math.max(0,p.cur.income-p.need)/dim(y,p.cur.m))} a day). ${tip(' Months without income are skipped, and anything you did not save moves to the next month.')}</p>
     <div class="meter"><span style="width:${pct.toFixed(1)}%"></span></div>
     <p style="font-size:13px;margin-top:6px"><b class="num">${eur(p.savedDone)}</b> <span style="color:var(--muted)">saved so far (confirmed) · ${pct.toFixed(0)}% of goal</span></p>
   </section>
@@ -653,25 +656,25 @@ V.year=()=>{
     ${barChart(bars,allowM,{vals:false,limitLabel:'budget'})}
     <div class="legend"><span><i style="background:var(--accent)"></i>Within budget</span><span><i style="background:var(--bad)"></i>Over budget</span><span><i style="background:var(--line)"></i>Upcoming</span></div>
   </section></div>
-  <section style="margin-top:28px"><div class="sec-h"><h2>Year expenses</h2><span class="meta">Spending adds up from your daily expenses · click an income to change it for that month</span></div>
+  <section style="margin-top:28px"><div class="sec-h"><h2>Year expenses</h2><span class="meta">${tip('Spending adds up from your daily expenses · click an income to change it for that month')}</span></div>
     <div class="tbl-wrap"><table class="tbl ytbl"><thead><tr><th>Month</th><th class="r">Spent</th><th class="r">Income</th><th class="r">Left over</th><th class="r">Target</th><th class="r">I saved</th><th>Status</th></tr></thead><tbody>${rows}</tbody>
     <tfoot><tr><td class="mn">Total ${y}</td><td class="r" data-l="Spent">${eur(totSpent)}</td><td class="r" data-l="Income">${eur(totInc)}</td><td class="r" data-l="Left over">${eur(totSaved)}</td><td class="r" data-l="Target">${eur(goal)}</td><td class="r" data-l="I saved">${eur(p.savedDone)}</td><td class="st"></td></tr></tfoot></table></div>
   </section>
   <section style="margin-top:28px;max-width:640px"><div class="sec-h"><h2>Where the money went</h2><span class="meta">${yList.length} expenses</span></div>${catBars(yList)}</section>
-  ${income===0?'<div class="onboard" style="margin-top:24px"><span>Enter your monthly income and savings goal above. The planner then works out how much to save each month and your daily spending allowance.</span></div>':''}`;
+  ${income===0&&TOUR?'<div class="onboard" style="margin-top:24px"><span>Enter your monthly income and savings goal above. The planner then works out how much to save each month and your daily spending allowance.</span></div>':''}`;
 };
 V.study=()=>{
   const ws=weekStart(TODAY),we=addDays(ws,6),todayI=wdi(TODAY);
   const pc=['var(--bad)','var(--warn)','var(--c-transport)'];
-  const rows=state.study.map((r,i)=>`<tr class="${i===todayI?'is-today':''}"><td class="d">${WD[i].toUpperCase()}</td><td><input class="cellin" data-study="subject" data-i="${i}" value="${esc(r.subject)}" placeholder="Subject" maxlength="80" aria-label="Subject for ${WDL[i]}"></td><td><input class="cellin" data-study="topic" data-i="${i}" value="${esc(r.topic)}" placeholder="Topic" maxlength="120" aria-label="Topic for ${WDL[i]}"></td><td><input class="cellin num" type="number" min="0" max="24" step="0.5" data-study="hours" data-i="${i}" value="${r.h||''}" placeholder="0" aria-label="Hours for ${WDL[i]}"></td><td><input type="checkbox" data-chk="rev" data-i="${i}" ${r.rev?'checked':''} aria-label="Revised on ${WDL[i]}"></td><td><button class="pdots" data-act="prio" data-i="${i}" aria-label="Change priority">${pc.map((c,k)=>`<i style="--pc:${c}" class="${r.p===k?'on':''}"></i>`).join('')}</button></td></tr>`).join('');
+  const rows=state.study.map((r,i)=>`<tr class="${i===todayI?'is-today':''}"><td class="d">${WD[i].toUpperCase()}</td><td><input class="cellin" data-study="subject" data-i="${i}" value="${esc(r.subject)}" placeholder="Subject" maxlength="80" aria-label="Subject for ${WDL[i]}"></td><td><input class="cellin num" type="number" min="0" max="24" step="0.5" data-study="hours" data-i="${i}" value="${r.h||''}" placeholder="0" aria-label="Hours for ${WDL[i]}"></td><td><input type="checkbox" data-chk="rev" data-i="${i}" ${r.rev?'checked':''} aria-label="Revised on ${WDL[i]}"></td><td><button class="pdots" data-act="prio" data-i="${i}" aria-label="Change priority">${pc.map((c,k)=>`<i style="--pc:${c}" class="${r.p===k?'on':''}"></i>`).join('')}</button></td></tr>`).join('');
   const blocks=studyBlocks(TI);
   const items=[...state.upcoming.map(u=>({...u,kind:'own'})),...state.subjects.filter(x=>x.exam).map(x=>({t:`${x.name} exam`,date:x.exam,kind:'exam'}))]
     .filter(u=>u.kind==='own'||dayDiff(parse(u.date),TODAY)>=0).sort((a,b)=>a.date.localeCompare(b.date));
   const soon=items.length?items.map(u=>{const n=dayDiff(parse(u.date),TODAY);
     const pill=n<0?'<span class="pill muted">Passed</span>':n===0?'<span class="pill bad">Today</span>':`<span class="pill ${n<=3?'bad':''}" style="${n>3?'background:var(--paper);color:var(--ink)':''}">${n} day${n===1?'':'s'}</span>`;
-    return `<div class="row" style="border-color:color-mix(in srgb,var(--c-fun) 25%,transparent)"><div class="grow t">${esc(u.t)}${u.kind==='exam'?' <span class="tag">from Subjects</span>':''}</div><span class="s">${short(parse(u.date))}</span>${pill}${u.kind==='own'?`<button class="x" data-act="del-upcoming" data-id="${u.id}" data-confirm aria-label="Delete ${esc(u.t)}">×</button>`:''}</div>`}).join(''):'<p class="empty">No deadlines yet. Add one below, or give a subject an exam date.</p>';
+    return `<div class="row" style="border-color:color-mix(in srgb,var(--c-fun) 25%,transparent)"><div class="grow t">${esc(u.t)}${u.kind==='exam'?' <span class="tag">from Subjects</span>':''}</div><span class="s">${short(parse(u.date))}</span>${pill}${u.kind==='own'?`<button class="x" data-act="del-upcoming" data-id="${u.id}" data-confirm aria-label="Delete ${esc(u.t)}">×</button>`:''}</div>`}).join(''):tip('<p class="empty">No deadlines yet. Add one below, or give a subject an exam date.</p>');
   return hdr(`Week ${isoWeek(ws)} · ${ws.getDate()} ${M3[ws.getMonth()]} – ${we.getDate()} ${M3[we.getMonth()]}`,'Study planner')+
-  `<div class="cols"><div class="stack"><div class="stbl tbl-wrap"><table><thead><tr><th style="background:var(--t-year)">Day</th><th style="background:var(--t-day)">Subject</th><th style="background:var(--t-month)">Topic</th><th style="background:var(--t-week)">Time</th><th style="background:var(--t-year)">Revised</th><th style="background:var(--t-study)">Priority</th></tr></thead><tbody>${rows}</tbody></table></div>
+  `<div class="cols"><div class="stack"><div class="stbl tbl-wrap"><table><thead><tr><th style="background:var(--t-year)">Day</th><th style="background:var(--t-day)">Subject</th><th style="background:var(--t-week)">Time</th><th style="background:var(--t-year)">Revised</th><th style="background:var(--t-study)">Priority</th></tr></thead><tbody>${rows}</tbody></table></div>
     <div class="panel" id="revpanel">${revisedPanel()}</div>
   </div>
   <div class="stack"><section><div class="sec-h"><h2>Today's study blocks</h2><span class="meta">${short(TODAY)}</span></div><div id="blocklist">${blockRows(blocks)}</div>${blockForm(TI,true)}</section>
@@ -696,7 +699,7 @@ V.tasks=()=>{
     <input id="t-tag" name="tag" placeholder="Tag" aria-label="Tag">
     <button class="btn primary">Add task</button></form>
   <div class="filters">${Object.keys(L).map(k=>`<button class="fbtn" data-act="filter" data-f="${k}" aria-pressed="${k===f}">${L[k]}<b>${c(k)}</b></button>`).join('')}</div>
-  <section>${list.length?list.map(taskRow).join(''):'<p class="empty">No tasks in this view.</p>'}</section>
+  <section>${list.length?list.map(taskRow).join(''):tip('<p class="empty">No tasks in this view.</p>')}</section>
   <div class="legend" style="margin-top:16px"><span><i style="background:var(--bad);border-radius:50%"></i>High</span><span><i style="background:var(--warn);border-radius:50%"></i>Medium</span><span><i style="background:var(--c-transport);border-radius:50%"></i>Low priority</span></div>`;
 };
 V.money=()=>{
@@ -1010,7 +1013,7 @@ const root=document.documentElement,mq=window.matchMedia('(prefers-color-scheme:
 const eff=()=>root.getAttribute('data-theme')||(mq.matches?'dark':'light');
 const SUN='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4"/></svg>';
 const MOON='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12.8A9 9 0 1 1 11.2 3a7 7 0 0 0 9.8 9.8z"/></svg>';
-function paintThemeBtn(){const d=eff()==='dark';document.getElementById('themeBtn').innerHTML=d?SUN+'Light':MOON+'Dark'}
+function paintThemeBtn(){const d=eff()==='dark';document.getElementById('themeBtn').innerHTML=d?SUN+'<span class="lbl">Light</span>':MOON+'<span class="lbl">Dark</span>'}
 function toggleTheme(){const n=eff()==='dark'?'light':'dark';root.setAttribute('data-theme',n);try{localStorage.setItem('sara-theme',n)}catch(e){}paintThemeBtn()}
 try{const t=localStorage.getItem('sara-theme');if(t==='dark'||t==='light')root.setAttribute('data-theme',t)}catch(e){}
 mq.addEventListener&&mq.addEventListener('change',paintThemeBtn);

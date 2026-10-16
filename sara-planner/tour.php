@@ -26,7 +26,7 @@ if (current_user_id()) {   // already have an account: go to your own planner
   <script>try{var t=localStorage.getItem('sara-theme');if(t)document.documentElement.setAttribute('data-theme',t)}catch(e){}</script>
 <script src="assets/lang.js?v=<?= filemtime(__DIR__ . '/assets/lang.js') ?>"></script>
 </head>
-<body>
+<body class="tour">
 <div class="app">
 <?php app_nav(null, '', true); ?>
   <div class="pub-note tour-note" role="status"><b>You are looking around.</b> This is the real planner with sample data, view only. Nothing can be added or saved. <a href="register.php">Create a free account</a> or <a href="login.php">log in</a> to use it.</div>

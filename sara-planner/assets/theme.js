@@ -6,7 +6,7 @@
   function eff(){return root.getAttribute('data-theme')||(mq.matches?'dark':'light')}
   function paint(){
     var d=eff()==='dark';
-    document.querySelectorAll('[data-theme-btn]').forEach(function(b){b.innerHTML=d?SUN+'Light':MOON+'Dark'});
+    document.querySelectorAll('[data-theme-btn]').forEach(function(b){b.innerHTML=d?SUN+'<span class="lbl">Light</span>':MOON+'<span class="lbl">Dark</span>'});
   }
   document.addEventListener('click',function(e){
     if(!e.target.closest('[data-theme-btn]'))return;
