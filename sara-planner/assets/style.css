@@ -1688,3 +1688,25 @@ a.nbcover-link:focus-visible{outline:3px solid var(--accent);outline-offset:6px;
   .page .catrow .track{height:10px}
   .page .total-line{min-height:48px;padding-top:6px}
 }
+
+/* phones: Tasks, a compact form and each task as its own card */
+@media (max-width:640px){
+  .page .addform.task{grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:8px;margin:10px 0 14px}
+  .page .addform.task input[name=title]{grid-column:1/-1}
+  .page .addform.task input[type=date]{grid-column:1;min-width:0}
+  .page .addform.task select{grid-column:2}
+  .page .addform.task input[name=tag]{grid-column:1}
+  .page .addform.task .btn{grid-column:2;width:100%}
+  .page .filters{margin-bottom:12px;gap:6px}
+  .page .fbtn{padding:5px 12px;font-size:13px}
+  .page .row{flex-wrap:wrap;align-items:center;gap:6px 10px;min-height:0;padding:10px 12px;margin-bottom:8px;background:var(--paper-2);border:1px solid var(--line);border-radius:14px;box-sizing:border-box}
+  .page .row:last-child{border:1px solid var(--line)}
+  .page .row.done{opacity:.65}
+  .page .row>input[type=checkbox]{width:20px;height:20px;margin:0;flex:none}
+  .page .row .grow{flex:1 1 0;min-width:0}
+  .page .row .t{line-height:1.35;overflow-wrap:anywhere}
+  .page .row .x{margin-left:auto;font-size:20px;padding:2px 8px}
+  .page .row>.pill,.page .row>.tag{font-size:11.5px;line-height:1.3;padding:3px 9px;white-space:nowrap}
+  .page .row>.pill{margin-left:0}
+  .page .legend{margin-top:14px!important}
+}
