@@ -117,7 +117,7 @@ if (current_user_id()) {
   <header class="lnav">
     <a class="logo" href="welcome.php">Splanner</a>
     <nav aria-label="Main">
-      <a href="#demo">Look inside</a>
+      <a href="tour.php">Look inside</a>
       <a href="explore.php">Browse notebooks</a>
       <a href="#features">Features</a>
       <a href="#safety">Is it safe?</a>
@@ -137,7 +137,7 @@ if (current_user_id()) {
       <h1>Your studies, tasks and money in one notebook.</h1>
       <p class="lead">Plan your day hour by hour, count down to exams, tick off chapters and see exactly where your money goes each week. Try it right here before you sign up.</p>
       <div class="cta">
-        <a class="btn primary" href="#demo">Try the live preview</a>
+        <a class="btn primary" href="tour.php">Look inside the planner</a>
         <a class="btn" href="explore.php">Browse people's notebooks</a>
       </div>
       <div class="trust">
@@ -161,7 +161,7 @@ if (current_user_id()) {
           <button class="tab" role="tab" data-tab="money">Expenses</button>
         </nav>
       </div>
-      <p class="demo-note">Click the tabs. Tick a task. It is view only: nothing is saved, and you can't change anything until you log in.</p>
+      <p class="demo-note"><a href="tour.php">Open the full planner preview</a> with every page. Click the tabs. Tick a task. It is view only: nothing is saved, and you can't change anything until you log in.</p>
     </div>
   </section>
 

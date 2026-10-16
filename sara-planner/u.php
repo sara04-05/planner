@@ -136,14 +136,11 @@ echo profile_head($person, (string)$prof['slug'], [plural(count($notebooks), 'no
   <nav class="nbtiles" aria-label="Notebooks">
     <?php foreach ($notebooks as $n): ?>
       <a class="nbtile<?= $n['id'] === $nb['id'] ? ' on' : '' ?>" href="u.php?u=<?= h(rawurlencode($prof['slug'])) ?>&amp;nb=<?= $n['id'] ?>"<?= design_attrs($n['design'], 'accent') . design_style($n['design']) ?>>
-        <i style="<?= cover_css($n['design'], $n['cover_url']) ?>"></i><span translate="no"><?= h($n['title']) ?></span><?php if ($isMe): ?><small><?= $n['public'] ? '🌍 Shown' : '🔒 Private' ?></small><?php endif; ?>
+        <i style="<?= cover_css($n['design'], $n['cover_url']) ?>"></i><span translate="no"><?= h($n['title']) ?></span>
       </a>
     <?php endforeach; ?>
   </nav>
-  <?php if ($isMe): ?>
-    <p class="hint2" style="font-size:13px;margin:-8px 0 14px">This is how <?= $nb['public'] ? ((int)$prof['is_public'] ? ((int)$prof['guest_view'] ? 'everyone, even visitors without an account,' : 'people with an account') : 'nobody but you (your profile is private)') : 'nobody but you' ?> sees this notebook.
-      <?= $nb['public'] ? '' : 'It is private right now. Switch it on in the Profile tab.' ?></p>
-  <?php endif; ?>
+
 
 
   <?php if ($page === 'cover'): ?>

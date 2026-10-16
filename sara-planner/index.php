@@ -27,6 +27,7 @@ $unread = unread_count($uid);
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="<?= FONT_LINK ?>" rel="stylesheet">
   <link rel="stylesheet" href="assets/style.css?v=<?= filemtime(__DIR__ . '/assets/style.css') ?>">
+  <link rel="stylesheet" href="assets/covers.css?v=<?= filemtime(__DIR__ . '/assets/covers.css') ?>">
   <link rel="icon" href="assets/logo.svg" type="image/svg+xml">
   <script>try{var t=localStorage.getItem('sara-theme');if(t)document.documentElement.setAttribute('data-theme',t)}catch(e){}</script>
 <script src="assets/lang.js?v=<?= filemtime(__DIR__ . '/assets/lang.js') ?>"></script>
@@ -44,6 +45,7 @@ $unread = unread_count($uid);
 <script src="assets/import.js?v=<?= filemtime(__DIR__ . '/assets/import.js') ?>"></script>
 <script src="assets/bell.js?v=<?= filemtime(__DIR__ . '/assets/bell.js') ?>"></script>
 <script src="assets/social.js?v=<?= filemtime(__DIR__ . '/assets/social.js') ?>"></script>
+<script src="assets/ruled.js?v=<?= filemtime(__DIR__ . '/assets/ruled.js') ?>" defer></script>
 <script src="assets/app.js?v=<?= filemtime(__DIR__ . '/assets/app.js') ?>"></script>
 </body>
 </html>
