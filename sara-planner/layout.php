@@ -41,6 +41,7 @@ function auth_bottom(): void
   </div>
 </main>
 <script src="assets/theme.js?v=<?= filemtime(__DIR__ . '/assets/theme.js') ?>"></script>
+<script src="assets/ruled.js?v=<?= filemtime(__DIR__ . '/assets/ruled.js') ?>" defer></script>
 <?php if (current_user_id()): ?><script src="assets/bell.js?v=<?= filemtime(__DIR__ . '/assets/bell.js') ?>"></script><?php endif; ?>
 </body>
 </html>
@@ -83,6 +84,7 @@ function cover_css(array $d, string $imgUrl = ''): string
 {
     if ($imgUrl !== '') return "background:url('" . h($imgUrl) . "') center/cover";
     if (($d['cover'] ?? '') === 'custom' && !empty($d['cover_c1']) && !empty($d['cover_c2'])) return 'background:linear-gradient(135deg,' . h($d['cover_c1']) . ',' . h($d['cover_c2']) . ')';
+    if (in_array($d['cover'] ?? '', ART_COVERS, true)) return 'background:var(--cov-' . $d['cover'] . ')';
     $g = COVER_GRADIENTS[$d['cover'] ?? 'dusk'] ?? COVER_GRADIENTS['dusk'];
     return 'background:linear-gradient(135deg,' . $g[0] . ',' . $g[1] . ')';
 }
@@ -234,6 +236,7 @@ function app_bottom(): void
   </div>
 </div>
 <script src="assets/theme.js?v=<?= filemtime(__DIR__ . '/assets/theme.js') ?>"></script>
+<script src="assets/ruled.js?v=<?= filemtime(__DIR__ . '/assets/ruled.js') ?>" defer></script>
 <?php if (current_user_id()): ?><script src="assets/bell.js?v=<?= filemtime(__DIR__ . '/assets/bell.js') ?>"></script><?php endif; ?>
 </body>
 </html>

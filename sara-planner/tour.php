@@ -21,6 +21,7 @@ if (current_user_id()) {   // already have an account: go to your own planner
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="<?= FONT_LINK ?>" rel="stylesheet">
   <link rel="stylesheet" href="assets/style.css?v=<?= filemtime(__DIR__ . '/assets/style.css') ?>">
+  <link rel="stylesheet" href="assets/covers.css?v=<?= filemtime(__DIR__ . '/assets/covers.css') ?>">
   <link rel="icon" href="assets/logo.svg" type="image/svg+xml">
   <script>try{var t=localStorage.getItem('sara-theme');if(t)document.documentElement.setAttribute('data-theme',t)}catch(e){}</script>
 <script src="assets/lang.js?v=<?= filemtime(__DIR__ . '/assets/lang.js') ?>"></script>
@@ -37,6 +38,7 @@ if (current_user_id()) {   // already have an account: go to your own planner
 </div>
 <div class="toast" id="toast" role="status" hidden></div>
 <script src="assets/tour.js?v=<?= filemtime(__DIR__ . '/assets/tour.js') ?>"></script>
+<script src="assets/ruled.js?v=<?= filemtime(__DIR__ . '/assets/ruled.js') ?>" defer></script>
 <script src="assets/app.js?v=<?= filemtime(__DIR__ . '/assets/app.js') ?>"></script>
 </body>
 </html>
