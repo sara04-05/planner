@@ -153,17 +153,15 @@ app_top('Users', ['active' => 'admin', 'eyebrow' => 'Your notebook', 'h1' => 'Us
       </table>
     </div>
     <h2 id="reports" style="margin-top:28px">Reports</h2>
-    <?php if (!$reports): ?><p class="hint2">Nobody has reported anyone.</p><?php else: ?>
+    <?php if (!$reports): ?><p class="hint2">No problems reported.</p><?php else: ?>
     <div class="tbl-wrap">
       <table class="tbl">
-        <thead><tr><th>Reported</th><th>By</th><th>Reason</th><th>Details</th><th>When</th><?php if ($canEdit): ?><th></th><?php endif; ?></tr></thead>
+        <thead><tr><th>From</th><th>Problem</th><th>When</th><?php if ($canEdit): ?><th></th><?php endif; ?></tr></thead>
         <tbody>
         <?php foreach ($reports as $r): $labels = ['spam' => 'Spam or fake account', 'harassment' => 'Harassment or bullying', 'inappropriate' => 'Inappropriate content', 'impersonation' => 'Pretending to be someone else', 'other' => 'Something else']; ?>
           <tr<?= (int)$r['resolved'] ? ' style="opacity:.55"' : '' ?>>
-            <td><a href="u.php?id=<?= (int)$r['target_id'] ?>"><?= h($r['tname']) ?></a><br><span class="email"><?= h($r['temail']) ?></span></td>
             <td><?= h($r['fname']) ?><br><span class="email"><?= h($r['femail']) ?></span></td>
-            <td><?= h($labels[$r['reason']] ?? $r['reason']) ?></td>
-            <td><?= h($r['details']) ?></td>
+            <td><?= h($r['details'] !== '' ? $r['details'] : ($labels[$r['reason']] ?? $r['reason'])) ?></td>
             <td><?= h(when($r['created_at'])) ?></td>
             <?php if ($canEdit): ?>
             <td class="admin-acts"><form method="post" class="inline">
