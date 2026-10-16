@@ -1417,3 +1417,7 @@ a.nbtile{text-decoration:none}.nbtiles{margin-bottom:14px}.nbtile.on span{color:
 .page .wd .foot{border-top:0}
 .page .ptabs{border-bottom:0}
 .page .plot{border-bottom:0}
+
+/* subjects: masonry columns, so each card starts right under the end of the one above it with no empty gaps */
+.subjects{display:block;column-width:290px;column-gap:16px}
+.subjects>.subj{break-inside:avoid;-webkit-column-break-inside:avoid;margin:0 0 16px;display:block}
