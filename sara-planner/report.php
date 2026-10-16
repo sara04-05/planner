@@ -55,8 +55,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $error = 'You have sent a lot of messages. Please wait a while and try again.';
         } else {
             $body = '🛠 Problem report: ' . $text;
-            q('INSERT INTO messages (from_id, to_id, body, sent_at) VALUES (?, ?, ?, ?)', [$uid, $owner, $body, time()]);
-            notify_replace($owner, 'msg:' . $uid, ($me['name'] ?? 'Someone') . ' reported a problem: “' . mb_substr($text, 0, 80) . (mb_strlen($text) > 80 ? '…' : '') . '”', 'messages.php?with=' . $uid);
+            q('INSERT INTO messages (from_id, to_id, body, sent_at) VALUES (?, ?, ?, ?)', [$uid, $owner, msg_encrypt($body), time()]);
+            notify_replace($owner, 'msg:' . $uid, ($me['name'] ?? 'Someone') . ' reported a problem', 'messages.php?with=' . $uid);
             $sent = 'Thank you! Your report was sent in Splanner. Replies will show up in your Messages.';
             $text = '';
         }
