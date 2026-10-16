@@ -2,7 +2,7 @@ html,body{margin:0}
 img{max-width:100%}
 [hidden]{display:none!important}
 
-:root{--lh:40px;
+:root{--lh:36px;
   --bg:#E9E4F1; --paper:#FFFFFF; --paper-2:#F6F3FA; --ink:#2A2338; --muted:#6F6781; --line:#E4DDEC;
   --accent:#6A4DC4; --accent-soft:#ECE6FB; --on-accent:#FFFFFF;
   --t-day:#FBE7B0; --t-week:#CBEBDA; --t-month:#F7D3DD; --t-year:#DAD1F5; --t-study:#F9D2BC; --t-tasks:#CDDCF5; --t-money:#E7DACA;
@@ -79,7 +79,7 @@ button,input,select,textarea{font:inherit;color:inherit}
 .page{position:relative;background-color:var(--paper);border-radius:6px 20px 20px 6px;padding:28px 30px 32px 62px;min-height:640px;transition:background-color .25s;
   background-image:linear-gradient(90deg,transparent 50px,var(--margin) 50px,var(--margin) 51.5px,transparent 51.5px,transparent 54px,var(--margin) 54px,var(--margin) 55px,transparent 55px),
     linear-gradient(var(--paper) 0 96px,transparent 96px),
-    repeating-linear-gradient(to bottom,transparent 0 calc(var(--lh,40px) - 1px),var(--rule) calc(var(--lh,40px) - 1px) var(--lh,40px));
+    repeating-linear-gradient(to bottom,transparent 0 calc(var(--lh,36px) - 1px),var(--rule) calc(var(--lh,36px) - 1px) var(--lh,36px));
   box-shadow:4px 4px 0 -1px var(--edge),4px 4px 0 0 var(--line),8px 8px 0 -1px var(--edge2),8px 8px 0 0 var(--line),var(--shadow)}
 .coil{position:absolute;left:-17px;top:24px;bottom:24px;width:46px;overflow:hidden;display:flex;flex-direction:column;gap:17px;pointer-events:none;z-index:2}
 .coil span{flex:0 0 auto;position:relative;height:13px}
@@ -333,7 +333,7 @@ input[type=checkbox]{accent-color:var(--accent);width:18px;height:18px;cursor:po
   .tab-gap{display:none}
   .page{padding:22px 18px 26px;border-radius:18px}
   .coil{display:none}
-  .page{padding:22px 18px 26px;border-radius:18px;background-image:linear-gradient(var(--paper) 0 84px,transparent 84px),repeating-linear-gradient(to bottom,transparent 0 calc(var(--lh,40px) - 1px),var(--rule) calc(var(--lh,40px) - 1px) var(--lh,40px));box-shadow:3px 3px 0 -1px var(--edge),3px 3px 0 0 var(--line),var(--shadow)}
+  .page{padding:22px 18px 26px;border-radius:18px;background-image:linear-gradient(var(--paper) 0 84px,transparent 84px),repeating-linear-gradient(to bottom,transparent 0 calc(var(--lh,36px) - 1px),var(--rule) calc(var(--lh,36px) - 1px) var(--lh,36px));box-shadow:3px 3px 0 -1px var(--edge),3px 3px 0 0 var(--line),var(--shadow)}
   .addform,.addform.task{grid-template-columns:repeat(2,minmax(0,1fr))}
   .addform input[name=desc],.addform input[name=title],.addform input[name=name]{grid-column:1/-1}
   .hr{grid-template-columns:42px 86px minmax(0,1fr) 28px;padding-left:6px}
@@ -372,7 +372,7 @@ td>.cellin{width:calc(100% - 16px);max-width:110px}
 /* login / sign-up */
 .auth{min-height:100vh;display:grid;place-items:center;padding-block:48px}
 .auth-card{width:100%;max-width:420px;background-color:var(--paper);border-radius:6px 20px 20px 6px;padding:32px 30px;box-shadow:4px 4px 0 -1px var(--edge),4px 4px 0 0 var(--line),var(--shadow);
-  background-image:linear-gradient(var(--paper) 0 70px,transparent 70px),repeating-linear-gradient(to bottom,transparent 0 calc(var(--lh,40px) - 1px),var(--rule) calc(var(--lh,40px) - 1px) var(--lh,40px))}
+  background-image:linear-gradient(var(--paper) 0 70px,transparent 70px),repeating-linear-gradient(to bottom,transparent 0 calc(var(--lh,36px) - 1px),var(--rule) calc(var(--lh,36px) - 1px) var(--lh,36px))}
 .auth-card h1{margin-bottom:6px}
 .auth-sub{color:var(--muted);font-size:14px;margin:10px 0 18px}
 .auth-form{display:flex;flex-direction:column;gap:14px}
@@ -490,7 +490,7 @@ table.ex tr:last-child td{border-bottom:0}
 }
 :root[data-theme="dark"] [data-pcolor]{--paper:var(--pc-d);--paper-2:color-mix(in srgb,var(--pc-d) 90%,#fff)}
 
-.page[data-paper="grid"],.nbx-page[data-paper="grid"]{background-image:repeating-linear-gradient(to bottom,transparent 0 calc(var(--lh,40px) - 1px),var(--rule) calc(var(--lh,40px) - 1px) var(--lh,40px)),repeating-linear-gradient(to right,transparent 0 calc(var(--lh,40px) - 1px),var(--rule) calc(var(--lh,40px) - 1px) var(--lh,40px))}
+.page[data-paper="grid"],.nbx-page[data-paper="grid"]{background-image:repeating-linear-gradient(to bottom,transparent 0 calc(var(--lh,36px) - 1px),var(--rule) calc(var(--lh,36px) - 1px) var(--lh,36px)),repeating-linear-gradient(to right,transparent 0 calc(var(--lh,36px) - 1px),var(--rule) calc(var(--lh,36px) - 1px) var(--lh,36px))}
 .page[data-paper="dots"],.nbx-page[data-paper="dots"]{background-image:radial-gradient(var(--rule) 1.6px,transparent 1.8px);background-size:24px 24px}
 .page[data-paper="plain"],.nbx-page[data-paper="plain"]{background-image:none}
 [data-font="hand"]{--body:"Caveat","Segoe Print",cursive;--display:"Caveat","Segoe Print",cursive;font-size:18px}
@@ -914,7 +914,7 @@ a.tab{display:block;text-decoration:none;box-sizing:border-box}
 /* binding styles */
 .binder[data-binding="stitch"]>.coil,.binder[data-binding="none"]>.coil{display:none}
 .binder[data-binding="stitch"]>.page{border-left:4px dashed var(--wire)}
-.binder[data-binding="none"]>.page{padding-left:36px;background-image:repeating-linear-gradient(to bottom,transparent 0 calc(var(--lh,40px) - 1px),var(--rule) calc(var(--lh,40px) - 1px) var(--lh,40px))}
+.binder[data-binding="none"]>.page{padding-left:36px;background-image:repeating-linear-gradient(to bottom,transparent 0 calc(var(--lh,36px) - 1px),var(--rule) calc(var(--lh,36px) - 1px) var(--lh,36px))}
 
 /* a notebook's cover page and the shelf of notebooks */
 .nbcover{border-radius:6px 18px 18px 6px;min-height:320px;display:grid;place-items:center;padding:28px;color:#fff;position:relative;overflow:hidden;box-shadow:inset 10px 0 0 rgba(0,0,0,.18),var(--shadow);isolation:isolate}
@@ -1102,7 +1102,7 @@ a.nbtile{text-decoration:none}.nbtiles{margin-bottom:14px}.nbtile.on span{color:
 /* ---------- writing on the lines ----------
    The page is ruled every var(--lh) (--lh). Text, headings, rows and fields are sized in whole lines, so every line of writing sits
    on a rule and the rules never run through letters. Boxes (panels, cards) are snapped to whole lines by assets/ruled.js. */
-.page{--lh:40px;line-height:var(--lh);padding-top:var(--lh)}
+.page{--lh:36px;line-height:var(--lh);padding-top:var(--lh)}
 .page .vh{height:calc(var(--lh)*2);margin:0;flex-wrap:nowrap;align-items:flex-end}
 .page .vh>*{min-width:0}
 .page .vh .eyebrow{line-height:24px;margin:0}
@@ -1203,7 +1203,7 @@ a.nbtile{text-decoration:none}.nbtiles{margin-bottom:14px}.nbtile.on span{color:
 .nbtile:hover i{transform:translateY(-5px) rotate(-1.2deg)}
 .nbtile.on i{outline:3px solid var(--accent);outline-offset:3px}
 .nbtile span{margin-top:6px;font-family:var(--display);font-weight:700}
-.nbtile.add{aspect-ratio:auto;height:160px;border:2px dashed var(--line);border-radius:4px 14px 14px 4px;background:repeating-linear-gradient(to bottom,transparent 0 calc(var(--lh,40px) - 1px),var(--rule) calc(var(--lh,40px) - 1px) var(--lh,40px)),var(--paper)}
+.nbtile.add{aspect-ratio:auto;height:160px;border:2px dashed var(--line);border-radius:4px 14px 14px 4px;background:repeating-linear-gradient(to bottom,transparent 0 calc(var(--lh,36px) - 1px),var(--rule) calc(var(--lh,36px) - 1px) var(--lh,36px)),var(--paper)}
 /* people on Explore: a card with their cover */
 .userlist.cards{display:grid;grid-template-columns:repeat(auto-fill,minmax(230px,1fr));gap:16px}
 .userlist.cards li{display:flex;flex-direction:column;align-items:stretch;gap:10px;padding:14px;background:var(--paper);border:1px solid var(--line);border-radius:6px 16px 16px 6px;box-shadow:4px 4px 0 -1px var(--edge),4px 4px 0 0 var(--line);transition:transform .15s}
@@ -1451,7 +1451,7 @@ a.nbtile{text-decoration:none}.nbtiles{margin-bottom:14px}.nbtile.on span{color:
 .page .row .grow{min-width:0}
 
 /* opened notebook: tidy spread. The planner's own ruled paper is hidden behind the book, each page has one margin line clear of the text, and the contents list sits on the lines */
-.nbv .nbook .page:not([data-paper]){background-image:linear-gradient(90deg,transparent 24px,var(--margin) 24px,var(--margin) 25.5px,transparent 25.5px),repeating-linear-gradient(to bottom,transparent 0 calc(var(--lh,40px) - 1px),var(--rule) calc(var(--lh,40px) - 1px) var(--lh,40px))}
+.nbv .nbook .page:not([data-paper]){background-image:linear-gradient(90deg,transparent 24px,var(--margin) 24px,var(--margin) 25.5px,transparent 25.5px),repeating-linear-gradient(to bottom,transparent 0 calc(var(--lh,36px) - 1px),var(--rule) calc(var(--lh,36px) - 1px) var(--lh,36px))}
 .nbv .nbook .page{padding:var(--lh) 26px var(--lh) 44px}
 .nbv .nbook .page .eyebrow{line-height:var(--lh);margin:0}
 .nbv .nbook .page .vh{height:auto;min-height:calc(var(--lh)*2);margin:0}
