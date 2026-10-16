@@ -89,7 +89,7 @@ function picInner(key){
 }
 const picPick=key=>`<div class="pic-pick" data-pic="${key}">${picInner(key)}</div>`;
 const sleep=ms=>new Promise(r=>setTimeout(r,ms));
-const calm=()=>window.matchMedia&&matchMedia('(prefers-reduced-motion: reduce)').matches;
+const calm=()=>window.matchMedia&&matchMedia('(prefers-reduced-motion: reduce), (min-width: 901px)').matches;   // notebook animations are for phones/tablets only; none on a laptop
 const flipLeaf=(front,cls)=>{   // a page that swings over the spine, like turning a real page
   const bk=document.querySelector('.nbook'),R=bk&&bk.querySelector('.nbp-right'),L=bk&&bk.querySelector('.nbp-left'),G=bk&&bk.querySelector('.nbp-gutter');
   if(!bk||!R||!L||!G||calm())return;
