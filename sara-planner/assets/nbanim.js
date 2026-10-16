@@ -20,12 +20,4 @@
     setTimeout(function(){leaf.remove()},1800);
   }
   window.NBANIM={calm:calm,flip:flipLeaf};
-  // arrived from the cover: the book opens
-  try{
-    if(sessionStorage.getItem('nbopen')){
-      sessionStorage.removeItem('nbopen');
-      var bk=document.querySelector('.nbook');
-      if(bk&&!calm()){bk.setAttribute('data-anim','open');flipLeaf('cover','open')}
-    }
-  }catch(e){}
 })();

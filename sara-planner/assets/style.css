@@ -1710,3 +1710,6 @@ a.nbcover-link:focus-visible{outline:3px solid var(--accent);outline-offset:6px;
   .page .row>.pill{margin-left:0}
   .page .legend{margin-top:14px!important}
 }
+
+/* shared notebooks: the cover is a link wrapping the cover, laid out like your own closed notebook */
+.nbclosed-hit .nbcover-link{display:block;color:inherit;text-decoration:none}
