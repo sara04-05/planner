@@ -32,7 +32,7 @@ function auth_top(string $title, string $cardClass = '', bool $covers = false): 
 <body>
 <main class="auth">
   <div class="auth-card<?= $cardClass ? ' ' . h($cardClass) : '' ?>">
-    <div class="auth-lang"><button class="btn ghost" data-theme-btn aria-label="Switch theme"></button> <button class="linkbtn langsw" data-lang-btn>Shqip</button></div>
+    <div class="auth-lang"><button class="btn ghost" data-theme-btn aria-label="Switch theme" title="Switch theme"></button> <button class="linkbtn langsw" data-lang-btn>Shqip</button></div>
     <?= logo_html('welcome.php') ?>
 <?php }
 
@@ -155,25 +155,25 @@ function app_nav(?int $uid, string $active = '', bool $planner = false): void
     <?php if ($uid):
         $unread = unread_count($uid); $chatUnread = chat_unread($uid); $requests = friend_requests_count($uid); ?>
       <span class="date-pill"><?= $ic('<rect x="3" y="5" width="18" height="16" rx="3"/><path d="M3 10h18M8 3v4M16 3v4"/>') ?><span class="chip-date" id="todayChip"><?= h(date('l, j F')) ?></span></span>
-      <a class="btn bell<?= $active === 'explore' ? ' on' : '' ?>" href="explore.php" aria-label="Explore"><?= $ic('<circle cx="12" cy="12" r="9"/><path d="M15.5 8.5l-2 5-5 2 2-5z"/>') ?>Explore<?php if ($requests): ?><span class="badge"><?= $requests ?></span><?php endif; ?></a>
-      <a class="btn bell<?= $active === 'messages' ? ' on' : '' ?>" href="messages.php" id="msgBtn" aria-label="Messages"><?= $ic('<path d="M21 12a8 8 0 0 1-11.6 7.1L3 21l1.9-5.4A8 8 0 1 1 21 12z"/>') ?>Messages<?php if ($chatUnread): ?><span class="badge"><?= $chatUnread ?></span><?php endif; ?></a>
+      <a class="btn bell<?= $active === 'explore' ? ' on' : '' ?>" href="explore.php" aria-label="Explore" title="Explore"><?= $ic('<circle cx="12" cy="12" r="9"/><path d="M15.5 8.5l-2 5-5 2 2-5z"/>') ?>Explore<?php if ($requests): ?><span class="badge"><?= $requests ?></span><?php endif; ?></a>
+      <a class="btn bell<?= $active === 'messages' ? ' on' : '' ?>" href="messages.php" id="msgBtn" aria-label="Messages" title="Messages"><?= $ic('<path d="M21 12a8 8 0 0 1-11.6 7.1L3 21l1.9-5.4A8 8 0 1 1 21 12z"/>') ?>Messages<?php if ($chatUnread): ?><span class="badge"><?= $chatUnread ?></span><?php endif; ?></a>
       <div class="bellwrap">
-        <button class="btn bell" id="bellBtn" aria-label="Notifications" aria-haspopup="true" aria-expanded="false"><?= $ic('<path d="M18 8a6 6 0 0 0-12 0c0 7-3 9-3 9h18s-3-2-3-9M13.7 21a2 2 0 0 1-3.4 0"/>') ?><span class="badge" id="bellBadge"<?= $unread ? '' : ' hidden' ?>><?= $unread ?></span></button>
+        <button class="btn bell" id="bellBtn" title="Notifications" aria-label="Notifications" aria-haspopup="true" aria-expanded="false"><?= $ic('<path d="M18 8a6 6 0 0 0-12 0c0 7-3 9-3 9h18s-3-2-3-9M13.7 21a2 2 0 0 1-3.4 0"/>') ?><span class="badge" id="bellBadge"<?= $unread ? '' : ' hidden' ?>><?= $unread ?></span></button>
         <div class="bellpop" id="bellPop" role="dialog" aria-label="Notifications" hidden></div>
       </div>
-      <?php if (can_view_users($uid)): ?><a class="btn<?= $active === 'admin' ? ' on' : '' ?>" href="admin.php">Users</a><?php endif; ?>
-      <button class="btn" data-lang-btn>Shqip</button>
-      <button class="btn"<?= $planner ? ' id="themeBtn" data-act="theme"' : ' data-theme-btn' ?> aria-label="Switch theme"></button>
+      <?php if (can_view_users($uid)): ?><a class="btn<?= $active === 'admin' ? ' on' : '' ?>" href="admin.php" title="Users" aria-label="Users"><?= $ic('<circle cx="9" cy="8" r="3.5"/><path d="M2.5 20a6.5 6.5 0 0 1 13 0M16 4.6a3.5 3.5 0 0 1 0 6.8M18 14a6.5 6.5 0 0 1 3.5 6"/>') ?>Users</a><?php endif; ?>
+      <button class="btn" data-lang-btn aria-label="Language"><?= $ic('<circle cx="12" cy="12" r="9"/><path d="M3 12h18M12 3a14 14 0 0 1 0 18M12 3a14 14 0 0 0 0 18"/>') ?><span class="lbl">Shqip</span></button>
+      <button class="btn"<?= $planner ? ' id="themeBtn" data-act="theme"' : ' data-theme-btn' ?> aria-label="Switch theme" title="Switch theme"></button>
       <form method="post" action="logout.php" class="inline">
         <input type="hidden" name="csrf" value="<?= h(csrf_token()) ?>">
-        <button class="btn ghost logout" aria-label="Log out"><?= $ic('<path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4M16 17l5-5-5-5M21 12H9"/>') ?>Log out</button>
+        <button class="btn ghost logout" aria-label="Log out" title="Log out"><?= $ic('<path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4M16 17l5-5-5-5M21 12H9"/>') ?>Log out</button>
       </form>
     <?php else: ?>
-      <a class="btn<?= $active === 'explore' ? ' on' : '' ?>" href="explore.php">Explore</a>
-      <a class="btn" href="login.php">Log in</a>
-      <a class="btn primary" href="register.php">Create free account</a>
-      <button class="btn" data-lang-btn>Shqip</button>
-      <button class="btn"<?= $planner ? ' id="themeBtn" data-act="theme"' : ' data-theme-btn' ?> aria-label="Switch theme"></button>
+      <a class="btn<?= $active === 'explore' ? ' on' : '' ?>" href="explore.php" title="Explore" aria-label="Explore"><?= $ic('<circle cx="12" cy="12" r="9"/><path d="M15.5 8.5l-2 5-5 2 2-5z"/>') ?>Explore</a>
+      <a class="btn" href="login.php" title="Log in" aria-label="Log in"><?= $ic('<path d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4M10 17l5-5-5-5M15 12H3"/>') ?>Log in</a>
+      <a class="btn primary" href="register.php" title="Create free account" aria-label="Create free account"><?= $ic('<circle cx="9" cy="8" r="4"/><path d="M2 21a7 7 0 0 1 14 0M19 8v6M16 11h6"/>') ?>Create free account</a>
+      <button class="btn" data-lang-btn aria-label="Language"><?= $ic('<circle cx="12" cy="12" r="9"/><path d="M3 12h18M12 3a14 14 0 0 1 0 18M12 3a14 14 0 0 0 0 18"/>') ?><span class="lbl">Shqip</span></button>
+      <button class="btn"<?= $planner ? ' id="themeBtn" data-act="theme"' : ' data-theme-btn' ?> aria-label="Switch theme" title="Switch theme"></button>
     <?php endif; ?>
     </div>
   </header>

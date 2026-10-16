@@ -31,7 +31,7 @@
       var pageTop=function(){return page.getBoundingClientRect().top};
       for(var i=0;i<all.length;i++){
         var el=all[i];
-        if(SKIP_TAG.test(el.tagName)||el.closest('.stk-layer,.tabs,.coil,nav.tabs,.tour-note,[hidden]'))continue;
+        if(SKIP_TAG.test(el.tagName)||el.closest('.stk-layer,.tabs,.coil,nav.tabs,.tour-note,[hidden]')||el.matches('.x,.pill,.tag,.badge'))continue;   // small controls inside a row keep their own height, or the row grows past one line
         var cs=getComputedStyle(el),disp=cs.display;
         if(!/^(block|flex|grid|list-item|table|flow-root)$/.test(disp)||cs.position==='absolute'||cs.position==='fixed'||cs.float!=='none')continue;
         // inside a box that has its own background? then the rules are hidden there: leave it

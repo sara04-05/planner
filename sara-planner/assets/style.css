@@ -1384,3 +1384,8 @@ a.nbtile{text-decoration:none}.nbtiles{margin-bottom:14px}.nbtile.on span{color:
 .ytbl td[data-l="I saved"] input,.ytbl td[data-l="Income"] input{vertical-align:middle}
 .ytbl td[data-l="I saved"] input[type=checkbox]{margin:0 4px 0 0}
 .sticky textarea{min-height:0;overflow:hidden}
+
+/* The top bar uses icons only (names are in each button's title and aria-label) */
+.top-r .btn{font-size:0;gap:0;padding:0;width:42px;height:42px;justify-content:center;position:relative}
+.top-r .btn svg{width:19px;height:19px}
+.top-r .badge{font-size:10.5px}

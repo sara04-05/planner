@@ -434,7 +434,7 @@ function start(){
 }
 function wireButtons(){
   const go=()=>document.querySelectorAll('[data-lang-btn]').forEach(b=>{
-    b.textContent=lang==='sq'?'English':'Shqip';
+    const lb=b.querySelector('.lbl');(lb||b).textContent=lang==='sq'?'English':'Shqip';
     b.setAttribute('lang',lang==='sq'?'en':'sq');
     b.title=lang==='sq'?'Switch to English':'Kalo në shqip';
     b.onclick=e=>{e.preventDefault();try{localStorage.setItem(KEY,lang==='sq'?'en':'sq')}catch(x){}location.reload()};
