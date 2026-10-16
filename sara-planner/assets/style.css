@@ -1479,3 +1479,15 @@ body:not(.tour) .page p.hint2,body:not(.tour) .page .xcard>p.sub,body:not(.tour)
 .top{--accent:#6A4DC4;--on-accent:#FFFFFF;--accent-soft:#ECE6FB}
 @media (prefers-color-scheme:dark){:root:not([data-theme="light"]) .top{--accent:#A98FF6;--on-accent:#17121F;--accent-soft:#302849}}
 :root[data-theme="dark"] .top{--accent:#A98FF6;--on-accent:#17121F;--accent-soft:#302849}
+
+/* page tabs sit inside the notebook, on the edge of the page, not out on the table */
+@media (min-width:901px){
+  .nbv .nbook{margin-right:0}
+  .nbook .nbp-tabs{right:16px;top:32px}
+  .nbook .nbp-tabs .tab,.nbook .nbp-tabs .tab[aria-selected="true"]{border-radius:12px;margin-right:0}
+  .nbv .nbook .nbp-right{padding-right:76px}
+}
+@media (min-width:761px){
+  .nbv .binder>.tabs{margin-left:-58px;position:relative;z-index:3}
+  .nbv .binder>.page{padding-right:70px}
+}
