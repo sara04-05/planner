@@ -1440,12 +1440,13 @@ input[type=range][data-xrange]{flex:1;min-width:120px}
 @media (max-width:480px){.look-extra{grid-template-columns:1fr 1fr}}
 .setup-nav .btn.primary{margin-left:auto}
 
-/* Hour by hour: rows are one ruled line (32px), or two when they show an end time, so the writing stays on the notebook lines and both columns line up */
-.page .hr{min-height:32px;height:32px;box-sizing:border-box;padding-block:0;line-height:1.25;align-items:center}
-.page .hr:has(.hl small){height:64px}
-.page .hr .hl{padding:0;line-height:1.2}
+/* Hour by hour: every hour is one ruled line, the end time sits next to the start, and the page rules are the only lines */
+.page .hr{grid-template-columns:86px 84px minmax(0,1fr) 28px;min-height:32px;height:32px;box-sizing:border-box;padding-block:0;border-bottom:0;line-height:1.25;align-items:center}
+.page .hr .hl{padding:0;line-height:1.2;white-space:nowrap}
+.page .hr .hl small{display:inline;margin-left:3px;font-size:10px}
 .page .hr select,.page .hr input{height:28px;padding-block:0}
 .page .hcol-h{line-height:var(--lh);padding-bottom:0}
+@media (max-width:640px){.page .hr{grid-template-columns:78px 72px minmax(0,1fr) 26px;padding-left:6px}}
 @media (max-width:640px){.top-r .btn{width:auto;min-width:0}}
 
 /* Year table: one ruled line per month, so the writing sits on the notebook lines */
