@@ -543,7 +543,7 @@ function subjectsSection(){
       ${chs}
       <form class="mini" data-form="chapter" data-sid="${s.id}" autocomplete="off" style="margin-top:12px"><input id="ch-${s.id}" name="title" placeholder="+ Add a chapter" aria-label="Add a chapter to ${esc(s.name)}"><button class="btn">Add</button></form></div>`;
   }).join('');
-  return `<section style="margin-top:36px"><div class="sec-h"><h2>Subjects and chapters</h2><span class="meta">${allDone} of ${all.length} things learned</span></div>
+  return `<section style="margin-top:8px"><div class="sec-h"><h2>Subjects and chapters</h2><span class="meta">${allDone} of ${all.length} things learned</span></div>
     <form class="addform subjform" data-form="subject" autocomplete="off"><input id="sb-name" name="name" placeholder="Add a subject, e.g. Linear Algebra" required aria-label="Subject name"><input id="sb-exam" name="exam" type="date" aria-label="Exam date (optional)" title="Exam date (optional)"><button class="btn primary">Add subject</button></form>
     ${state.subjects.length?`<div class="subjects">${cards}</div>`:'<p class="empty">No subjects yet. Add your first one above.</p>'}</section>`;
 }

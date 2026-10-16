@@ -1383,3 +1383,4 @@ a.nbtile{text-decoration:none}.nbtiles{margin-bottom:14px}.nbtile.on span{color:
 .ytbl td[data-l="I saved"]{white-space:nowrap}
 .ytbl td[data-l="I saved"] input,.ytbl td[data-l="Income"] input{vertical-align:middle}
 .ytbl td[data-l="I saved"] input[type=checkbox]{margin:0 4px 0 0}
+.sticky textarea{min-height:0;overflow:hidden}
