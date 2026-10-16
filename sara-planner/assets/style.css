@@ -1358,9 +1358,9 @@ a.nbtile{text-decoration:none}.nbtiles{margin-bottom:14px}.nbtile.on span{color:
 
 /* ===== phones: everything fits, nothing is cut off ===== */
 @media (max-width:760px){
-  .tabs{flex-wrap:wrap;overflow:visible;padding:0 4px;gap:6px}
-  .tab{margin:0;border-radius:12px;padding:9px 13px;font-size:14px}
-  .tab[aria-selected="true"]{padding-top:9px}
+  .tabs{flex-wrap:nowrap;overflow-x:auto;overflow-y:hidden;padding:0 4px;gap:4px;-webkit-overflow-scrolling:touch}
+  .tab{flex:0 0 auto;margin:0 0 -6px;border-radius:12px 12px 0 0;padding:9px 14px 12px;font-size:14px;white-space:nowrap}
+  .tab[aria-selected="true"]{padding-top:12px}
   .onboard{flex-direction:column;align-items:flex-start;height:auto!important;min-height:0!important;margin-bottom:32px!important}
   .onboard .btn{align-self:flex-start}
 }
