@@ -195,6 +195,10 @@ const T={
 
 /* ---------- strings with names, numbers or dates in them ---------- */
 const P=[
+ [/^(.+) sent you a friend request\.$/,(m,a)=>`${a} të dërgoi një kërkesë miqësie.`],
+ [/^(.+) accepted your friend request\.$/,(m,a)=>`${a} e pranoi kërkesën tënde për miqësi.`],
+ [/^(.+) sent you a message: “([\s\S]*)”$/,(m,a,b)=>`${a} të dërgoi një mesazh: “${b}”`],
+ [/^(.+) liked your post “([\s\S]*)”\.$/,(m,a,b)=>`${a} pëlqeu postimin tënd “${b}”.`],
  [/^Remove (.+) from your friends\?$/,(m,a)=>`Ta heq ${a} nga miqtë?`],
  [/^Someone else is also called (.+), so people see your email under your name to tell you apart\.$/,(m,a)=>`Edhe dikush tjetër quhet ${a}, prandaj njerëzit shohin email-in tënd nën emër për t'ju dalluar.`],
  [/^Hi, (.+)$/,(m,a)=>`Përshëndetje, ${a}`],
@@ -282,6 +286,7 @@ const P=[
 const cache=new Map();
 /* ---------- look inside (visitor tour), welcome page, guest Explore, new covers ---------- */
 Object.assign(T,{
+'Nothing new. Friend requests, messages and likes show up here.':'Asgjë e re. Kërkesat e miqësisë, mesazhet dhe pëlqimet shfaqen këtu.',
 'Look inside':'Shiko brenda','Look inside the planner':'Shiko brenda planerit','Look inside · Splanner':'Shiko brenda · Splanner',
 'Open the real planner with sample data and click through every page: Day, Week, Month, Year, Study, Tasks and Expenses. It is view only, so nothing is saved until you have an account.':'Hap planerin e vërtetë me të dhëna shembull dhe kalo nëpër çdo faqe: Dita, Java, Muaji, Viti, Studimi, Detyrat dhe Shpenzimet. Është vetëm për shikim, ndaj asgjë nuk ruhet derisa të kesh llogari.',
 'Open the full planner preview':'Hap pamjen e plotë të planerit',
