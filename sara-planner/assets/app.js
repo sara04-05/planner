@@ -62,6 +62,11 @@ async function reload(){
     const data=await api('bootstrap');
     const p=loadPrefs();
     state={tab:'day',taskFilter:'open',expPeriod:'month',...p,...data,showAll:false};
+    // Blog and Interests are pages of your notebooks now (Profile tab); other pages link here with ?tab=
+    const want=new URLSearchParams(location.search).get('tab');
+    if(want&&(want==='profile'||document.querySelector('nav[aria-label="Planner sections"] .tab[data-tab="'+want+'"]'))){state.tab=want;history.replaceState(null,'',location.pathname)}
+    if(state.tab==='blog'||state.tab==='interests')state.tab='profile';
+    if(typeof V[state.tab]!=='function')state.tab='day';   // a tab saved by an older version (e.g. Alerts) no longer exists
     render();
     if(state.google&&state.google.connected&&state.google.needsSync&&!gcalBusy)gcalRun(true);
   }catch(err){
@@ -315,9 +320,11 @@ function paintHourRow(row){
 }
 function paintHourRows(){document.querySelectorAll('.hr').forEach(paintHourRow)}
 function hourSum(di){
-  const c={};for(let h=0;h<24;h++){const e=resolveHour(di,h);if(e&&HT[e.type]&&e.type!=='sleep')c[e.type]=(c[e.type]||0)+1}
-  const free=[...Array(24).keys()].filter(h=>!resolveHour(di,h)).length;
-  return Object.keys(HT).filter(k=>c[k]).map(k=>`<span style="--hc:var(--c-${HT[k][1]})"><i></i>${HT[k][0]} ${c[k]}h</span>`).join('')+`<span style="--hc:var(--line)"><i></i>Free ${free}h</span>`;
+  // Count minutes, not rows: 07:00–10:45 is 3h 45m, not 4h
+  const c={};let busy=0;
+  for(let h=0;h<24;h++){const e=resolveHour(di,h);if(!e)continue;const m=Math.max(0,hE(e)-hS(e));busy+=m;if(HT[e.type]&&e.type!=='sleep')c[e.type]=(c[e.type]||0)+m}
+  const free=Math.max(0,1440-busy);
+  return Object.keys(HT).filter(k=>c[k]).map(k=>`<span style="--hc:var(--c-${HT[k][1]})"><i></i>${HT[k][0]} ${durTxt(c[k])}</span>`).join('')+`<span style="--hc:var(--line)"><i></i>Free ${durTxt(free)}</span>`;
 }
 function hourSection(d){
   const di=iso(d),rows=(a,b)=>{let o='';for(let h=a;h<=b;h++)o+=hourRow(di,h);return o};
@@ -721,7 +728,10 @@ let drawing=false; // true while the page is re-drawn: boxes removed then fire c
 function render(focusId){
   if(!state)return;
   drawing=true;
-  document.querySelectorAll('.tab').forEach(t=>t.setAttribute('aria-selected',t.dataset.tab===state.tab));
+  const PT='nav[aria-label="Planner sections"] .tab';   // the notebook inside the Profile tab has tabs of its own
+  document.querySelectorAll(PT).forEach(t=>t.setAttribute('aria-selected',t.dataset.tab===state.tab));
+  {const t=document.querySelector(PT+'[aria-selected="true"]'),r=t&&t.parentElement;   // phone: keep the open tab in view in the scrolling tab strip
+   if(r&&r.scrollWidth>r.clientWidth){const a=t.getBoundingClientRect(),b=r.getBoundingClientRect();r.scrollBy({left:a.left-b.left-(b.width-a.width)/2})}}
   // Keep text typed in other "+ Add …" boxes that hasn't been added yet, so re-drawing doesn't wipe it
   const drafts=[...view.querySelectorAll('form.mini input[id]:not([type=date])')].filter(i=>i.value.trim()).map(i=>[i.id,i.value]);
   view.innerHTML=V[state.tab]();
@@ -1002,6 +1012,10 @@ paintThemeBtn();
 {const r=new URLSearchParams(location.search).get('gcal');
  const M={connected:'Google Calendar is connected. Your hours are on their way to the "Splanner" calendar.',disconnected:'Google Calendar is disconnected. You can delete the "Splanner" calendar in Google if you don\'t need it.',cancelled:'Google Calendar was not connected.','no-calendar':'Please tick the calendar box on Google\'s page so the planner can add your hours.','not-set-up':'Google Calendar is not set up on this site yet.',error:"Couldn't connect Google Calendar. Please try again."};
  if(r){if(M[r])setTimeout(()=>toast(M[r]),300);history.replaceState(null,'',location.pathname)}}
+// Blog, Interests and Profile are drawn by social.js
+V.profile=()=>window.SPLX?window.SPLX.html('profile'):'';
+window.SPL_RENDER=render;
+window.SPL_TAB=()=>state&&state.tab;
 document.getElementById('coil').innerHTML='<span></span>'.repeat(90);
 document.getElementById('todayChip').textContent=`${WDL[wdi(TODAY)]}, ${TODAY.getDate()} ${MON[TODAY.getMonth()]}`;
 reload();

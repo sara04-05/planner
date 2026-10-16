@@ -173,3 +173,136 @@ CREATE TABLE IF NOT EXISTS email_codes (
   tries      TINYINT UNSIGNED NOT NULL DEFAULT 0,
   FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
 ) ENGINE=InnoDB;
+
+-- Chat between users. sent_at is a Unix time, so it shows right in every time zone.
+CREATE TABLE IF NOT EXISTS messages (
+  id       INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+  from_id  INT UNSIGNED NOT NULL,
+  to_id    INT UNSIGNED NOT NULL,
+  body     TEXT NOT NULL,
+  sent_at  INT UNSIGNED NOT NULL,
+  is_read  TINYINT UNSIGNED NOT NULL DEFAULT 0,
+  INDEX idx_msg_to (to_id, from_id),
+  INDEX idx_msg_from (from_id, to_id),
+  FOREIGN KEY (from_id) REFERENCES users(id) ON DELETE CASCADE,
+  FOREIGN KEY (to_id) REFERENCES users(id) ON DELETE CASCADE
+) ENGINE=InnoDB;
+
+-- What other people see about you: a short bio, a profile picture and the colour of your notebook cover.
+-- avatar holds the picture itself ("image/jpeg;<base64>"), so no upload folder is needed on the host.
+CREATE TABLE IF NOT EXISTS profiles (
+  user_id   INT UNSIGNED PRIMARY KEY,
+  bio       VARCHAR(300) NOT NULL DEFAULT '',
+  cover     VARCHAR(20)  NOT NULL DEFAULT 'meadow',
+  words     VARCHAR(60)  NOT NULL DEFAULT '',
+  avatar    MEDIUMTEXT NULL,
+  avatar_v  INT UNSIGNED NOT NULL DEFAULT 0,
+  -- notebook sharing (added later): page name, who may see the notebook, what is shown, the design, which alerts to get
+  slug       VARCHAR(40) NULL UNIQUE,
+  is_public  TINYINT(1) NOT NULL DEFAULT 0,
+  guest_view TINYINT(1) NOT NULL DEFAULT 0,
+  share      TEXT NULL,
+  design     TEXT NULL,
+  notify     TEXT NULL,
+  nb_ready   TINYINT(1) NOT NULL DEFAULT 0,
+  FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+) ENGINE=InnoDB;
+
+-- Friends. from_id asked to_id; accepted = 1 once to_id said yes. Friends can see each other's day.
+CREATE TABLE IF NOT EXISTS friends (
+  from_id   INT UNSIGNED NOT NULL,
+  to_id     INT UNSIGNED NOT NULL,
+  accepted  TINYINT UNSIGNED NOT NULL DEFAULT 0,
+  sent_at   INT UNSIGNED NOT NULL,
+  PRIMARY KEY (from_id, to_id),
+  INDEX idx_friend_to (to_id),
+  FOREIGN KEY (from_id) REFERENCES users(id) ON DELETE CASCADE,
+  FOREIGN KEY (to_id) REFERENCES users(id) ON DELETE CASCADE
+) ENGINE=InnoDB;
+
+-- ---- Notebook sharing: pictures, blog, interest lists, likes, alerts ----
+-- Pictures are kept in the database (like profile pictures), so no upload folder is needed on the host.
+CREATE TABLE IF NOT EXISTS uploads (
+  id         INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+  user_id    INT UNSIGNED NOT NULL,
+  kind       VARCHAR(10) NOT NULL,
+  mime       VARCHAR(30) NOT NULL,
+  data       MEDIUMTEXT NOT NULL,
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+) ENGINE=InnoDB;
+
+CREATE TABLE IF NOT EXISTS posts (
+  id         INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+  user_id    INT UNSIGNED NOT NULL,
+  title      VARCHAR(150) NOT NULL,
+  body       TEXT NOT NULL,
+  image_id   INT UNSIGNED NULL,
+  notebook_id INT UNSIGNED NULL,
+  is_public  TINYINT(1) NOT NULL DEFAULT 0,
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+) ENGINE=InnoDB;
+
+CREATE TABLE IF NOT EXISTS post_likes (
+  post_id INT UNSIGNED NOT NULL,
+  user_id INT UNSIGNED NOT NULL,
+  PRIMARY KEY (post_id, user_id),
+  FOREIGN KEY (post_id) REFERENCES posts(id) ON DELETE CASCADE,
+  FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+) ENGINE=InnoDB;
+
+CREATE TABLE IF NOT EXISTS interest_lists (
+  id        INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+  user_id   INT UNSIGNED NOT NULL,
+  title     VARCHAR(80) NOT NULL,
+  emoji     VARCHAR(16) NOT NULL DEFAULT '',
+  layout    VARCHAR(8) NOT NULL DEFAULT 'list',
+  notebook_id INT UNSIGNED NULL,
+  is_public TINYINT(1) NOT NULL DEFAULT 0,
+  FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+) ENGINE=InnoDB;
+
+CREATE TABLE IF NOT EXISTS interest_items (
+  id       INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+  list_id  INT UNSIGNED NOT NULL,
+  text     VARCHAR(150) NOT NULL,
+  note     VARCHAR(300) NOT NULL DEFAULT '',
+  image_id INT UNSIGNED NULL,
+  FOREIGN KEY (list_id) REFERENCES interest_lists(id) ON DELETE CASCADE
+) ENGINE=InnoDB;
+
+CREATE TABLE IF NOT EXISTS notifications (
+  id         INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+  user_id    INT UNSIGNED NOT NULL,
+  ref        VARCHAR(60) NOT NULL,
+  text       VARCHAR(250) NOT NULL,
+  link       VARCHAR(120) NOT NULL DEFAULT '',
+  is_read    TINYINT(1) NOT NULL DEFAULT 0,
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  UNIQUE KEY uq_notif_ref (user_id, ref),
+  FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+) ENGINE=InnoDB;
+
+-- A user can have several notebooks. Each one chooses its pages (sections), has its own look and stickers,
+-- and holds its own blog posts and interest lists (posts.notebook_id / interest_lists.notebook_id).
+CREATE TABLE IF NOT EXISTS notebooks (
+  id         INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+  user_id    INT UNSIGNED NOT NULL,
+  title      VARCHAR(80) NOT NULL,
+  intro      VARCHAR(300) NOT NULL DEFAULT '',
+  sections   VARCHAR(120) NOT NULL DEFAULT '',
+  design     TEXT NULL,
+  is_public  TINYINT(1) NOT NULL DEFAULT 0,
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+) ENGINE=InnoDB;
+
+-- Looks a user saved ("my styles") to reuse on any of their notebooks.
+CREATE TABLE IF NOT EXISTS notebook_styles (
+  id      INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+  user_id INT UNSIGNED NOT NULL,
+  name    VARCHAR(60) NOT NULL,
+  design  TEXT NOT NULL,
+  FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+) ENGINE=InnoDB;
