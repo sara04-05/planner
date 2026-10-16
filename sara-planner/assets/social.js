@@ -21,7 +21,7 @@ const SECS=[['interests','⭐','Interests','Lists of things you love, with pictu
 const SECNAME=Object.fromEntries([['cover','Cover']].concat(SECS.map(s=>[s[0],s[2]]),[['day','Day']]));
 const PAGE_EMOJI=['📝','📖','🌸','✈️','🍳','💡','🎨','🏋️','🎵','🐾','🧘','💌'];
 const DAYLV=['Nobody, only me','Friends only','Anyone signed in','Everyone, even visitors'];
-const BASE={cover:'dusk',cover_img:0,cover_c1:'',cover_c2:'',paper:'lined',paper_color:'white',paper_hex:'',accent:'violet',accent_hex:'',font:'modern',binding:'coil',label:'box',label_hex:'',label_r:0,label_w:0,label_h:0};
+const BASE={cover:'dusk',cover_img:0,cover_c1:'',cover_c2:'',paper:'lined',paper_color:'white',paper_hex:'',accent:'violet',accent_hex:'',font:'modern',binding:'coil',label:'box',label_hex:'',label_r:0,label_w:0,label_h:0,font_size:0};
 // ready-made looks (the user can also save their own)
 const PRESETS=[
   ['Dreamy lilac',{cover:'dusk',paper:'dots',paper_color:'lilac',accent:'violet',font:'hand'}],
@@ -117,7 +117,8 @@ function wrapAttrs(d){   // goes on the notebook wrapper: accent colour + the co
   if(d.paper_color==='custom'&&d.paper_hex)v+=`--c-paper:${d.paper_hex};`;
   if(d.label&&d.label!=='box')a+=` data-label="${d.label}"`;
   if(d.label_hex)v+=`--c-label:${d.label_hex};--c-label-ink:${lum(d.label_hex)>.5?'#2B2118':'#FFFFFF'};`;
-  if(d.label==='custom'){v+=`--lb-r:${+d.label_r||0}%;`;if(+d.label_w>0)v+=`--lb-w:${+d.label_w}%;`;if(+d.label_h>0)v+=`--lb-h:${+d.label_h}%;`}
+  if(d.label!=='none'){if(+d.label_r>0)v+=`--lb-r:${+d.label_r}%;`;if(+d.label_w>0){v+=`--lb-w:${+d.label_w}%;`;a+=' data-lbw="1"'}if(+d.label_h>0)v+=`--lb-h:${+d.label_h}%;`}
+  if(+d.font_size>0)v+=`--nb-fs:${+d.font_size}px;`;
   return a+(v?` style="${v}"`:'');
 }
 function pageAttrs(d){
@@ -291,13 +292,14 @@ function decoPanel(nb){
     <p class="opt-h">Paper colour</p><div class="swatches">${Object.keys(PAPER_COLORS).map(c=>swatch('pcolor',c,PAPER_COLORS[c],'Paper '+c)).join('')}<input type="color" class="colorpick" data-xcolor="paper_hex" value="${d.paper_hex||'#ffffff'}" aria-label="Your own paper colour"></div>
     <p class="opt-h">Accent colour</p><div class="swatches">${Object.keys(ACCENTS).map(c=>swatch('accent',c,ACCENTS[c],'Accent '+c)).join('')}<input type="color" class="colorpick" data-xcolor="accent_hex" value="${d.accent_hex||'#6a4dc4'}" aria-label="Your own accent colour"></div>
     <p class="opt-h">Writing</p><div class="pilltabs">${FONTS.map(f=>`<button type="button" data-x="font" data-v="${f[0]}" style="${f[2]?`font-family:${f[2]};font-size:15px`:''}" aria-pressed="false">${f[1]}</button>`).join('')}</div>
+    <p class="opt-h">Text size</p><div class="lbrange"><label>Size <b id="fsVal">${d.font_size||15} px</b><input type="range" min="12" max="24" step="1" data-xrange="font_size" value="${d.font_size||15}"></label><button type="button" class="btn sm ghost" data-x="fs-reset">Normal</button></div>
     <p class="opt-h">Binding</p><div class="pilltabs">${BINDINGS.map(b=>`<button type="button" data-x="binding" data-v="${b[0]}" aria-pressed="false">${b[1]}</button>`).join('')}</div>
     <p class="opt-h">Stickers on the page “<span id="stkPg">${esc(secName(ui.pg))}</span>”</p>
     <div class="stk-lib">${STICKERS.map(s=>`<button type="button" data-x="stk-add" data-k="${s}" aria-label="Add sticker ${s}">${s}</button>`).join('')}${S.stickers_up.map(u=>`<button type="button" data-x="stk-add" data-k="up:${u.id}" aria-label="Add my sticker"><img src="${esc(u.url)}" alt=""></button>`).join('')}</div>
     <div class="pic-pick" style="margin-top:8px"><label class="btn sm"><input type="file" accept="image/*" data-xfile="sticker" data-kind="sticker">➕ Make a sticker from my picture</label><span class="hint2" data-pic-msg></span></div>
     <div class="stk-bar" id="stkCtl">${stkCtl()}</div>
     <p class="hint2" style="margin-top:6px">Stickers go on the page you have open. Use the tabs on the right of the notebook to move between pages, and drag a sticker to place it.</p>
-    <div class="xrow" style="margin-top:16px"><button class="btn primary" id="saveDesign" data-x="design-save" ${ui.dirty?'':'disabled'}>Save design</button><button class="btn ghost" data-x="design-reset">Undo changes</button><button class="btn sm" data-x="use-planner" title="Use this paper, colours and writing for your planner too">Use for my planner</button></div></section>`;
+    <div class="xrow" style="margin-top:16px"><button class="btn primary" id="saveDesign" data-x="design-save" ${ui.dirty?'':'disabled'}>Save design</button><span class="hint2" id="autoSaved" style="display:inline" aria-live="polite"></span><button class="btn ghost" data-x="design-reset">Undo changes</button><button class="btn sm" data-x="use-planner" title="Use this paper, colours and writing for your planner too">Use for my planner</button></div></section>`;
 }
 function stkCtl(){
   const s=ui.dd&&ui.dd.stickers[ui.sel];
@@ -528,7 +530,18 @@ function html(tab){
 }
 window.SPLX={html,setUnread:n=>{if(S){S.unread=n;S.notes.forEach(x=>x.read=true)}}};
 
-const markDirty=()=>{ui.dirty=true;const sv=$('saveDesign');if(sv)sv.disabled=false};
+let autoSaveT=null;
+// design changes save by themselves a moment after the last change (the Save design button still works)
+const markDirty=()=>{ui.dirty=true;const sv=$('saveDesign');if(sv)sv.disabled=false;clearTimeout(autoSaveT);autoSaveT=setTimeout(autoSave,900)};
+async function autoSave(){
+  const nb=S&&cur();if(!nb||!ui.dd||!ui.dirty)return;
+  try{
+    const r=await api('x.nb.design',{id:nb.id,design:designOut()});
+    nb.design=r.design;nb.cover_url=r.cover_url;ui.dirty=false;
+    const sv=$('saveDesign');if(sv)sv.disabled=true;
+    const sm=$('autoSaved');if(sm){sm.textContent='Saved ✓';clearTimeout(sm._t);sm._t=setTimeout(()=>{sm.textContent=''},2000)}
+  }catch(err){toast(err.message)}
+}
 const designOut=()=>{const d=clone(ui.dd);delete d.cover_url;return d};
 const DESIGN_ACTS=['cover','cover-rm','paper','pcolor','accent','font','binding','label','stk-add','stk-size','stk-rot','stk-del','preset','style-apply'];
 function applyLook(look){   // a ready-made or saved look: replaces colours/paper/font/binding/cover, keeps your stickers
@@ -603,6 +616,7 @@ document.addEventListener('click',async e=>{
         const c=document.createElement('input');c.type='checkbox';c.name='own';c.value=t;c.checked=true;
         const sp=document.createElement('span'),bb=document.createElement('b');bb.textContent='✨ '+t;sp.appendChild(bb);l.append(c,sp);
         $('secpick').appendChild(l);inp.value='';inp.focus();return}
+      case 'fs-reset':ui.dd.font_size=0;markDirty();paintPreview();redraw();return;
       case 'label-color':ui.dd.label_hex=b.dataset.v;if(ui.dd.label==='none')ui.dd.label='box';markDirty();paintPreview();return;
       case 'label':ui.dd.label=b.dataset.v;if(b.dataset.v==='none')ui.dd.label_hex='';break;
       case 'preset':applyLook(PRESETS[+b.dataset.i][1]);break;
@@ -646,8 +660,9 @@ document.addEventListener('input',e=>{
 });
 document.addEventListener('input',e=>{
   const t=e.target;if(!t.dataset||!t.dataset.xrange||!ui.dd)return;
-  ui.dd[t.dataset.xrange]=+t.value;
-  if(ui.dd.label!=='custom'){ui.dd.label='custom';if(!ui.dd.label_w)ui.dd.label_w=+(document.querySelector('[data-xrange=label_w]')||{}).value||69;if(!ui.dd.label_h)ui.dd.label_h=+(document.querySelector('[data-xrange=label_h]')||{}).value||40}
+  const k=t.dataset.xrange;ui.dd[k]=+t.value;
+  if(k.startsWith('label_')&&ui.dd.label==='none')ui.dd.label='box';
+  if(k==='font_size'){const o=document.getElementById('fsVal');if(o)o.textContent=(+t.value||15)+' px'}
   markDirty();paintPreview();
 });
 

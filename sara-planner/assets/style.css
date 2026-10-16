@@ -1645,3 +1645,13 @@ a.nbcover-link:focus-visible{outline:3px solid var(--accent);outline-offset:6px;
   .nbe.panel-open>div:first-child{position:sticky;top:16px;align-self:start;z-index:2}
 }
 .nbe.panel-open .nbe-side{position:static}
+
+/* corners, width and height from the sliders work on top of any ready-made shape; text size from the slider */
+[data-label="box"] .nbcover-in,[data-label="stamp"] .nbcover-in,[data-label="ticket"] .nbcover-in,[data-label="band"] .nbcover-in,:not([data-label]) .nbcover-in{border-radius:var(--lb-r,4px)}
+[data-lbw] .nbcover-in{width:var(--lb-w,69%);left:calc(14% + (86% - var(--lb-w,69%)) / 2);right:auto}
+.nbcover-in{min-height:var(--lb-h,0%)}
+[data-label="custom"] .nbcover-in{border-radius:var(--lb-r,6%)}
+.nbv .nbook .page,.nbv .binder .page{font-size:var(--nb-fs,15px)}
+.nbv :is(.nb-text,.nb-what,.nb-intro,.nbp-toc a,.nbp-toc button,.post .txt,.ilist li,.tx){font-size:var(--nb-fs,15px)}
+.nbv .nbook .page h1{font-size:calc(var(--nb-fs,15px) * 1.9)}
+.lbrange b{font-weight:700;color:var(--ink);margin-left:6px}
