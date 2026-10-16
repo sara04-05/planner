@@ -1521,3 +1521,20 @@ a.nbcover-link:focus-visible{outline:3px solid var(--accent);outline-offset:6px;
 .page .vh{margin-bottom:var(--lh)}
 .page .tiles{margin-bottom:var(--lh)}
 .page .sec-h{margin-top:0}
+
+/* the notebook's page tabs look like the planner's tabs: vertical, on the page edge */
+@media (min-width:901px){
+  .nbook .nbp-tabs{right:-12px;top:var(--lh);gap:6px}
+  .nbook .nbp-tabs .tab{width:44px;min-height:0;padding:16px 10px 16px 12px;border-radius:0 14px 14px 0;margin:0;font-size:15px;box-shadow:2px 2px 6px rgba(0,0,0,.06);filter:saturate(.9)}
+  .nbook .nbp-tabs .tab[aria-selected="true"]{width:54px;margin-right:0;filter:none;font-weight:700}
+  .nbook .nbp-tabs .tab:hover{transform:translateX(3px)}
+  .nbook .nbp-tabs .tab[aria-selected="true"]:hover{transform:none}
+  .nbv .nbook .nbp-right{padding-right:64px}
+}
+
+/* profile page: closer together */
+.page .phead-btns{margin-bottom:0}
+.page .ptabs{margin:0 0 var(--lh)}
+.page .nbtiles{margin-top:0;margin-bottom:0}
+.page .nbtile small{display:none}
+.page .nbe-bar{margin-top:var(--lh);margin-bottom:0}

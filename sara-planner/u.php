@@ -281,6 +281,25 @@ echo profile_head($person, (string)$prof['slug'], [plural($dayOnly ? 0 : count($
 (function(){
   var csrf=(document.querySelector('meta[name="csrf-token"]')||{}).content||'';
   function call(action,data){return fetch('api.php?action='+action,{method:'POST',credentials:'same-origin',headers:{'Content-Type':'application/json','X-CSRF-Token':csrf},body:JSON.stringify(data)}).then(function(r){return r.json().then(function(b){if(!r.ok)throw new Error(b.error||'Something went wrong.');return b})})}
+  // Pages of the notebook change without reloading the whole site: only the open book is swapped
+  function swapBook(url,push){
+    return fetch(url,{credentials:'same-origin'}).then(function(r){return r.text()}).then(function(html){
+      var doc=new DOMParser().parseFromString(html,'text/html');
+      var nb=doc.querySelector('.nbook'),old=document.querySelector('.nbook');
+      if(!nb||!old){location.href=url;return}
+      old.replaceWith(nb);
+      document.title=doc.title;
+      if(push)history.pushState({u:1},'',url);
+    }).catch(function(){location.href=url});
+  }
+  document.addEventListener('click',function(e){
+    var a=e.target.closest('.nbook .nbp-tabs a, .nbook .nbp-toc a');
+    if(!a||e.ctrlKey||e.metaKey||e.shiftKey||e.button)return;
+    var u=new URL(a.href,location.href);
+    if(u.pathname!==location.pathname||(u.searchParams.get('p')||'cover')==='cover')return;   // the cover is a different layout: load it normally
+    e.preventDefault();swapBook(a.href,true);
+  });
+  window.addEventListener('popstate',function(){location.reload()});
   document.addEventListener('click',function(e){
     var b=e.target.closest('[data-like]');if(!b)return;
     call('x.like',{post_id:+b.dataset.like}).then(function(r){b.classList.toggle('on',r.liked);b.querySelector('span').textContent=r.likes}).catch(function(e){alert(e.message)});
