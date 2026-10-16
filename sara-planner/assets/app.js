@@ -119,6 +119,12 @@ function plan(y){
 }
 function allowanceFor(y,m){return Math.max(0,incomeFor(y,m)-targets(y)[m].t)}
 const dailyAllow=d=>allowanceFor(d.getFullYear(),d.getMonth())/dim(d.getFullYear(),d.getMonth());
+/** What is really left to spend: the day's or week's own allowance, but never more than what is left of that month's whole allowance
+    (a month you already overspent is over, even if this day or week has nothing spent yet). Returned as an allowance for statusPill. */
+function capAllow(b,spent,allow){
+  const y=b.getFullYear(),m=b.getMonth(),monthLeft=allowanceFor(y,m)-sum(expIn(new Date(y,m,1),new Date(y,m,dim(y,m))));
+  return Math.min(allow,spent+monthLeft);
+}
 function allowRange(a,b){let t=0;for(let d=new Date(a);d<=b;d=addDays(d,1))t+=dailyAllow(d);return t}
 
 /* ---------- shared pieces ---------- */
@@ -153,7 +159,7 @@ function barChart(items,limit,{vals=true,limitLabel='limit'}={}){
     ${limit?`<div class="lim" style="bottom:${(limit/max*100).toFixed(1)}%"><em>${limitLabel} ${eur0(limit)}</em></div>`:''}
   </div><div class="xl" style="${cols}">${items.map(i=>`<span class="${i.today?'today':''}">${items.length>7?String(i.label).slice(0,3):i.label}</span>`).join('')}</div></div>`;
 }
-const statusPill=(spent,allow)=>{if(!allow)return '';const r=spent/allow;return r>1?`<span class="pill bad">${eur(spent-allow)} over</span>`:r>.85?`<span class="pill warn">${eur(allow-spent)} left</span>`:`<span class="pill good">${eur(allow-spent)} left</span>`};
+const statusPill=(spent,allow)=>{if(allow<=0&&spent<=0)return '';if(spent>allow)return `<span class="pill bad">${eur(spent-allow)} over</span>`;const r=spent/allow;return r>.85?`<span class="pill warn">${eur(allow-spent)} left</span>`:`<span class="pill good">${eur(allow-spent)} left</span>`};
 const meterCls=(spent,allow)=>spent>allow?'bad':spent>allow*.85?'warn':'good';
 function taskRow(t){
   const d=parse(t.due),n=dayDiff(d,TODAY);
@@ -569,7 +575,7 @@ V.day=()=>{
     <section><div class="sec-h"><h2>Study blocks</h2><span class="meta">${blocks.filter(b=>b.done).length} of ${blocks.length} done</span></div><div id="blocklist">${blockRows(blocks)}</div>${blockForm(di,false)}</section>
     <section><div class="sec-h"><h2>Tasks</h2><button class="linkbtn" data-act="tab" data-tab="tasks">All tasks →</button></div>${tasks.length?tasks.map(taskRow).join(''):'<p class="empty">Nothing due on this day.</p>'}</section>
   </div>
-  <section class="panel"><div class="sec-h"><h2>Money today</h2>${statusPill(spent,allow)}</div>
+  <section class="panel"><div class="sec-h"><h2>Money today</h2>${statusPill(spent,capAllow(d,spent,allow))}</div>
     <div class="meter ${meterCls(spent,allow)}" style="margin:6px 0 8px"><span style="width:${Math.min(100,spent/(allow||1)*100).toFixed(1)}%"></span></div>
     <p class="s" style="font-size:13px;color:var(--muted);margin-bottom:16px">${state.settings.income?`Spent <b class="num" style="color:var(--ink)">${eur(spent)}</b> of your daily allowance of ${eur(allow)}.`:`Spent <b class="num" style="color:var(--ink)">${eur(spent)}</b> today. Set your income in the Year tab to get a daily allowance.`}</p>
     ${expForm(di)}${expRows(list,{showDate:false})}
@@ -589,7 +595,7 @@ V.week=()=>{
   const bars=days.map(d=>{const v=sum(state.exps.filter(e=>e.date===iso(d)));return {label:WD[wdi(d)],v,today:iso(d)===TI,cls:d>TODAY?'fut':v>dailyAllow(d)?'over':''}});
   return hdr(`Week ${isoWeek(ws)} · ${ws.getFullYear()}`,`${ws.getDate()} ${M3[ws.getMonth()]} – ${we.getDate()} ${M3[we.getMonth()]}`,navBtns())+
   `<div class="wk-scroll"><div class="weekgrid">${cards}</div></div>
-  <div class="cols"><section class="panel"><div class="sec-h"><h2>Spending this week</h2>${statusPill(spent,allow)}</div>
+  <div class="cols"><section class="panel"><div class="sec-h"><h2>Spending this week</h2>${statusPill(spent,capAllow(we,spent,allow))}</div>
     ${barChart(bars,daily,{limitLabel:'daily'})}
     <div class="legend"><span><i style="background:var(--accent)"></i>Within allowance</span><span><i style="background:var(--bad)"></i>Over daily allowance</span></div>
     <div style="margin-top:18px">${catBars(list)}</div>
