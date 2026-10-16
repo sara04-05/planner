@@ -6,7 +6,35 @@ const CSRF=(document.querySelector('meta[name="csrf-token"]')||{}).content||'';
 let bg=null;
 function close(){if(bg){bg.remove();bg=null;document.removeEventListener('keydown',onKey);rb.focus()}}
 function onKey(e){if(e.key==='Escape')close()}
+const esc=t=>String(t==null?'':t).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+async function api(a,data){
+  const r=await fetch('api.php?action='+a,{method:'POST',credentials:'same-origin',headers:{'Content-Type':'application/json','X-CSRF-Token':CSRF},body:JSON.stringify(data||{})});
+  const d=await r.json().catch(()=>({}));
+  if(!r.ok)throw new Error(d.error||'Something went wrong.');
+  return d;
+}
+// admins and sub admins: the same button lists what people reported (no separate page)
+function openList(){
+  if(bg)return;
+  bg=document.createElement('div');bg.className='modal-bg';
+  bg.innerHTML='<div class="modal reportmodal reportlist" role="dialog" aria-modal="true" aria-labelledby="rlTitle"><h3 id="rlTitle">Reported problems</h3><div class="rlbody"><p class="rpdone">Loading…</p></div><div class="reportfoot"><span></span><span class="acts"><button type="button" class="btn primary" data-rp-cancel>Close</button></span></div></div>';
+  document.body.appendChild(bg);
+  document.addEventListener('keydown',onKey);
+  bg.addEventListener('click',e=>{if(e.target===bg||e.target.closest('[data-rp-cancel]'))close()});
+  const body=bg.querySelector('.rlbody');
+  let canEdit=false,rows=[];
+  const paint=()=>{
+    body.innerHTML=rows.length?rows.map(r=>'<div class="rlrow'+(r.resolved?' done':'')+'"><div class="rlhead"><b>'+esc(r.name)+'</b><span class="rlmail">'+esc(r.email)+'</span><span class="rlwhen">'+esc(r.when)+'</span></div><p>'+esc(r.details)+'</p>'+(canEdit?'<button type="button" class="btn sm" data-rl="'+r.id+'" data-on="'+(r.resolved?0:1)+'">'+(r.resolved?'Reopen':'Done')+'</button>':'')+'</div>').join(''):'<p class="rpdone">No problems reported.</p>';
+  };
+  body.addEventListener('click',async e=>{
+    const b=e.target.closest('[data-rl]');if(!b)return;
+    b.disabled=true;
+    try{await api('x.report.resolve',{id:+b.dataset.rl,on:+b.dataset.on});const r=rows.find(x=>x.id===+b.dataset.rl);if(r)r.resolved=+b.dataset.on;rows.sort((x,y)=>x.resolved-y.resolved||y.id-x.id);paint()}catch(err){b.disabled=false;alert(err.message)}
+  });
+  api('x.reports').then(d=>{rows=d.reports;canEdit=d.can_edit;paint()}).catch(err=>{body.innerHTML='<p class="rpmsg">'+esc(err.message)+'</p>'});
+}
 function open(){
+  if(rb.dataset.admin)return openList();
   if(bg)return;
   bg=document.createElement('div');bg.className='modal-bg';
   bg.innerHTML='<div class="modal reportmodal" role="dialog" aria-modal="true" aria-labelledby="rpTitle"><h3 id="rpTitle">Report a problem</h3><form class="reportbox" autocomplete="off"><label for="rpText">What went wrong?</label><textarea id="rpText" rows="5" maxlength="1000" placeholder="Which page were you on, and what happened?" required></textarea><p class="rpmsg" role="alert" hidden></p><div class="reportfoot"><span class="count" id="rpCount">0 / 1000</span><span class="acts"><button type="button" class="btn ghost" data-rp-cancel>Cancel</button><button class="btn primary">Send to the admins</button></span></div></form></div>';

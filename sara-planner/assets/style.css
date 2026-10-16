@@ -1382,9 +1382,11 @@ a.nbtile{text-decoration:none}.nbtiles{margin-bottom:14px}.nbtile.on span{color:
 /* day view: the money panel stays in its own column and never rides up over the header or down over the hours */
 .page .cols{align-items:start}
 .page .cols>.panel{position:static;margin:0;min-width:0;overflow:hidden}
-.page .cols>.panel .addform{grid-template-columns:minmax(0,1fr) minmax(0,1fr)}
-.page .cols>.panel .addform input[name=desc]{grid-column:1/-1}
-.page .cols>.panel .addform .btn{grid-column:1/-1;justify-content:center}
+@media (max-width:760px){
+  .page .cols>.panel .addform{grid-template-columns:minmax(0,1fr) minmax(0,1fr)}
+  .page .cols>.panel .addform input[name=desc]{grid-column:1/-1}
+  .page .cols>.panel .addform .btn{grid-column:1/-1;justify-content:center}
+}
 .page .cols>.stack{min-width:0}
 
 /* phones: section headings sit left, with their small note on the right; date header wraps cleanly */
@@ -1645,3 +1647,32 @@ a.nbcover-link:focus-visible{outline:3px solid var(--accent);outline-offset:6px;
   .nbe.panel-open>div:first-child{position:sticky;top:16px;align-self:start;z-index:2}
 }
 .nbe.panel-open .nbe-side{position:static}
+
+/* corners, width and height from the sliders work on top of any ready-made shape; text size from the slider */
+[data-label="box"] .nbcover-in,[data-label="stamp"] .nbcover-in,[data-label="ticket"] .nbcover-in,[data-label="band"] .nbcover-in,:not([data-label]) .nbcover-in{border-radius:var(--lb-r,4px)}
+[data-lbw] .nbcover-in{width:var(--lb-w,69%);left:calc(14% + (86% - var(--lb-w,69%)) / 2);right:auto}
+.nbcover-in{min-height:var(--lb-h,0%)}
+[data-label="custom"] .nbcover-in{border-radius:var(--lb-r,6%)}
+.nbv .nbook .page,.nbv .binder .page{font-size:var(--nb-fs,15px)}
+.nbv :is(.nb-text,.nb-what,.nb-intro,.nbp-toc a,.nbp-toc button,.post .txt,.ilist li,.tx){font-size:var(--nb-fs,15px)}
+.nbv .nbook .page h1{font-size:calc(var(--nb-fs,15px) * 1.9)}
+.lbrange b{font-weight:700;color:var(--ink);margin-left:6px}
+
+/* money panel: the add form in one row again (what, category, amount, date, Add) */
+@media (min-width:761px){
+  .page .panel .addform{grid-template-columns:minmax(0,1.1fr) minmax(0,.8fr) minmax(0,1.1fr) auto;align-items:center;margin-bottom:var(--lh)}
+  .page .panel .addform input[name=desc]{grid-column:1/-1}
+  .page .panel .addform .btn{grid-column:auto;justify-content:center;width:auto;padding:0 18px}
+}
+
+/* chart limit label ("budget €658", "daily €17") sits above its dashed line at the left end, clear of the bars and their amounts */
+.plot .lim em{top:auto;bottom:3px;left:0;right:auto;background:none;padding:0 2px}
+
+/* reported problems list (admins, sub admins): popup */
+.reportlist{width:min(640px,100%);max-height:min(80vh,640px)}
+.reportlist .rlbody{overflow:auto;display:flex;flex-direction:column;gap:10px;min-height:60px}
+.rlrow{border:1px solid var(--line);border-radius:12px;padding:12px 14px;background:var(--paper-2);display:flex;flex-direction:column;gap:6px;align-items:flex-start}
+.rlrow.done{opacity:.55}
+.rlrow p{margin:0;white-space:pre-wrap;overflow-wrap:anywhere;line-height:1.5}
+.rlhead{display:flex;gap:10px;flex-wrap:wrap;align-items:baseline;font-size:13px}
+.rlmail,.rlwhen{color:var(--muted)}

@@ -28,7 +28,7 @@ const MAX_STYLES    = 20;
 function default_design(): array
 {
     return ['cover' => 'dusk', 'cover_img' => 0, 'cover_c1' => '', 'cover_c2' => '', 'paper' => 'lined', 'paper_color' => 'white', 'paper_hex' => '',
-        'accent' => 'violet', 'accent_hex' => '', 'font' => 'modern', 'binding' => 'coil', 'label' => 'box', 'label_hex' => '', 'label_r' => 0, 'label_w' => 0, 'label_h' => 0, 'stickers' => []];
+        'accent' => 'violet', 'accent_hex' => '', 'font' => 'modern', 'binding' => 'coil', 'label' => 'box', 'label_hex' => '', 'label_r' => 0, 'label_w' => 0, 'label_h' => 0, 'font_size' => 0, 'stickers' => []];
 }
 
 function clean_hex($v): string
@@ -46,6 +46,7 @@ function clean_design(int $uid, array $d, bool $withStickers = true): array
     foreach (['cover_c1', 'cover_c2', 'paper_hex', 'accent_hex', 'label_hex'] as $k) $out[$k] = clean_hex($d[$k] ?? '');
     if (in_array($d['label'] ?? '', ['round', 'oval', 'arch', 'pill', 'ticket', 'band', 'hexagon', 'diamond', 'tag', 'stamp', 'custom', 'none'], true)) $out['label'] = $d['label'];
     // the shape you shape yourself: roundness of the corners (0-50 %), width (30-100 % of the cover, 0 = automatic) and height (0 = automatic, else 15-80 % of the cover)
+    $out['font_size'] = ($fs = (int)($d['font_size'] ?? 0)) > 0 ? max(12, min(24, $fs)) : 0;   // text size inside the notebook, in px (0 = normal)
     $out['label_r'] = max(0, min(50, (int)($d['label_r'] ?? 0)));
     $out['label_w'] = ($w = (int)($d['label_w'] ?? 0)) > 0 ? max(30, min(100, $w)) : 0;
     $out['label_h'] = ($hh = (int)($d['label_h'] ?? 0)) > 0 ? max(15, min(80, $hh)) : 0;
@@ -617,6 +618,23 @@ function notebook_action(int $uid, string $action, array $in): void
                 }
             }
         }
+        ok([]);
+    }
+
+    case 'x.reports': {   // the problems people reported: admins and sub admins read them in a popup
+        if (!can_view_users($uid)) fail(403, 'Only admins can read the reports.');
+        try {
+            $rows = q('SELECT r.id, r.details, r.resolved, r.created_at, f.name AS fname, f.email AS femail
+                FROM reports r JOIN users f ON f.id = r.reporter_id ORDER BY r.resolved, r.id DESC LIMIT 100')->fetchAll();
+        } catch (PDOException $e) {
+            $rows = [];
+        }
+        ok(['reports' => array_map(fn($r) => ['id' => (int)$r['id'], 'details' => (string)$r['details'], 'resolved' => (int)$r['resolved'], 'when' => (string)$r['created_at'], 'name' => (string)$r['fname'], 'email' => (string)$r['femail']], $rows), 'can_edit' => is_admin($uid)]);
+    }
+
+    case 'x.report.resolve': {   // admins only: mark a report done or open it again
+        if (!is_admin($uid)) fail(403, 'Only admins can change reports.');
+        q('UPDATE reports SET resolved = ? WHERE id = ?', [!empty($in['on']) ? 1 : 0, id_in($in)]);
         ok([]);
     }
 
