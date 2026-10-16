@@ -35,6 +35,10 @@
         var isText=hasOwnText(el);
         if(!isBox&&!isText)continue;
         var r0=el.getBoundingClientRect();if(!r0.height)continue;
+        // little things (colour dots, swatches, icons) and chips / pills with a tinted background are never stretched: a chip moves with its row
+        if(isBox&&!isText&&(r0.height<24||r0.width<24))continue;
+        if(isText&&!opaque(cs)&&/rgba?\(/.test(cs.backgroundColor)&&!/rgba\([^)]*,\s*0\)/.test(cs.backgroundColor)&&cs.backgroundColor!=='transparent')continue;
+        if(isText&&visibleBorder(cs)&&parseFloat(cs.borderTopLeftRadius)>=8&&r0.height<40&&!el.children.length)continue;
         if(isBox&&opaque(cs))boxes.add(el);
         // something laid out side by side (a flex row / grid) moves as one piece
         var t=el,unit=el.closest('.nbtile,.nb,.person,.nb-new');if(unit&&unit!==page&&page.contains(unit))t=unit;

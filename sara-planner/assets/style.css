@@ -1193,3 +1193,6 @@ a.nbtile{text-decoration:none}.nbtiles{margin-bottom:14px}.nbtile.on span{color:
 .st-sec input[type=text],.st-sec textarea{width:100%;box-sizing:border-box}
 .st-sec .userlist li{display:flex;gap:8px;align-items:center}
 .st-sec .userlist .un{flex:1;min-width:0;overflow-wrap:anywhere}
+/* chips keep their own height (the page's 32px line height is only for writing) */
+.page .hsum span,.page .chipbtn,.page .tag2,.page .stk-lib button,.page .swatch{line-height:1.3}
+.page .hsum{align-items:center;min-height:var(--lh,32px)}
