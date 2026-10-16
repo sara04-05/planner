@@ -3,6 +3,15 @@
   const pad=n=>String(n).padStart(2,'0');
   const iso=d=>`${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())}`;
   const addDays=(d,n)=>new Date(d.getFullYear(),d.getMonth(),d.getDate()+n);
+  // Albanian mode: translate the sample text (the page's own words are translated by lang.js)
+  const SQ={"Algorithms lecture":"Leksion Algoritmet","Databases, ch. 4":"Bazat e të dhënave, kap. 4","OOP lab report":"Raport laboratori POO","Gym":"Palestër","Databases":"Bazat e të dhënave","Café shift":"Turn në kafene","OOP lecture":"Leksion POO","Lunch with Ana":"Drekë me Anën","Revise algorithms":"Përsërit algoritmet","Databases lab":"Laborator bazat e të dhënave","Group project":"Projekti në grup","Algorithms lab":"Laborator algoritmet","Read chapter 4":"Lexo kapitullin 4","Meet friends":"Takim me shokët","Rest day":"Ditë pushimi","Plan next week":"Planifiko javën tjetër","Call home":"Telefono në shtëpi","Lunch":"Drekë","Coffee":"Kafe","Bus":"Autobus","Groceries":"Ushqime","Printing":"Printim","Cinema":"Kinema","Top-up":"Rimbushje","Misc":"Të ndryshme","Finish OOP lab report":"Përfundo raportin e laboratorit POO","Read chapter 4, Databases":"Lexo kapitullin 4, Bazat e të dhënave","Email group about project":"Shkruaj grupit për projektin","Buy notebook":"Bli fletore","Hand in scholarship form":"Dorëzo formularin e bursës","Book dentist":"Cakto vizitë te dentisti","OOP":"POO","Normal forms":"Format normale","Sorting":"Renditja","Lab report":"Raport laboratori","SQL joins":"SQL joins","Graphs":"Grafet","Algorithms":"Algoritmet","Databases exam":"Provimi i bazave të të dhënave","OOP lab due":"Afati i laboratorit POO","Algorithms exam":"Provimi i algoritmeve","ER diagrams":"Diagramet ER","Entities":"Entitetet","Relationships":"Marrëdhëniet","SQL":"SQL","SELECT":"SELECT","Joins":"Joins","Subqueries":"Nënpyetje","1NF to 3NF":"1NF deri 3NF","Merge sort":"Merge sort","Quick sort":"Quick sort","BFS":"BFS","Dijkstra":"Dijkstra","Classes":"Klasat","Inheritance":"Trashëgimia","Patterns":"Modelet e dizajnit","Factory":"Factory","Observer":"Observer","Exam in 9 days, you got this!":"Provim pas 9 ditësh, ia del!","there":"ti"};
+  const tr=o=>{
+    if(window.SPL_LANG!=='sq')return o;
+    if(typeof o==='string')return SQ[o]||o;
+    if(Array.isArray(o))return o.map(tr);
+    if(o&&typeof o==='object'){const r={};for(const k in o)r[k]=tr(o[k]);return r}
+    return o;
+  };
   window.SPL_TOUR=function(){
     const T=new Date();T.setHours(0,0,0,0);
     const mon=addDays(T,-((T.getDay()+6)%7));
@@ -53,6 +62,6 @@
       {id:nid(),name:'Algorithms',c:'transport',exam:ex(23),chapters:[chap('Sorting',true,[['Merge sort',true],['Quick sort',true]]),chap('Graphs',false,[['BFS',true],['Dijkstra',false]])]},
       {id:nid(),name:'OOP',c:'food',exam:'',chapters:[chap('Classes',true,[['Inheritance',true]]),chap('Patterns',false,[['Factory',false],['Observer',false]])]}
     ];
-    return {user:{name:'there'},settings:{income:900,goal:1200},months:{},note:'Exam in 9 days, you got this!',exps,tasks,hours,weekly,blockDone:{},study,upcoming,subjects,google:{configured:false,connected:false,email:'',needsSync:false}};
+    return tr({user:{name:'there'},settings:{income:900,goal:1200},months:{},note:'Exam in 9 days, you got this!',exps,tasks,hours,weekly,blockDone:{},study,upcoming,subjects,google:{configured:false,connected:false,email:'',needsSync:false}});
   };
 })();
