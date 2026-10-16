@@ -1,3 +1,35 @@
+/* The "!" button in the top bar: report a problem with the website to the admins, in a popup (no separate page). */
+(function(){
+const rb=document.getElementById('reportBtn');
+if(!rb)return;
+const CSRF=(document.querySelector('meta[name="csrf-token"]')||{}).content||'';
+let bg=null;
+function close(){if(bg){bg.remove();bg=null;document.removeEventListener('keydown',onKey);rb.focus()}}
+function onKey(e){if(e.key==='Escape')close()}
+function open(){
+  if(bg)return;
+  bg=document.createElement('div');bg.className='modal-bg';
+  bg.innerHTML='<div class="modal reportmodal" role="dialog" aria-modal="true" aria-labelledby="rpTitle"><h3 id="rpTitle">Report a problem</h3><form class="reportbox" autocomplete="off"><label for="rpText">What went wrong?</label><textarea id="rpText" rows="5" maxlength="1000" placeholder="Which page were you on, and what happened?" required></textarea><p class="rpmsg" role="alert" hidden></p><div class="reportfoot"><span class="count" id="rpCount">0 / 1000</span><span class="acts"><button type="button" class="btn ghost" data-rp-cancel>Cancel</button><button class="btn primary">Send to the admins</button></span></div></form></div>';
+  document.body.appendChild(bg);
+  const f=bg.querySelector('form'),t=bg.querySelector('#rpText'),m=bg.querySelector('.rpmsg'),c=bg.querySelector('#rpCount');
+  t.addEventListener('input',()=>{c.textContent=t.value.length+' / 1000'});
+  bg.addEventListener('click',e=>{if(e.target===bg||e.target.closest('[data-rp-cancel]'))close()});
+  document.addEventListener('keydown',onKey);
+  f.addEventListener('submit',async e=>{
+    e.preventDefault();
+    const b=f.querySelector('.primary');b.disabled=true;m.hidden=true;
+    try{
+      const r=await fetch('api.php?action=x.report',{method:'POST',credentials:'same-origin',headers:{'Content-Type':'application/json','X-CSRF-Token':CSRF},body:JSON.stringify({details:t.value})});
+      const d=await r.json().catch(()=>({}));
+      if(!r.ok)throw new Error(d.error||'Something went wrong.');
+      bg.querySelector('.modal').innerHTML='<h3>Thank you</h3><p class="rpdone">Your report was sent to the admins.</p><div class="reportfoot"><span></span><span class="acts"><button type="button" class="btn primary" data-rp-cancel>Close</button></span></div>';
+    }catch(err){m.textContent=err.message;m.hidden=false;b.disabled=false}
+  });
+  t.focus();
+}
+rb.addEventListener('click',open);
+})();
+
 /* The bell in the top bar: a dropdown with your notifications (on every page). */
 (function(){
 const btn=document.getElementById('bellBtn'),pop=document.getElementById('bellPop');
