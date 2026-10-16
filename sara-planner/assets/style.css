@@ -1456,3 +1456,6 @@ input[type=range][data-xrange]{flex:1;min-width:120px}
   .page .ytbl td .cellin{height:26px;padding-block:0}
   .page .ytbl td .pill{line-height:20px}
 }
+
+/* Week: some air between the title and the day cards, and a whole line below them */
+.page .wk-scroll{margin-top:32px;margin-bottom:32px}
