@@ -167,6 +167,14 @@ function upgrade_schema(PDO $pdo): void
     // Chat, profiles and friends: same tables as in the schema file.
     try {
         $sql = file_get_contents(__DIR__ . (DB_DRIVER === 'sqlite' ? '/sql/schema-sqlite.sql' : '/sql/schema.sql'));
+        // An early test version of reports kept who was reported (no "message" column). Those reports about people are not used any more: drop that table so the new one below can be made (MySQL also needs the old foreign key names freed).
+        try {
+            $rc = DB_DRIVER === 'sqlite'
+                ? array_column($pdo->query('PRAGMA table_info(reports)')->fetchAll(), 'name')
+                : array_column($pdo->query('SHOW COLUMNS FROM reports')->fetchAll(), 'Field');
+            if ($rc && !in_array('message', $rc, true)) $pdo->exec('DROP TABLE reports');
+        } catch (PDOException $e) {   // no reports table yet: nothing to set aside
+        }
         foreach (['messages', 'profiles', 'friends', 'reports'] as $t) {
             if (preg_match("/CREATE TABLE IF NOT EXISTS $t \\(.*?\\n\\)[^;]*;/s", $sql, $m)) $pdo->exec($m[0]);
         }
