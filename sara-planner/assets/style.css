@@ -1474,3 +1474,8 @@ body:not(.tour) .page p.hint2,body:not(.tour) .page .xcard>p.sub,body:not(.tour)
 .nbcover-in .avatar,.nbcover-in img.avatar{width:96px;height:96px;min-width:96px;min-height:96px;max-width:96px;max-height:96px;aspect-ratio:1/1;border-radius:50%;object-fit:cover;flex:0 0 96px;box-sizing:border-box;border:3px solid rgba(255,255,255,.9)}
 .nbcover-in .avatar.letter{font-size:38px}
 .nbcover-in{display:flex;flex-direction:column;align-items:center}
+
+/* the top bar always uses the Splanner brand colours, whatever accent colour (even white) a notebook design picks */
+.top{--accent:#6A4DC4;--on-accent:#FFFFFF;--accent-soft:#ECE6FB}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]) .top{--accent:#A98FF6;--on-accent:#17121F;--accent-soft:#302849}}
+:root[data-theme="dark"] .top{--accent:#A98FF6;--on-accent:#17121F;--accent-soft:#302849}
