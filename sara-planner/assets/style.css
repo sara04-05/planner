@@ -1462,3 +1462,7 @@ a.nbtile{text-decoration:none}.nbtiles{margin-bottom:14px}.nbtile.on span{color:
 .nbp-toc button,.nbp-toc a{display:flex;justify-content:space-between;align-items:center;width:100%;min-height:32px;height:32px;padding:0;color:var(--ink);text-decoration:none;font:inherit;font-size:15px}
 .nbp-toc button i,.nbp-toc a i{font-style:normal;font-weight:700;color:var(--accent);font-size:13px}
 .nbp-toc button:hover,.nbp-toc a:hover{color:var(--accent)}
+
+/* a little air between a profile's action buttons and the notebook tiles under them */
+.page .phead-btns{margin-bottom:32px}
+.page .nbtiles{margin-top:32px}

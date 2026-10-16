@@ -52,7 +52,7 @@ if ($prof && $viewer && !can_view_profile($prof, $viewer)) {
     $btn = function (string $do, string $label, string $cls) use ($owner, $back): string {
         return '<form method="post" action="explore.php" class="inline"><input type="hidden" name="csrf" value="' . h(csrf_token()) . '"><input type="hidden" name="do" value="' . $do . '"><input type="hidden" name="id" value="' . $owner . '"><input type="hidden" name="back" value="' . h($back) . '"><button class="' . $cls . '">' . h($label) . '</button></form>';
     };
-    if ($state === 'friends') $actions = '<a class="btn primary" href="messages.php?with=' . $owner . '">Message</a> <a class="btn" href="friend.php?id=' . $owner . '">Today\'s plan</a> <a class="btn" href="hangout.php?with=' . $owner . '">🗓️ Find time together</a>';
+    if ($state === 'friends') $actions = '<a class="btn primary" href="messages.php?with=' . $owner . '">Message</a> <a class="btn" href="hangout.php?with=' . $owner . '">🗓️ Find time together</a>';
     elseif ($state === 'sent') $actions = $btn('cancel', 'Requested · cancel', 'btn ghost');
     elseif ($state === 'received') $actions = $btn('accept', 'Accept friend request', 'btn primary');
     else $actions = $btn('add', 'Add friend', 'btn primary');
@@ -97,7 +97,7 @@ $actions = '';
 if ($isMe) {
     $actions = '<a class="btn" href="index.php?tab=profile">Edit my notebooks</a>';
 } elseif ($viewer) {
-    if ($state === 'friends') $actions = '<a class="btn primary" href="messages.php?with=' . $owner . '">Message</a> <a class="btn" href="friend.php?id=' . $owner . '">Today\'s plan</a> <a class="btn" href="hangout.php?with=' . $owner . '">🗓️ Find time together</a>';
+    if ($state === 'friends') $actions = '<a class="btn primary" href="messages.php?with=' . $owner . '">Message</a> <a class="btn" href="hangout.php?with=' . $owner . '">🗓️ Find time together</a>';
     elseif ($state === 'sent') $actions = friend_btn('cancel', $owner, 'Requested · cancel', 'btn ghost', $back);
     elseif ($state === 'received') $actions = friend_btn('accept', $owner, 'Accept friend request', 'btn primary', $back);
     else $actions = friend_btn('add', $owner, 'Add friend', 'btn primary', $back);
