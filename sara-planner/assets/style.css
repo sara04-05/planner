@@ -1331,3 +1331,22 @@ a.nbtile{text-decoration:none}.nbtiles{margin-bottom:14px}.nbtile.on span{color:
 .nbook .nbp-tabs .tab[aria-selected="true"]{width:46px;margin-right:-8px;position:relative}
 .nbook .nbp-tabs .tab.add-page{min-height:70px}
 @media (max-width:900px){.nbook .nbp-tabs{display:none}.nbv .nbook{margin-right:0}}
+
+/* ===== opening and closing the notebook, smoothly ===== */
+.nbclosed{perspective:1500px}
+.nbclosed .nbcover{transform-origin:left center;transition:transform .55s cubic-bezier(.45,.05,.25,1),box-shadow .55s}
+.nbclosed .nbcover.flip-open{transform:rotateY(-112deg);box-shadow:0 22px 30px -16px rgba(20,12,40,.2)}
+.nbclosed[data-anim="close"] .nbcover{animation:coverClose .55s cubic-bezier(.3,.1,.2,1)}
+.nbook{perspective:1700px}
+.nbook.shut{transition:transform .3s ease,opacity .3s ease;transform:scale(.92);opacity:0}
+.nbook[data-anim="open"]{animation:bookOpen .6s cubic-bezier(.2,.8,.2,1)}
+.nbook[data-anim="open"] .nbp-left{transform-origin:right center;animation:pageFromSpineL .65s cubic-bezier(.2,.8,.2,1)}
+.nbook[data-anim="open"] .nbp-right{transform-origin:left center;animation:pageFromSpineR .65s cubic-bezier(.2,.8,.2,1)}
+.nbook[data-anim="turn"] .nbp-right{transform-origin:left center;animation:pageTurn .45s cubic-bezier(.25,.8,.3,1)}
+@keyframes coverClose{from{transform:rotateY(-105deg);opacity:.7}to{transform:none;opacity:1}}
+@keyframes bookOpen{from{opacity:0;transform:scale(.9)}to{opacity:1;transform:none}}
+@keyframes pageFromSpineL{from{transform:rotateY(80deg);opacity:.2}to{transform:none;opacity:1}}
+@keyframes pageFromSpineR{from{transform:rotateY(-80deg);opacity:.2}to{transform:none;opacity:1}}
+@keyframes pageTurn{from{opacity:.15;transform:rotateY(-20deg) translateX(14px)}to{opacity:1;transform:none}}
+@media (prefers-reduced-motion: reduce){.nbclosed .nbcover,.nbook,.nbook *,.nbclosed .nbcover{animation:none!important;transition:none!important}}
+.nbclosed .nbcover{backface-visibility:hidden;-webkit-backface-visibility:hidden}
