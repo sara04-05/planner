@@ -1421,3 +1421,19 @@ a.nbtile{text-decoration:none}.nbtiles{margin-bottom:14px}.nbtile.on span{color:
 /* subjects: masonry columns, so each card starts right under the end of the one above it with no empty gaps */
 .subjects{display:block;column-width:290px;column-gap:16px}
 .subjects>.subj{break-inside:avoid;-webkit-column-break-inside:avoid;margin:0 0 16px;display:block}
+
+/* top bar: icons only (the date stays as text); the logo keeps the brand violet whatever accent colour the notebook uses */
+.top-r .btn .lbl{display:none}
+.top-r .btn{gap:0;padding:8px 11px}
+.top-r .btn[data-lang-btn] svg,.top-r a.btn[href="admin.php"] svg{width:18px;height:18px}
+.brand .logo,.logo{color:#6A4DC4}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]) .brand .logo,:root:not([data-theme="light"]) .logo{color:#A98FF6}}
+:root[data-theme="dark"] .brand .logo,:root[data-theme="dark"] .logo{color:#A98FF6}
+
+/* tables (admin lists, year table): one row = one ruled line, and no separator lines of their own */
+.page .tbl{border-collapse:collapse}
+.page .tbl tr{height:32px;border:0}
+.page .tbl :is(th,td){border:0;padding-block:0;height:32px;line-height:1.2}
+.page .tbl tfoot td{border-top:2px solid var(--ink)}
+.page .tbl .btn{padding-block:3px;font-size:12px}
+.page .tbl .admin-acts{align-items:center}
