@@ -4,10 +4,16 @@
 (function(){
   var LH=32,busy=false,timer=null;
   var SKIP_TAG=/^(INPUT|SELECT|TEXTAREA|IMG|SVG|BR|OPTION|SCRIPT|STYLE|CANVAS)$/;
-  function opaque(cs){
-    var m=/rgba?\(([^)]+)\)/.exec(cs.backgroundColor||'');if(!m)return false;
-    var p=m[1].split(',').map(parseFloat);return p.length<4||p[3]>0.4;
+  // how see-through a computed colour is (0 = clear, 1 = solid); handles rgb(), rgba() and color(srgb … / a) from color-mix()
+  function alphaOf(c){
+    if(!c||c==='transparent')return 0;
+    var m=/\/\s*([\d.]+%?)\s*\)/.exec(c);
+    if(m){var v=parseFloat(m[1]);return m[1].slice(-1)==='%'?v/100:v}
+    m=/^rgba?\(([^)]+)\)/.exec(c);
+    if(m){var p=m[1].split(/[,\s]+/).filter(Boolean);return p.length>=4?parseFloat(p[3]):1}
+    return 1;
   }
+  function opaque(cs){return alphaOf(cs.backgroundColor)>0.4}
   function visibleBorder(cs){return parseFloat(cs.borderTopWidth)>0&&cs.borderTopStyle!=='none'&&cs.borderTopStyle!=='hidden'||parseFloat(cs.borderLeftWidth)>=2&&cs.borderLeftStyle!=='none'}
   function hasOwnText(el){for(var n=el.firstChild;n;n=n.nextSibling)if(n.nodeType===3&&n.nodeValue.trim())return true;return false}
   function snap(){
@@ -37,7 +43,7 @@
         var r0=el.getBoundingClientRect();if(!r0.height)continue;
         // little things (colour dots, swatches, icons) and chips / pills with a tinted background are never stretched: a chip moves with its row
         if(isBox&&!isText&&(r0.height<24||r0.width<24))continue;
-        if(isText&&!opaque(cs)&&/rgba?\(/.test(cs.backgroundColor)&&!/rgba\([^)]*,\s*0\)/.test(cs.backgroundColor)&&cs.backgroundColor!=='transparent')continue;
+        if(isText&&!opaque(cs)&&alphaOf(cs.backgroundColor)>0.02)continue;
         if(isText&&visibleBorder(cs)&&parseFloat(cs.borderTopLeftRadius)>=8&&r0.height<40&&!el.children.length)continue;
         if(isBox&&opaque(cs))boxes.add(el);
         // something laid out side by side (a flex row / grid) moves as one piece
