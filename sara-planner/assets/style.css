@@ -1466,3 +1466,6 @@ a.nbtile{text-decoration:none}.nbtiles{margin-bottom:14px}.nbtile.on span{color:
 /* a little air between a profile's action buttons and the notebook tiles under them */
 .page .phead-btns{margin-bottom:32px}
 .page .nbtiles{margin-top:32px}
+
+/* how-to text lives only in the visitor tour: the planner and profile pages show none of it */
+.page p.hint2,.page .xcard>p.sub,.page .xform>p.sub,.page p.hint{display:none}
