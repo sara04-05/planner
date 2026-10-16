@@ -98,6 +98,14 @@ if ($isMe) {
     $actions = '<a class="btn primary" href="login.php">Log in to add friend</a>';
 }
 
+// No notebook is shared with this viewer, but they may still be allowed to see the person's day: show a notebook with only the Day page
+$dayOnly = false;
+if (!$notebooks && can_see_day($owner, $viewer)) {
+    $dayOnly = true;
+    $notebooks = [['id' => 0, 'title' => $name . "'s notebook", 'intro' => '', 'sections' => [], 'design' => profile_design($prof), 'cover_url' => '', 'public' => 0]];
+    $_GET['p'] = 'day';
+}
+
 if (!$notebooks) {
     app_top($name . "'s profile", ['tab' => $isMe ? 'profile' : '', 'active' => 'explore']);
     $nf = count(friend_ids($owner));
@@ -116,11 +124,11 @@ $page = (string)($_GET['p'] ?? 'cover');
 $showDay = can_see_day($owner, $viewer);   // the Day page: today's plan, for whoever the owner allowed
 if ($page !== 'cover' && !in_array($page, $sections, true) && !($page === 'day' && $showDay)) $page = 'cover';
 $cover = $nb['cover_url'];
-$base = 'u.php?u=' . rawurlencode($prof['slug']) . '&nb=' . $nb['id'];
+$base = ((string)$prof['slug'] !== '' ? 'u.php?u=' . rawurlencode($prof['slug']) : 'u.php?id=' . $owner) . '&nb=' . $nb['id'];
 
 $LABEL = ['cover' => 'Cover', 'interests' => 'Interests', 'blog' => 'Blog', 'timetable' => 'Timetable', 'subjects' => 'Studying', 'day' => 'Day'];
 $tabs = '';
-foreach (array_merge(['cover'], $sections, $showDay ? ['day'] : []) as $k) {
+foreach ($dayOnly ? ['day'] : array_merge(['cover'], $sections, $showDay ? ['day'] : []) as $k) {
     $tabs .= '<a class="tab" role="tab" data-tab="' . $k . '" href="' . h($base . ($k === 'cover' ? '' : '&p=' . $k)) . '"' . ($k === $page ? ' aria-selected="true"' : '') . '>' . $LABEL[$k] . '</a>';
 }
 
@@ -130,16 +138,16 @@ $nFriends = count(friend_ids($owner));
 $topOpts = ['tab' => '', 'active' => $isMe ? '' : 'explore', 'design' => $design, 'tabs' => $tabs, 'covers' => true];
 if ($page !== 'cover') $topOpts += ['eyebrow' => $name . ' · ' . $nb['title'], 'h1' => $LABEL[$page]];
 app_top($nb['title'] . ' · ' . $name, $topOpts);
-echo profile_head($person, (string)$prof['slug'], [plural(count($notebooks), 'notebook', 'notebooks') => count($notebooks), plural($nPosts, 'post', 'posts') => $nPosts, plural($nFriends, 'friend', 'friends') => $nFriends], $actions,
+echo profile_head($person, (string)$prof['slug'], [plural($dayOnly ? 0 : count($notebooks), 'notebook', 'notebooks') => $dayOnly ? 0 : count($notebooks), plural($nPosts, 'post', 'posts') => $nPosts, plural($nFriends, 'friend', 'friends') => $nFriends], $actions,
     $isMe ? '' : ((int)$prof['is_public'] ? '' : '<span class="tag2 priv">Private</span>'));
 ?>
-  <nav class="nbtiles" aria-label="Notebooks">
+  <?php if (!$dayOnly): ?><nav class="nbtiles" aria-label="Notebooks">
     <?php foreach ($notebooks as $n): ?>
       <a class="nbtile<?= $n['id'] === $nb['id'] ? ' on' : '' ?>" href="u.php?u=<?= h(rawurlencode($prof['slug'])) ?>&amp;nb=<?= $n['id'] ?>"<?= design_attrs($n['design'], 'accent') . design_style($n['design']) ?>>
         <i style="<?= cover_css($n['design'], $n['cover_url']) ?>"></i><span translate="no"><?= h($n['title']) ?></span>
       </a>
     <?php endforeach; ?>
-  </nav>
+  </nav><?php endif; ?>
 
 
 
