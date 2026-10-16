@@ -112,6 +112,7 @@ app_top('Edit profile & settings', ['tab' => 'profile', 'covers' => true, 'eyebr
       <button class="btn primary">Save everything</button>
     </form>
     <h2 class="nb-h2">Account</h2>
+    <p style="margin-bottom:10px"><a class="btn" href="change-password.php">Change my password</a></p>
     <p class="hint2">Logs you out and removes your account and everything in it for good.</p>
     <p style="margin-top:10px"><a class="btn danger" href="delete-account.php">Delete my account</a></p>
     <template id="coverTpl"><?php foreach (COVERS as $k => $x): ?><div data-cover="<?= $k ?>"><?= cover_html($me, false, $k) ?></div><?php endforeach; ?></template>

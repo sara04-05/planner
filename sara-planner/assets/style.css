@@ -4,7 +4,7 @@ img{max-width:100%}
 
 :root{
   --bg:#E9E4F1; --paper:#FFFFFF; --paper-2:#F6F3FA; --ink:#2A2338; --muted:#6F6781; --line:#E4DDEC;
-  --accent:#6A4DC4; --accent-soft:#ECE6FB; --on-accent:#FFFFFF;
+  --accent:#6A4DC4; --accent-soft:#ECE6FB; --on-accent:#FFFFFF; --brand:#6A4DC4;
   --t-day:#FBE7B0; --t-week:#CBEBDA; --t-month:#F7D3DD; --t-year:#DAD1F5; --t-study:#F9D2BC; --t-tasks:#CDDCF5; --t-money:#E7DACA;
   --good:#23804D; --good-soft:#DDF2E6; --warn:#A86C06; --warn-soft:#FBEFD2; --bad:#BF3651; --bad-soft:#F9DDE3;
   --c-food:#E07A5F; --c-coffee:#A47148; --c-transport:#3D8FD1; --c-groceries:#4FA36B; --c-school:#8B6AD8; --c-phone:#D9A21B; --c-fun:#E0609A; --c-clothes:#179C95; --c-gifts:#8FA31E; --c-work:#4C5FA8; --c-other:#8A8F99;
@@ -19,7 +19,7 @@ img{max-width:100%}
   :root:not([data-theme="light"]){
     color-scheme:dark;
     --bg:#14111B; --paper:#1E1A27; --paper-2:#27222F; --ink:#EDE9F5; --muted:#A49CB5; --line:#352E42;
-    --accent:#A98FF6; --accent-soft:#302849; --on-accent:#17121F;
+    --accent:#A98FF6; --accent-soft:#302849; --on-accent:#17121F; --brand:#A98FF6;
     --t-day:#4D4222; --t-week:#1F4032; --t-month:#4A2A3B; --t-year:#372D5C; --t-study:#4D3022; --t-tasks:#243655; --t-money:#40362B;
     --good:#62C98E; --good-soft:#1B3526; --warn:#E8B656; --warn-soft:#3A2F16; --bad:#F2819A; --bad-soft:#3F1F2A;
     --c-food:#EE8E74; --c-coffee:#C79468; --c-transport:#5DA9E8; --c-groceries:#66C084; --c-school:#A88EEE; --c-phone:#EABB3E; --c-fun:#EF80B3; --c-clothes:#45C4BC; --c-gifts:#B5C93F; --c-work:#8C9CE0; --c-other:#A1A6B0;
@@ -32,7 +32,7 @@ img{max-width:100%}
 :root[data-theme="dark"]{
   color-scheme:dark;
   --bg:#14111B; --paper:#1E1A27; --paper-2:#27222F; --ink:#EDE9F5; --muted:#A49CB5; --line:#352E42;
-  --accent:#A98FF6; --accent-soft:#302849; --on-accent:#17121F;
+  --accent:#A98FF6; --accent-soft:#302849; --on-accent:#17121F; --brand:#A98FF6;
   --t-day:#4D4222; --t-week:#1F4032; --t-month:#4A2A3B; --t-year:#372D5C; --t-study:#4D3022; --t-tasks:#243655; --t-money:#40362B;
   --good:#62C98E; --good-soft:#1B3526; --warn:#E8B656; --warn-soft:#3A2F16; --bad:#F2819A; --bad-soft:#3F1F2A;
   --c-food:#EE8E74; --c-coffee:#C79468; --c-transport:#5DA9E8; --c-groceries:#66C084; --c-school:#A88EEE; --c-phone:#EABB3E; --c-fun:#EF80B3; --c-clothes:#45C4BC; --c-gifts:#B5C93F; --c-work:#8C9CE0; --c-other:#A1A6B0;
@@ -383,10 +383,10 @@ td>.cellin{width:calc(100% - 16px);max-width:110px}
 .auth-alt a{color:var(--accent);font-weight:700}
 
 /* logo */
-.logo{display:inline-block;color:var(--accent);text-decoration:none;font-family:"Pacifico",cursive;font-weight:400;font-size:28px;line-height:1.3;letter-spacing:0;white-space:nowrap}
+.logo{display:inline-block;color:var(--brand);text-decoration:none;font-family:"Pacifico",cursive;font-weight:400;font-size:28px;line-height:1.3;letter-spacing:0;white-space:nowrap}
 .logo.sm{font-size:20px}
 .auth-card .logo{display:block;width:max-content;margin-bottom:14px}
-.brand .logo{font-size:28px;color:var(--accent);font-weight:400}
+.brand .logo{font-size:28px;color:var(--brand);font-weight:400}
 
 /* Per-month income / savings target you changed by hand */
 .tbl .r .cellin{text-align:right;width:96px;font-weight:inherit;color:inherit;border:1px dashed var(--line)}
@@ -1377,6 +1377,21 @@ a.nbtile{text-decoration:none}.nbtiles{margin-bottom:14px}.nbtile.on span{color:
   .nbv .nbook .nbp-left{display:none}
   .nbv .nbook .nbp-right{margin-top:0}
 }
+
+/* ---------- cover name plate: shape, place and colours (design.label / layout / label_hex / text_hex) ---------- */
+.nbcover-in{background:var(--lbl-bg,#EFE2C8);color:var(--lbl-fg,#4A3426);box-shadow:0 0 0 3px var(--lbl-bg,#EFE2C8),0 0 0 4px rgba(74,52,38,.5),0 5px 12px rgba(0,0,0,.25)}
+.nbcover[data-layout="top"] .nbcover-in{top:9%;transform:none}
+.nbcover[data-layout="bottom"] .nbcover-in{top:auto;bottom:9%;transform:none}
+.nbcover[data-label="round"] .nbcover-in{aspect-ratio:1;border-radius:50%;justify-content:center;padding:12px;left:24%;right:11%}
+.nbcover[data-label="round"] .nbcover-in .avatar{width:44px;height:44px;font-size:20px}
+.nbcover[data-label="oval"] .nbcover-in{border-radius:50%/42%;justify-content:center;padding:26px 14px}
+.nbcover[data-label="arch"] .nbcover-in{border-radius:999px 999px 6px 6px;padding:34px 12px 18px}
+.nbcover[data-label="pill"] .nbcover-in{border-radius:999px;flex-direction:row;flex-wrap:wrap;justify-content:center;padding:14px 18px}
+.nbcover[data-label="ticket"] .nbcover-in{border-radius:2px;box-shadow:0 0 0 3px var(--lbl-bg,#EFE2C8),0 0 0 5px var(--lbl-fg,#4A3426),0 5px 12px rgba(0,0,0,.25);outline:2px dashed var(--lbl-fg,#4A3426);outline-offset:-8px}
+.nbcover[data-label="band"] .nbcover-in{left:14%;right:0;border-radius:0;box-shadow:0 4px 10px rgba(0,0,0,.25);padding:18px 14px}
+.nbcover[data-label="none"] .nbcover-in{background:transparent;box-shadow:none;color:var(--lbl-fg,#fff);text-shadow:0 1px 8px rgba(0,0,0,.5)}
+.nbcover[data-noavatar] .nbcover-in .avatar{display:none}
+input[type=range][data-xrange]{flex:1;min-width:120px}
 
 /* Laptop fixes: the limit label no longer covers the heading above the chart, and the "I saved" tick sits level with its amount */
 .chart{margin-top:24px}

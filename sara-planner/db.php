@@ -167,6 +167,14 @@ function upgrade_schema(PDO $pdo): void
     // Chat, profiles and friends: same tables as in the schema file.
     try {
         $sql = file_get_contents(__DIR__ . (DB_DRIVER === 'sqlite' ? '/sql/schema-sqlite.sql' : '/sql/schema.sql'));
+        // An early test version of reports kept who was reported (no "message" column). Those reports about people are not used any more: drop that table so the new one below can be made (MySQL also needs the old foreign key names freed).
+        try {
+            $rc = DB_DRIVER === 'sqlite'
+                ? array_column($pdo->query('PRAGMA table_info(reports)')->fetchAll(), 'name')
+                : array_column($pdo->query('SHOW COLUMNS FROM reports')->fetchAll(), 'Field');
+            if ($rc && !in_array('message', $rc, true)) $pdo->exec('DROP TABLE reports');
+        } catch (PDOException $e) {   // no reports table yet: nothing to set aside
+        }
         foreach (['messages', 'profiles', 'friends', 'reports'] as $t) {
             if (preg_match("/CREATE TABLE IF NOT EXISTS $t \\(.*?\\n\\)[^;]*;/s", $sql, $m)) $pdo->exec($m[0]);
         }
@@ -277,6 +285,57 @@ function q(string $sql, array $params = []): PDOStatement
     $stmt = db()->prepare($sql);
     $stmt->execute($params);
     return $stmt;
+}
+
+/**
+ * Messages are stored encrypted (AES-256-GCM), so reading the database (phpMyAdmin, a backup, a leaked dump) shows only scrambled text.
+ * The key is made once and kept in data/message.key (blocked from the web by data/.htaccess). Keep it safe: without it old messages can't be read.
+ */
+function msg_key(): string
+{
+    static $key = null;
+    if ($key !== null) return $key;
+    $file = __DIR__ . '/data/message.key';
+    $raw = is_file($file) ? trim((string)file_get_contents($file)) : '';
+    if (strlen($raw) !== 64 || !ctype_xdigit($raw)) {
+        $raw = bin2hex(random_bytes(32));
+        if (file_put_contents($file, $raw, LOCK_EX) === false) throw new RuntimeException("Can't save data/message.key. Make the data folder writable.");
+        @chmod($file, 0600);
+    }
+    return $key = hex2bin($raw);
+}
+
+function msg_encrypt(string $text): string
+{
+    $iv = random_bytes(12);
+    $ct = openssl_encrypt($text, 'aes-256-gcm', msg_key(), OPENSSL_RAW_DATA, $iv, $tag);
+    if ($ct === false) throw new RuntimeException("Couldn't encrypt the message.");
+    return 'enc1:' . base64_encode($iv . $tag . $ct);
+}
+
+/** Old messages written before encryption existed come back unchanged. */
+function msg_decrypt(string $stored): string
+{
+    if (strncmp($stored, 'enc1:', 5) !== 0) return $stored;
+    $bin = base64_decode(substr($stored, 5), true);
+    if ($bin === false || strlen($bin) < 28) return '';
+    $plain = openssl_decrypt(substr($bin, 28), 'aes-256-gcm', msg_key(), OPENSSL_RAW_DATA, substr($bin, 0, 12), substr($bin, 12, 16));
+    return $plain === false ? '' : $plain;
+}
+
+/** Once: encrypt messages that were saved as plain text before this existed. */
+function msg_encrypt_existing(): void
+{
+    $marker = __DIR__ . '/data/msgenc.ok';
+    if (is_file($marker)) return;
+    foreach (q("SELECT id, body FROM messages WHERE body <> '' AND body NOT LIKE 'enc1:%'")->fetchAll() as $r) {
+        q('UPDATE messages SET body = ? WHERE id = ?', [msg_encrypt($r['body']), $r['id']]);
+    }
+    try {   // old alerts quoted the start of the message: make them plain
+        q("UPDATE notifications SET text = SUBSTR(text, 1, INSTR(text, ' sent you a message') + 18) WHERE ref LIKE 'msg:%' AND text LIKE '% sent you a message: %'");
+    } catch (PDOException $e) {
+    }
+    @file_put_contents($marker, '1');
 }
 
 function csrf_token(): string
