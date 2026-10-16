@@ -91,7 +91,7 @@ async function open(id){
   let r;try{r=await api('msg.messages',{with:id})}catch(e){main.replaceChildren(el('p','chat-empty',e.message));return}
   current=r.person;
   history.replaceState(null,'','messages.php?with='+id);
-  const head=el('div','chat-head');const h2=el('h2',null,current.name);if(current.verified)h2.append(tick());head.append(h2);
+  const head=el('div','chat-head');const h2=el('h2');const nameLink=el('a','chat-name',current.name);nameLink.href='u.php?id='+current.id;nameLink.title=T('View profile');h2.append(nameLink);if(current.verified)h2.append(tick());head.append(h2);
   if(current.tag)head.append(el('div','pmail',current.tag));
   const tools=el('div','chat-tools');
   const ren=el('button','btn sm ghost','✏️ '+T('Contact name')),del=el('button','btn sm ghost del','🗑 '+T('Delete chat'));ren.type=del.type='button';
