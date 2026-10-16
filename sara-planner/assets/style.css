@@ -79,7 +79,7 @@ button,input,select,textarea{font:inherit;color:inherit}
 .page{position:relative;background-color:var(--paper);border-radius:6px 20px 20px 6px;padding:28px 30px 32px 62px;min-height:640px;transition:background-color .25s;
   background-image:linear-gradient(90deg,transparent 50px,var(--margin) 50px,var(--margin) 51.5px,transparent 51.5px,transparent 54px,var(--margin) 54px,var(--margin) 55px,transparent 55px),
     linear-gradient(var(--paper) 0 96px,transparent 96px),
-    repeating-linear-gradient(to bottom,transparent 0 39px,var(--rule) 39px 40px);
+    repeating-linear-gradient(to bottom,transparent 0 calc(var(--lh,40px) - 1px),var(--rule) calc(var(--lh,40px) - 1px) var(--lh,40px));
   box-shadow:4px 4px 0 -1px var(--edge),4px 4px 0 0 var(--line),8px 8px 0 -1px var(--edge2),8px 8px 0 0 var(--line),var(--shadow)}
 .coil{position:absolute;left:-17px;top:24px;bottom:24px;width:46px;overflow:hidden;display:flex;flex-direction:column;gap:17px;pointer-events:none;z-index:2}
 .coil span{flex:0 0 auto;position:relative;height:13px}
@@ -333,7 +333,7 @@ input[type=checkbox]{accent-color:var(--accent);width:18px;height:18px;cursor:po
   .tab-gap{display:none}
   .page{padding:22px 18px 26px;border-radius:18px}
   .coil{display:none}
-  .page{padding:22px 18px 26px;border-radius:18px;background-image:linear-gradient(var(--paper) 0 84px,transparent 84px),repeating-linear-gradient(to bottom,transparent 0 39px,var(--rule) 39px 40px);box-shadow:3px 3px 0 -1px var(--edge),3px 3px 0 0 var(--line),var(--shadow)}
+  .page{padding:22px 18px 26px;border-radius:18px;background-image:linear-gradient(var(--paper) 0 84px,transparent 84px),repeating-linear-gradient(to bottom,transparent 0 calc(var(--lh,40px) - 1px),var(--rule) calc(var(--lh,40px) - 1px) var(--lh,40px));box-shadow:3px 3px 0 -1px var(--edge),3px 3px 0 0 var(--line),var(--shadow)}
   .addform,.addform.task{grid-template-columns:repeat(2,minmax(0,1fr))}
   .addform input[name=desc],.addform input[name=title],.addform input[name=name]{grid-column:1/-1}
   .hr{grid-template-columns:42px 86px minmax(0,1fr) 28px;padding-left:6px}
@@ -372,7 +372,7 @@ td>.cellin{width:calc(100% - 16px);max-width:110px}
 /* login / sign-up */
 .auth{min-height:100vh;display:grid;place-items:center;padding-block:48px}
 .auth-card{width:100%;max-width:420px;background-color:var(--paper);border-radius:6px 20px 20px 6px;padding:32px 30px;box-shadow:4px 4px 0 -1px var(--edge),4px 4px 0 0 var(--line),var(--shadow);
-  background-image:linear-gradient(var(--paper) 0 70px,transparent 70px),repeating-linear-gradient(to bottom,transparent 0 39px,var(--rule) 39px 40px)}
+  background-image:linear-gradient(var(--paper) 0 70px,transparent 70px),repeating-linear-gradient(to bottom,transparent 0 calc(var(--lh,40px) - 1px),var(--rule) calc(var(--lh,40px) - 1px) var(--lh,40px))}
 .auth-card h1{margin-bottom:6px}
 .auth-sub{color:var(--muted);font-size:14px;margin:10px 0 18px}
 .auth-form{display:flex;flex-direction:column;gap:14px}
@@ -490,7 +490,7 @@ table.ex tr:last-child td{border-bottom:0}
 }
 :root[data-theme="dark"] [data-pcolor]{--paper:var(--pc-d);--paper-2:color-mix(in srgb,var(--pc-d) 90%,#fff)}
 
-.page[data-paper="grid"],.nbx-page[data-paper="grid"]{background-image:repeating-linear-gradient(to bottom,transparent 0 39px,var(--rule) 39px 40px),repeating-linear-gradient(to right,transparent 0 39px,var(--rule) 39px 40px)}
+.page[data-paper="grid"],.nbx-page[data-paper="grid"]{background-image:repeating-linear-gradient(to bottom,transparent 0 calc(var(--lh,40px) - 1px),var(--rule) calc(var(--lh,40px) - 1px) var(--lh,40px)),repeating-linear-gradient(to right,transparent 0 calc(var(--lh,40px) - 1px),var(--rule) calc(var(--lh,40px) - 1px) var(--lh,40px))}
 .page[data-paper="dots"],.nbx-page[data-paper="dots"]{background-image:radial-gradient(var(--rule) 1.6px,transparent 1.8px);background-size:24px 24px}
 .page[data-paper="plain"],.nbx-page[data-paper="plain"]{background-image:none}
 [data-font="hand"]{--body:"Caveat","Segoe Print",cursive;--display:"Caveat","Segoe Print",cursive;font-size:18px}
@@ -914,7 +914,7 @@ a.tab{display:block;text-decoration:none;box-sizing:border-box}
 /* binding styles */
 .binder[data-binding="stitch"]>.coil,.binder[data-binding="none"]>.coil{display:none}
 .binder[data-binding="stitch"]>.page{border-left:4px dashed var(--wire)}
-.binder[data-binding="none"]>.page{padding-left:36px;background-image:repeating-linear-gradient(to bottom,transparent 0 39px,var(--rule) 39px 40px)}
+.binder[data-binding="none"]>.page{padding-left:36px;background-image:repeating-linear-gradient(to bottom,transparent 0 calc(var(--lh,40px) - 1px),var(--rule) calc(var(--lh,40px) - 1px) var(--lh,40px))}
 
 /* a notebook's cover page and the shelf of notebooks */
 .nbcover{border-radius:6px 18px 18px 6px;min-height:320px;display:grid;place-items:center;padding:28px;color:#fff;position:relative;overflow:hidden;box-shadow:inset 10px 0 0 rgba(0,0,0,.18),var(--shadow);isolation:isolate}
@@ -1102,11 +1102,11 @@ a.nbtile{text-decoration:none}.nbtiles{margin-bottom:14px}.nbtile.on span{color:
 /* ---------- writing on the lines ----------
    The page is ruled every 40px (--lh). Text, headings, rows and fields are sized in whole lines, so every line of writing sits
    on a rule and the rules never run through letters. Boxes (panels, cards) are snapped to whole lines by assets/ruled.js. */
-.page{--lh:40px;line-height:var(--lh);padding-top:40px}
-.page .vh{height:80px;margin:0;flex-wrap:nowrap;align-items:flex-end}
+.page{--lh:40px;line-height:var(--lh);padding-top:var(--lh,40px)}
+.page .vh{height:calc(var(--lh,40px)*2);margin:0;flex-wrap:nowrap;align-items:flex-end}
 .page .vh>*{min-width:0}
 .page .vh .eyebrow{line-height:24px;margin:0}
-.page .vh h1{line-height:40px;padding-block:0}
+.page .vh h1{line-height:var(--lh,40px);padding-block:0}
 .page :is(p,li,.s,.meta,.hint,.hint2,.empty,.nb-intro,.legend,.sub,dd,dt,summary){line-height:var(--lh);margin-block:0;padding-block:0}
 .page .legend{margin-top:0}
 .page :is(h2,h3){line-height:var(--lh)}
@@ -1134,21 +1134,21 @@ a.nbtile{text-decoration:none}.nbtiles{margin-bottom:14px}.nbtile.on span{color:
 /* pages people add to a notebook themselves */
 .nb-text{white-space:pre-wrap;font-size:15px;line-height:var(--lh,40px);overflow-wrap:anywhere}
 .tab.add-page{--tc:var(--line);opacity:.85;font-weight:700}
-.pagebar{display:flex;gap:8px;flex-wrap:wrap;min-height:40px;align-items:center}
+.pagebar{display:flex;gap:8px;flex-wrap:wrap;min-height:var(--lh,40px);align-items:center}
 
 /* profile header written on the lines: avatar = 4 lines, name / numbers / full name / bio = one line each */
 .page .phead{gap:0 28px;margin:0;align-items:start}
 .page .phead-av .avatar.xl{width:128px;height:128px;font-size:50px;box-sizing:border-box}
 .page .phead-main{min-height:128px}
-.page .phead-top{min-height:40px;gap:10px}
-.page .phead-top h2{line-height:40px}
+.page .phead-top{min-height:var(--lh,40px);gap:10px}
+.page .phead-top h2{line-height:var(--lh,40px)}
 .page .phead-top .tag2{line-height:18px}
-.page .pstats{min-height:40px;margin:0;gap:22px;align-items:center}
-.page .pstat{line-height:40px;align-items:center}
-.page .pname2,.page .pbio2{margin:0;line-height:40px}
-.page .phead-btns{min-height:40px;align-items:center;margin-bottom:0}
+.page .pstats{min-height:var(--lh,40px);margin:0;gap:22px;align-items:center}
+.page .pstat{line-height:var(--lh,40px);align-items:center}
+.page .pname2,.page .pbio2{margin:0;line-height:var(--lh,40px)}
+.page .phead-btns{min-height:var(--lh,40px);align-items:center;margin-bottom:0}
 .page .phead-btns .btn{height:28px;padding-block:0}
-.page .ptabs{border-top:0;border-bottom:1px solid var(--line);margin:40px 0 40px;height:40px;overflow-y:hidden}
+.page .ptabs{border-top:0;border-bottom:1px solid var(--line);margin:var(--lh,40px) 0 var(--lh,40px);height:var(--lh,40px);overflow-y:hidden}
 .page .ptabs button{border-top:0;margin:0;height:39px;padding:0 14px;line-height:38px;box-sizing:border-box}
 .page .ptabs button[aria-selected="true"]{box-shadow:inset 0 -2px 0 var(--ink)}
 .page .nbtiles{margin-bottom:var(--lh)}
@@ -1203,7 +1203,7 @@ a.nbtile{text-decoration:none}.nbtiles{margin-bottom:14px}.nbtile.on span{color:
 .nbtile:hover i{transform:translateY(-5px) rotate(-1.2deg)}
 .nbtile.on i{outline:3px solid var(--accent);outline-offset:3px}
 .nbtile span{margin-top:6px;font-family:var(--display);font-weight:700}
-.nbtile.add{aspect-ratio:auto;height:160px;border:2px dashed var(--line);border-radius:4px 14px 14px 4px;background:repeating-linear-gradient(to bottom,transparent 0 39px,var(--rule) 39px 40px),var(--paper)}
+.nbtile.add{aspect-ratio:auto;height:160px;border:2px dashed var(--line);border-radius:4px 14px 14px 4px;background:repeating-linear-gradient(to bottom,transparent 0 calc(var(--lh,40px) - 1px),var(--rule) calc(var(--lh,40px) - 1px) var(--lh,40px)),var(--paper)}
 /* people on Explore: a card with their cover */
 .userlist.cards{display:grid;grid-template-columns:repeat(auto-fill,minmax(230px,1fr));gap:16px}
 .userlist.cards li{display:flex;flex-direction:column;align-items:stretch;gap:10px;padding:14px;background:var(--paper);border:1px solid var(--line);border-radius:6px 16px 16px 6px;box-shadow:4px 4px 0 -1px var(--edge),4px 4px 0 0 var(--line);transition:transform .15s}
@@ -1262,7 +1262,7 @@ a.nbtile{text-decoration:none}.nbtiles{margin-bottom:14px}.nbtile.on span{color:
 .spread .sp-page{position:relative;background-color:var(--sp-paper);color:var(--sp-ink);padding:22px 20px 20px;min-width:0;overflow:hidden}
 .spread .sp-page.left{border-radius:6px 0 0 6px;box-shadow:inset -22px 0 24px -22px rgba(0,0,0,.35)}
 .spread .sp-page.right{border-radius:0 6px 6px 0;box-shadow:inset 22px 0 24px -22px rgba(0,0,0,.35)}
-.spread[data-paper="lined"] .sp-page{background-image:repeating-linear-gradient(to bottom,transparent 0 39px,var(--sp-rule) 39px 40px);background-position:0 18px}
+.spread[data-paper="lined"] .sp-page{background-image:repeating-linear-gradient(to bottom,transparent 0 calc(var(--lh,40px) - 1px),var(--sp-rule) calc(var(--lh,40px) - 1px) var(--lh,40px));background-position:0 18px}
 .spread[data-paper="grid"] .sp-page{background-image:repeating-linear-gradient(to bottom,transparent 0 23px,var(--sp-rule) 23px 24px),repeating-linear-gradient(to right,transparent 0 23px,var(--sp-rule) 23px 24px)}
 .spread[data-paper="dots"] .sp-page{background-image:radial-gradient(var(--sp-rule) 1.8px,transparent 2.2px);background-size:24px 24px}
 .spread .sp-gutter{position:relative;background:linear-gradient(90deg,rgba(0,0,0,.18),rgba(0,0,0,.05) 35%,rgba(0,0,0,.05) 65%,rgba(0,0,0,.18))}
@@ -1272,10 +1272,10 @@ a.nbtile{text-decoration:none}.nbtiles{margin-bottom:14px}.nbtile.on span{color:
 .spread .sp-eyebrow{font-size:11px;letter-spacing:.1em;text-transform:uppercase;font-weight:700;color:var(--sp-ac);margin:0 0 4px}
 .spread h3{font-size:22px;line-height:1.1;margin:0 0 14px;color:var(--sp-ink);overflow-wrap:anywhere}
 .spread ol{list-style:none;margin:0;padding:0}
-.spread ol li{display:flex;justify-content:space-between;gap:8px;font-size:15px;line-height:40px;border-bottom:1px dotted var(--sp-rule)}
+.spread ol li{display:flex;justify-content:space-between;gap:8px;font-size:15px;line-height:var(--lh,40px);border-bottom:1px dotted var(--sp-rule)}
 .spread ol li i{font-style:normal;color:var(--sp-ac);font-weight:700}
-.spread .sp-intro{font-size:15px;line-height:40px;margin:0;white-space:pre-wrap;overflow-wrap:anywhere}
-.spread .sp-by{font-size:14px;line-height:40px;margin:6px 0 0;color:var(--sp-ac);font-weight:600}
+.spread .sp-intro{font-size:15px;line-height:var(--lh,40px);margin:0;white-space:pre-wrap;overflow-wrap:anywhere}
+.spread .sp-by{font-size:14px;line-height:var(--lh,40px);margin:6px 0 0;color:var(--sp-ac);font-weight:600}
 .spread .sp-stk{position:absolute;font-size:28px;line-height:1}
 @media (max-width:760px){.st-inside .spread{grid-template-columns:minmax(0,1fr);}.spread .sp-gutter{display:none}.spread .sp-page.left,.spread .sp-page.right{border-radius:6px;box-shadow:none}.spread .sp-page.right{margin-top:10px}}
 
@@ -1288,7 +1288,7 @@ a.nbtile{text-decoration:none}.nbtiles{margin-bottom:14px}.nbtile.on span{color:
 .nbp-title{font-family:var(--display);font-size:24px;line-height:1.1;margin:0 0 14px;overflow-wrap:anywhere}
 .nbp-toc{list-style:none;margin:0;padding:0}
 .nbp-toc li{border-bottom:1px dotted var(--rule)}
-.nbp-toc button{display:flex;justify-content:space-between;align-items:center;gap:8px;width:100%;border:0;background:none;font:inherit;font-size:15px;color:inherit;text-align:left;padding:0;min-height:40px;cursor:pointer;border-radius:6px}
+.nbp-toc button{display:flex;justify-content:space-between;align-items:center;gap:8px;width:100%;border:0;background:none;font:inherit;font-size:15px;color:inherit;text-align:left;padding:0;min-height:var(--lh,40px);cursor:pointer;border-radius:6px}
 .nbp-toc button:hover{color:var(--accent)}
 .nbp-toc button i{font-style:normal;font-weight:700;color:var(--accent)}
 .nbp-toc button[aria-current="page"]{color:var(--accent);font-weight:700}
@@ -1394,7 +1394,7 @@ a.nbtile{text-decoration:none}.nbtiles{margin-bottom:14px}.nbtile.on span{color:
 input[type=range][data-xrange]{flex:1;min-width:120px}
 
 /* Laptop fixes: the limit label no longer covers the heading above the chart, and the "I saved" tick sits level with its amount */
-.chart{margin-top:40px}
+.chart{margin-top:var(--lh,40px)}
 .ytbl td[data-l="I saved"]{white-space:nowrap}
 .ytbl td[data-l="I saved"] input,.ytbl td[data-l="Income"] input{vertical-align:middle}
 .ytbl td[data-l="I saved"] input[type=checkbox]{margin:0 4px 0 0}
@@ -1406,7 +1406,7 @@ input[type=range][data-xrange]{flex:1;min-width:120px}
 .top-r .badge{font-size:10.5px}
 
 /* someone else's open notebook: the contents are links, not buttons */
-.nbp-toc a{display:flex;justify-content:space-between;align-items:center;gap:8px;min-height:40px;font-size:15px;color:inherit;text-decoration:none}
+.nbp-toc a{display:flex;justify-content:space-between;align-items:center;gap:8px;min-height:var(--lh,40px);font-size:15px;color:inherit;text-decoration:none}
 .nbp-toc a:hover{color:var(--accent)}
 .nbp-toc a i{font-style:normal;font-weight:700;color:var(--accent)}
 .nbp-toc a[aria-current="page"]{color:var(--accent);font-weight:700}
@@ -1441,7 +1441,7 @@ input[type=range][data-xrange]{flex:1;min-width:120px}
 .setup-nav .btn.primary{margin-left:auto}
 
 /* Hour by hour: every hour is one ruled line, the end time sits next to the start, and the page rules are the only lines */
-.page .hr{grid-template-columns:86px 84px minmax(0,1fr) 28px;min-height:40px;height:40px;box-sizing:border-box;padding-block:0;border-bottom:0;line-height:1.25;align-items:center}
+.page .hr{grid-template-columns:86px 84px minmax(0,1fr) 28px;min-height:var(--lh,40px);height:var(--lh,40px);box-sizing:border-box;padding-block:0;border-bottom:0;line-height:1.25;align-items:center}
 .page .hr .hl{padding:0;line-height:1.2;white-space:nowrap}
 .page .hr .hl small{display:inline;margin-left:3px;font-size:10px}
 .page .hr select,.page .hr input{height:28px;padding-block:0}
@@ -1451,14 +1451,14 @@ input[type=range][data-xrange]{flex:1;min-width:120px}
 
 /* Year table: one ruled line per month, so the writing sits on the notebook lines */
 @media (min-width:641px){
-  .page .ytbl th{padding-block:0;height:40px}
-  .page .ytbl td{padding-block:0;height:40px;border-bottom-width:0}
+  .page .ytbl th{padding-block:0;height:var(--lh,40px)}
+  .page .ytbl td{padding-block:0;height:var(--lh,40px);border-bottom-width:0}
   .page .ytbl td .cellin{height:26px;padding-block:0}
   .page .ytbl td .pill{line-height:20px}
 }
 
 /* Week: some air between the title and the day cards, and a whole line below them */
-.page .wk-scroll{margin-top:40px;margin-bottom:40px}
+.page .wk-scroll{margin-top:var(--lh,40px);margin-bottom:var(--lh,40px)}
 
 /* Tasks (and other add-forms): room between the title, the form and the filters; row extras centred on the line */
 .page .addform{margin-top:16px;margin-bottom:12px}
@@ -1470,3 +1470,43 @@ input[type=range][data-xrange]{flex:1;min-width:120px}
 .page .tiles{margin-top:16px;margin-bottom:var(--lh)}
 .page .dgroup{height:var(--lh);box-sizing:border-box;padding:0 0 4px;align-items:flex-end;line-height:1.2!important}
 .page .tile .l,.page .tile .s{line-height:1.5}
+
+
+/* ---------- phones: a tighter notebook (32px lines), headings on the left, titles and buttons stacked neatly ---------- */
+@media (max-width:640px){
+  .page{--lh:32px}
+  .page .sec-h{align-items:flex-start}
+  .page .sec-h h2,.page .sec-h .meta{text-align:left}
+  .panel .sec-h{align-items:flex-start}
+  .page .vh{height:auto;min-height:calc(var(--lh)*2);flex-wrap:wrap;gap:6px 10px;align-items:flex-end;justify-content:space-between}
+  .page .vh h1{font-size:26px;line-height:var(--lh)}
+  .page .vh .nav{margin-left:auto;display:flex;gap:6px;align-items:center;flex-wrap:nowrap}
+}
+@media (max-width:640px){
+  .stbl{overflow-x:auto}
+  .stbl table{min-width:0;table-layout:fixed}
+  .stbl th,.stbl td{padding:8px 4px;font-size:12px;overflow-wrap:anywhere}
+  .stbl th:nth-child(1),.stbl td:nth-child(1){width:40px}
+  .stbl th:nth-child(4),.stbl td:nth-child(4){width:38px}
+  .stbl th:nth-child(5),.stbl td:nth-child(5){width:50px}
+  .stbl th:nth-child(6),.stbl td:nth-child(6){width:58px}
+  .stbl input,.stbl select{min-width:0;width:100%;font-size:12px;padding:4px}
+}
+@media (max-width:640px){
+  .stbl th{font-size:9px;letter-spacing:0;padding:8px 2px;overflow-wrap:normal;word-break:normal}
+  .stbl th:nth-child(4),.stbl td:nth-child(4){width:40px}
+  .stbl th:nth-child(5),.stbl td:nth-child(5){width:54px}
+  .stbl th:nth-child(6),.stbl td:nth-child(6){width:56px}
+}
+
+/* forms and links that were still using the browser's plain look */
+.auth-form textarea,.auth-card textarea{width:100%;min-height:140px;box-sizing:border-box;background:var(--paper);border:1px solid var(--line);border-radius:10px;padding:11px 12px;font:inherit;font-size:15px;color:var(--ink);resize:vertical}
+.auth-card a:not(.btn){color:var(--accent);font-weight:600}
+a.fbtn,.page a.fbtn{color:inherit;text-decoration:none}
+@media (max-width:640px){
+  .vrow{flex-wrap:wrap}
+  .vrow .vt{flex:1 1 140px;min-width:0}
+  .vrow>select{flex:1 1 100%;margin-left:34px;max-width:calc(100% - 34px)}
+  .page .ptabs{gap:0}
+  .page .ptabs button{padding:0 9px;font-size:12px}
+}

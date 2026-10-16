@@ -22,6 +22,7 @@
   }
   function snapPage(page){
     {
+      LH=parseFloat(getComputedStyle(page).getPropertyValue('--lh'))||40;
       // undo the last pass
       page.querySelectorAll('[data-snap]').forEach(function(e){
         e.style.marginTop=e.dataset.mt0||'';e.style.lineHeight=e.dataset.lh0||'';e.style.minHeight=e.dataset.mh0||'';

@@ -123,7 +123,7 @@ const dailyAllow=d=>allowanceFor(d.getFullYear(),d.getMonth())/dim(d.getFullYear
     (a month you already overspent is over, even if this day or week has nothing spent yet). Returned as an allowance for statusPill. */
 function capAllow(b,spent,allow){
   const y=b.getFullYear(),m=b.getMonth(),monthLeft=allowanceFor(y,m)-sum(expIn(new Date(y,m,1),new Date(y,m,dim(y,m))));
-  return Math.min(allow,spent+monthLeft);
+  return allow>0?Math.min(allow,spent+monthLeft):allow;   // no allowance set (no income yet): nothing to compare
 }
 function allowRange(a,b){let t=0;for(let d=new Date(a);d<=b;d=addDays(d,1))t+=dailyAllow(d);return t}
 
@@ -159,7 +159,7 @@ function barChart(items,limit,{vals=true,limitLabel='limit'}={}){
     ${limit?`<div class="lim" style="bottom:${(limit/max*100).toFixed(1)}%"><em>${limitLabel} ${eur0(limit)}</em></div>`:''}
   </div><div class="xl" style="${cols}">${items.map(i=>`<span class="${i.today?'today':''}">${items.length>7?String(i.label).slice(0,3):i.label}</span>`).join('')}</div></div>`;
 }
-const statusPill=(spent,allow)=>{if(allow<=0&&spent<=0)return '';if(spent>allow)return `<span class="pill bad">${eur(spent-allow)} over</span>`;const r=spent/allow;return r>.85?`<span class="pill warn">${eur(allow-spent)} left</span>`:`<span class="pill good">${eur(allow-spent)} left</span>`};
+const statusPill=(spent,allow)=>{if(!allow)return '';if(spent>allow)return `<span class="pill bad">${eur(spent-allow)} over</span>`;const r=spent/allow;return r>.85?`<span class="pill warn">${eur(allow-spent)} left</span>`:`<span class="pill good">${eur(allow-spent)} left</span>`};
 const meterCls=(spent,allow)=>spent>allow?'bad':spent>allow*.85?'warn':'good';
 function taskRow(t){
   const d=parse(t.due),n=dayDiff(d,TODAY);
