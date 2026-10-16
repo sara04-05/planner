@@ -2,7 +2,7 @@ html,body{margin:0}
 img{max-width:100%}
 [hidden]{display:none!important}
 
-:root{--lh:40px;
+:root{--lh:36px;
   --bg:#E9E4F1; --paper:#FFFFFF; --paper-2:#F6F3FA; --ink:#2A2338; --muted:#6F6781; --line:#E4DDEC;
   --accent:#6A4DC4; --accent-soft:#ECE6FB; --on-accent:#FFFFFF;
   --t-day:#FBE7B0; --t-week:#CBEBDA; --t-month:#F7D3DD; --t-year:#DAD1F5; --t-study:#F9D2BC; --t-tasks:#CDDCF5; --t-money:#E7DACA;
@@ -79,7 +79,7 @@ button,input,select,textarea{font:inherit;color:inherit}
 .page{position:relative;background-color:var(--paper);border-radius:6px 20px 20px 6px;padding:28px 30px 32px 62px;min-height:640px;transition:background-color .25s;
   background-image:linear-gradient(90deg,transparent 50px,var(--margin) 50px,var(--margin) 51.5px,transparent 51.5px,transparent 54px,var(--margin) 54px,var(--margin) 55px,transparent 55px),
     linear-gradient(var(--paper) 0 96px,transparent 96px),
-    repeating-linear-gradient(to bottom,transparent 0 calc(var(--lh,40px) - 1px),var(--rule) calc(var(--lh,40px) - 1px) var(--lh,40px));
+    repeating-linear-gradient(to bottom,transparent 0 calc(var(--lh,36px) - 1px),var(--rule) calc(var(--lh,36px) - 1px) var(--lh,36px));
   box-shadow:4px 4px 0 -1px var(--edge),4px 4px 0 0 var(--line),8px 8px 0 -1px var(--edge2),8px 8px 0 0 var(--line),var(--shadow)}
 .coil{position:absolute;left:-17px;top:24px;bottom:24px;width:46px;overflow:hidden;display:flex;flex-direction:column;gap:17px;pointer-events:none;z-index:2}
 .coil span{flex:0 0 auto;position:relative;height:13px}
@@ -333,7 +333,7 @@ input[type=checkbox]{accent-color:var(--accent);width:18px;height:18px;cursor:po
   .tab-gap{display:none}
   .page{padding:22px 18px 26px;border-radius:18px}
   .coil{display:none}
-  .page{padding:22px 18px 26px;border-radius:18px;background-image:linear-gradient(var(--paper) 0 84px,transparent 84px),repeating-linear-gradient(to bottom,transparent 0 calc(var(--lh,40px) - 1px),var(--rule) calc(var(--lh,40px) - 1px) var(--lh,40px));box-shadow:3px 3px 0 -1px var(--edge),3px 3px 0 0 var(--line),var(--shadow)}
+  .page{padding:22px 18px 26px;border-radius:18px;background-image:linear-gradient(var(--paper) 0 84px,transparent 84px),repeating-linear-gradient(to bottom,transparent 0 calc(var(--lh,36px) - 1px),var(--rule) calc(var(--lh,36px) - 1px) var(--lh,36px));box-shadow:3px 3px 0 -1px var(--edge),3px 3px 0 0 var(--line),var(--shadow)}
   .addform,.addform.task{grid-template-columns:repeat(2,minmax(0,1fr))}
   .addform input[name=desc],.addform input[name=title],.addform input[name=name]{grid-column:1/-1}
   .hr{grid-template-columns:42px 86px minmax(0,1fr) 28px;padding-left:6px}
@@ -372,7 +372,7 @@ td>.cellin{width:calc(100% - 16px);max-width:110px}
 /* login / sign-up */
 .auth{min-height:100vh;display:grid;place-items:center;padding-block:48px}
 .auth-card{width:100%;max-width:420px;background-color:var(--paper);border-radius:6px 20px 20px 6px;padding:32px 30px;box-shadow:4px 4px 0 -1px var(--edge),4px 4px 0 0 var(--line),var(--shadow);
-  background-image:linear-gradient(var(--paper) 0 70px,transparent 70px),repeating-linear-gradient(to bottom,transparent 0 calc(var(--lh,40px) - 1px),var(--rule) calc(var(--lh,40px) - 1px) var(--lh,40px))}
+  background-image:linear-gradient(var(--paper) 0 70px,transparent 70px),repeating-linear-gradient(to bottom,transparent 0 calc(var(--lh,36px) - 1px),var(--rule) calc(var(--lh,36px) - 1px) var(--lh,36px))}
 .auth-card h1{margin-bottom:6px}
 .auth-sub{color:var(--muted);font-size:14px;margin:10px 0 18px}
 .auth-form{display:flex;flex-direction:column;gap:14px}
@@ -490,7 +490,7 @@ table.ex tr:last-child td{border-bottom:0}
 }
 :root[data-theme="dark"] [data-pcolor]{--paper:var(--pc-d);--paper-2:color-mix(in srgb,var(--pc-d) 90%,#fff)}
 
-.page[data-paper="grid"],.nbx-page[data-paper="grid"]{background-image:repeating-linear-gradient(to bottom,transparent 0 calc(var(--lh,40px) - 1px),var(--rule) calc(var(--lh,40px) - 1px) var(--lh,40px)),repeating-linear-gradient(to right,transparent 0 calc(var(--lh,40px) - 1px),var(--rule) calc(var(--lh,40px) - 1px) var(--lh,40px))}
+.page[data-paper="grid"],.nbx-page[data-paper="grid"]{background-image:repeating-linear-gradient(to bottom,transparent 0 calc(var(--lh,36px) - 1px),var(--rule) calc(var(--lh,36px) - 1px) var(--lh,36px)),repeating-linear-gradient(to right,transparent 0 calc(var(--lh,36px) - 1px),var(--rule) calc(var(--lh,36px) - 1px) var(--lh,36px))}
 .page[data-paper="dots"],.nbx-page[data-paper="dots"]{background-image:radial-gradient(var(--rule) 1.6px,transparent 1.8px);background-size:24px 24px}
 .page[data-paper="plain"],.nbx-page[data-paper="plain"]{background-image:none}
 [data-font="hand"]{--body:"Caveat","Segoe Print",cursive;--display:"Caveat","Segoe Print",cursive;font-size:18px}
@@ -914,7 +914,7 @@ a.tab{display:block;text-decoration:none;box-sizing:border-box}
 /* binding styles */
 .binder[data-binding="stitch"]>.coil,.binder[data-binding="none"]>.coil{display:none}
 .binder[data-binding="stitch"]>.page{border-left:4px dashed var(--wire)}
-.binder[data-binding="none"]>.page{padding-left:36px;background-image:repeating-linear-gradient(to bottom,transparent 0 calc(var(--lh,40px) - 1px),var(--rule) calc(var(--lh,40px) - 1px) var(--lh,40px))}
+.binder[data-binding="none"]>.page{padding-left:36px;background-image:repeating-linear-gradient(to bottom,transparent 0 calc(var(--lh,36px) - 1px),var(--rule) calc(var(--lh,36px) - 1px) var(--lh,36px))}
 
 /* a notebook's cover page and the shelf of notebooks */
 .nbcover{border-radius:6px 18px 18px 6px;min-height:320px;display:grid;place-items:center;padding:28px;color:#fff;position:relative;overflow:hidden;box-shadow:inset 10px 0 0 rgba(0,0,0,.18),var(--shadow);isolation:isolate}
@@ -1102,7 +1102,7 @@ a.nbtile{text-decoration:none}.nbtiles{margin-bottom:14px}.nbtile.on span{color:
 /* ---------- writing on the lines ----------
    The page is ruled every var(--lh) (--lh). Text, headings, rows and fields are sized in whole lines, so every line of writing sits
    on a rule and the rules never run through letters. Boxes (panels, cards) are snapped to whole lines by assets/ruled.js. */
-.page{--lh:40px;line-height:var(--lh);padding-top:var(--lh)}
+.page{--lh:36px;line-height:var(--lh);padding-top:var(--lh)}
 .page .vh{height:calc(var(--lh)*2);margin:0;flex-wrap:nowrap;align-items:flex-end}
 .page .vh>*{min-width:0}
 .page .vh .eyebrow{line-height:24px;margin:0}
@@ -1203,7 +1203,7 @@ a.nbtile{text-decoration:none}.nbtiles{margin-bottom:14px}.nbtile.on span{color:
 .nbtile:hover i{transform:translateY(-5px) rotate(-1.2deg)}
 .nbtile.on i{outline:3px solid var(--accent);outline-offset:3px}
 .nbtile span{margin-top:6px;font-family:var(--display);font-weight:700}
-.nbtile.add{aspect-ratio:auto;height:160px;border:2px dashed var(--line);border-radius:4px 14px 14px 4px;background:repeating-linear-gradient(to bottom,transparent 0 calc(var(--lh,40px) - 1px),var(--rule) calc(var(--lh,40px) - 1px) var(--lh,40px)),var(--paper)}
+.nbtile.add{aspect-ratio:auto;height:160px;border:2px dashed var(--line);border-radius:4px 14px 14px 4px;background:repeating-linear-gradient(to bottom,transparent 0 calc(var(--lh,36px) - 1px),var(--rule) calc(var(--lh,36px) - 1px) var(--lh,36px)),var(--paper)}
 /* people on Explore: a card with their cover */
 .userlist.cards{display:grid;grid-template-columns:repeat(auto-fill,minmax(230px,1fr));gap:16px}
 .userlist.cards li{display:flex;flex-direction:column;align-items:stretch;gap:10px;padding:14px;background:var(--paper);border:1px solid var(--line);border-radius:6px 16px 16px 6px;box-shadow:4px 4px 0 -1px var(--edge),4px 4px 0 0 var(--line);transition:transform .15s}
@@ -1451,8 +1451,7 @@ a.nbtile{text-decoration:none}.nbtiles{margin-bottom:14px}.nbtile.on span{color:
 .page .row .grow{min-width:0}
 
 /* opened notebook: tidy spread. The planner's own ruled paper is hidden behind the book, each page has one margin line clear of the text, and the contents list sits on the lines */
-.page:has(>.nbook),.binder:has(.nbook)>.page{background-image:none}
-.nbv .nbook .page:not([data-paper]){background-image:linear-gradient(90deg,transparent 24px,var(--margin) 24px,var(--margin) 25.5px,transparent 25.5px),repeating-linear-gradient(to bottom,transparent 0 calc(var(--lh,40px) - 1px),var(--rule) calc(var(--lh,40px) - 1px) var(--lh,40px))}
+.nbv .nbook .page:not([data-paper]){background-image:linear-gradient(90deg,transparent 24px,var(--margin) 24px,var(--margin) 25.5px,transparent 25.5px),repeating-linear-gradient(to bottom,transparent 0 calc(var(--lh,36px) - 1px),var(--rule) calc(var(--lh,36px) - 1px) var(--lh,36px))}
 .nbv .nbook .page{padding:var(--lh) 26px var(--lh) 44px}
 .nbv .nbook .page .eyebrow{line-height:var(--lh);margin:0}
 .nbv .nbook .page .vh{height:auto;min-height:calc(var(--lh)*2);margin:0}
@@ -1521,3 +1520,107 @@ a.nbcover-link:focus-visible{outline:3px solid var(--accent);outline-offset:6px;
 .page .vh{margin-bottom:var(--lh)}
 .page .tiles{margin-bottom:var(--lh)}
 .page .sec-h{margin-top:0}
+
+/* more label shapes */
+[data-label="hexagon"] .nbcover-in{clip-path:polygon(25% 0,75% 0,100% 50%,75% 100%,25% 100%,0 50%);box-shadow:none;padding:30px 30px;border-radius:0}
+[data-label="diamond"] .nbcover-in{clip-path:polygon(50% 0,100% 50%,50% 100%,0 50%);box-shadow:none;padding:60px 18px;border-radius:0;left:24%;right:12%}
+[data-label="tag"] .nbcover-in{clip-path:polygon(0 0,86% 0,100% 50%,86% 100%,0 100%);box-shadow:none;padding:18px 34px 18px 14px;border-radius:0 0 0 0}
+[data-label="stamp"] .nbcover-in{border-radius:4px;box-shadow:none;outline:3px dashed var(--c-label-ink,#4A3426);outline-offset:-9px;padding:24px 18px}
+[data-label="hexagon"] .nbcover-in .avatar,[data-label="diamond"] .nbcover-in .avatar{width:64px;height:64px;min-width:64px;min-height:64px;max-width:64px;max-height:64px;flex-basis:64px}
+[data-label="diamond"] .nbcover-in h2{font-size:16px}
+/* the shape you make yourself: corners, width and height from the sliders */
+[data-label="custom"] .nbcover-in{border-radius:var(--lb-r,6%);width:var(--lb-w,69%);left:calc(14% + (86% - var(--lb-w,69%)) / 2);right:auto;min-height:var(--lb-h,0%)}
+[data-label="custom"] .nbcover-in{justify-content:center}
+.lbrange{display:flex;gap:10px;flex-wrap:wrap;margin-top:8px}
+.lbrange label{display:flex;flex-direction:column;gap:2px;font-size:12px;font-weight:600;color:var(--muted);flex:1 1 90px}
+.lbrange input[type=range]{width:100%;accent-color:var(--accent)}
+.lbsw{margin-top:8px}
+
+/* the day plan inside the open notebook: the text gets the room, words never break letter by letter */
+.nb-what{overflow-wrap:break-word;word-break:normal;min-width:0}
+.nbook .nb-plan{margin-top:0}
+.nbook .nb-plan li{grid-template-columns:auto 6px minmax(0,1fr);gap:4px 10px;min-height:var(--lh);padding:0}
+.nbook .nb-time{white-space:nowrap}
+.nbook .nb-type{grid-column:3;margin-top:-6px}
+
+/* the notebook's page tabs look like the planner's tabs: vertical, on the page edge */
+@media (min-width:901px){
+  .nbook .nbp-tabs{right:-12px;top:var(--lh);gap:6px}
+  .nbook .nbp-tabs .tab{width:44px;min-height:0;padding:16px 10px 16px 12px;border-radius:0 14px 14px 0;margin:0;font-size:15px;box-shadow:2px 2px 6px rgba(0,0,0,.06);filter:saturate(.9)}
+  .nbook .nbp-tabs .tab[aria-selected="true"]{width:54px;margin-right:0;filter:none;font-weight:700}
+  .nbook .nbp-tabs .tab:hover{transform:translateX(3px)}
+  .nbook .nbp-tabs .tab[aria-selected="true"]:hover{transform:none}
+  .nbv .nbook .nbp-right{padding-right:64px}
+}
+
+/* profile page: closer together */
+.page .phead-btns{margin-bottom:0}
+.page .ptabs{margin:0 0 var(--lh)}
+.page .nbtiles{margin-top:0;margin-bottom:0}
+.page .nbtile small{display:none}
+.page .nbe-bar{margin-top:var(--lh);margin-bottom:0}
+
+/* report a problem */
+.reportbox{max-width:640px;background:var(--paper-2);border:1px solid var(--line);border-radius:16px;padding:20px 22px;display:flex;flex-direction:column;gap:10px;box-shadow:var(--shadow)}
+.reportbox label{font-family:var(--display);font-size:17px;font-weight:700;line-height:var(--lh)}
+.reportbox textarea{width:100%;box-sizing:border-box;min-height:calc(var(--lh)*5);resize:vertical;background:var(--paper);color:var(--ink);border:1px solid var(--line);border-radius:12px;padding:12px 14px;font:inherit;font-size:15px;line-height:1.5;transition:border-color .15s,box-shadow .15s}
+.reportbox textarea::placeholder{color:var(--muted);opacity:.8}
+.reportbox textarea:focus{outline:none;border-color:var(--accent);box-shadow:0 0 0 3px var(--accent-soft)}
+.reportfoot{display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap}
+.reportfoot .count{font-size:12px;color:var(--muted);font-weight:600;font-variant-numeric:tabular-nums}
+.reportfoot .acts{display:flex;gap:8px}
+
+/* every text box in the settings and decorate panels looks the same: rounded, on the paper, with an accent ring when you type */
+.page :is(.xcard,.xform,.nbe-side) :is(input:not([type]),input[type=text],input[type=search],input[type=url],input[type=email],input[type=password],input[type=number],input[type=date],textarea,select){
+  background:var(--paper);color:var(--ink);border:1px solid var(--line);border-radius:12px;padding:9px 12px;font:inherit;font-size:14px;line-height:1.4;box-sizing:border-box;min-height:38px;transition:border-color .15s,box-shadow .15s}
+.page :is(.xcard,.xform,.nbe-side) :is(input,textarea,select)::placeholder{color:var(--muted);opacity:.85}
+.page :is(.xcard,.xform,.nbe-side) :is(input,textarea,select):focus{outline:none;border-color:var(--accent);box-shadow:0 0 0 3px var(--accent-soft)}
+.page .xrow{align-items:center;gap:8px}
+.page .xrow .btn.sm{height:38px;padding:0 14px}
+
+/* rows with a title and a small line under it grow to fit instead of overlapping the next row; the language button keeps its icon next to its label */
+.page .row{height:auto;min-height:var(--lh)}
+.page .row .grow{min-width:0}
+.page .sec-h h2{white-space:nowrap}
+[data-lang-btn]{display:inline-flex;align-items:center;gap:6px}
+[data-lang-btn] svg{width:18px;height:18px;flex:none}
+
+/* ---------- first-time setup: notebook style, then the intro ---------- */
+.auth-card.setup-card{max-width:560px}
+.setup-dots{display:flex;justify-content:center;gap:8px;list-style:none;margin:0 0 18px;padding:0}
+.setup-dots li{width:9px;height:9px;border-radius:50%;background:var(--line)}
+.setup-dots li.on{background:var(--accent);transform:scale(1.25)}
+.setup-dots li.done{background:color-mix(in srgb,var(--accent) 55%,var(--line))}
+.look-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(110px,1fr));gap:10px;margin:14px 0}
+.look{display:flex;flex-direction:column;gap:6px;align-items:center;padding:8px;border:2px solid var(--line);border-radius:12px;background:var(--paper);color:var(--ink);cursor:pointer;font:inherit}
+.look b{font-size:12px}
+.look.on{border-color:var(--accent);box-shadow:0 0 0 2px var(--accent)}
+.look-cover{display:block;width:100%;aspect-ratio:3/4;max-height:96px;border-radius:4px 10px 10px 4px}
+.look-extra{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px;margin-bottom:14px}
+.look-extra label{display:flex;flex-direction:column;gap:4px;font-size:12px;font-weight:700;color:var(--muted)}
+.look-extra select{padding:8px;border:1px solid var(--line);border-radius:10px;background:var(--paper);color:var(--ink);font-size:14px}
+.setup-preview{display:grid;place-items:center;padding:14px;border-radius:12px;border:1px solid var(--line)}
+.setup-preview[data-paper="lined"]{background-image:repeating-linear-gradient(to bottom,transparent 0 23px,var(--line) 23px 24px)}
+.setup-preview[data-paper="grid"]{background-image:repeating-linear-gradient(to bottom,transparent 0 23px,var(--line) 23px 24px),repeating-linear-gradient(to right,transparent 0 23px,var(--line) 23px 24px)}
+.setup-preview[data-paper="dots"]{background-image:radial-gradient(var(--line) 1.8px,transparent 2.2px);background-size:24px 24px}
+.nbcover.mini{width:150px;position:relative}
+.nbcover.mini .nbcover-in h2{font-size:14px}
+.setup-nav{display:flex;justify-content:space-between;align-items:center;gap:10px;margin-top:20px}
+.slide-ic{font-size:56px;text-align:center;margin:10px 0}
+.step h1{text-align:center}
+.slide-tx{font-size:16px;line-height:1.6;color:var(--muted);text-align:center;max-width:36em;margin:10px auto 0}
+.setup-skip{text-align:center;margin-top:16px}
+@media (max-width:480px){.look-extra{grid-template-columns:1fr 1fr}}
+.setup-nav .btn.primary{margin-left:auto}
+
+/* first-time setup, polished: bigger look cards, tidy selects and buttons */
+.setup .look{transition:transform .12s,box-shadow .15s,border-color .15s}
+.setup .look:hover{transform:translateY(-2px)}
+.setup .look b{font-family:var(--display);font-size:13px}
+.setup .look-extra select{width:100%;min-height:40px;font:inherit;font-size:14px}
+.setup .setup-preview{background-color:var(--paper-2);padding:18px}
+.setup .setup-preview .nbcover{width:min(100%,150px);margin:0 auto}
+.setup .setup-preview .nbcover.mini h2{font-size:15px}
+.setup h1{font-size:clamp(24px,5vw,30px);margin:0 0 6px}
+.setup .auth-sub{margin:0 0 6px}
+.setup-nav .btn{min-height:40px;padding:0 18px}

@@ -21,7 +21,7 @@ const SECS=[['interests','⭐','Interests','Lists of things you love, with pictu
 const SECNAME=Object.fromEntries([['cover','Cover']].concat(SECS.map(s=>[s[0],s[2]]),[['day','Day']]));
 const PAGE_EMOJI=['📝','📖','🌸','✈️','🍳','💡','🎨','🏋️','🎵','🐾','🧘','💌'];
 const DAYLV=['Nobody, only me','Friends only','Anyone signed in','Everyone, even visitors'];
-const BASE={cover:'dusk',cover_img:0,cover_c1:'',cover_c2:'',paper:'lined',paper_color:'white',paper_hex:'',accent:'violet',accent_hex:'',font:'modern',binding:'coil',label:'box',label_hex:''};
+const BASE={cover:'dusk',cover_img:0,cover_c1:'',cover_c2:'',paper:'lined',paper_color:'white',paper_hex:'',accent:'violet',accent_hex:'',font:'modern',binding:'coil',label:'box',label_hex:'',label_r:0,label_w:0,label_h:0};
 // ready-made looks (the user can also save their own)
 const PRESETS=[
   ['Dreamy lilac',{cover:'dusk',paper:'dots',paper_color:'lilac',accent:'violet',font:'hand'}],
@@ -117,6 +117,7 @@ function wrapAttrs(d){   // goes on the notebook wrapper: accent colour + the co
   if(d.paper_color==='custom'&&d.paper_hex)v+=`--c-paper:${d.paper_hex};`;
   if(d.label&&d.label!=='box')a+=` data-label="${d.label}"`;
   if(d.label_hex)v+=`--c-label:${d.label_hex};--c-label-ink:${lum(d.label_hex)>.5?'#2B2118':'#FFFFFF'};`;
+  if(d.label==='custom'){v+=`--lb-r:${+d.label_r||0}%;`;if(+d.label_w>0)v+=`--lb-w:${+d.label_w}%;`;if(+d.label_h>0)v+=`--lb-h:${+d.label_h}%;`}
   return a+(v?` style="${v}"`:'');
 }
 function pageAttrs(d){
@@ -279,11 +280,13 @@ function decoPanel(nb){
   return `<section class="xcard xdesign"><h3>Decorate this notebook</h3><p class="sub">Pick a look, make your own colours, and put stickers on its pages. You see it on the left straight away.</p>
     <p class="opt-h">Ready-made looks</p><div class="quick">${PRESETS.map((p,i)=>`<button class="chipbtn" data-x="preset" data-i="${i}">${p[0]}</button>`).join('')}</div>
     <p class="opt-h">My styles</p><div class="stylelist">${styles||'<span class="hint2">Styles you save show up here, ready to use on any notebook.</span>'}</div>
-    <form class="xrow" data-xform="style" style="margin-top:8px" autocomplete="off"><input type="text" name="name" maxlength="60" placeholder="Name this look" aria-label="Style name" required style="flex:1;min-width:0"><button class="btn sm">Save as my style</button></form>
+    <form class="xrow" data-xform="style" style="margin-top:8px" autocomplete="off"><input type="text" name="name" maxlength="60" placeholder="Name this look" aria-label="Style name" required style="flex:1;min-width:0"><button class="btn sm primary">Save as my style</button></form>
     <p class="opt-h">Cover</p><div class="swatches">${Object.keys(COVERS).map(c=>swatch('cover',c,`linear-gradient(135deg,${COVERS[c][0]},${COVERS[c][1]})`,'Cover '+c)).join('')}${Object.keys(ART).map(c=>swatch('cover',c,`var(--cov-${c})`,ART[c])).join('')}</div>
     <div class="colorrow"><span>Your own colours</span><input type="color" data-xcolor="cover_c1" value="${d.cover_c1||'#6a4dc4'}" aria-label="Cover colour 1"><input type="color" data-xcolor="cover_c2" value="${d.cover_c2||'#e0609a'}" aria-label="Cover colour 2"></div>
     <div class="pic-pick" style="margin-top:10px"><label class="btn sm"><input type="file" accept="image/*" data-xfile="cover" data-kind="cover">🖼️ Use my own cover picture</label><button type="button" class="btn sm ghost" id="coverRm" data-x="cover-rm" ${d.cover_url?'':'hidden'}>Remove my picture</button><span class="hint2" data-pic-msg></span></div>
-    <p class="opt-h">Label on the cover</p><div class="pilltabs">${[['box','▭ Box'],['round','⬤ Circle'],['oval','⬭ Oval'],['arch','⌓ Arch'],['pill','💊 Pill'],['ticket','🎟️ Ticket'],['band','▬ Band'],['none','✕ No box']].map(x=>`<button type="button" data-x="label" data-v="${x[0]}" aria-pressed="false">${x[1]}</button>`).join('')}<input type="color" class="colorpick" data-xcolor="label_hex" value="${d.label_hex||'#efe2c8'}" aria-label="Your own label colour"></div>
+    <p class="opt-h">Label on the cover</p><div class="pilltabs">${[['box','▭ Box'],['round','⬤ Circle'],['oval','⬭ Oval'],['arch','⌓ Arch'],['pill','💊 Pill'],['ticket','🎟️ Ticket'],['band','▬ Band'],['hexagon','⬡ Hexagon'],['diamond','◆ Diamond'],['tag','🏷️ Tag'],['stamp','▣ Stamp'],['custom','✎ My own shape'],['none','✕ No box']].map(x=>`<button type="button" data-x="label" data-v="${x[0]}" aria-pressed="false">${x[1]}</button>`).join('')}<input type="color" class="colorpick" data-xcolor="label_hex" value="${d.label_hex||'#efe2c8'}" aria-label="Your own label colour"></div>
+    <div class="swatches lbsw">${['#efe2c8','#ffffff','#111111','#f8c8dc','#ffd9b8','#fff2a8','#c9e8c3','#bfe3f5','#d8ccf3','#ef9a9a','#e0609a','#6a4dc4','#2f6f5e','#b0bec5'].map(c=>`<button type="button" class="swatch" style="background:${c}" data-x="label-color" data-v="${c}" aria-label="Label colour ${c}"></button>`).join('')}</div>
+    <div class="lbrange"><label>Corners<input type="range" min="0" max="50" step="1" data-xrange="label_r" value="${d.label_r||0}"></label><label>Width<input type="range" min="30" max="100" step="1" data-xrange="label_w" value="${d.label_w||69}"></label><label>Height<input type="range" min="15" max="80" step="1" data-xrange="label_h" value="${d.label_h||40}"></label></div>
     <p class="opt-h">Paper</p><div class="pilltabs">${PAPERS.map(x=>`<button type="button" data-x="paper" data-v="${x[0]}" aria-pressed="false">${x[1]}</button>`).join('')}</div>
     <p class="opt-h">Paper colour</p><div class="swatches">${Object.keys(PAPER_COLORS).map(c=>swatch('pcolor',c,PAPER_COLORS[c],'Paper '+c)).join('')}<input type="color" class="colorpick" data-xcolor="paper_hex" value="${d.paper_hex||'#ffffff'}" aria-label="Your own paper colour"></div>
     <p class="opt-h">Accent colour</p><div class="swatches">${Object.keys(ACCENTS).map(c=>swatch('accent',c,ACCENTS[c],'Accent '+c)).join('')}<input type="color" class="colorpick" data-xcolor="accent_hex" value="${d.accent_hex||'#6a4dc4'}" aria-label="Your own accent colour"></div>
@@ -358,7 +361,8 @@ function notebooksTab(){
   const secs=SECS.map((s,i)=>`<label><input type="checkbox" name="sections" value="${s[0]}" ${i<2?'checked':''}><span><b>${s[1]} ${s[2]}</b><small>${s[3]}</small></span></label>`).join('');
   const newForm=ui.newNb?`<form class="xcard xform" data-xform="nbnew" autocomplete="off" style="margin:12px 0"><h3>New notebook</h3><p class="sub">One for your interests, one for your plans, one for your blog… make as many as you like.</p>
       <label class="l" for="nn-title">Name</label><input type="text" id="nn-title" name="title" maxlength="80" placeholder="e.g. Things I love" required>
-      <p class="opt-h">Pages</p><div class="secpick">${secs}</div>
+      <p class="opt-h">Pages</p><div class="secpick" id="secpick">${secs}</div>
+      <div class="ownpage"><input type="text" id="ownPageName" maxlength="40" placeholder="Your own page, e.g. Recipes" aria-label="Name of your own page"><button type="button" class="btn sm" data-x="own-page-add">+ Add page</button></div>
       <label class="l" for="nn-look">Look</label><select id="nn-look" name="look"><option value="">Plain to start (you can decorate it next)</option>${PRESETS.map((x,i)=>`<option value="${i}">${x[0]}</option>`).join('')}</select>
       <div class="xrow"><button class="btn primary">Create notebook</button><button type="button" class="btn ghost" data-x="nb-new">Cancel</button></div></form>`:'';
   let editor='';
@@ -534,6 +538,7 @@ function applyLook(look){   // a ready-made or saved look: replaces colours/pape
 }
 
 /* ---------- clicks ---------- */
+document.addEventListener('keydown',e=>{if(e.key==='Enter'&&e.target&&e.target.id==='ownPageName'){e.preventDefault();const b=document.querySelector('[data-x=own-page-add]');if(b)b.click()}});
 document.addEventListener('keydown',e=>{if((e.key==='Enter'||e.key===' ')&&e.target.matches&&e.target.matches('[role=button][data-x]')){e.preventDefault();e.target.click()}});
 document.addEventListener('click',async e=>{
   const b=e.target.closest('[data-x]');if(!b)return;
@@ -592,6 +597,13 @@ document.addEventListener('click',async e=>{
       case 'accent':ui.dd.accent=b.dataset.v;break;
       case 'font':ui.dd.font=b.dataset.v;break;
       case 'binding':ui.dd.binding=b.dataset.v;break;
+      case 'own-page-add':{
+        const inp=$('ownPageName'),t=(inp.value||'').trim().slice(0,40);if(!t){inp.focus();return}
+        const l=document.createElement('label');l.className='ownchip';
+        const c=document.createElement('input');c.type='checkbox';c.name='own';c.value=t;c.checked=true;
+        const sp=document.createElement('span'),bb=document.createElement('b');bb.textContent='✨ '+t;sp.appendChild(bb);l.append(c,sp);
+        $('secpick').appendChild(l);inp.value='';inp.focus();return}
+      case 'label-color':ui.dd.label_hex=b.dataset.v;if(ui.dd.label==='none')ui.dd.label='box';markDirty();paintPreview();return;
       case 'label':ui.dd.label=b.dataset.v;if(b.dataset.v==='none')ui.dd.label_hex='';break;
       case 'preset':applyLook(PRESETS[+b.dataset.i][1]);break;
       case 'style-apply':{const s=S.styles.find(x=>x.id===id);if(!s)return;applyLook(s.design);break}
@@ -630,6 +642,12 @@ document.addEventListener('input',e=>{
   if(k==='paper_hex')ui.dd.paper_color='custom';
   if(k==='accent_hex')ui.dd.accent='custom';
   if(k==='label_hex')ui.dd.label='box';
+  markDirty();paintPreview();
+});
+document.addEventListener('input',e=>{
+  const t=e.target;if(!t.dataset||!t.dataset.xrange||!ui.dd)return;
+  ui.dd[t.dataset.xrange]=+t.value;
+  if(ui.dd.label!=='custom'){ui.dd.label='custom';if(!ui.dd.label_w)ui.dd.label_w=+(document.querySelector('[data-xrange=label_w]')||{}).value||69;if(!ui.dd.label_h)ui.dd.label_h=+(document.querySelector('[data-xrange=label_h]')||{}).value||40}
   markDirty();paintPreview();
 });
 
@@ -675,6 +693,7 @@ document.addEventListener('submit',async e=>{
     }else if(x==='nbnew'){
       const look=d.look!==''?PRESETS[+d.look][1]:{};
       const r=await api('x.nb.add',{title:d.title,sections:new FormData(f).getAll('sections'),design:look});
+      for(const t of new FormData(f).getAll('own')){const pr=await api('x.page.save',{notebook_id:r.notebook.id,title:t,emoji:'',body:'',blank:1});r.notebook.pages=pr.pages}
       S.notebooks.push(r.notebook);ui.newNb=false;ui.panel='deco';pick(r.notebook.id);toast('Notebook created. Decorate it, then add things to its pages.');redraw();
     }else if(x==='style'){
       const r=await api('x.style.save',{name:d.name,design:designOut()});
