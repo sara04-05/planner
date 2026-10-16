@@ -8,8 +8,8 @@ const SHARE_KEYS   = ['blog', 'interests', 'timetable', 'subjects'];   // kept f
 const SECTIONS     = ['interests', 'blog', 'timetable', 'subjects'];       // the pages a notebook can have, besides its cover
 const NOTIFY_KEYS  = ['like'];
 // Ready-made covers: plain gradients, then patterned ones (their drawings are the --cov-* variables in assets/style.css)
-const ART_COVERS   = ['blossom', 'library', 'gingham', 'coquette', 'stars', 'clouds', 'lavender', 'daisy', 'checker', 'strawberry', 'terrazzo', 'waves', 'dots', 'sunsetgrain', 'matcha'];
-const BANNERS      = ['dusk', 'peach', 'ocean', 'mint', 'berry', 'sunny', 'night', 'cloud', 'blossom', 'library', 'gingham', 'coquette', 'stars', 'clouds', 'lavender', 'daisy', 'checker', 'strawberry', 'terrazzo', 'waves', 'dots', 'sunsetgrain', 'matcha'];
+const ART_COVERS   = ['blossom', 'library', 'gingham', 'coquette', 'stars', 'clouds', 'lavender', 'daisy', 'checker', 'strawberry', 'terrazzo', 'waves', 'dots', 'sunsetgrain', 'matcha', 'hearts', 'rainbow', 'mountains', 'pinstripe', 'monstera'];
+const BANNERS      = ['dusk', 'peach', 'ocean', 'mint', 'berry', 'sunny', 'night', 'cloud', 'blossom', 'library', 'gingham', 'coquette', 'stars', 'clouds', 'lavender', 'daisy', 'checker', 'strawberry', 'terrazzo', 'waves', 'dots', 'sunsetgrain', 'matcha', 'hearts', 'rainbow', 'mountains', 'pinstripe', 'monstera'];
 const COVER_GRADIENTS = [
     'dusk' => ['#6A4DC4', '#E0609A'], 'peach' => ['#F9A826', '#F36B7F'], 'ocean' => ['#1F77C9', '#3FC1C9'], 'mint' => ['#4FA36B', '#B6E3C9'],
     'berry' => ['#8E2DE2', '#C2185B'], 'sunny' => ['#FFD452', '#FF9966'], 'night' => ['#1B1740', '#4B3A8F'], 'cloud' => ['#BFD7F5', '#E8DDF8'],
@@ -594,7 +594,9 @@ function notebook_action(int $uid, string $action, array $in): void
         if ((int)q('SELECT COUNT(*) c FROM notebooks WHERE user_id = ?', [$uid])->fetch()['c'] >= MAX_NOTEBOOKS) fail(400, 'That is plenty of notebooks! Delete one first.');
         $title = str_in($in, 'title', 80);
         $sections = clean_sections($in['sections'] ?? []);
-        $design = clean_design($uid, (array)($in['design'] ?? []), false);
+        $dsn = (array)($in['design'] ?? []);
+        if (empty($dsn['cover'])) $dsn['cover'] = BANNERS[array_rand(BANNERS)];   // every new notebook starts with a different cover
+        $design = clean_design($uid, $dsn, false);
         q('INSERT INTO notebooks (user_id, title, sections, design, is_public) VALUES (?, ?, ?, ?, 0)', [$uid, $title, implode(',', $sections), json_encode($design)]);
         $id = (int)db()->lastInsertId();
         ok(['notebook' => nb_row(own_notebook($uid, $id))]);

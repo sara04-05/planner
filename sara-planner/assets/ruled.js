@@ -43,6 +43,7 @@
         var r0=el.getBoundingClientRect();if(!r0.height)continue;
         // little things (colour dots, swatches, icons) and chips / pills with a tinted background are never stretched: a chip moves with its row
         if(isBox&&!isText&&(r0.height<24||r0.width<24))continue;
+        if(isBox&&(parseFloat(cs.borderTopLeftRadius)>=Math.min(r0.width,r0.height)/2-1||Math.abs(r0.width-r0.height)<6&&r0.width<200))continue;   // circles and squares (avatars, swatches) keep their shape
         if(isText&&!opaque(cs)&&alphaOf(cs.backgroundColor)>0.02)continue;
         if(isText&&visibleBorder(cs)&&parseFloat(cs.borderTopLeftRadius)>=8&&r0.height<40&&!el.children.length)continue;
         if(isBox&&opaque(cs))boxes.add(el);
@@ -56,7 +57,7 @@
         t.dataset.snap='1';t.dataset.mt0=t.style.marginTop;t.dataset.lh0=t.style.lineHeight;t.dataset.mh0=t.style.minHeight;
         var tcs=getComputedStyle(t);
         if(isText&&!isBox&&parseFloat(getComputedStyle(el).fontSize)<=20&&!el.dataset.snap){el.dataset.snap='1';el.dataset.mt0=el.style.marginTop;el.dataset.lh0=el.style.lineHeight;el.dataset.mh0=el.style.minHeight;el.style.lineHeight=LH+'px'}
-        if(isBox&&opaque(cs)&&t===el){var h=t.getBoundingClientRect().height;t.style.minHeight=Math.ceil(h/LH-0.02)*LH+'px'}
+        if(isBox&&opaque(cs)&&t===el&&r0.width>=160&&r0.height>=48){var h=t.getBoundingClientRect().height;t.style.minHeight=Math.ceil(h/LH-0.02)*LH+'px'}
         for(var k=0;k<3;k++){
           var y=t.getBoundingClientRect().top-pageTop(),rem=((y%LH)+LH)%LH;
           if(rem<0.6||LH-rem<0.6)break;

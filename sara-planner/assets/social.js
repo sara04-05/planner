@@ -7,7 +7,7 @@ const esc=s=>String(s==null?'':s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;'
 const $=id=>document.getElementById(id);
 const hdr=(eyebrow,title,right='')=>`<div class="vh"><div><p class="eyebrow">${eyebrow}</p><h1>${title}</h1></div><div class="nav">${right}</div></div>`;
 
-const ART={blossom:'Cherry blossom',library:'Dark academia',gingham:'Gingham',coquette:'Bows',stars:'Starry night',clouds:'Clouds',lavender:'Lavender',daisy:'Daisies',checker:'Checkerboard',strawberry:'Strawberries',terrazzo:'Terrazzo',waves:'Waves',dots:'Polka dots',sunsetgrain:'Sunset',matcha:'Matcha'};   // patterned covers: name by key, drawn by --cov-* in style.css
+const ART={hearts:'Hearts',rainbow:'Rainbows',mountains:'Mountains',pinstripe:'Pinstripe',monstera:'Monstera',blossom:'Cherry blossom',library:'Dark academia',gingham:'Gingham',coquette:'Bows',stars:'Starry night',clouds:'Clouds',lavender:'Lavender',daisy:'Daisies',checker:'Checkerboard',strawberry:'Strawberries',terrazzo:'Terrazzo',waves:'Waves',dots:'Polka dots',sunsetgrain:'Sunset',matcha:'Matcha'};   // patterned covers: name by key, drawn by --cov-* in style.css
 const COVERS={dusk:['#6A4DC4','#E0609A'],peach:['#F9A826','#F36B7F'],ocean:['#1F77C9','#3FC1C9'],mint:['#4FA36B','#B6E3C9'],berry:['#8E2DE2','#C2185B'],sunny:['#FFD452','#FF9966'],night:['#1B1740','#4B3A8F'],cloud:['#BFD7F5','#E8DDF8']};
 const PAPER_COLORS={white:'#FFFFFF',cream:'#FFF8E8',blush:'#FFF0F3',mint:'#EEF9F2',sky:'#EEF5FD',lilac:'#F4EFFC'};
 const ACCENTS={violet:'#6A4DC4',rose:'#C93A72',ocean:'#1F77C9',forest:'#2B8A5B',sunset:'#D2661E',graphite:'#4A4F5C'};
@@ -308,12 +308,12 @@ function profileHead(){
   return `<header class="phead">
     <div class="phead-av">${avatarHtml(p)}</div>
     <div class="phead-main">
-      <div class="phead-top"><h2 translate="no">@${esc(p.slug)}</h2><span class="tag2 ${p.public?'':'priv'}">${p.public?'Public':'Private'}</span></div>
+      <div class="phead-top"><h2 translate="no">@${esc(p.slug)}</h2><span class="tag2 ${p.public?'':'priv'}">${p.public?'Public':'Private'}</span><button type="button" class="btn ghost sm" data-x="copy-link" data-link="${esc(link)}">Copy link</button></div>
       <div class="pstats">${stat(S.notebooks.length,S.notebooks.length===1?'notebook':'notebooks','notebooks')}${stat(S.posts.length,S.posts.length===1?'post':'posts','posts')}${stat(p.friends,p.friends===1?'friend':'friends','friends')}<span class="pstat"><b>${likes}</b><span>likes</span></span></div>
       <p class="pname2" translate="no">${esc(p.name)}</p>
       ${p.bio?`<p class="pbio2" translate="no">${esc(p.bio)}</p>`:'<p class="hint2">No bio yet. Add one in Settings.</p>'}
     </div>
-    <div class="phead-btns"><button class="btn primary" data-x="ptab" data-v="settings">⚙️ Settings</button><button class="btn" data-x="ptab" data-v="preview">👁️ See what others see</button><button type="button" class="btn ghost" data-x="copy-link" data-link="${esc(link)}">Copy link</button></div>
+    
   </header>
   <nav class="ptabs" role="tablist">${PTABS.map(t=>`<button role="tab" data-x="ptab" data-v="${t[0]}" aria-selected="${ui.ptab===t[0]}">${t[1]} ${t[2]}</button>`).join('')}</nav>`;
 }
@@ -329,7 +329,7 @@ function notebooksTab(){
   let editor='';
   if(nb){
     const open=ui.panel?' panel-open':'';
-    editor=`<div class="nbe-bar"><button class="btn" data-x="nb-settings">⚙️ Settings</button><button class="btn${ui.panel==='deco'?' on':''}" data-x="panel" data-v="deco">🎨 Decorate</button><a class="btn" href="u.php?u=${esc(S.profile.slug)}&amp;nb=${nb.id}" target="_blank" rel="noopener">👁️ Open as a visitor ↗</a><span class="hint2">${nb.public?'Shown on your profile':'Private: only you can see it'}</span></div>
+    editor=`<div class="nbe-bar"><button class="btn${ui.panel==='deco'?' on':''}" data-x="panel" data-v="deco">🎨 Decorate</button><a class="btn" href="u.php?u=${esc(S.profile.slug)}&amp;nb=${nb.id}" target="_blank" rel="noopener">👁️ Open as a visitor ↗</a><span class="hint2">${nb.public?'Shown on your profile':'Private: only you can see it'}</span></div>
       <div class="nbe${open}"><div>${notebookHtml(nb)}</div>${ui.panel?`<div class="nbe-side">${ui.panel==='settings'?settingsPanel(nb):decoPanel(nb)}</div>`:''}</div>`;
   }else editor='<p class="empty">You have no notebooks yet. Press <b>+ New notebook</b> to make your first one.</p>';
   return tiles+newForm+editor;
@@ -396,6 +396,19 @@ function coverMini(c,on){
   const style=c[2],light=['cherry','rose'].includes(c[0])?' light':'';
   return `<button type="button" class="cover-opt" data-x="cover-pick" data-v="${c[0]}" aria-pressed="${on}" title="${esc(c[1])}"><span class="nbc cv-${c[0]}${style==='spiral'?' spiral':''}${style==='top'?' top':''} mini" aria-hidden="true"><span class="nbc-art"></span><span class="nbc-spine${light}"></span></span><span>${esc(c[1])}</span></button>`;
 }
+/** The whole Explore cover as other people see it (picture, name or your words), drawn like cover_html() in social.php. */
+function coverFull(p){
+  const key=p.cover,c=(p.covers||[]).find(x=>x[0]===key),custom=key==='custom'&&p.cover_url;
+  const style=custom?'top':(c?c[2]:'vintage');
+  const cls=`nbc cv-${key}${style==='spiral'?' spiral':''}${style==='top'?' top':''}`;
+  const light=['cherry','rose'].includes(key)?' light':'';
+  const art=custom?` style="background-image:url('${esc(p.cover_url)}');background-size:cover;background-position:center"`:'';
+  const name=esc(p.name),words=(p.words||'').trim(),av=avatarHtml(p,'');
+  const inner=style==='spiral'
+    ?`<span class="nbc-words">${['petal','ivory'].includes(key)?'<span class="nbc-bowtop"></span>':''}<span class="nbc-script" translate="no">${esc(words||p.name)}</span>${av}<span class="nbc-small" translate="no">${words?name:''}</span></span>`
+    :`<span class="nbc-label">${av}<span class="nbc-name" translate="no">${name}</span><span class="nbc-orn"></span><span class="nbc-dots"></span></span>`;
+  return `<span class="${cls}" aria-hidden="true"><span class="nbc-art"${art}></span><span class="nbc-spine${light}"></span>${inner}</span>`;
+}
 function settingsTab(){
   const p=S.profile,nb=cur();
   const dsel=`<select class="daysel" data-xday aria-label="Who can see my day">${DAYLV.map((l,i)=>`<option value="${i}"${i===p.day?' selected':''}>${l}</option>`).join('')}</select>`;
@@ -419,8 +432,9 @@ function settingsTab(){
     <label class="l">Who can see my day (today’s hour-by-hour plan, nothing else of your planner)</label>${dsel}
     ${sw('Alert when someone likes my post','Shows in the bell at the top of the page.',!!(p.notify&&p.notify.like),'data-xsw="notify" data-k="like"')}</section>
   <section class="xcard st-sec" id="st-explore"><h3>My card on Explore</h3><p class="sub">The cover people see next to your name. Pick one or use your own picture.</p>
-    <div class="covers">${covers}</div>
-    <label class="l" for="ac-words">Words on a spiral cover</label><input type="text" id="ac-words" data-xwords maxlength="60" value="${esc(p.words||'')}" placeholder="e.g. she is fearless"><p class="hint2">Shown in handwriting on the pink spiral covers. Empty shows your name.</p></section>
+    <div class="cover-pick"><div class="cover-preview" id="coverPreview"><p class="opt-h" style="margin:0 0 8px">Preview</p>${coverFull(p)}</div>
+      <div class="cover-side"><div class="covers">${covers}</div>
+      <label class="l" for="ac-words">Words on a spiral cover</label><input type="text" id="ac-words" data-xwords maxlength="60" value="${esc(p.words||'')}" placeholder="e.g. she is fearless"><p class="hint2">Shown in handwriting on the spiral covers. Empty shows your name.</p></div></div></section>
   <section class="xcard st-sec" id="st-notebooks"><h3>Notebooks</h3><p class="sub">Pick a notebook to change its name, pages and who sees it.</p>${nbTiles}
     ${nb?`<div class="st-nb">${settingsPanel(nb)}${pages}<div class="xrow" style="margin-top:12px"><button class="btn" data-x="st-deco">🎨 Look, colours and stickers</button><span class="hint2">Make your own cover colours, use your own picture, and make stickers from your pictures.</span></div></div>`:''}</section>
   <section class="xcard st-sec" id="st-danger"><h3>Delete account</h3><p class="sub">Logs you out and removes your account and everything in it for good.</p><a class="btn danger" href="delete-account.php">Delete my account</a></section>`;
@@ -539,6 +553,10 @@ document.addEventListener('input',e=>{
 });
 
 /* ---------- forms ---------- */
+document.addEventListener('input',e=>{
+  const t=e.target;if(!(t.dataset&&t.hasAttribute('data-xwords'))||!S)return;
+  S.profile.words=t.value;const pv=$('coverPreview');if(pv)pv.innerHTML='<p class="opt-h" style="margin:0 0 8px">Preview</p>'+coverFull(S.profile);
+});
 document.addEventListener('submit',async e=>{
   const f=e.target.closest('form[data-xform]');if(!f)return;
   e.preventDefault();if(f.dataset.busy)return;

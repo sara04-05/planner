@@ -245,6 +245,12 @@ function upgrade_schema(PDO $pdo): void
         };
         $add('users', 'role', "VARCHAR(12) NOT NULL DEFAULT 'user'");
         $add('users', 'verified_badge', 'TINYINT(1) NOT NULL DEFAULT 0');
+        // A site with nobody in ADMIN_EMAILS and no admin yet: the first account made on the site becomes its admin
+        // (otherwise nobody could ever open the Users page or give anyone a role).
+        if (!(defined('ADMIN_EMAILS') && ADMIN_EMAILS) && !$pdo->query("SELECT 1 FROM users WHERE role = 'admin'")->fetch()) {
+            $first = $pdo->query('SELECT MIN(id) AS m FROM users')->fetch()['m'] ?? null;
+            if ($first) $pdo->exec("UPDATE users SET role = 'admin' WHERE id = " . (int)$first);
+        }
         $add('profiles', 'in_explore', 'TINYINT(1) NOT NULL DEFAULT 0');   // opt in: only people who switch it on are listed in Explore
         $add('profiles', 'cover_img', 'INT NULL');
         foreach (['hidden_from', 'hidden_to', 'deleted_all'] as $c) $add('messages', $c, 'TINYINT(1) NOT NULL DEFAULT 0');

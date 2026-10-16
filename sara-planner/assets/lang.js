@@ -289,7 +289,7 @@ const P=[
 
 const cache=new Map();
 /* ---------- look inside (visitor tour), welcome page, guest Explore, new covers ---------- */
-Object.assign(T,{
+Object.assign(T,{'Hearts':'Zemra','Rainbows':'Ylberë','Mountains':'Male','Pinstripe':'Vija të holla','Monstera':'Monstera','Preview':'Pamja paraprake',
 'Verified account':'Llogari e verifikuar',
 'This message was deleted':'Ky mesazh u fshi',
 'edited':'u redaktua',
