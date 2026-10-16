@@ -1352,6 +1352,7 @@ a.nbtile{text-decoration:none}.nbtiles{margin-bottom:14px}.nbtile.on span{color:
 .nbook[data-anim="open"] .nbp-left{animation:leftIn 1.15s ease-out both}
 @keyframes bookIn{from{transform:scale(.93) translateY(8px);opacity:0}to{transform:none;opacity:1}}
 @keyframes leftIn{0%,62%{opacity:0}100%{opacity:1}}
+@media (min-width:901px){.nbleaf{display:none}.nbook,.nbook *{animation:none!important;transition:none!important}}
 @media (prefers-reduced-motion: reduce){.nbleaf{display:none}.nbook,.nbook *{animation:none!important;transition:none!important}}
 
 /* ===== phones: everything fits, nothing is cut off ===== */
