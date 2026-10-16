@@ -1389,3 +1389,11 @@ a.nbtile{text-decoration:none}.nbtiles{margin-bottom:14px}.nbtile.on span{color:
 .page .addform{margin-bottom:6px}
 .page .nbtiles{margin-bottom:12px;gap:12px 14px}
 @media (max-width:760px){.page{padding-top:16px}.tabs{margin-bottom:0}}
+
+/* day view: the money panel stays in its own column and never rides up over the header or down over the hours */
+.page .cols{margin-top:12px;align-items:start}
+.page .cols>.panel{position:static;margin:0;min-width:0;overflow:hidden}
+.page .cols>.panel .addform{grid-template-columns:minmax(0,1fr) minmax(0,1fr)}
+.page .cols>.panel .addform input[name=desc]{grid-column:1/-1}
+.page .cols>.panel .addform .btn{grid-column:1/-1;justify-content:center}
+.page .cols>.stack{min-width:0}
