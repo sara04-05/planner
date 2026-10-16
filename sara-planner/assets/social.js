@@ -88,6 +88,8 @@ function picInner(key){
     (p?`<img class="thumb" src="${esc(p.url)}" alt=""><button type="button" class="btn sm ghost" data-x="pic-rm" data-key="${key}">Remove</button>`:'')+`<span class="hint2" data-pic-msg></span>`;
 }
 const picPick=key=>`<div class="pic-pick" data-pic="${key}">${picInner(key)}</div>`;
+const sleep=ms=>new Promise(r=>setTimeout(r,ms));
+const calm=()=>window.matchMedia&&matchMedia('(prefers-reduced-motion: reduce)').matches;
 const armed=b=>{if(b.dataset.armed)return true;b.dataset.armed='1';b.textContent='Sure?';return false};
 
 /* ---------- design: how a draft turns into attributes, colours and a cover ---------- */
@@ -218,14 +220,14 @@ function notebookHtml(nb){
   const body=ui.pageEdit?pageForm():ui.pg==='cover'?coverPage(nb,d):ui.pg==='day'?dayPage():ui.pg==='blog'?blogPage():ui.pg==='interests'?interestsPage():ui.pg==='timetable'?timetablePage():ui.pg.startsWith('pg:')?customPage(nb):subjectsPage();
   // the notebook opened flat: contents on the left page, the page you are on on the right, the binding in the middle, the cover around it
   const toc=tabs.map((k,i)=>`<li><button type="button" data-x="${k==='cover'?'nb-close':'pg'}" data-v="${k}" data-tab="${k}"${k===ui.pg&&!ui.pageEdit?' aria-current="page"':''}><span translate="no">${esc(secName(k))}</span><i>${i+1}</i></button></li>`).join('');
-  const isOpen=ui.nbOpen||ui.pageEdit;
+  const isOpen=ui.nbOpen||ui.pageEdit,an=ui.anim||'';ui.anim='';   // an animation plays once, on the redraw that follows the click
   if(!isOpen)return `<div class="nbv${ui.panel==='deco'?' deco':''}" id="nbv"${wrapAttrs(d)}>
-    <div class="nbclosed" id="nbBinder"${d.binding&&d.binding!=='coil'?` data-binding="${d.binding}"`:''}>
+    <div class="nbclosed" id="nbBinder" data-anim="${an}"${d.binding&&d.binding!=='coil'?` data-binding="${d.binding}"`:''}>
       ${coverPage(nb,d)}
       <div class="nbclosed-go"><button type="button" class="btn primary" data-x="nb-open">📖 Open the notebook</button>${stkLayer(d,'cover')}</div>
     </div></div>`;
   return `<div class="nbv${ui.panel==='deco'?' deco':''}" id="nbv"${wrapAttrs(d)}>
-    <div class="nbook" id="nbBinder"${d.binding&&d.binding!=='coil'?` data-binding="${d.binding}"`:''} style="${coverCss(d)}">
+    <div class="nbook" id="nbBinder" data-anim="${an}"${d.binding&&d.binding!=='coil'?` data-binding="${d.binding}"`:''} style="${coverCss(d)}">
       <div class="page nbp-left" id="nbPageL"${pageAttrs(d)}>
         <p class="eyebrow">Contents</p><h2 class="nbp-title" translate="no">${esc(nb.title)}</h2>
         <ol class="nbp-toc">${toc}<li><button type="button" class="nbp-add" data-x="page-new">+ Page</button></li></ol>
@@ -536,9 +538,9 @@ document.addEventListener('click',async e=>{
       case 'post-open':{const p=S.posts.find(x=>x.id===id);if(!p)return;pick(p.nb);ui.pg='blog';ui.nbOpen=true;ui.ptab='notebooks';redraw();return}
       case 'nb-new':ui.newNb=!ui.newNb;redraw(ui.newNb?'nn-title':'');return;
       case 'panel':ui.panel=ui.panel===b.dataset.v?'':b.dataset.v;ui.sel=-1;redraw();return;
-      case 'pg':ui.pg=b.dataset.v;ui.nbOpen=ui.pg!=='cover';ui.sel=-1;ui.post=null;ui.newList=false;ui.pageEdit=null;redraw();return;
-      case 'nb-open':ui.nbOpen=true;if(ui.pg==='cover')ui.pg=(cur().sections[0]||(cur().pages[0]&&'pg:'+cur().pages[0].id)||'day');redraw();return;
-      case 'nb-close':ui.nbOpen=false;ui.pg='cover';ui.pageEdit=null;redraw();return;
+      case 'pg':if(ui.nbOpen&&b.dataset.v!==ui.pg&&!calm())ui.anim='turn';ui.pg=b.dataset.v;ui.nbOpen=ui.pg!=='cover';ui.sel=-1;ui.post=null;ui.newList=false;ui.pageEdit=null;redraw();return;
+      case 'nb-open':{const cv=document.querySelector('.nbclosed .nbcover');if(cv&&!calm()){cv.classList.add('flip-open');await sleep(520);ui.anim='open'}}ui.nbOpen=true;if(ui.pg==='cover')ui.pg=(cur().sections[0]||(cur().pages[0]&&'pg:'+cur().pages[0].id)||'day');redraw();return;
+      case 'nb-close':{const bk=document.querySelector('.nbook');if(bk&&!calm()){bk.classList.add('shut');await sleep(300);ui.anim='close'}}ui.nbOpen=false;ui.pg='cover';ui.pageEdit=null;redraw();return;
       case 'page-new':ui.pageEdit={id:0,title:'',emoji:PAGE_EMOJI[0],body:''};ui.nbOpen=true;redraw('pg-title');return;
       case 'page-edit':{const p=nb.pages.find(x=>x.id===id);if(!p)return;ui.pageEdit={id:p.id,title:p.title,emoji:p.emoji||PAGE_EMOJI[0],body:p.body};ui.nbOpen=true;redraw('pg-title');return}
       case 'page-cancel':ui.pageEdit=null;redraw();return;
