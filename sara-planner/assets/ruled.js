@@ -4,10 +4,16 @@
 (function(){
   var LH=32,busy=false,timer=null;
   var SKIP_TAG=/^(INPUT|SELECT|TEXTAREA|IMG|SVG|BR|OPTION|SCRIPT|STYLE|CANVAS)$/;
-  function opaque(cs){
-    var m=/rgba?\(([^)]+)\)/.exec(cs.backgroundColor||'');if(!m)return false;
-    var p=m[1].split(',').map(parseFloat);return p.length<4||p[3]>0.4;
+  // how see-through a computed colour is (0 = clear, 1 = solid); handles rgb(), rgba() and color(srgb … / a) from color-mix()
+  function alphaOf(c){
+    if(!c||c==='transparent')return 0;
+    var m=/\/\s*([\d.]+%?)\s*\)/.exec(c);
+    if(m){var v=parseFloat(m[1]);return m[1].slice(-1)==='%'?v/100:v}
+    m=/^rgba?\(([^)]+)\)/.exec(c);
+    if(m){var p=m[1].split(/[,\s]+/).filter(Boolean);return p.length>=4?parseFloat(p[3]):1}
+    return 1;
   }
+  function opaque(cs){return alphaOf(cs.backgroundColor)>0.4}
   function visibleBorder(cs){return parseFloat(cs.borderTopWidth)>0&&cs.borderTopStyle!=='none'&&cs.borderTopStyle!=='hidden'||parseFloat(cs.borderLeftWidth)>=2&&cs.borderLeftStyle!=='none'}
   function hasOwnText(el){for(var n=el.firstChild;n;n=n.nextSibling)if(n.nodeType===3&&n.nodeValue.trim())return true;return false}
   function snap(){
@@ -35,6 +41,11 @@
         var isText=hasOwnText(el);
         if(!isBox&&!isText)continue;
         var r0=el.getBoundingClientRect();if(!r0.height)continue;
+        // little things (colour dots, swatches, icons) and chips / pills with a tinted background are never stretched: a chip moves with its row
+        if(isBox&&!isText&&(r0.height<24||r0.width<24))continue;
+        if(isBox&&(parseFloat(cs.borderTopLeftRadius)>=Math.min(r0.width,r0.height)/2-1||Math.abs(r0.width-r0.height)<6&&r0.width<200))continue;   // circles and squares (avatars, swatches) keep their shape
+        if(isText&&!opaque(cs)&&alphaOf(cs.backgroundColor)>0.02)continue;
+        if(isText&&visibleBorder(cs)&&parseFloat(cs.borderTopLeftRadius)>=8&&r0.height<40&&!el.children.length)continue;
         if(isBox&&opaque(cs))boxes.add(el);
         // something laid out side by side (a flex row / grid) moves as one piece
         var t=el,unit=el.closest('.nbtile,.nb,.person,.nb-new');if(unit&&unit!==page&&page.contains(unit))t=unit;
@@ -46,7 +57,7 @@
         t.dataset.snap='1';t.dataset.mt0=t.style.marginTop;t.dataset.lh0=t.style.lineHeight;t.dataset.mh0=t.style.minHeight;
         var tcs=getComputedStyle(t);
         if(isText&&!isBox&&parseFloat(getComputedStyle(el).fontSize)<=20&&!el.dataset.snap){el.dataset.snap='1';el.dataset.mt0=el.style.marginTop;el.dataset.lh0=el.style.lineHeight;el.dataset.mh0=el.style.minHeight;el.style.lineHeight=LH+'px'}
-        if(isBox&&opaque(cs)&&t===el){var h=t.getBoundingClientRect().height;t.style.minHeight=Math.ceil(h/LH-0.02)*LH+'px'}
+        if(isBox&&opaque(cs)&&t===el&&r0.width>=160&&r0.height>=48){var h=t.getBoundingClientRect().height;t.style.minHeight=Math.ceil(h/LH-0.02)*LH+'px'}
         for(var k=0;k<3;k++){
           var y=t.getBoundingClientRect().top-pageTop(),rem=((y%LH)+LH)%LH;
           if(rem<0.6||LH-rem<0.6)break;
