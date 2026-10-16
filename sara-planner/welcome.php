@@ -52,7 +52,6 @@ if (current_user_id()) {
     .demo h2.dh{display:inline;font-size:26px;font-weight:700;background:linear-gradient(transparent 58%,var(--hl) 58%,var(--hl) 90%,transparent 90%);padding:0 4px;margin-left:-4px}
     .demo .vh{margin-bottom:18px}
     .demo .panel{padding:14px}
-    .demo-note{text-align:center;font-size:13px;color:var(--muted);margin-top:18px}
 
     section.blk{padding:64px 0;border-top:1px solid var(--line)}
     .sh{max-width:640px;margin-bottom:32px}
@@ -157,7 +156,6 @@ if (current_user_id()) {
           <button class="tab" role="tab" data-tab="money">Expenses</button>
         </nav>
       </div>
-      <p class="demo-note"><a href="tour.php">Open the full planner preview</a> with every page. Click the tabs. Tick a task. It is view only: nothing is saved, and you can't change anything until you log in.</p>
     </div>
   </section>
 
