@@ -237,7 +237,7 @@ function settingsPanel(nb){
       <div class="secpick">${SECS.map(s=>`<label><input type="checkbox" name="sections" value="${s[0]}" ${nb.sections.includes(s[0])?'checked':''}><span><b>${s[1]} ${s[2]}</b><small>${s[3]}</small></span></label>`).join('')}</div>
       <div class="xrow"><button class="btn primary">Save</button></div></form>
     <div style="margin-top:10px">${sw('Show this notebook on my profile','People who may open your profile can read it. Items you keep private stay hidden.',nb.public,`data-xsw="nb-public"`)}</div>
-    ${S.profile.public?'':'<p class="hint2">Your profile itself is private right now. Turn on <b>Public profile</b> in <b>Edit profile &amp; settings</b> for others to see your shared notebooks.</p>'}
+    ${S.profile.public?'':'<p class="hint2">Your profile itself is private right now. Turn on <b>Public profile</b> under <b>Privacy</b> on this page for others to see your shared notebooks.</p>'}
     <div class="xrow" style="margin-top:12px"><button class="btn danger sm" data-x="nb-del">Delete this notebook</button><span class="hint2">Also deletes its posts and lists.</span></div></section>`;
 }
 const swatch=(act,v,bg,label)=>`<button type="button" class="swatch${act==='cover'?' sq':''}" style="background:${bg}" data-x="${act}" data-v="${v}" aria-label="${label}" aria-pressed="false"></button>`;
@@ -409,6 +409,18 @@ function coverFull(p){
     :`<span class="nbc-label">${av}<span class="nbc-name" translate="no">${name}</span><span class="nbc-orn"></span><span class="nbc-dots"></span></span>`;
   return `<span class="${cls}" aria-hidden="true"><span class="nbc-art"${art}></span><span class="nbc-spine${light}"></span>${inner}</span>`;
 }
+/** Change how a notebook looks without opening the decorator: cover, binding, paper and accent colour, saved as you click. */
+function quickLook(nb){
+  const d=nb.design||{},btn=(k,v,bg,label,on)=>`<button type="button" class="swatch sq" style="background:${bg}" data-x="st-look" data-k="${k}" data-v="${v}" aria-pressed="${on}" aria-label="${esc(label)}" title="${esc(label)}"></button>`;
+  const covers=Object.keys(COVERS).map(c=>btn('cover',c,`linear-gradient(135deg,${COVERS[c][0]},${COVERS[c][1]})`,'Cover '+c,!nb.cover_url&&d.cover===c)).join('')
+    +Object.keys(ART).map(c=>btn('cover',c,`var(--cov-${c})`,ART[c],!nb.cover_url&&d.cover===c)).join('');
+  const pills=(k,list)=>`<div class="pilltabs">${list.map(x=>`<button type="button" data-x="st-look" data-k="${k}" data-v="${x[0]}" aria-pressed="${d[k]===x[0]}">${x[1]}</button>`).join('')}</div>`;
+  const acc=Object.keys(ACCENTS).map(c=>btn('accent',c,ACCENTS[c],'Accent '+c,d.accent===c)).join('');
+  return `<section class="xcard"><h3>Quick look</h3><p class="sub">Click to change this notebook's look. It saves straight away; open “Look, colours and stickers” below for your own colours, pictures and stickers.</p>
+    <div class="st-lookrow"><div class="st-prev"><i style="${coverCss({...d,cover_url:nb.cover_url})}"></i></div>
+    <div class="st-lookopts"><p class="opt-h">Cover</p><div class="swatches">${covers}</div>
+    <p class="opt-h">Binding</p>${pills('binding',BINDINGS)}<p class="opt-h">Paper</p>${pills('paper',PAPERS)}<p class="opt-h">Accent colour</p><div class="swatches">${acc}</div></div></div></section>`;
+}
 function settingsTab(){
   const p=S.profile,nb=cur();
   const dsel=`<select class="daysel" data-xday aria-label="Who can see my day">${DAYLV.map((l,i)=>`<option value="${i}"${i===p.day?' selected':''}>${l}</option>`).join('')}</select>`;
@@ -436,7 +448,7 @@ function settingsTab(){
       <div class="cover-side"><div class="covers">${covers}</div>
       <label class="l" for="ac-words">Words on a spiral cover</label><input type="text" id="ac-words" data-xwords maxlength="60" value="${esc(p.words||'')}" placeholder="e.g. she is fearless"><p class="hint2">Shown in handwriting on the spiral covers. Empty shows your name.</p></div></div></section>
   <section class="xcard st-sec" id="st-notebooks"><h3>Notebooks</h3><p class="sub">Pick a notebook to change its name, pages and who sees it.</p>${nbTiles}
-    ${nb?`<div class="st-nb">${settingsPanel(nb)}${pages}<div class="xrow" style="margin-top:12px"><button class="btn" data-x="st-deco">🎨 Look, colours and stickers</button><span class="hint2">Make your own cover colours, use your own picture, and make stickers from your pictures.</span></div></div>`:''}</section>
+    ${nb?`<div class="st-nb">${quickLook(nb)}${settingsPanel(nb)}${pages}<div class="xrow" style="margin-top:12px"><button class="btn" data-x="st-deco">🎨 Look, colours and stickers</button><span class="hint2">Make your own cover colours, use your own picture, and make stickers from your pictures.</span></div></div>`:''}</section>
   <section class="xcard st-sec" id="st-danger"><h3>Delete account</h3><p class="sub">Logs you out and removes your account and everything in it for good.</p><a class="btn danger" href="delete-account.php">Delete my account</a></section>`;
 }
 function profileHtml(){
@@ -481,6 +493,10 @@ document.addEventListener('click',async e=>{
       case 'ptab':ui.ptab=b.dataset.v;redraw();return;
       case 'nb-settings':ui.ptab='settings';redraw();setTimeout(()=>{const el=$('st-notebooks');if(el)el.scrollIntoView({behavior:'smooth'})},50);return;
       case 'nb-pick-st':if(ui.dirty)toast('Unsaved design changes were dropped.');pick(id);redraw();setTimeout(()=>{const el=$('st-notebooks');if(el)el.scrollIntoView()},20);return;
+      case 'st-look':{
+        const d={...nb.design,[b.dataset.k]:b.dataset.v};if(b.dataset.k==='cover')d.cover_img=0;
+        const r=await api('x.nb.design',{id:nb.id,design:d});nb.design=r.design;nb.cover_url=r.cover_url;
+        ui.dd=Object.assign(clone(BASE),clone(r.design));ui.dd.cover_url=r.cover_url;ui.dirty=false;redraw();return}
       case 'st-deco':ui.ptab='notebooks';ui.panel='deco';redraw();return;
       case 'st-page-new':ui.ptab='notebooks';ui.panel='';ui.pageEdit={id:0,title:'',emoji:PAGE_EMOJI[0],body:''};redraw('pg-title');return;
       case 'st-page-edit':{const g=nb.pages.find(x=>x.id===id);if(!g)return;ui.ptab='notebooks';ui.panel='';ui.pg='pg:'+g.id;ui.pageEdit={id:g.id,title:g.title,emoji:g.emoji||PAGE_EMOJI[0],body:g.body};redraw('pg-title');return}

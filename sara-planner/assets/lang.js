@@ -289,7 +289,7 @@ const P=[
 
 const cache=new Map();
 /* ---------- look inside (visitor tour), welcome page, guest Explore, new covers ---------- */
-Object.assign(T,{'Hearts':'Zemra','Rainbows':'Ylberë','Mountains':'Male','Pinstripe':'Vija të holla','Monstera':'Monstera','Preview':'Pamja paraprake',
+Object.assign(T,{'Quick look':'Pamje e shpejtë',"Click to change this notebook's look. It saves straight away; open “Look, colours and stickers” below for your own colours, pictures and stickers.":'Kliko për të ndryshuar pamjen e kësaj fletoreje. Ruhet menjëherë; hap “Pamja, ngjyrat dhe afishet” më poshtë për ngjyrat, fotot dhe afishet e tua.','Hearts':'Zemra','Rainbows':'Ylberë','Mountains':'Male','Pinstripe':'Vija të holla','Monstera':'Monstera','Preview':'Pamja paraprake',
 'Verified account':'Llogari e verifikuar',
 'This message was deleted':'Ky mesazh u fshi',
 'edited':'u redaktua',
