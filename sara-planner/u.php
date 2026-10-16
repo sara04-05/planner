@@ -287,7 +287,9 @@ echo profile_head($person, (string)$prof['slug'], [plural($dayOnly ? 0 : count($
       var doc=new DOMParser().parseFromString(html,'text/html');
       var nb=doc.querySelector('.nbook'),old=document.querySelector('.nbook');
       if(!nb||!old){location.href=url;return}
+      var oldPg=old.querySelector('.nbp-right'),snap=oldPg&&window.NBANIM&&!NBANIM.calm()?oldPg.cloneNode(true):null;
       old.replaceWith(nb);
+      if(snap)NBANIM.flip(snap,'turn');
       document.title=doc.title;
       if(push)history.pushState({u:1},'',url);
     }).catch(function(){location.href=url});
@@ -299,6 +301,17 @@ echo profile_head($person, (string)$prof['slug'], [plural($dayOnly ? 0 : count($
     if(u.pathname!==location.pathname||(u.searchParams.get('p')||'cover')==='cover')return;   // the cover is a different layout: load it normally
     e.preventDefault();swapBook(a.href,true);
   });
+  // opening the notebook from its cover: the next page load plays the opening
+  document.addEventListener('click',function(e){
+    var c=e.target.closest('.nbcover-link');
+    if(c&&!e.ctrlKey&&!e.metaKey&&!e.shiftKey&&!e.button){try{sessionStorage.setItem('nbopen','1')}catch(x){}}
+    // going back to the cover: the book closes first
+    var a=e.target.closest('.nbook .nbp-tabs a, .nbook .nbp-toc a');
+    if(a&&!e.ctrlKey&&!e.metaKey&&!e.shiftKey&&!e.button&&(new URL(a.href,location.href).searchParams.get('p')||'cover')==='cover'&&window.NBANIM&&!NBANIM.calm()){
+      e.preventDefault();var bk=document.querySelector('.nbook');if(bk)bk.classList.add('shut');
+      setTimeout(function(){location.href=a.href},400);
+    }
+  });
   window.addEventListener('popstate',function(){location.reload()});
   document.addEventListener('click',function(e){
     var b=e.target.closest('[data-like]');if(!b)return;
@@ -306,4 +319,5 @@ echo profile_head($person, (string)$prof['slug'], [plural($dayOnly ? 0 : count($
   });
 })();
 </script>
+<script src="assets/nbanim.js?v=<?= filemtime(__DIR__ . '/assets/nbanim.js') ?>"></script>
 <?php app_bottom();
