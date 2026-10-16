@@ -549,6 +549,20 @@ function forget_upload(int $uid, int $id): void
     if ((int)$d['cover_img'] === $id) { $d['cover_img'] = 0; q('UPDATE profiles SET design = ? WHERE user_id = ?', [json_encode($d), $uid]); }
 }
 
+/** The column names of the reports table (it exists in two shapes on different installs: message, or target_id + reason + details). */
+function report_cols(): array
+{
+    static $cols = null;
+    if ($cols !== null) return $cols;
+    try {
+        $rows = DB_DRIVER === 'sqlite' ? q('PRAGMA table_info(reports)')->fetchAll() : q('SHOW COLUMNS FROM reports')->fetchAll();
+        $cols = array_map(fn($r) => (string)($r['name'] ?? $r['Field'] ?? ''), $rows);
+    } catch (PDOException $e) {
+        $cols = [];
+    }
+    return $cols;
+}
+
 function notebook_action(int $uid, string $action, array $in): void
 {
     switch ($action) {
@@ -602,7 +616,11 @@ function notebook_action(int $uid, string $action, array $in): void
         if (mb_strlen($details) > 1000) fail(400, 'Keep it under 1000 characters.');
         if ((int)q('SELECT COUNT(*) n FROM reports WHERE reporter_id = ? AND resolved = 0', [$uid])->fetch()['n'] >= 5) fail(429, 'You already have several open reports. The admins will look at them soon.');
         // a problem report has no other account in it: the "reported" account is the sender themselves
-        q('INSERT INTO reports (reporter_id, target_id, reason, details) VALUES (?, ?, ?, ?)', [$uid, $uid, 'problem', $details]);
+        if (in_array('message', report_cols(), true) && !in_array('details', report_cols(), true)) {
+            q('INSERT INTO reports (reporter_id, message) VALUES (?, ?)', [$uid, mb_substr($details, 0, 2000)]);
+        } else {
+            q('INSERT INTO reports (reporter_id, target_id, reason, details) VALUES (?, ?, ?, ?)', [$uid, $uid, 'problem', $details]);
+        }
         $admins = defined('ADMIN_EMAILS') ? ADMIN_EMAILS : [];
         if ($admins) {
             require_once __DIR__ . '/mail.php';
@@ -624,7 +642,8 @@ function notebook_action(int $uid, string $action, array $in): void
     case 'x.reports': {   // the problems people reported: admins and sub admins read them in a popup
         if (!can_view_users($uid)) fail(403, 'Only admins can read the reports.');
         try {
-            $rows = q('SELECT r.id, r.details, r.resolved, r.created_at, f.name AS fname, f.email AS femail
+            $txt = in_array('message', report_cols(), true) && !in_array('details', report_cols(), true) ? 'r.message' : 'r.details';
+            $rows = q('SELECT r.id, ' . $txt . ' AS details, r.resolved, r.created_at, f.name AS fname, f.email AS femail
                 FROM reports r JOIN users f ON f.id = r.reporter_id ORDER BY r.resolved, r.id DESC LIMIT 100')->fetchAll();
         } catch (PDOException $e) {
             $rows = [];
