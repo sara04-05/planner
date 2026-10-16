@@ -47,10 +47,12 @@ app_top('Report a problem', ['active' => 'report', 'h1' => 'Report a problem']);
     <div class="formmsg ok" role="status">Thank you. Your report was sent to the admins.</div>
     <p class="auth-alt"><a class="btn" href="index.php">Back to my planner</a></p>
     <?php else: ?>
-    <form method="post" class="auth-form" autocomplete="off">
+    <form method="post" class="reportbox" autocomplete="off">
       <input type="hidden" name="csrf" value="<?= h(csrf_token()) ?>">
-      <label>What went wrong?<textarea name="details" rows="5" maxlength="1000" required><?= h($details) ?></textarea></label>
-      <div class="xrow"><button class="btn primary">Send to the admins</button><a class="btn ghost" href="index.php">Cancel</a></div>
+      <label for="details">What went wrong?</label>
+      <textarea id="details" name="details" rows="6" maxlength="1000" placeholder="Which page were you on, and what happened?" required><?= h($details) ?></textarea>
+      <div class="reportfoot"><span class="count" id="rcount">0 / 1000</span><span class="acts"><a class="btn ghost" href="index.php">Cancel</a><button class="btn primary">Send to the admins</button></span></div>
     </form>
+    <script>(function(){var t=document.getElementById('details'),c=document.getElementById('rcount');function u(){c.textContent=t.value.length+' / 1000'}t.addEventListener('input',u);u()})();</script>
     <?php endif; ?>
 <?php app_bottom();

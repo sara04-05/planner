@@ -1559,3 +1559,21 @@ a.nbcover-link:focus-visible{outline:3px solid var(--accent);outline-offset:6px;
 .page .nbtiles{margin-top:0;margin-bottom:0}
 .page .nbtile small{display:none}
 .page .nbe-bar{margin-top:var(--lh);margin-bottom:0}
+
+/* report a problem */
+.reportbox{max-width:640px;background:var(--paper-2);border:1px solid var(--line);border-radius:16px;padding:20px 22px;display:flex;flex-direction:column;gap:10px;box-shadow:var(--shadow)}
+.reportbox label{font-family:var(--display);font-size:17px;font-weight:700;line-height:var(--lh)}
+.reportbox textarea{width:100%;box-sizing:border-box;min-height:calc(var(--lh)*5);resize:vertical;background:var(--paper);color:var(--ink);border:1px solid var(--line);border-radius:12px;padding:12px 14px;font:inherit;font-size:15px;line-height:1.5;transition:border-color .15s,box-shadow .15s}
+.reportbox textarea::placeholder{color:var(--muted);opacity:.8}
+.reportbox textarea:focus{outline:none;border-color:var(--accent);box-shadow:0 0 0 3px var(--accent-soft)}
+.reportfoot{display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap}
+.reportfoot .count{font-size:12px;color:var(--muted);font-weight:600;font-variant-numeric:tabular-nums}
+.reportfoot .acts{display:flex;gap:8px}
+
+/* every text box in the settings and decorate panels looks the same: rounded, on the paper, with an accent ring when you type */
+.page :is(.xcard,.xform,.nbe-side) :is(input:not([type]),input[type=text],input[type=search],input[type=url],input[type=email],input[type=password],input[type=number],input[type=date],textarea,select){
+  background:var(--paper);color:var(--ink);border:1px solid var(--line);border-radius:12px;padding:9px 12px;font:inherit;font-size:14px;line-height:1.4;box-sizing:border-box;min-height:38px;transition:border-color .15s,box-shadow .15s}
+.page :is(.xcard,.xform,.nbe-side) :is(input,textarea,select)::placeholder{color:var(--muted);opacity:.85}
+.page :is(.xcard,.xform,.nbe-side) :is(input,textarea,select):focus{outline:none;border-color:var(--accent);box-shadow:0 0 0 3px var(--accent-soft)}
+.page .xrow{align-items:center;gap:8px}
+.page .xrow .btn.sm{height:38px;padding:0 14px}
