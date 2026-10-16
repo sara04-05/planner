@@ -299,7 +299,7 @@ CREATE TABLE IF NOT EXISTS notebook_styles (
   FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
 );
 
--- Reports: someone reports another account. They are emailed to the ADMIN_EMAILS in config.php and listed on admin.php.
+-- Reports: someone reports another account. They are emailed to the ADMIN_EMAILS in config.php and listed on reports.php.
 CREATE TABLE IF NOT EXISTS reports (
   id          INTEGER PRIMARY KEY AUTOINCREMENT,
   reporter_id INTEGER NOT NULL,

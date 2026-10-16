@@ -27,7 +27,7 @@ function profile_head(array $person, string $slug, array $stats, string $actions
 function report_btn(int $owner): string
 {
     $me = current_user_id();
-    return $me && can_view_users($me) ? ' <a class="btn ghost" href="admin.php#reports">Reports</a>' : ' <a class="btn ghost" href="report.php?id=' . $owner . '">Report</a>';
+    return $me && can_view_users($me) ? ' <a class="btn ghost" href="reports.php">Reports</a>' : ' <a class="btn ghost" href="report.php?id=' . $owner . '">Report</a>';
 }
 function plural(int $n, string $one, string $many): string
 {

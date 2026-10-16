@@ -10,7 +10,7 @@ require __DIR__ . '/layout.php';
 
 $uid = require_login();
 if (can_view_users($uid)) {   // admins don't make reports, they read them
-    header('Location: admin.php#reports');
+    header('Location: reports.php');
     exit;
 }
 $target = isset($_REQUEST['id']) && ctype_digit((string)$_REQUEST['id']) ? (int)$_REQUEST['id'] : 0;
@@ -49,7 +49,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 . 'Reported by: ' . $me['name'] . ' <' . $me['email'] . ">\n"
                 . 'Reason: ' . REPORT_REASONS[$reason] . "\n"
                 . 'Details: ' . ($details !== '' ? $details : '(none)') . "\n\n"
-                . "See all reports on the Users page (admin.php).\n";
+                . "See all reports on the Reports page (reports.php).\n";
             foreach ($admins as $email) {
                 try {
                     send_mail((string)$email, 'Splanner report: ' . $person['name'], $text);
