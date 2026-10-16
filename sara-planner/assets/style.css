@@ -1062,3 +1062,4 @@ button.pstat:hover span{color:var(--accent)}
 .auth-form label.sw{flex-direction:row;align-items:center;text-transform:none;letter-spacing:0;font-size:14px;font-weight:500;color:var(--ink);gap:14px}
 .auth-form label.sw .t span{text-transform:none;letter-spacing:0;font-weight:400;color:var(--muted)}
 .auth-form label.sw .t b{text-transform:none;letter-spacing:0;font-size:14px;color:var(--ink)}
+a.nbtile{text-decoration:none}.nbtiles{margin-bottom:14px}.nbtile.on span{color:var(--accent)}
