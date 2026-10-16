@@ -1664,3 +1664,6 @@ a.nbcover-link:focus-visible{outline:3px solid var(--accent);outline-offset:6px;
   .page .panel .addform input[name=desc]{grid-column:1/-1}
   .page .panel .addform .btn{grid-column:auto;justify-content:center;width:auto;padding:0 18px}
 }
+
+/* chart limit label ("budget €658", "daily €17") sits above its dashed line at the left end, clear of the bars and their amounts */
+.plot .lim em{top:auto;bottom:3px;left:0;right:auto;background:none;padding:0 2px}
