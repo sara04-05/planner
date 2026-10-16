@@ -1465,3 +1465,8 @@ input[type=range][data-xrange]{flex:1;min-width:120px}
 .page .filters{margin-bottom:8px;gap:8px}
 .page .row .pill,.page .row .tag{align-self:center}
 .page .row .x{height:28px;line-height:1;display:inline-flex;align-items:center;justify-content:center;padding:0 8px}
+
+/* Expenses: air under the title, one-line day headers, even rows */
+.page .tiles{margin-top:16px;margin-bottom:var(--lh)}
+.page .dgroup{height:var(--lh);box-sizing:border-box;padding:0 0 4px;align-items:flex-end;line-height:1.2!important}
+.page .tile .l,.page .tile .s{line-height:1.5}
