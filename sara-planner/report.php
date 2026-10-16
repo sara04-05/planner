@@ -9,6 +9,10 @@ require __DIR__ . '/mail.php';
 require __DIR__ . '/layout.php';
 
 $uid = require_login();
+if (can_view_users($uid)) {   // admins don't make reports, they read them
+    header('Location: admin.php#reports');
+    exit;
+}
 $target = isset($_REQUEST['id']) && ctype_digit((string)$_REQUEST['id']) ? (int)$_REQUEST['id'] : 0;
 $person = $target && $target !== $uid ? person($target) : null;
 if (!$person) {
