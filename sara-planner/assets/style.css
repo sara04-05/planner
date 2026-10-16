@@ -1491,3 +1491,9 @@ body:not(.tour) .page p.hint2,body:not(.tour) .page .xcard>p.sub,body:not(.tour)
   .nbv .binder>.tabs{margin-left:-58px;position:relative;z-index:3}
   .nbv .binder>.page{padding-right:70px}
 }
+
+/* the box on your own cover opens the Decorate panel when you press it */
+.nbcover-edit{cursor:pointer}
+.nbcover-edit:hover{filter:brightness(1.04)}
+.nbcover-pen{position:absolute;top:6px;right:8px;font-size:14px;opacity:.55}
+.nbcover-edit:hover .nbcover-pen{opacity:1}

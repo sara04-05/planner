@@ -207,7 +207,7 @@ function subjectsPage(){
 }
 function coverPage(nb,d){
   const name=(document.querySelector('.hello span:last-child')||{textContent:'You'}).textContent.replace(/^Hi,\s*/,'');
-  return `<div class="nbcover" id="pvCover" style="${coverCss(d)}"><div class="nbcover-in">${avatarHtml({avatar:S.profile.avatar,name})}<h2 translate="no">${esc(nb.title)}</h2><p class="by" translate="no">by ${esc(name)} · @${esc(S.profile.slug)}</p></div></div>`+
+  return `<div class="nbcover" id="pvCover" style="${coverCss(d)}"><div class="nbcover-in nbcover-edit" data-x="panel" data-v="deco" role="button" tabindex="0" title="Edit the box" aria-label="Edit the box on the cover"><span class="nbcover-pen" aria-hidden="true">✎</span>${avatarHtml({avatar:S.profile.avatar,name})}<h2 translate="no">${esc(nb.title)}</h2><p class="by" translate="no">by ${esc(name)} · @${esc(S.profile.slug)}</p></div></div>`+
     (nb.intro?`<p class="nb-intro" translate="no">${esc(nb.intro)}</p>`:'<p class="hint2" style="margin-top:12px">Add a few words about this notebook in <b>Settings</b>.</p>')+
     (nb.sections.length?'':'<p class="hint2">This notebook has no pages yet. Add some in <b>Settings</b>.</p>');
 }
