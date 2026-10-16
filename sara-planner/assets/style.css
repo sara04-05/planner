@@ -1639,3 +1639,9 @@ a.nbcover-link:focus-visible{outline:3px solid var(--accent);outline-offset:6px;
 .page .phead+.nbtiles,.page .phead-btns+.nbtiles{margin-top:0}
 .nbv{margin-top:var(--lh)}
 .page .nbtiles{margin-bottom:var(--lh)}
+
+/* while you decorate, the notebook stays in view (sticky) as the long options panel scrolls */
+@media (min-width:981px){
+  .nbe.panel-open>div:first-child{position:sticky;top:16px;align-self:start;z-index:2}
+}
+.nbe.panel-open .nbe-side{position:static}
