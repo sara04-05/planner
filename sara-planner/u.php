@@ -146,8 +146,7 @@ foreach ($dayOnly ? ['day'] : array_merge(['cover'], $sections, array_keys($page
 $nPosts = 0;   // public posts in the notebooks this viewer can open
 foreach ($notebooks as $n) if (in_array('blog', $n['sections'], true)) $nPosts += count(load_posts($owner, !$isMe, null, $n['id']));
 $nFriends = count(friend_ids($owner));
-$topOpts = ['tab' => '', 'active' => $isMe ? '' : 'explore', 'design' => $design, 'tabs' => $tabs, 'covers' => true];
-if ($page !== 'cover') $topOpts += ['eyebrow' => $name . ' · ' . $nb['title'], 'h1' => $LABEL[$page]];
+$topOpts = ['tab' => '', 'active' => $isMe ? '' : 'explore', 'notabs' => true, 'covers' => true];
 app_top($nb['title'] . ' · ' . $name, $topOpts);
 echo profile_head($person, (string)$prof['slug'], [plural($dayOnly ? 0 : count($notebooks), 'notebook', 'notebooks') => $dayOnly ? 0 : count($notebooks), plural($nPosts, 'post', 'posts') => $nPosts, plural($nFriends, 'friend', 'friends') => $nFriends], $actions,
     $isMe ? '' : ((int)$prof['is_public'] ? '' : '<span class="tag2 priv">Private</span>'));
@@ -162,6 +161,22 @@ echo profile_head($person, (string)$prof['slug'], [plural($dayOnly ? 0 : count($
 
 
 
+<?php if ($page !== 'cover'):   // the notebook opened flat: contents on the left page, the page you are on on the right, the cover around it
+    $tocKeys = $dayOnly ? ['day'] : array_merge(['cover'], $sections, array_keys($pagesById), $showDay ? ['day'] : []);
+    $tocHtml = '';
+    foreach ($tocKeys as $i => $k) {
+        $tocHtml .= '<li><a href="' . h($base . ($k === 'cover' ? '' : '&p=' . $k)) . '"' . ($k === $page ? ' aria-current="page"' : '') . '><span translate="no">' . h($LABEL[$k]) . '</span><i>' . ($i + 1) . '</i></a></li>';
+    } ?>
+  <div class="nbv" id="nbv"<?= design_attrs($design, 'accent') . design_style($design) ?>>
+  <div class="nbook"<?= ($design['binding'] ?? 'coil') !== 'coil' ? ' data-binding="' . h($design['binding']) . '"' : '' ?> style="<?= cover_css($design, $cover) ?>">
+    <div class="page nbp-left"<?= design_attrs($design, 'page') ?>>
+      <p class="eyebrow">Contents</p><h2 class="nbp-title" translate="no"><?= h($nb['title']) ?></h2>
+      <ol class="nbp-toc"><?= $tocHtml ?></ol>
+    </div>
+    <div class="nbp-gutter" aria-hidden="true"></div>
+    <div class="page nbp-right"<?= design_attrs($design, 'page') ?>>
+      <div class="vh"><div><p class="eyebrow"><?= h($nb['title']) ?></p><h1><?= h($LABEL[$page]) ?></h1></div></div>
+<?php endif; ?>
   <?php if ($page === 'cover'): ?>
     <?php $firstPg = $sections[0] ?? (array_key_first($pagesById) ?? ($showDay ? 'day' : null)); ?>
     <?php if ($firstPg !== null): ?><a class="nbcover-link" href="<?= h($base . '&p=' . $firstPg) ?>" title="Open the notebook" aria-label="Open the notebook"><?php endif; ?>
@@ -257,7 +272,12 @@ echo profile_head($person, (string)$prof['slug'], [plural($dayOnly ? 0 : count($
     </div><?php else: ?><p class="empty">No subjects yet.</p><?php endif; ?>
   <?php endif; ?>
 
-<?php app_inside(stickers_html($design, $page)); ?>
+<?php if ($page !== 'cover'): ?>
+      <?= stickers_html($design, $page) ?>
+    </div>
+    <nav class="tabs nbp-tabs" role="tablist" aria-label="Pages"><?= $tabs ?></nav>
+  </div></div>
+<?php else: app_inside(stickers_html($design, $page)); endif; ?>
 <script>
 (function(){
   var csrf=(document.querySelector('meta[name="csrf-token"]')||{}).content||'';
