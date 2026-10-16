@@ -21,6 +21,7 @@ const FONTS        = ['modern', 'hand', 'serif', 'mono'];
 const BINDINGS     = ['coil', 'stitch', 'none'];
 const STICKERS     = ['⭐', '💜', '🌸', '🎀', '🦋', '☁️', '🌙', '✨', '🍓', '🎧', '📚', '☕', '🐱', '🌈', '🔥', '🍒', '🎬', '🎵', '👗', '👠', '🧸', '🌷', '🍀', '💌', '📌', '✏️', '🎨', '🪩', '💫', '🍑', '🌻', '🧿'];
 const LIST_EMOJI   = ['🎬', '🎤', '👗', '📚', '🍕', '🎮', '🎧', '✈️', '🐾', '💄', '🎨', '⭐'];
+const PAGE_EMOJI   = ['📝', '📖', '🌸', '✈️', '🍳', '💡', '🎨', '🏋️', '🎵', '🐾', '🧘', '💌'];   // icons for pages people add themselves
 const MAX_NOTEBOOKS = 12;
 const MAX_STYLES    = 20;
 
@@ -61,7 +62,7 @@ function clean_design(int $uid, array $d, bool $withStickers = true): array
             continue;
         }
         $page = (string)($s['p'] ?? 'cover');
-        if ($page !== 'cover' && !in_array($page, SECTIONS, true) && $page !== 'day') $page = 'cover';
+        if ($page !== 'cover' && !in_array($page, SECTIONS, true) && $page !== 'day' && !preg_match('/^pg:\d+$/', $page)) $page = 'cover';
         $out['stickers'][] = [
             'k' => $key, 'p' => $page,
             'x' => max(0, min(100, round((float)($s['x'] ?? 50), 1))),
@@ -205,11 +206,22 @@ function nb_design(array $nb): array
     return json_col($nb['design'] ?? null, default_design());
 }
 
+/** The pages someone added to a notebook themselves, in the order they were made. */
+function nb_pages(int $nbId): array
+{
+    try {
+        return array_map(fn($p) => ['id' => (int)$p['id'], 'title' => $p['title'], 'emoji' => $p['emoji'], 'body' => $p['body']],
+            q('SELECT id, title, emoji, body FROM nb_pages WHERE notebook_id = ? ORDER BY id', [$nbId])->fetchAll());
+    } catch (PDOException $e) {   // table couldn't be made on this host
+        return [];
+    }
+}
+
 function nb_row(array $r): array
 {
     $d = nb_design($r);
     return ['id' => (int)$r['id'], 'title' => $r['title'], 'intro' => $r['intro'], 'sections' => nb_sections($r), 'public' => (int)$r['is_public'] === 1,
-        'design' => $d, 'cover_url' => upload_url($d['cover_img'] ? (int)$d['cover_img'] : null)];
+        'pages' => nb_pages((int)$r['id']), 'design' => $d, 'cover_url' => upload_url($d['cover_img'] ? (int)$d['cover_img'] : null)];
 }
 
 /** A user's notebooks. $onlyPublic = what other people may see. */
@@ -468,7 +480,9 @@ function notebook_bootstrap(int $uid): array
         $plan[] = ['from' => $e['from'], 'to' => min($e['to'], 1440), 'text' => $e['text'], 'label' => HOUR_NAMES[$t], 'color' => HOUR_COLORS[$t]];
     }
     return [
-        'profile' => ['slug' => $p['slug'], 'bio' => $p['bio'], 'public' => (int)$p['is_public'] === 1, 'guest' => (int)$p['guest_view'] === 1,
+        'profile' => ['slug' => $p['slug'], 'bio' => $p['bio'], 'public' => (int)$p['is_public'] === 1, 'guest' => (int)$p['guest_view'] === 1, 'explore' => (int)($p['in_explore'] ?? 0) === 1,
+            'cover' => $me['cover'], 'cover_url' => $me['cover_img'] ? upload_url((int)$me['cover_img']) : '', 'words' => $me['words'],
+            'covers' => array_map(fn($k, $c) => [$k, $c[0], $c[1]], array_keys(COVERS), array_values(COVERS)),
             'notify' => $notify, 'friends' => count($friends), 'name' => $me['name'], 'day' => day_level($p),
             'avatar' => $me['avatar_v'] ? 'avatar.php?id=' . $uid . '&v=' . $me['avatar_v'] : ''],
         'friends' => $friends, 'me_id' => $uid,
@@ -544,8 +558,22 @@ function notebook_action(int $uid, string $action, array $in): void
             if ($taken) fail(409, 'Someone already uses that page name. Try another.');
             q('UPDATE profiles SET slug = ? WHERE user_id = ?', [$slug, $uid]);
         }
+        if (array_key_exists('name', $in)) q('UPDATE users SET name = ? WHERE id = ?', [str_in($in, 'name', 80), $uid]);
+        if (array_key_exists('cover', $in)) {   // the picture on your Explore card: a ready-made cover, or one of your own pictures
+            $cv = (string)$in['cover'];
+            if ($cv === 'custom') {
+                $img = (int)($in['cover_img'] ?? 0);
+                if (!$img || !own_upload($uid, $img, 'cover')) fail(400, 'Pick a picture first.');
+                q('UPDATE profiles SET cover = ?, cover_img = ? WHERE user_id = ?', ['custom', $img, $uid]);
+            } elseif (isset(COVERS[$cv])) {
+                q('UPDATE profiles SET cover = ?, cover_img = NULL WHERE user_id = ?', [$cv, $uid]);
+            }
+        }
+        if (array_key_exists('words', $in)) q('UPDATE profiles SET words = ? WHERE user_id = ?', [mb_substr(trim((string)$in['words']), 0, 60), $uid]);
+        if (!empty($in['remove_avatar'])) q('UPDATE profiles SET avatar = NULL, avatar_v = 0 WHERE user_id = ?', [$uid]);
         if (array_key_exists('bio', $in)) q('UPDATE profiles SET bio = ? WHERE user_id = ?', [mb_substr(trim((string)$in['bio']), 0, 300), $uid]);
         if (array_key_exists('public', $in)) q('UPDATE profiles SET is_public = ? WHERE user_id = ?', [!empty($in['public']) ? 1 : 0, $uid]);
+        if (array_key_exists('explore', $in)) q('UPDATE profiles SET in_explore = ? WHERE user_id = ?', [!empty($in['explore']) ? 1 : 0, $uid]);
         if (array_key_exists('guest', $in)) q('UPDATE profiles SET guest_view = ? WHERE user_id = ?', [!empty($in['guest']) ? 1 : 0, $uid]);
         if (array_key_exists('day', $in)) {   // who may see today's hour-by-hour plan (0-3, see day_level)
             $sh = profile_share($p);
@@ -570,6 +598,34 @@ function notebook_action(int $uid, string $action, array $in): void
         q('INSERT INTO notebooks (user_id, title, sections, design, is_public) VALUES (?, ?, ?, ?, 0)', [$uid, $title, implode(',', $sections), json_encode($design)]);
         $id = (int)db()->lastInsertId();
         ok(['notebook' => nb_row(own_notebook($uid, $id))]);
+    }
+
+    case 'x.page.save': {   // a page you add to a notebook yourself
+        $title = str_in($in, 'title', 40);
+        $body = mb_substr(trim((string)($in['body'] ?? '')), 0, 8000);
+        if ($body === '') fail(400, 'Please write something on the page.');
+        $emoji = in_array($in['emoji'] ?? '', PAGE_EMOJI, true) ? $in['emoji'] : '';
+        $id = (int)($in['id'] ?? 0);
+        if ($id > 0) {
+            $p = q('SELECT notebook_id FROM nb_pages WHERE id = ? AND user_id = ?', [$id, $uid])->fetch();
+            if (!$p) fail(404, 'That page was not found.');
+            q('UPDATE nb_pages SET title = ?, emoji = ?, body = ? WHERE id = ?', [$title, $emoji, $body, $id]);
+            $nbId = (int)$p['notebook_id'];
+        } else {
+            $nbId = notebook_in($uid, $in);
+            if ((int)q('SELECT COUNT(*) c FROM nb_pages WHERE notebook_id = ?', [$nbId])->fetch()['c'] >= 12) fail(400, 'That is plenty of pages! Delete one first.');
+            q('INSERT INTO nb_pages (user_id, notebook_id, title, emoji, body) VALUES (?, ?, ?, ?, ?)', [$uid, $nbId, $title, $emoji, $body]);
+            $id = (int)db()->lastInsertId();
+        }
+        ok(['id' => $id, 'pages' => nb_pages($nbId)]);
+    }
+
+    case 'x.page.delete': {
+        $id = id_in($in);
+        $p = q('SELECT notebook_id FROM nb_pages WHERE id = ? AND user_id = ?', [$id, $uid])->fetch();
+        if (!$p) fail(404, 'That page was not found.');
+        q('DELETE FROM nb_pages WHERE id = ?', [$id]);
+        ok(['pages' => nb_pages((int)$p['notebook_id'])]);
     }
 
     case 'x.nb.save': {

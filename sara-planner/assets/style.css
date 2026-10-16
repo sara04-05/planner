@@ -1133,3 +1133,63 @@ a.nbtile{text-decoration:none}.nbtiles{margin-bottom:14px}.nbtile.on span{color:
 .page .legend{min-height:var(--lh);align-items:center;margin:0;padding:0}
 .page p[style],.page .s[style]{margin-block:0 !important}
 .page .gcal,.page .onboard,.page .soon{margin-block:0}
+/* pages people add to a notebook themselves */
+.nb-text{white-space:pre-wrap;font-size:15px;line-height:var(--lh,32px);overflow-wrap:anywhere}
+.tab.add-page{--tc:var(--line);opacity:.85;font-weight:700}
+.pagebar{display:flex;gap:8px;flex-wrap:wrap;min-height:32px;align-items:center}
+
+/* profile header written on the lines: avatar = 4 lines, name / numbers / full name / bio = one line each */
+.page .phead{gap:0 28px;margin:0;align-items:start}
+.page .phead-av .avatar.xl{width:128px;height:128px;font-size:50px;box-sizing:border-box}
+.page .phead-main{min-height:128px}
+.page .phead-top{min-height:32px;gap:10px}
+.page .phead-top h2{line-height:32px}
+.page .phead-top .tag2{line-height:18px}
+.page .pstats{min-height:32px;margin:0;gap:22px;align-items:center}
+.page .pstat{line-height:32px;align-items:center}
+.page .pname2,.page .pbio2{margin:0;line-height:32px}
+.page .phead-btns{min-height:32px;align-items:center;margin-bottom:0}
+.page .phead-btns .btn{height:28px;padding-block:0}
+.page .ptabs{border-top:0;border-bottom:1px solid var(--line);margin:32px 0 32px;height:32px;overflow-y:hidden}
+.page .ptabs button{border-top:0;margin:0;height:31px;padding:0 14px;line-height:30px;box-sizing:border-box}
+.page .ptabs button[aria-selected="true"]{box-shadow:inset 0 -2px 0 var(--ink)}
+.page .nbtiles{margin-bottom:var(--lh)}
+.page .nbtile i{aspect-ratio:auto;height:160px}
+.page .nbtile span,.page .nbtile small{line-height:var(--lh)}
+.page .nbtiles{gap:var(--lh) 14px}
+/* verified tick */
+.vbadge{display:inline-grid;place-items:center;width:1.05em;height:1.05em;border-radius:50%;background:#1d9bf0;color:#fff;font-size:.62em;font-weight:800;line-height:1;vertical-align:.18em;margin-left:.3em}
+/* messages: options on each message, chat tools */
+.msg{position:relative}
+.msg.gone .msg-body{font-style:italic;opacity:.65}
+.msg-more{border:0;background:none;color:inherit;opacity:.45;cursor:pointer;font-size:16px;line-height:1;padding:0 4px;margin-left:6px;border-radius:6px}
+.msg:hover .msg-more,.msg-more:focus-visible{opacity:.9}
+.msg-menu{position:absolute;z-index:6;top:100%;right:0;display:flex;flex-direction:column;min-width:190px;background:var(--paper);color:var(--ink);border:1px solid var(--line);border-radius:12px;box-shadow:var(--shadow);padding:6px}
+.msg.mine .msg-menu{right:0}.msg:not(.mine) .msg-menu{left:0;right:auto}
+.msg-menu button{border:0;background:none;text-align:left;font:inherit;font-size:13px;font-weight:600;color:inherit;padding:8px 10px;border-radius:8px;cursor:pointer}
+.msg-menu button:hover{background:var(--accent-soft)}
+.msg-menu button.danger{color:var(--bad)}
+.msg-edit{width:100%;min-width:220px;font:inherit;border:1px solid var(--line);border-radius:10px;padding:8px;background:var(--paper);color:var(--ink)}
+.msg-edit-row{display:flex;gap:6px;margin-top:6px}
+.chat-tools{display:flex;gap:8px;flex-wrap:wrap;margin-top:8px}
+.chat-tools .danger{color:var(--bad)}
+
+/* Settings: account and notebooks on one page */
+.st-nav{display:flex;gap:8px;flex-wrap:wrap;margin:0 0 var(--lh,32px)}
+.st-nav .chipbtn{text-decoration:none;color:inherit}
+.st-sec{margin-bottom:var(--lh,32px)}
+.st-sec h3{font-size:20px}
+.st-avatar{display:flex;align-items:center;gap:16px;margin-bottom:12px}
+.st-avatar .avatar.xl{width:96px;height:96px;font-size:38px}
+.st-avatar>div{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
+.covers{display:grid;grid-template-columns:repeat(auto-fill,minmax(96px,1fr));gap:8px;margin-bottom:12px}
+.xcard .cover-opt{display:flex;flex-direction:column;align-items:center;gap:6px;font:inherit;font-size:12px;font-weight:600;color:var(--ink);background:var(--paper);border:1px solid var(--line);border-radius:12px;padding:10px 6px;cursor:pointer;text-align:center}
+.xcard .cover-opt input[type=file]{position:absolute;opacity:0;pointer-events:none;width:1px;height:1px}
+.xcard .cover-opt:hover{border-color:var(--accent)}
+.xcard .cover-opt[aria-pressed="true"],.xcard .cover-opt.on{border-color:var(--accent);background:var(--accent-soft)}
+.nbc.mini.own-pic{display:grid;place-items:center;font-size:22px;color:var(--muted);background:var(--paper-2);border:2px dashed var(--line);box-shadow:none}
+.st-nb .xcard{border:0;padding:0;box-shadow:none;background:none}
+.st-sec label.l{display:block;margin-top:14px;margin-bottom:6px}
+.st-sec input[type=text],.st-sec textarea{width:100%;box-sizing:border-box}
+.st-sec .userlist li{display:flex;gap:8px;align-items:center}
+.st-sec .userlist .un{flex:1;min-width:0;overflow-wrap:anywhere}

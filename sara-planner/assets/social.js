@@ -19,6 +19,7 @@ const LIST_EMOJI=['🎬','🎤','👗','📚','🍕','🎮','🎧','✈️','�
 const QUICK=[['🎬','Favourite movies','list'],['🎤','Favourite singers','list'],['👗','My clothes and style','grid'],['📚','Books I love','list'],['🍕','Favourite food','list'],['✈️','Places I want to visit','list']];
 const SECS=[['interests','⭐','Interests','Lists of things you love, with pictures.'],['blog','✍️','Blog','Posts you write.'],['timetable','🗓️','Timetable','Your repeating weekly hours (the ↻ ones).'],['subjects','📚','Studying','Subject names and how far you are, never your notes.']];
 const SECNAME=Object.fromEntries([['cover','Cover']].concat(SECS.map(s=>[s[0],s[2]]),[['day','Day']]));
+const PAGE_EMOJI=['📝','📖','🌸','✈️','🍳','💡','🎨','🏋️','🎵','🐾','🧘','💌'];
 const DAYLV=['Nobody, only me','Friends only','Anyone signed in','Everyone, even visitors'];
 const BASE={cover:'dusk',cover_img:0,cover_c1:'',cover_c2:'',paper:'lined',paper_color:'white',paper_hex:'',accent:'violet',accent_hex:'',font:'modern',binding:'coil'};
 // ready-made looks (the user can also save their own)
@@ -33,7 +34,7 @@ const PRESETS=[
 const SHARE_MSG='Only what you mark public ever shows.';
 
 let S=null,loading=false,loadErr='';
-const ui={ptab:'notebooks',aud:'friend',nb:0,pg:'cover',panel:'',dd:null,dirty:false,sel:-1,post:null,pics:{},newList:false,newNb:false,marked:false};
+const ui={ptab:(new URLSearchParams(location.search).get('ptab')==='settings'?'settings':'notebooks'),aud:'friend',nb:0,pg:'cover',panel:'',dd:null,dirty:false,sel:-1,post:null,pics:{},newList:false,newNb:false,marked:false};
 
 async function api(action,data={}){
   const res=await fetch('api.php?action='+encodeURIComponent(action),{method:'POST',credentials:'same-origin',headers:{'Content-Type':'application/json','X-CSRF-Token':CSRF},body:JSON.stringify(data)});
@@ -65,12 +66,17 @@ function paintBadges(){
 }
 const cur=()=>S&&S.notebooks.find(n=>n.id===ui.nb)||null;
 /** Open a notebook in the editor (its saved design becomes the draft you edit). */
+const secName=k=>{
+  if(String(k).startsWith('pg:')){const nb=cur(),p=nb&&nb.pages.find(x=>'pg:'+x.id===k);return p?((p.emoji?p.emoji+' ':'')+p.title):'Page'}
+  return SECNAME[k]||'';
+};
+const hasPage=(nb,k)=>k==='cover'||k==='day'||nb.sections.includes(k)||(nb.pages||[]).some(p=>'pg:'+p.id===k);
 function pick(id,keepPage){
   ui.nb=id;const nb=cur();
   ui.dd=nb?Object.assign(clone(BASE),clone(nb.design)):null;
   if(ui.dd){ui.dd.cover_url=nb.cover_url;ui.dd.stickers=ui.dd.stickers||[]}
   ui.dirty=false;ui.sel=-1;ui.post=null;ui.newList=false;
-  if(!keepPage||!nb||(ui.pg!=='cover'&&ui.pg!=='day'&&!nb.sections.includes(ui.pg)))ui.pg='cover';
+  if(!keepPage||!nb||!hasPage(nb,ui.pg))ui.pg='cover';
 }
 
 /* ---------- small building blocks ---------- */
@@ -186,6 +192,21 @@ function coverPage(nb,d){
     (nb.sections.length?'':'<p class="hint2">This notebook has no pages yet. Add some in <b>Settings</b>.</p>');
 }
 
+function customPage(nb){
+  const p=nb.pages.find(x=>'pg:'+x.id===ui.pg);if(!p)return '';
+  return `<div class="pagebar"><button class="btn sm" data-x="page-edit" data-id="${p.id}">Edit page</button><button class="btn sm danger" data-x="page-del" data-id="${p.id}">Delete page</button></div>
+    <div class="nb-text" translate="no">${esc(p.body)}</div>`;
+}
+function pageForm(){
+  const f=ui.pageEdit;
+  return `<form class="xcard xform" data-xform="page" autocomplete="off" style="margin-bottom:16px">
+    <h3>${f.id?'Edit page':'New page'}</h3>
+    <label class="l" for="pg-title">Page name</label><input type="text" id="pg-title" name="title" maxlength="40" value="${esc(f.title)}" placeholder="e.g. Recipes, Travel plans, Gym" data-draft required>
+    <label class="l" for="pg-emoji">Icon</label><select id="pg-emoji" name="emoji">${PAGE_EMOJI.map(e=>`<option${e===f.emoji?' selected':''}>${e}</option>`).join('')}</select>
+    <label class="l" for="pg-body">Write on the page</label><textarea id="pg-body" name="body" maxlength="8000" data-draft required placeholder="Anything you like…">${esc(f.body)}</textarea>
+    <div class="xrow"><button class="btn primary">${f.id?'Save page':'Add page'}</button><button type="button" class="btn ghost" data-x="page-cancel">Cancel</button></div>
+  </form>`;
+}
 function dayPage(){
   const p=S.profile;
   return `<p class="hint2" style="margin:-6px 0 12px;font-size:13px">Who sees this page: <b>${DAYLV[p.day]}</b>. <button class="linkbtn" data-x="ptab" data-v="preview">Change who sees it</button></p>`+dayList(true);
@@ -193,16 +214,16 @@ function dayPage(){
 
 /* ---------- the notebook itself (cover, pages as side tabs, stickers inside) ---------- */
 function notebookHtml(nb){
-  const d=ui.dd,tabs=['cover'].concat(nb.sections,['day']);
-  const body=ui.pg==='cover'?coverPage(nb,d):ui.pg==='day'?dayPage():ui.pg==='blog'?blogPage():ui.pg==='interests'?interestsPage():ui.pg==='timetable'?timetablePage():subjectsPage();
+  const d=ui.dd,tabs=['cover'].concat(nb.sections,nb.pages.map(p=>'pg:'+p.id),['day']);
+  const body=ui.pageEdit?pageForm():ui.pg==='cover'?coverPage(nb,d):ui.pg==='day'?dayPage():ui.pg==='blog'?blogPage():ui.pg==='interests'?interestsPage():ui.pg==='timetable'?timetablePage():ui.pg.startsWith('pg:')?customPage(nb):subjectsPage();
   return `<div class="nbv${ui.panel==='deco'?' deco':''}" id="nbv"${wrapAttrs(d)}>
     <div class="binder" id="nbBinder"${d.binding&&d.binding!=='coil'?` data-binding="${d.binding}"`:''}>
       <div class="coil" aria-hidden="true">${'<span></span>'.repeat(70)}</div>
       <div class="page" id="nbPage"${pageAttrs(d)}>
-        <div class="vh"><div><p class="eyebrow">${esc(nb.title)}</p><h1>${esc(SECNAME[ui.pg])}</h1></div></div>
+        <div class="vh"><div><p class="eyebrow">${esc(nb.title)}</p><h1>${esc(secName(ui.pg))}</h1></div></div>
         ${body}${stkLayer(d,ui.pg)}
       </div>
-      <nav class="tabs" role="tablist">${tabs.map(k=>`<button class="tab" role="tab" data-x="pg" data-v="${k}" data-tab="${k}" aria-selected="${k===ui.pg}">${SECNAME[k]}</button>`).join('')}</nav>
+      <nav class="tabs" role="tablist">${tabs.map(k=>`<button class="tab" role="tab" data-x="pg" data-v="${k}" data-tab="${k}" aria-selected="${k===ui.pg}">${esc(secName(k))}</button>`).join('')}<button class="tab add-page" role="tab" data-x="page-new" title="Add a page">+ Page</button></nav>
     </div></div>`;
 }
 
@@ -235,7 +256,7 @@ function decoPanel(nb){
     <p class="opt-h">Accent colour</p><div class="swatches">${Object.keys(ACCENTS).map(c=>swatch('accent',c,ACCENTS[c],'Accent '+c)).join('')}<input type="color" class="colorpick" data-xcolor="accent_hex" value="${d.accent_hex||'#6a4dc4'}" aria-label="Your own accent colour"></div>
     <p class="opt-h">Writing</p><div class="pilltabs">${FONTS.map(f=>`<button type="button" data-x="font" data-v="${f[0]}" style="${f[2]?`font-family:${f[2]};font-size:15px`:''}" aria-pressed="false">${f[1]}</button>`).join('')}</div>
     <p class="opt-h">Binding</p><div class="pilltabs">${BINDINGS.map(b=>`<button type="button" data-x="binding" data-v="${b[0]}" aria-pressed="false">${b[1]}</button>`).join('')}</div>
-    <p class="opt-h">Stickers on the page “<span id="stkPg">${esc(SECNAME[ui.pg])}</span>”</p>
+    <p class="opt-h">Stickers on the page “<span id="stkPg">${esc(secName(ui.pg))}</span>”</p>
     <div class="stk-lib">${STICKERS.map(s=>`<button type="button" data-x="stk-add" data-k="${s}" aria-label="Add sticker ${s}">${s}</button>`).join('')}${S.stickers_up.map(u=>`<button type="button" data-x="stk-add" data-k="up:${u.id}" aria-label="Add my sticker"><img src="${esc(u.url)}" alt=""></button>`).join('')}</div>
     <div class="pic-pick" style="margin-top:8px"><label class="btn sm"><input type="file" accept="image/*" data-xfile="sticker" data-kind="sticker">➕ Make a sticker from my picture</label><span class="hint2" data-pic-msg></span></div>
     <div class="stk-bar" id="stkCtl">${stkCtl()}</div>
@@ -278,7 +299,7 @@ function syncControls(){
 const hm=m=>String(Math.floor(m/60)).padStart(2,'0')+':'+String(m%60).padStart(2,'0');
 const avatarHtml=(p,cls='xl')=>p.avatar?`<img class="avatar ${cls}" src="${esc(p.avatar)}" alt="">`:`<span class="avatar ${cls} letter" aria-hidden="true">${esc(((p.name||'S')[0]||'S').toUpperCase())}</span>`;
 const AUD=[['visitor','🌐','Visitor','Someone with no account'],['user','👤','Signed-in person','Someone with an account, not a friend'],['friend','🤝','Friend','Someone you accepted']];
-const PTABS=[['notebooks','📓','Notebooks'],['posts','🖼️','Posts'],['friends','👥','Friends'],['preview','👁️','What others see']];
+const PTABS=[['notebooks','📓','Notebooks'],['posts','🖼️','Posts'],['friends','👥','Friends'],['preview','👁️','What others see'],['settings','⚙️','Settings']];
 
 function profileHead(){
   const p=S.profile,likes=S.posts.reduce((n,x)=>n+x.likes,0);
@@ -290,9 +311,9 @@ function profileHead(){
       <div class="phead-top"><h2 translate="no">@${esc(p.slug)}</h2><span class="tag2 ${p.public?'':'priv'}">${p.public?'Public':'Private'}</span></div>
       <div class="pstats">${stat(S.notebooks.length,S.notebooks.length===1?'notebook':'notebooks','notebooks')}${stat(S.posts.length,S.posts.length===1?'post':'posts','posts')}${stat(p.friends,p.friends===1?'friend':'friends','friends')}<span class="pstat"><b>${likes}</b><span>likes</span></span></div>
       <p class="pname2" translate="no">${esc(p.name)}</p>
-      ${p.bio?`<p class="pbio2" translate="no">${esc(p.bio)}</p>`:'<p class="hint2">No bio yet. Add one in Edit profile.</p>'}
+      ${p.bio?`<p class="pbio2" translate="no">${esc(p.bio)}</p>`:'<p class="hint2">No bio yet. Add one in Settings.</p>'}
     </div>
-    <div class="phead-btns"><a class="btn primary" href="profile.php">✎ Edit profile &amp; settings</a><button class="btn" data-x="ptab" data-v="preview">👁️ See what others see</button><button type="button" class="btn ghost" data-x="copy-link" data-link="${esc(link)}">Copy link</button></div>
+    <div class="phead-btns"><button class="btn primary" data-x="ptab" data-v="settings">⚙️ Settings</button><button class="btn" data-x="ptab" data-v="preview">👁️ See what others see</button><button type="button" class="btn ghost" data-x="copy-link" data-link="${esc(link)}">Copy link</button></div>
   </header>
   <nav class="ptabs" role="tablist">${PTABS.map(t=>`<button role="tab" data-x="ptab" data-v="${t[0]}" aria-selected="${ui.ptab===t[0]}">${t[1]} ${t[2]}</button>`).join('')}</nav>`;
 }
@@ -308,7 +329,7 @@ function notebooksTab(){
   let editor='';
   if(nb){
     const open=ui.panel?' panel-open':'';
-    editor=`<div class="nbe-bar"><button class="btn${ui.panel==='settings'?' on':''}" data-x="panel" data-v="settings">⚙️ Settings</button><button class="btn${ui.panel==='deco'?' on':''}" data-x="panel" data-v="deco">🎨 Decorate</button><a class="btn" href="u.php?u=${esc(S.profile.slug)}&amp;nb=${nb.id}" target="_blank" rel="noopener">👁️ Open as a visitor ↗</a><span class="hint2">${nb.public?'Shown on your profile':'Private: only you can see it'}</span></div>
+    editor=`<div class="nbe-bar"><button class="btn" data-x="nb-settings">⚙️ Settings</button><button class="btn${ui.panel==='deco'?' on':''}" data-x="panel" data-v="deco">🎨 Decorate</button><a class="btn" href="u.php?u=${esc(S.profile.slug)}&amp;nb=${nb.id}" target="_blank" rel="noopener">👁️ Open as a visitor ↗</a><span class="hint2">${nb.public?'Shown on your profile':'Private: only you can see it'}</span></div>
       <div class="nbe${open}"><div>${notebookHtml(nb)}</div>${ui.panel?`<div class="nbe-side">${ui.panel==='settings'?settingsPanel(nb):decoPanel(nb)}</div>`:''}</div>`;
   }else editor='<p class="empty">You have no notebooks yet. Press <b>+ New notebook</b> to make your first one.</p>';
   return tiles+newForm+editor;
@@ -370,8 +391,42 @@ function previewPages(n){
   if(n.sections.includes('subjects'))bits.push(`<p class="opt-h">📚 Studying</p>`+item('📚','Subject names and progress (never notes)',true,'','Remove the page in notebook Settings to hide it'));
   return `<div class="vpages">${bits.join('')}</div>`;
 }
+/* ---------- SETTINGS: everything about your account and your notebooks, on one page ---------- */
+function coverMini(c,on){
+  const style=c[2],light=['cherry','rose'].includes(c[0])?' light':'';
+  return `<button type="button" class="cover-opt" data-x="cover-pick" data-v="${c[0]}" aria-pressed="${on}" title="${esc(c[1])}"><span class="nbc cv-${c[0]}${style==='spiral'?' spiral':''}${style==='top'?' top':''} mini" aria-hidden="true"><span class="nbc-art"></span><span class="nbc-spine${light}"></span></span><span>${esc(c[1])}</span></button>`;
+}
+function settingsTab(){
+  const p=S.profile,nb=cur();
+  const dsel=`<select class="daysel" data-xday aria-label="Who can see my day">${DAYLV.map((l,i)=>`<option value="${i}"${i===p.day?' selected':''}>${l}</option>`).join('')}</select>`;
+  const nav=[['st-account','Account'],['st-privacy','Privacy'],['st-explore','Explore'],['st-notebooks','Notebooks'],['st-danger','Delete account']].map(x=>`<a class="chipbtn" href="#${x[0]}">${x[1]}</a>`).join('');
+  const covers=(p.covers||[]).map(c=>coverMini(c,p.cover===c[0])).join('')+
+    `<label class="cover-opt own${p.cover==='custom'?' on':''}" title="Your own picture"><input type="file" accept="image/*" data-xfile="ecover" data-kind="cover"><span class="nbc mini own-pic" aria-hidden="true" style="${p.cover_url?`background-image:url('${esc(p.cover_url)}');background-size:cover`:''}">${p.cover_url?'':'＋'}</span><span>Your own picture</span></label>`;
+  const nbTiles=S.notebooks.length?`<div class="nbtiles">${S.notebooks.map(n=>`<button class="nbtile${nb&&n.id===nb.id?' on':''}" data-x="nb-pick-st" data-id="${n.id}"><i style="${coverCss({...n.design,cover_url:n.cover_url})}"></i><span translate="no">${esc(n.title)}</span><small>${n.public?'🌍 Shown':'🔒 Private'}</small></button>`).join('')}</div>`:'<p class="empty">You have no notebooks yet. Make one in the Notebooks tab.</p>';
+  const pages=nb?`<p class="opt-h">Pages you added yourself</p>`+(nb.pages.length?`<ul class="userlist">${nb.pages.map(g=>`<li><span class="un" translate="no">${esc((g.emoji?g.emoji+' ':'')+g.title)}</span><button class="btn sm" data-x="st-page-edit" data-id="${g.id}">Edit</button><button class="btn sm danger" data-x="st-page-del" data-id="${g.id}">Delete</button></li>`).join('')}</ul>`:'<p class="hint2">None yet.</p>')+`<div class="xrow"><button class="btn sm" data-x="st-page-new">+ Add a page</button></div>`:'';
+  return `<nav class="st-nav" aria-label="Settings sections">${nav}</nav>
+  <section class="xcard st-sec" id="st-account"><h3>Account</h3><p class="sub">Your picture, name, page name and bio.</p>
+    <div class="pic-pick st-avatar">${avatarHtml(p,'xl')}<div><label class="btn sm"><input type="file" accept="image/*" data-xfile="avatar" data-kind="avatar">📷 Change picture</label>${p.avatar?'<button type="button" class="btn sm ghost" data-x="avatar-rm">Remove</button>':''}<span class="hint2" data-pic-msg></span></div></div>
+    <form class="xform" data-xform="acct" autocomplete="off">
+      <label class="l" for="ac-name">Name</label><input type="text" id="ac-name" name="name" maxlength="80" value="${esc(p.name)}" required>
+      <label class="l" for="ac-slug">Page name (your link)</label><input type="text" id="ac-slug" name="slug" maxlength="30" pattern="[A-Za-z0-9_]{3,30}" value="${esc(p.slug)}" required>
+      <label class="l" for="ac-bio">Bio</label><textarea id="ac-bio" name="bio" maxlength="300" style="min-height:70px" placeholder="A few words about you">${esc(p.bio||'')}</textarea>
+      <div class="xrow"><button class="btn primary">Save account</button></div></form></section>
+  <section class="xcard st-sec" id="st-privacy"><h3>Privacy and alerts</h3><p class="sub">Each switch saves straight away. Open “What others see” to check the result.</p>
+    ${sw('Public profile','People with an account can open it and send you a friend request.',p.public,'data-xsw="public"')}
+    ${sw('Visible without logging in','Also show it to visitors who have no account. Needs a public profile.',p.guest&&p.public,'data-xsw="guest"',!p.public)}
+    ${sw('Show me in Explore','Off by default: Explore only lists people who switch this on. Friends and your link work either way.',p.explore,'data-xsw="explore"')}
+    <label class="l">Who can see my day (today’s hour-by-hour plan, nothing else of your planner)</label>${dsel}
+    ${sw('Alert when someone likes my post','Shows in the bell at the top of the page.',!!(p.notify&&p.notify.like),'data-xsw="notify" data-k="like"')}</section>
+  <section class="xcard st-sec" id="st-explore"><h3>My card on Explore</h3><p class="sub">The cover people see next to your name. Pick one or use your own picture.</p>
+    <div class="covers">${covers}</div>
+    <label class="l" for="ac-words">Words on a spiral cover</label><input type="text" id="ac-words" data-xwords maxlength="60" value="${esc(p.words||'')}" placeholder="e.g. she is fearless"><p class="hint2">Shown in handwriting on the pink spiral covers. Empty shows your name.</p></section>
+  <section class="xcard st-sec" id="st-notebooks"><h3>Notebooks</h3><p class="sub">Pick a notebook to change its name, pages and who sees it.</p>${nbTiles}
+    ${nb?`<div class="st-nb">${settingsPanel(nb)}${pages}<div class="xrow" style="margin-top:12px"><button class="btn" data-x="st-deco">🎨 Look, colours and stickers</button><span class="hint2">Make your own cover colours, use your own picture, and make stickers from your pictures.</span></div></div>`:''}</section>
+  <section class="xcard st-sec" id="st-danger"><h3>Delete account</h3><p class="sub">Logs you out and removes your account and everything in it for good.</p><a class="btn danger" href="delete-account.php">Delete my account</a></section>`;
+}
 function profileHtml(){
-  const body=ui.ptab==='posts'?postsTab():ui.ptab==='friends'?friendsTab():ui.ptab==='preview'?previewTab():notebooksTab();
+  const body=ui.ptab==='posts'?postsTab():ui.ptab==='friends'?friendsTab():ui.ptab==='preview'?previewTab():ui.ptab==='settings'?settingsTab():notebooksTab();
   return hdr('Your notebook','Profile','')+profileHead()+`<div class="ptab-body">${body}</div>`;
 }
 
@@ -410,11 +465,23 @@ document.addEventListener('click',async e=>{
       // notebooks
       case 'nb-pick':if(ui.dirty)toast('Unsaved design changes were dropped.');pick(id);redraw();return;
       case 'ptab':ui.ptab=b.dataset.v;redraw();return;
+      case 'nb-settings':ui.ptab='settings';redraw();setTimeout(()=>{const el=$('st-notebooks');if(el)el.scrollIntoView({behavior:'smooth'})},50);return;
+      case 'nb-pick-st':if(ui.dirty)toast('Unsaved design changes were dropped.');pick(id);redraw();setTimeout(()=>{const el=$('st-notebooks');if(el)el.scrollIntoView()},20);return;
+      case 'st-deco':ui.ptab='notebooks';ui.panel='deco';redraw();return;
+      case 'st-page-new':ui.ptab='notebooks';ui.panel='';ui.pageEdit={id:0,title:'',emoji:PAGE_EMOJI[0],body:''};redraw('pg-title');return;
+      case 'st-page-edit':{const g=nb.pages.find(x=>x.id===id);if(!g)return;ui.ptab='notebooks';ui.panel='';ui.pg='pg:'+g.id;ui.pageEdit={id:g.id,title:g.title,emoji:g.emoji||PAGE_EMOJI[0],body:g.body};redraw('pg-title');return}
+      case 'st-page-del':{if(!armed(b))return;const r=await api('x.page.delete',{id});nb.pages=r.pages;redraw();return}
+      case 'cover-pick':{await api('x.profile.save',{cover:b.dataset.v});S.profile.cover=b.dataset.v;redraw();return}
+      case 'avatar-rm':{await api('x.profile.save',{remove_avatar:true});S.profile.avatar='';redraw();return}
       case 'aud':ui.aud=b.dataset.v;redraw();return;
       case 'post-open':{const p=S.posts.find(x=>x.id===id);if(!p)return;pick(p.nb);ui.pg='blog';ui.ptab='notebooks';redraw();return}
       case 'nb-new':ui.newNb=!ui.newNb;redraw(ui.newNb?'nn-title':'');return;
       case 'panel':ui.panel=ui.panel===b.dataset.v?'':b.dataset.v;ui.sel=-1;redraw();return;
-      case 'pg':ui.pg=b.dataset.v;ui.sel=-1;ui.post=null;ui.newList=false;redraw();return;
+      case 'pg':ui.pg=b.dataset.v;ui.sel=-1;ui.post=null;ui.newList=false;ui.pageEdit=null;redraw();return;
+      case 'page-new':ui.pageEdit={id:0,title:'',emoji:PAGE_EMOJI[0],body:''};redraw('pg-title');return;
+      case 'page-edit':{const p=nb.pages.find(x=>x.id===id);if(!p)return;ui.pageEdit={id:p.id,title:p.title,emoji:p.emoji||PAGE_EMOJI[0],body:p.body};redraw('pg-title');return}
+      case 'page-cancel':ui.pageEdit=null;redraw();return;
+      case 'page-del':{if(!armed(b))return;const r=await api('x.page.delete',{id});nb.pages=r.pages;ui.pg='cover';redraw();return}
       case 'nb-del':{if(!armed(b))return;await api('x.nb.delete',{id:nb.id});S.notebooks=S.notebooks.filter(n=>n.id!==nb.id);S.posts=S.posts.filter(p=>p.nb!==nb.id);S.lists=S.lists.filter(l=>l.nb!==nb.id);ui.panel='';pick(S.notebooks[0]?S.notebooks[0].id:0);toast('Notebook deleted.');redraw();return}
       case 'use-planner':{await api('x.nb.planner',{id:nb.id});toast('Your planner will use this look from the next time you open it.');return}
       // blog + interests
@@ -485,6 +552,12 @@ document.addEventListener('submit',async e=>{
       await api('x.post.save',{id:ui.post.id,notebook_id:ui.nb,title:d.title,body:d.body,public:pub,image_id:pic?pic.id:0});
       ui.post=null;ui.pics.post=null;
       const r=await api('x.load');S=Object.assign(S,{posts:r.posts});toast(pub?'Published.':'Saved as private.');redraw();
+    }else if(x==='acct'){
+      await api('x.profile.save',{name:d.name,slug:d.slug,bio:d.bio||''});
+      Object.assign(S.profile,{name:d.name.trim(),slug:d.slug.trim().toLowerCase(),bio:(d.bio||'').trim()});toast('Saved.');redraw();
+    }else if(x==='page'){
+      const nb=cur(),r=await api('x.page.save',{id:ui.pageEdit.id,notebook_id:ui.nb,title:d.title,emoji:d.emoji,body:d.body});
+      nb.pages=r.pages;ui.pg='pg:'+r.id;ui.pageEdit=null;toast('Saved.');redraw();
     }else if(x==='list'){
       const r=await api('x.list.add',{notebook_id:ui.nb,title:d.title,emoji:d.emoji,layout:d.layout});
       S.lists.push({id:r.id,nb:ui.nb,title:d.title.trim(),emoji:d.emoji,layout:d.layout,public:false,items:[]});ui.newList=false;redraw('ix-text-'+r.id);
@@ -498,7 +571,7 @@ document.addEventListener('submit',async e=>{
       const nb=cur(),sections=new FormData(f).getAll('sections');
       const r=await api('x.nb.save',{id:nb.id,title:d.title,intro:d.intro||'',sections});
       Object.assign(nb,{title:r.notebook.title,intro:r.notebook.intro,sections:r.notebook.sections});
-      if(ui.pg!=='cover'&&ui.pg!=='day'&&!nb.sections.includes(ui.pg))ui.pg='cover';
+      if(!hasPage(nb,ui.pg))ui.pg='cover';
       toast('Saved.');redraw();
     }else if(x==='nbnew'){
       const look=d.look!==''?PRESETS[+d.look][1]:{};
@@ -515,6 +588,7 @@ document.addEventListener('submit',async e=>{
 /* ---------- switches + uploads ---------- */
 document.addEventListener('change',async e=>{
   const t=e.target;
+  if(t.dataset&&t.hasAttribute('data-xwords')){try{await api('x.profile.save',{words:t.value});S.profile.words=t.value.trim();toast('Saved.')}catch(err){toast(err.message)}return}
   if(t.dataset&&t.hasAttribute('data-xday')){
     const old=S.profile.day;S.profile.day=+t.value;
     try{await api('x.profile.save',{day:S.profile.day});redraw()}catch(err){S.profile.day=old;t.value=old;toast(err.message)}
@@ -528,6 +602,7 @@ document.addEventListener('change',async e=>{
         const body={public:S.profile.public};if(k==='guest'||!on)body.guest=S.profile.guest;
         if(k==='guest')body.guest=on;
         await api('x.profile.save',body);redraw();
+      }else if(k==='explore'){S.profile.explore=on;await api('x.profile.save',{explore:on});redraw()
       }else if(k==='post-public'){const p=S.posts.find(x=>x.id===+t.dataset.id);if(p)p.public=on;await api('x.post.public',{id:+t.dataset.id,public:on});redraw()}
       else if(k==='nb-public'){const nb=S.notebooks.find(x=>x.id===+(t.dataset.id||ui.nb));nb.public=on;await api('x.nb.save',{id:nb.id,public:on});redraw()}
       else if(k==='notify'){S.profile.notify[t.dataset.k]=on;await api('x.profile.save',{notify:{[t.dataset.k]:on}})}
@@ -541,7 +616,9 @@ document.addEventListener('change',async e=>{
     if(msg)msg.textContent='Uploading…';
     try{
       const r=await upload(f,kind);
-      if(kind==='photo'){ui.pics[key]={id:r.id,url:r.url};if(wrap)wrap.innerHTML=picInner(key)}
+      if(key==='avatar'){S.profile.avatar=r.url;redraw();toast('Picture saved.')}
+      else if(key==='ecover'){await api('x.profile.save',{cover:'custom',cover_img:r.id});S.profile.cover='custom';S.profile.cover_url=r.url;redraw();toast('Saved.')}
+      else if(kind==='photo'){ui.pics[key]={id:r.id,url:r.url};if(wrap)wrap.innerHTML=picInner(key)}
       else if(kind==='cover'){ui.dd.cover_img=r.id;ui.dd.cover_url=r.url;markDirty();paintPreview();if(msg)msg.textContent=''}
       else{S.stickers_up.unshift({id:r.id,url:r.url});ui.dd.stickers.push({k:'up:'+r.id,p:ui.pg,x:50,y:50,s:1,r:0});ui.sel=ui.dd.stickers.length-1;markDirty();redraw()}
     }catch(err){if(msg)msg.textContent='';toast(err.message)}

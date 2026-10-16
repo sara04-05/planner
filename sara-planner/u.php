@@ -12,7 +12,7 @@ require __DIR__ . '/layout.php';
 function profile_head(array $person, string $slug, array $stats, string $actions, string $badge = ''): string
 {
     $out = '<header class="phead"><div class="phead-av">' . avatar_html($person, 'xl') . '</div><div class="phead-main">'
-        . '<div class="phead-top"><h2 translate="no">' . ($slug !== '' ? '@' . h($slug) : h($person['name'])) . '</h2>' . $badge . '</div>';
+        . '<div class="phead-top"><h2 translate="no">' . ($slug !== '' ? '@' . h($slug) : h($person['name'])) . vbadge(!empty($person['verified'])) . '</h2>' . $badge . '</div>';
     if ($stats) {
         $out .= '<div class="pstats">';
         foreach ($stats as $label => $n) $out .= '<span class="pstat"><b>' . (int)$n . '</b><span>' . h($label) . '</span></span>';
@@ -122,14 +122,17 @@ $design = $nb['design'];
 $sections = $nb['sections'];
 $page = (string)($_GET['p'] ?? 'cover');
 $showDay = can_see_day($owner, $viewer);   // the Day page: today's plan, for whoever the owner allowed
-if ($page !== 'cover' && !in_array($page, $sections, true) && !($page === 'day' && $showDay)) $page = 'cover';
+$pagesById = [];
+foreach ($nb['pages'] ?? [] as $cp) $pagesById['pg:' . $cp['id']] = $cp;
+if ($page !== 'cover' && !in_array($page, $sections, true) && !isset($pagesById[$page]) && !($page === 'day' && $showDay)) $page = 'cover';
 $cover = $nb['cover_url'];
 $base = ((string)$prof['slug'] !== '' ? 'u.php?u=' . rawurlencode($prof['slug']) : 'u.php?id=' . $owner) . '&nb=' . $nb['id'];
 
 $LABEL = ['cover' => 'Cover', 'interests' => 'Interests', 'blog' => 'Blog', 'timetable' => 'Timetable', 'subjects' => 'Studying', 'day' => 'Day'];
 $tabs = '';
-foreach ($dayOnly ? ['day'] : array_merge(['cover'], $sections, $showDay ? ['day'] : []) as $k) {
-    $tabs .= '<a class="tab" role="tab" data-tab="' . $k . '" href="' . h($base . ($k === 'cover' ? '' : '&p=' . $k)) . '"' . ($k === $page ? ' aria-selected="true"' : '') . '>' . $LABEL[$k] . '</a>';
+foreach ($pagesById as $k => $cp) $LABEL[$k] = trim($cp['emoji'] . ' ' . $cp['title']);
+foreach ($dayOnly ? ['day'] : array_merge(['cover'], $sections, array_keys($pagesById), $showDay ? ['day'] : []) as $k) {
+    $tabs .= '<a class="tab" role="tab" data-tab="' . $k . '" href="' . h($base . ($k === 'cover' ? '' : '&p=' . $k)) . '"' . ($k === $page ? ' aria-selected="true"' : '') . '>' . h($LABEL[$k]) . '</a>';
 }
 
 $nPosts = 0;   // public posts in the notebooks this viewer can open
@@ -161,6 +164,9 @@ echo profile_head($person, (string)$prof['slug'], [plural($dayOnly ? 0 : count($
     </div>
     <?php if ($nb['intro'] !== ''): ?><p class="nb-intro" translate="no"><?= nl2br(h($nb['intro'])) ?></p><?php endif; ?>
     <?php if (!$sections): ?><p class="hint2" style="margin-top:14px">No pages in this notebook yet.</p><?php endif; ?>
+
+  <?php elseif (isset($pagesById[$page])): ?>
+    <div class="nb-text" translate="no"><?= nl2br(h($pagesById[$page]['body'])) ?></div>
 
   <?php elseif ($page === 'blog'):
     $posts = load_posts($owner, !$isMe, $viewer, $nb['id']);

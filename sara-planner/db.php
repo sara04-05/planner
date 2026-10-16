@@ -235,6 +235,34 @@ function upgrade_schema(PDO $pdo): void
     } catch (PDOException $e) {
         error_log('Could not add the Google / email tables: ' . $e->getMessage());
     }
+    // Roles, verified badge, "hide me from Explore", deleting / editing chat messages and contact names. Only adds columns and a table.
+    try {
+        $colsOf = fn(string $t): array => DB_DRIVER === 'sqlite'
+            ? array_column($pdo->query("PRAGMA table_info($t)")->fetchAll(), 'name')
+            : array_column($pdo->query("SHOW COLUMNS FROM $t")->fetchAll(), 'Field');
+        $add = function (string $t, string $c, string $def) use ($pdo, $colsOf): void {
+            if (!in_array($c, $colsOf($t), true)) $pdo->exec("ALTER TABLE $t ADD COLUMN $c $def");
+        };
+        $add('users', 'role', "VARCHAR(12) NOT NULL DEFAULT 'user'");
+        $add('users', 'verified_badge', 'TINYINT(1) NOT NULL DEFAULT 0');
+        $add('profiles', 'in_explore', 'TINYINT(1) NOT NULL DEFAULT 0');   // opt in: only people who switch it on are listed in Explore
+        $add('profiles', 'cover_img', 'INT NULL');
+        foreach (['hidden_from', 'hidden_to', 'deleted_all'] as $c) $add('messages', $c, 'TINYINT(1) NOT NULL DEFAULT 0');
+        $add('messages', 'edited_at', 'INT NULL');
+        $pdo->exec(DB_DRIVER === 'sqlite'
+            ? 'CREATE TABLE IF NOT EXISTS contact_names (user_id INTEGER NOT NULL, contact_id INTEGER NOT NULL, name VARCHAR(80) NOT NULL,
+                PRIMARY KEY (user_id, contact_id), FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE, FOREIGN KEY (contact_id) REFERENCES users(id) ON DELETE CASCADE)'
+            : 'CREATE TABLE IF NOT EXISTS contact_names (user_id INT UNSIGNED NOT NULL, contact_id INT UNSIGNED NOT NULL, name VARCHAR(80) NOT NULL,
+                PRIMARY KEY (user_id, contact_id), FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE, FOREIGN KEY (contact_id) REFERENCES users(id) ON DELETE CASCADE) ENGINE=InnoDB');
+        // Pages people add to a notebook themselves (a title, an icon and some writing)
+        $pdo->exec(DB_DRIVER === 'sqlite'
+            ? 'CREATE TABLE IF NOT EXISTS nb_pages (id INTEGER PRIMARY KEY AUTOINCREMENT, user_id INTEGER NOT NULL, notebook_id INTEGER NOT NULL, title VARCHAR(40) NOT NULL,
+                emoji VARCHAR(16) NOT NULL DEFAULT \'\', body TEXT NOT NULL, FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE, FOREIGN KEY (notebook_id) REFERENCES notebooks(id) ON DELETE CASCADE)'
+            : 'CREATE TABLE IF NOT EXISTS nb_pages (id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY, user_id INT UNSIGNED NOT NULL, notebook_id INT UNSIGNED NOT NULL, title VARCHAR(40) NOT NULL,
+                emoji VARCHAR(16) NOT NULL DEFAULT \'\', body TEXT NOT NULL, FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE, FOREIGN KEY (notebook_id) REFERENCES notebooks(id) ON DELETE CASCADE) ENGINE=InnoDB');
+    } catch (PDOException $e) {
+        error_log('Could not add roles / chat editing columns: ' . $e->getMessage());
+    }
 }
 
 /** Run a prepared statement: q('SELECT * FROM x WHERE id = ?', [$id]) */
@@ -308,8 +336,11 @@ function login_user(int $id): void
     }
 }
 
-/** Is this user allowed to open admin.php? (ADMIN_EMAILS is set in config.php) */
-function is_admin(int $uid): bool
+/**
+ * Roles. The owner is whoever's email is in ADMIN_EMAILS (config.php): always an admin and can't be changed.
+ * Other people have a role stored on their account: 'admin' (full Users page), 'subadmin' (can only look at the Users page) or 'user'.
+ */
+function is_owner(int $uid): bool
 {
     $admins = defined('ADMIN_EMAILS') ? array_map('strtolower', ADMIN_EMAILS) : [];
     if (!$admins) return false;
@@ -317,11 +348,44 @@ function is_admin(int $uid): bool
     return $row && in_array(strtolower($row['email']), $admins, true);
 }
 
+function user_role(int $uid): string
+{
+    if (is_owner($uid)) return 'admin';
+    try {
+        $r = (string)(q('SELECT role FROM users WHERE id = ?', [$uid])->fetch()['role'] ?? 'user');
+    } catch (PDOException $e) {   // role column couldn't be added on this host
+        return 'user';
+    }
+    return in_array($r, ['admin', 'subadmin'], true) ? $r : 'user';
+}
+
+/** May this user change accounts on admin.php (edit, delete, verify, roles)? */
+function is_admin(int $uid): bool
+{
+    return user_role($uid) === 'admin';
+}
+
+/** May this user open admin.php? Admins can change things there, sub admins can only look. */
+function can_view_users(int $uid): bool
+{
+    return user_role($uid) !== 'user';
+}
+
+/** The name this user gave a contact ('' = none, the real name is used). */
+function contact_name(int $uid, int $contact): string
+{
+    try {
+        return (string)(q('SELECT name FROM contact_names WHERE user_id = ? AND contact_id = ?', [$uid, $contact])->fetch()['name'] ?? '');
+    } catch (PDOException $e) {
+        return '';
+    }
+}
+
 /** How many chat messages this user hasn't read yet (0 if the messages table couldn't be made on this host). */
 function chat_unread(int $uid): int
 {
     try {
-        return (int)q('SELECT COUNT(*) AS n FROM messages WHERE to_id = ? AND is_read = 0', [$uid])->fetch()['n'];
+        return (int)q('SELECT COUNT(*) AS n FROM messages WHERE to_id = ? AND is_read = 0 AND hidden_to = 0', [$uid])->fetch()['n'];
     } catch (PDOException $e) {
         return 0;
     }

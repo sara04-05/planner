@@ -161,7 +161,7 @@ function app_nav(?int $uid, string $active = '', bool $planner = false): void
         <button class="btn bell" id="bellBtn" aria-label="Notifications" aria-haspopup="true" aria-expanded="false"><?= $ic('<path d="M18 8a6 6 0 0 0-12 0c0 7-3 9-3 9h18s-3-2-3-9M13.7 21a2 2 0 0 1-3.4 0"/>') ?><span class="badge" id="bellBadge"<?= $unread ? '' : ' hidden' ?>><?= $unread ?></span></button>
         <div class="bellpop" id="bellPop" role="dialog" aria-label="Notifications" hidden></div>
       </div>
-      <?php if (is_admin($uid)): ?><a class="btn<?= $active === 'admin' ? ' on' : '' ?>" href="admin.php">Users</a><?php endif; ?>
+      <?php if (can_view_users($uid)): ?><a class="btn<?= $active === 'admin' ? ' on' : '' ?>" href="admin.php">Users</a><?php endif; ?>
       <button class="btn" data-lang-btn>Shqip</button>
       <button class="btn"<?= $planner ? ' id="themeBtn" data-act="theme"' : ' data-theme-btn' ?> aria-label="Switch theme"></button>
       <form method="post" action="logout.php" class="inline">

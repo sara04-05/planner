@@ -17,20 +17,63 @@ const HOUR_COLORS = ['uni' => 'school', 'work' => 'transport', 'study' => 'food'
 const HOUR_NAMES = ['uni' => 'Uni', 'work' => 'Work', 'study' => 'Study', 'personal' => 'Personal',
     'health' => 'Health', 'sleep' => 'Sleep'];
 
+/** Turn an uploaded picture into a 256×256 JPEG (cropped to a square). Returns "image/jpeg;<base64>" or an error. */
+function avatar_from_upload(array $f): array
+{
+    if ($f['error'] === UPLOAD_ERR_INI_SIZE || $f['error'] === UPLOAD_ERR_FORM_SIZE || $f['size'] > 5 * 1024 * 1024) {
+        return [null, 'That picture is too big. Pick one under 5 MB.'];
+    }
+    if ($f['error'] !== UPLOAD_ERR_OK || !is_uploaded_file($f['tmp_name'])) return [null, 'The picture could not be uploaded. Try again.'];
+    $info = @getimagesize($f['tmp_name']);
+    $types = [IMAGETYPE_JPEG => 'image/jpeg', IMAGETYPE_PNG => 'image/png', IMAGETYPE_WEBP => 'image/webp', IMAGETYPE_GIF => 'image/gif'];
+    if (!$info || !isset($types[$info[2]])) return [null, 'Pick a JPG, PNG, WebP or GIF picture.'];
+    $raw = file_get_contents($f['tmp_name']);
+
+    if (function_exists('imagecreatefromstring') && ($src = @imagecreatefromstring($raw))) {
+        $w = imagesx($src); $hgt = imagesy($src); $side = min($w, $hgt);
+        $dst = imagecreatetruecolor(256, 256);
+        imagefill($dst, 0, 0, imagecolorallocate($dst, 255, 255, 255));   // transparent PNGs get a white background
+        imagecopyresampled($dst, $src, 0, 0, intdiv($w - $side, 2), intdiv($hgt - $side, 2), 256, 256, $side, $side);
+        ob_start();
+        imagejpeg($dst, null, 85);
+        return ['image/jpeg;' . base64_encode((string)ob_get_clean()), ''];
+    }
+    // Host without the GD image library: keep the file as it is, if it's small
+    if (strlen($raw) > 600 * 1024) return [null, 'That picture is too big. Pick one under 600 KB.'];
+    return [$types[$info[2]] . ';' . base64_encode($raw), ''];
+}
+
+/** Does this account have the blue verified tick? (given by an admin on admin.php) */
+function is_verified_badge(int $id): bool
+{
+    try {
+        return (int)(q('SELECT verified_badge FROM users WHERE id = ?', [$id])->fetch()['verified_badge'] ?? 0) === 1;
+    } catch (PDOException $e) {   // column couldn't be added on this host
+        return false;
+    }
+}
+
+/** The small blue tick next to the name of a verified account. */
+function vbadge(bool $on): string
+{
+    return $on ? ' <span class="vbadge" title="Verified account" aria-label="Verified account">✓</span>' : '';
+}
+
 /** Name, bio, cover and picture version of one user, or null if the account doesn't exist. */
 function person(int $id): ?array
 {
     $u = q('SELECT id, name, email FROM users WHERE id = ?', [$id])->fetch();
     if (!$u) return null;
+    $u['verified'] = is_verified_badge($id);
     try {
-        $p = q('SELECT bio, cover, words, avatar_v FROM profiles WHERE user_id = ?', [$id])->fetch();
-    } catch (PDOException $e) {   // words column couldn't be added on this host
-        $p = q("SELECT bio, cover, '' AS words, avatar_v FROM profiles WHERE user_id = ?", [$id])->fetch();
+        $p = q('SELECT bio, cover, words, avatar_v, cover_img FROM profiles WHERE user_id = ?', [$id])->fetch();
+    } catch (PDOException $e) {   // words / cover_img column couldn't be added on this host
+        $p = q("SELECT bio, cover, '' AS words, avatar_v, NULL AS cover_img FROM profiles WHERE user_id = ?", [$id])->fetch();
     }
-    $p = $p ?: ['bio' => '', 'cover' => DEFAULT_COVER, 'words' => '', 'avatar_v' => 0];
+    $p = $p ?: ['bio' => '', 'cover' => DEFAULT_COVER, 'words' => '', 'avatar_v' => 0, 'cover_img' => null];
     return ['id' => (int)$u['id'], 'name' => $u['name'], 'email' => $u['email'], 'bio' => $p['bio'],
-        'cover' => isset(COVERS[$p['cover']]) ? $p['cover'] : DEFAULT_COVER, 'words' => (string)$p['words'], 'avatar_v' => (int)$p['avatar_v'],
-        'same_name' => same_name_count($u['name']) > 1];
+        'cover' => isset(COVERS[$p['cover']]) || ($p['cover'] === 'custom' && $p['cover_img']) ? $p['cover'] : DEFAULT_COVER, 'cover_img' => $p['cover_img'] ? (int)$p['cover_img'] : 0, 'words' => (string)$p['words'], 'avatar_v' => (int)$p['avatar_v'],
+        'same_name' => same_name_count($u['name']) > 1, 'verified' => $u['verified']];
 }
 
 /** How many accounts use this name. When it's more than one, the email is shown next to it to tell them apart. */
@@ -91,10 +134,13 @@ function avatar_html(array $p, string $size = ''): string
 function cover_html(array $p, bool $mini = false, ?string $cover = null): string
 {
     $cover = $cover ?? $p['cover'];
-    $style = COVERS[$cover][1];
+    $custom = $cover === 'custom' && !empty($p['cover_img']);
+    if (!$custom && !isset(COVERS[$cover])) $cover = DEFAULT_COVER;
+    $style = $custom ? 'top' : COVERS[$cover][1];
     $cls = 'nbc cv-' . $cover . ($style === 'spiral' ? ' spiral' : '') . ($style === 'top' ? ' top' : '') . ($mini ? ' mini' : '');
     $lightSpine = in_array($cover, ['cherry', 'rose'], true) ? ' light' : '';
-    $out = '<span class="' . $cls . '" aria-hidden="true"><span class="nbc-art"></span><span class="nbc-spine' . $lightSpine . '"></span>';
+    $art = $custom ? ' style="background-image:url(\'' . h((string)upload_url((int)$p['cover_img'])) . '\');background-size:cover;background-position:center"' : '';
+    $out = '<span class="' . $cls . '" aria-hidden="true"><span class="nbc-art"' . $art . '></span><span class="nbc-spine' . $lightSpine . '"></span>';
     if (!$mini) {
         if ($style === 'spiral') {
             $words = trim($p['words']);
@@ -112,7 +158,7 @@ function cover_html(array $p, bool $mini = false, ?string $cover = null): string
 /** Name, plus the email underneath when someone else has the same name. */
 function name_html(array $p): string
 {
-    return '<span class="pname">' . h($p['name']) . '</span>'
+    return '<span class="pname">' . h($p['name']) . '</span>' . vbadge(!empty($p['verified']))
         . ($p['same_name'] ? '<span class="pmail" translate="no">' . h($p['email']) . '</span>' : '');
 }
 
@@ -190,7 +236,7 @@ function common_slots(array $a, array $b, int $min = 30): array
 function guest_people(int $limit = 12, string $term = ''): array
 {
     $sql = 'SELECT u.id, u.name, p.slug, p.bio FROM users u JOIN profiles p ON p.user_id = u.id
-            WHERE u.email_verified = 1 AND p.is_public = 1 AND p.guest_view = 1 AND p.slug IS NOT NULL AND p.slug <> \'\'';
+            WHERE u.email_verified = 1 AND p.is_public = 1 AND p.guest_view = 1 AND p.slug IS NOT NULL AND p.slug <> \'\' AND COALESCE(p.in_explore, 0) = 1';
     $args = [];
     if ($term !== '') {
         $sql .= " AND u.name LIKE ? ESCAPE '|'";

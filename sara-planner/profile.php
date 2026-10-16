@@ -7,34 +7,12 @@ require __DIR__ . '/social.php';
 require __DIR__ . '/notebook.php';
 
 $uid = require_login();
+if ($_SERVER['REQUEST_METHOD'] !== 'POST') {   // all settings live in one place now: the Settings tab of your profile
+    header('Location: index.php?tab=profile&ptab=settings');
+    exit;
+}
 $error = '';
 $saved = isset($_GET['saved']);
-
-/** Turn an uploaded picture into a 256×256 JPEG (cropped to a square). Returns "image/jpeg;<base64>" or an error. */
-function avatar_from_upload(array $f): array
-{
-    if ($f['error'] === UPLOAD_ERR_INI_SIZE || $f['error'] === UPLOAD_ERR_FORM_SIZE || $f['size'] > 5 * 1024 * 1024) {
-        return [null, 'That picture is too big. Pick one under 5 MB.'];
-    }
-    if ($f['error'] !== UPLOAD_ERR_OK || !is_uploaded_file($f['tmp_name'])) return [null, 'The picture could not be uploaded. Try again.'];
-    $info = @getimagesize($f['tmp_name']);
-    $types = [IMAGETYPE_JPEG => 'image/jpeg', IMAGETYPE_PNG => 'image/png', IMAGETYPE_WEBP => 'image/webp', IMAGETYPE_GIF => 'image/gif'];
-    if (!$info || !isset($types[$info[2]])) return [null, 'Pick a JPG, PNG, WebP or GIF picture.'];
-    $raw = file_get_contents($f['tmp_name']);
-
-    if (function_exists('imagecreatefromstring') && ($src = @imagecreatefromstring($raw))) {
-        $w = imagesx($src); $hgt = imagesy($src); $side = min($w, $hgt);
-        $dst = imagecreatetruecolor(256, 256);
-        imagefill($dst, 0, 0, imagecolorallocate($dst, 255, 255, 255));   // transparent PNGs get a white background
-        imagecopyresampled($dst, $src, 0, 0, intdiv($w - $side, 2), intdiv($hgt - $side, 2), 256, 256, $side, $side);
-        ob_start();
-        imagejpeg($dst, null, 85);
-        return ['image/jpeg;' . base64_encode((string)ob_get_clean()), ''];
-    }
-    // Host without the GD image library: keep the file as it is, if it's small
-    if (strlen($raw) > 600 * 1024) return [null, 'That picture is too big. Pick one under 600 KB.'];
-    return [$types[$info[2]] . ';' . base64_encode($raw), ''];
-}
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     if (!check_csrf($_POST['csrf'] ?? null)) {
