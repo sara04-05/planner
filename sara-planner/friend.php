@@ -21,6 +21,11 @@ if (!$p || (!$self && friendship($uid, $id) !== 'friends' && !$shared)) {
     exit;
 }
 
+if (!$self) {   // a friend's day is shown as a page of their notebook (u.php), like any other notebook page
+    header('Location: u.php?id=' . $id . '&p=day');
+    exit;
+}
+
 $today = date('Y-m-d');
 $plan = $shared ? day_schedule($id, $today) : [];
 $now = (int)date('G') * 60 + (int)date('i');
