@@ -6,7 +6,7 @@
 
 // "mysql" for XAMPP / real hosting, or "sqlite" to run without MySQL
 // (SQLite creates data/planner.sqlite automatically).
-const DB_DRIVER = 'mysql';
+const DB_DRIVER = 'sqlite';
 
 // MySQL / MariaDB
 const DB_HOST = '127.0.0.1';

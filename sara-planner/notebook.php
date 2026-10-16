@@ -21,6 +21,7 @@ const FONTS        = ['modern', 'hand', 'serif', 'mono'];
 const BINDINGS     = ['coil', 'stitch', 'none'];
 const STICKERS     = ['⭐', '💜', '🌸', '🎀', '🦋', '☁️', '🌙', '✨', '🍓', '🎧', '📚', '☕', '🐱', '🌈', '🔥', '🍒', '🎬', '🎵', '👗', '👠', '🧸', '🌷', '🍀', '💌', '📌', '✏️', '🎨', '🪩', '💫', '🍑', '🌻', '🧿'];
 const LIST_EMOJI   = ['🎬', '🎤', '👗', '📚', '🍕', '🎮', '🎧', '✈️', '🐾', '💄', '🎨', '⭐'];
+const PAGE_EMOJI   = ['📝', '📖', '🌸', '✈️', '🍳', '💡', '🎨', '🏋️', '🎵', '🐾', '🧘', '💌'];   // icons for pages people add themselves
 const MAX_NOTEBOOKS = 12;
 const MAX_STYLES    = 20;
 
@@ -61,7 +62,7 @@ function clean_design(int $uid, array $d, bool $withStickers = true): array
             continue;
         }
         $page = (string)($s['p'] ?? 'cover');
-        if ($page !== 'cover' && !in_array($page, SECTIONS, true) && $page !== 'day') $page = 'cover';
+        if ($page !== 'cover' && !in_array($page, SECTIONS, true) && $page !== 'day' && !preg_match('/^pg:\d+$/', $page)) $page = 'cover';
         $out['stickers'][] = [
             'k' => $key, 'p' => $page,
             'x' => max(0, min(100, round((float)($s['x'] ?? 50), 1))),
@@ -205,11 +206,22 @@ function nb_design(array $nb): array
     return json_col($nb['design'] ?? null, default_design());
 }
 
+/** The pages someone added to a notebook themselves, in the order they were made. */
+function nb_pages(int $nbId): array
+{
+    try {
+        return array_map(fn($p) => ['id' => (int)$p['id'], 'title' => $p['title'], 'emoji' => $p['emoji'], 'body' => $p['body']],
+            q('SELECT id, title, emoji, body FROM nb_pages WHERE notebook_id = ? ORDER BY id', [$nbId])->fetchAll());
+    } catch (PDOException $e) {   // table couldn't be made on this host
+        return [];
+    }
+}
+
 function nb_row(array $r): array
 {
     $d = nb_design($r);
     return ['id' => (int)$r['id'], 'title' => $r['title'], 'intro' => $r['intro'], 'sections' => nb_sections($r), 'public' => (int)$r['is_public'] === 1,
-        'design' => $d, 'cover_url' => upload_url($d['cover_img'] ? (int)$d['cover_img'] : null)];
+        'pages' => nb_pages((int)$r['id']), 'design' => $d, 'cover_url' => upload_url($d['cover_img'] ? (int)$d['cover_img'] : null)];
 }
 
 /** A user's notebooks. $onlyPublic = what other people may see. */
@@ -570,6 +582,34 @@ function notebook_action(int $uid, string $action, array $in): void
         q('INSERT INTO notebooks (user_id, title, sections, design, is_public) VALUES (?, ?, ?, ?, 0)', [$uid, $title, implode(',', $sections), json_encode($design)]);
         $id = (int)db()->lastInsertId();
         ok(['notebook' => nb_row(own_notebook($uid, $id))]);
+    }
+
+    case 'x.page.save': {   // a page you add to a notebook yourself
+        $title = str_in($in, 'title', 40);
+        $body = mb_substr(trim((string)($in['body'] ?? '')), 0, 8000);
+        if ($body === '') fail(400, 'Please write something on the page.');
+        $emoji = in_array($in['emoji'] ?? '', PAGE_EMOJI, true) ? $in['emoji'] : '';
+        $id = (int)($in['id'] ?? 0);
+        if ($id > 0) {
+            $p = q('SELECT notebook_id FROM nb_pages WHERE id = ? AND user_id = ?', [$id, $uid])->fetch();
+            if (!$p) fail(404, 'That page was not found.');
+            q('UPDATE nb_pages SET title = ?, emoji = ?, body = ? WHERE id = ?', [$title, $emoji, $body, $id]);
+            $nbId = (int)$p['notebook_id'];
+        } else {
+            $nbId = notebook_in($uid, $in);
+            if ((int)q('SELECT COUNT(*) c FROM nb_pages WHERE notebook_id = ?', [$nbId])->fetch()['c'] >= 12) fail(400, 'That is plenty of pages! Delete one first.');
+            q('INSERT INTO nb_pages (user_id, notebook_id, title, emoji, body) VALUES (?, ?, ?, ?, ?)', [$uid, $nbId, $title, $emoji, $body]);
+            $id = (int)db()->lastInsertId();
+        }
+        ok(['id' => $id, 'pages' => nb_pages($nbId)]);
+    }
+
+    case 'x.page.delete': {
+        $id = id_in($in);
+        $p = q('SELECT notebook_id FROM nb_pages WHERE id = ? AND user_id = ?', [$id, $uid])->fetch();
+        if (!$p) fail(404, 'That page was not found.');
+        q('DELETE FROM nb_pages WHERE id = ?', [$id]);
+        ok(['pages' => nb_pages((int)$p['notebook_id'])]);
     }
 
     case 'x.nb.save': {
