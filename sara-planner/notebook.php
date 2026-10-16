@@ -480,7 +480,9 @@ function notebook_bootstrap(int $uid): array
         $plan[] = ['from' => $e['from'], 'to' => min($e['to'], 1440), 'text' => $e['text'], 'label' => HOUR_NAMES[$t], 'color' => HOUR_COLORS[$t]];
     }
     return [
-        'profile' => ['slug' => $p['slug'], 'bio' => $p['bio'], 'public' => (int)$p['is_public'] === 1, 'guest' => (int)$p['guest_view'] === 1,
+        'profile' => ['slug' => $p['slug'], 'bio' => $p['bio'], 'public' => (int)$p['is_public'] === 1, 'guest' => (int)$p['guest_view'] === 1, 'explore' => (int)($p['in_explore'] ?? 0) === 1,
+            'cover' => $me['cover'], 'cover_url' => $me['cover_img'] ? upload_url((int)$me['cover_img']) : '', 'words' => $me['words'],
+            'covers' => array_map(fn($k, $c) => [$k, $c[0], $c[1]], array_keys(COVERS), array_values(COVERS)),
             'notify' => $notify, 'friends' => count($friends), 'name' => $me['name'], 'day' => day_level($p),
             'avatar' => $me['avatar_v'] ? 'avatar.php?id=' . $uid . '&v=' . $me['avatar_v'] : ''],
         'friends' => $friends, 'me_id' => $uid,
@@ -556,8 +558,22 @@ function notebook_action(int $uid, string $action, array $in): void
             if ($taken) fail(409, 'Someone already uses that page name. Try another.');
             q('UPDATE profiles SET slug = ? WHERE user_id = ?', [$slug, $uid]);
         }
+        if (array_key_exists('name', $in)) q('UPDATE users SET name = ? WHERE id = ?', [str_in($in, 'name', 80), $uid]);
+        if (array_key_exists('cover', $in)) {   // the picture on your Explore card: a ready-made cover, or one of your own pictures
+            $cv = (string)$in['cover'];
+            if ($cv === 'custom') {
+                $img = (int)($in['cover_img'] ?? 0);
+                if (!$img || !own_upload($uid, $img, 'cover')) fail(400, 'Pick a picture first.');
+                q('UPDATE profiles SET cover = ?, cover_img = ? WHERE user_id = ?', ['custom', $img, $uid]);
+            } elseif (isset(COVERS[$cv])) {
+                q('UPDATE profiles SET cover = ?, cover_img = NULL WHERE user_id = ?', [$cv, $uid]);
+            }
+        }
+        if (array_key_exists('words', $in)) q('UPDATE profiles SET words = ? WHERE user_id = ?', [mb_substr(trim((string)$in['words']), 0, 60), $uid]);
+        if (!empty($in['remove_avatar'])) q('UPDATE profiles SET avatar = NULL, avatar_v = 0 WHERE user_id = ?', [$uid]);
         if (array_key_exists('bio', $in)) q('UPDATE profiles SET bio = ? WHERE user_id = ?', [mb_substr(trim((string)$in['bio']), 0, 300), $uid]);
         if (array_key_exists('public', $in)) q('UPDATE profiles SET is_public = ? WHERE user_id = ?', [!empty($in['public']) ? 1 : 0, $uid]);
+        if (array_key_exists('explore', $in)) q('UPDATE profiles SET in_explore = ? WHERE user_id = ?', [!empty($in['explore']) ? 1 : 0, $uid]);
         if (array_key_exists('guest', $in)) q('UPDATE profiles SET guest_view = ? WHERE user_id = ?', [!empty($in['guest']) ? 1 : 0, $uid]);
         if (array_key_exists('day', $in)) {   // who may see today's hour-by-hour plan (0-3, see day_level)
             $sh = profile_share($p);

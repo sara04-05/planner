@@ -12,7 +12,7 @@ require __DIR__ . '/layout.php';
 function profile_head(array $person, string $slug, array $stats, string $actions, string $badge = ''): string
 {
     $out = '<header class="phead"><div class="phead-av">' . avatar_html($person, 'xl') . '</div><div class="phead-main">'
-        . '<div class="phead-top"><h2 translate="no">' . ($slug !== '' ? '@' . h($slug) : h($person['name'])) . '</h2>' . $badge . '</div>';
+        . '<div class="phead-top"><h2 translate="no">' . ($slug !== '' ? '@' . h($slug) : h($person['name'])) . vbadge(!empty($person['verified'])) . '</h2>' . $badge . '</div>';
     if ($stats) {
         $out .= '<div class="pstats">';
         foreach ($stats as $label => $n) $out .= '<span class="pstat"><b>' . (int)$n . '</b><span>' . h($label) . '</span></span>';

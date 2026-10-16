@@ -245,7 +245,8 @@ function upgrade_schema(PDO $pdo): void
         };
         $add('users', 'role', "VARCHAR(12) NOT NULL DEFAULT 'user'");
         $add('users', 'verified_badge', 'TINYINT(1) NOT NULL DEFAULT 0');
-        $add('profiles', 'in_explore', 'TINYINT(1) NOT NULL DEFAULT 1');
+        $add('profiles', 'in_explore', 'TINYINT(1) NOT NULL DEFAULT 0');   // opt in: only people who switch it on are listed in Explore
+        $add('profiles', 'cover_img', 'INT NULL');
         foreach (['hidden_from', 'hidden_to', 'deleted_all'] as $c) $add('messages', $c, 'TINYINT(1) NOT NULL DEFAULT 0');
         $add('messages', 'edited_at', 'INT NULL');
         $pdo->exec(DB_DRIVER === 'sqlite'
@@ -370,11 +371,21 @@ function can_view_users(int $uid): bool
     return user_role($uid) !== 'user';
 }
 
+/** The name this user gave a contact ('' = none, the real name is used). */
+function contact_name(int $uid, int $contact): string
+{
+    try {
+        return (string)(q('SELECT name FROM contact_names WHERE user_id = ? AND contact_id = ?', [$uid, $contact])->fetch()['name'] ?? '');
+    } catch (PDOException $e) {
+        return '';
+    }
+}
+
 /** How many chat messages this user hasn't read yet (0 if the messages table couldn't be made on this host). */
 function chat_unread(int $uid): int
 {
     try {
-        return (int)q('SELECT COUNT(*) AS n FROM messages WHERE to_id = ? AND is_read = 0', [$uid])->fetch()['n'];
+        return (int)q('SELECT COUNT(*) AS n FROM messages WHERE to_id = ? AND is_read = 0 AND hidden_to = 0', [$uid])->fetch()['n'];
     } catch (PDOException $e) {
         return 0;
     }

@@ -709,17 +709,21 @@ try {
 
     // ---------- chat between users ----------
     case 'msg.list': {
-        // Everyone this user has written with, newest first, with the last message and how many are unread
+        // Everyone this user has written with, newest first, with the last message and how many are unread.
+        // Messages you deleted for yourself don't count; a chat you deleted is gone until someone writes again.
         $rows = q('SELECT CASE WHEN from_id = ? THEN to_id ELSE from_id END AS other, MAX(id) AS last_id,
-                          SUM(CASE WHEN to_id = ? AND is_read = 0 THEN 1 ELSE 0 END) AS unread
-                   FROM messages WHERE from_id = ? OR to_id = ?
+                          SUM(CASE WHEN to_id = ? AND is_read = 0 AND hidden_to = 0 THEN 1 ELSE 0 END) AS unread
+                   FROM messages WHERE (from_id = ? AND hidden_from = 0) OR (to_id = ? AND hidden_to = 0)
                    GROUP BY other ORDER BY last_id DESC LIMIT 100', [$uid, $uid, $uid, $uid])->fetchAll();
         $people = [];
         foreach ($rows as $r) {
             $u = q('SELECT id, name, email FROM users WHERE id = ?', [(int)$r['other']])->fetch();
-            $m = q('SELECT from_id, body, sent_at FROM messages WHERE id = ?', [(int)$r['last_id']])->fetch();
+            $m = q('SELECT from_id, body, sent_at, deleted_all FROM messages WHERE id = ?', [(int)$r['last_id']])->fetch();
             if (!$u || !$m) continue;
-            $people[] = ['id' => (int)$u['id'], 'name' => $u['name'], 'tag' => name_tag($u['name'], $u['email']), 'last' => mb_substr($m['body'], 0, 80),
+            $nick = contact_name($uid, (int)$u['id']);
+            $people[] = ['id' => (int)$u['id'], 'name' => $nick !== '' ? $nick : $u['name'], 'tag' => $nick !== '' ? $u['name'] : name_tag($u['name'], $u['email']),
+                'verified' => is_verified_badge((int)$u['id']),
+                'last' => (int)$m['deleted_all'] === 1 ? 'This message was deleted' : mb_substr($m['body'], 0, 80),
                 'mine' => (int)$m['from_id'] === $uid, 'at' => (int)$m['sent_at'], 'unread' => (int)$r['unread']];
         }
         ok(['people' => $people, 'unread' => chat_unread($uid)]);
@@ -740,14 +744,61 @@ try {
         $u = q('SELECT id, name, email FROM users WHERE id = ?', [$other])->fetch();
         if (!$u) fail(404, 'That account no longer exists.');
         $after = isset($in['after']) && is_numeric($in['after']) ? max(0, (int)$in['after']) : 0;
-        $rows = q('SELECT id, from_id, body, sent_at FROM messages
-                   WHERE ((from_id = ? AND to_id = ?) OR (from_id = ? AND to_id = ?)) AND id > ?
+        $rows = q('SELECT id, from_id, body, sent_at, deleted_all, edited_at FROM messages
+                   WHERE ((from_id = ? AND to_id = ? AND hidden_from = 0) OR (from_id = ? AND to_id = ? AND hidden_to = 0)) AND id > ?
                    ORDER BY id DESC LIMIT 200', [$uid, $other, $other, $uid, $after])->fetchAll();
         $msgs = array_map(fn($m) => ['id' => (int)$m['id'], 'mine' => (int)$m['from_id'] === $uid,
-            'body' => $m['body'], 'at' => (int)$m['sent_at']], array_reverse($rows));
+            'body' => (int)$m['deleted_all'] === 1 ? '' : $m['body'], 'deleted' => (int)$m['deleted_all'] === 1,
+            'edited' => $m['edited_at'] !== null && (int)$m['deleted_all'] === 0, 'at' => (int)$m['sent_at']], array_reverse($rows));
         q('UPDATE messages SET is_read = 1 WHERE to_id = ? AND from_id = ? AND is_read = 0', [$uid, $other]);
         q('UPDATE notifications SET is_read = 1 WHERE user_id = ? AND ref = ?', [$uid, 'msg:' . $other]);   // you have read that chat
-        ok(['person' => ['id' => (int)$u['id'], 'name' => $u['name'], 'tag' => name_tag($u['name'], $u['email'])], 'messages' => $msgs, 'unread' => chat_unread($uid)]);
+        $nick = contact_name($uid, $other);
+        ok(['person' => ['id' => (int)$u['id'], 'name' => $nick !== '' ? $nick : $u['name'], 'real' => $u['name'], 'nick' => $nick, 'verified' => is_verified_badge((int)$u['id']),
+            'tag' => $nick !== '' ? $u['name'] : name_tag($u['name'], $u['email'])], 'messages' => $msgs, 'unread' => chat_unread($uid)]);
+    }
+
+    case 'msg.delete': {
+        // scope "me": hide the message for yourself only. scope "all": the sender takes it back for both of you.
+        $id = id_in($in);
+        $m = q('SELECT id, from_id, to_id FROM messages WHERE id = ? AND (from_id = ? OR to_id = ?)', [$id, $uid, $uid])->fetch();
+        if (!$m) fail(404, 'That message was not found.');
+        if (($in['scope'] ?? 'me') === 'all') {
+            if ((int)$m['from_id'] !== $uid) fail(403, 'You can only delete your own messages for everyone.');
+            q("UPDATE messages SET deleted_all = 1, body = '', edited_at = NULL WHERE id = ?", [$id]);
+            q('DELETE FROM notifications WHERE user_id = ? AND ref = ?', [(int)$m['to_id'], 'msg:' . $uid]);   // its preview must not stay in their bell
+        } else {
+            q((int)$m['from_id'] === $uid ? 'UPDATE messages SET hidden_from = 1 WHERE id = ?' : 'UPDATE messages SET hidden_to = 1 WHERE id = ?', [$id]);
+        }
+        ok(['unread' => chat_unread($uid)]);
+    }
+
+    case 'msg.edit': {
+        $id = id_in($in);
+        $body = str_in($in, 'message', 2000);
+        $m = q('SELECT id, deleted_all FROM messages WHERE id = ? AND from_id = ?', [$id, $uid])->fetch();
+        if (!$m) fail(404, 'You can only edit your own messages.');
+        if ((int)$m['deleted_all'] === 1) fail(400, 'That message was deleted.');
+        q('UPDATE messages SET body = ?, edited_at = ? WHERE id = ?', [$body, time(), $id]);
+        ok(['body' => $body]);
+    }
+
+    case 'msg.clear': {
+        // Delete a whole conversation for yourself. The other person keeps their copy.
+        $other = id_in($in, 'with');
+        q('UPDATE messages SET hidden_from = 1 WHERE from_id = ? AND to_id = ?', [$uid, $other]);
+        q('UPDATE messages SET hidden_to = 1, is_read = 1 WHERE to_id = ? AND from_id = ?', [$uid, $other]);
+        q('DELETE FROM notifications WHERE user_id = ? AND ref = ?', [$uid, 'msg:' . $other]);
+        ok(['unread' => chat_unread($uid)]);
+    }
+
+    case 'msg.rename': {
+        // Your own name for a contact. Only you see it; an empty name goes back to their real one.
+        $other = id_in($in, 'with');
+        if (!q('SELECT id FROM users WHERE id = ?', [$other])->fetch()) fail(404, 'That account no longer exists.');
+        $name = mb_substr(trim((string)($in['name'] ?? '')), 0, 80);
+        q('DELETE FROM contact_names WHERE user_id = ? AND contact_id = ?', [$uid, $other]);
+        if ($name !== '') q('INSERT INTO contact_names (user_id, contact_id, name) VALUES (?, ?, ?)', [$uid, $other, $name]);
+        ok(['name' => $name]);
     }
 
     case 'msg.send': {

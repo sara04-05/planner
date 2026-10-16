@@ -70,8 +70,9 @@ $friends = array_filter(array_map('person', friend_ids($viewer)));
 usort($friends, fn($a, $b) => strcasecmp($a['name'], $b['name']));
 
 $term = trim((string)($_GET['q'] ?? ''));
-$sql = 'SELECT u.id, u.name, p.slug, p.is_public FROM users u LEFT JOIN profiles p ON p.user_id = u.id WHERE u.email_verified = 1';
-$args = [];
+// Only people who switched "Show me in Explore" on are listed (everybody else just uses the app), and never you yourself.
+$sql = 'SELECT u.id, u.name, p.slug, p.is_public, u.verified_badge FROM users u LEFT JOIN profiles p ON p.user_id = u.id WHERE u.email_verified = 1 AND u.id <> ? AND COALESCE(p.in_explore, 0) = 1';
+$args = [$viewer];
 if ($term !== '') {
     $sql .= " AND u.name LIKE ? ESCAPE '|'";
     $args[] = '%' . str_replace(['|', '%', '_'], ['||', '|%', '|_'], $term) . '%';
@@ -110,13 +111,13 @@ app_top('Explore', ['active' => 'explore', 'covers' => true, 'eyebrow' => 'Your 
     <button class="btn primary">Search</button>
   </form>
   <?php if (!$rows): ?>
-    <div class="pub-note">Nobody matches that search.</div>
+    <div class="pub-note"><?= $term !== '' ? 'Nobody matches that search.' : 'Nobody has chosen to be listed in Explore yet.' ?></div>
   <?php else: ?>
   <ul class="userlist">
     <?php foreach ($rows as $r): ?>
       <?php $isMe = (int)$r['id'] === $viewer; $st = $isMe ? '' : friendship($viewer, (int)$r['id']); $back = 'explore.php' . ($term !== '' ? '?q=' . rawurlencode($term) : ''); ?>
       <?php $href = (int)$r['is_public'] && (string)$r['slug'] !== '' ? 'u.php?u=' . rawurlencode((string)$r['slug']) : 'u.php?id=' . (int)$r['id']; ?>
-      <li translate="no"><a class="ulink" href="<?= h($href) ?>"><span class="av" aria-hidden="true"><?= h(mb_strtoupper(mb_substr($r['name'], 0, 1))) ?></span><span class="un"><?= h($r['name']) ?></span><?php if (!(int)$r['is_public']): ?><small title="Private account">🔒</small><?php endif; ?></a>
+      <li translate="no"><a class="ulink" href="<?= h($href) ?>"><span class="av" aria-hidden="true"><?= h(mb_strtoupper(mb_substr($r['name'], 0, 1))) ?></span><span class="un"><?= h($r['name']) ?><?= vbadge((int)$r['verified_badge'] === 1) ?></span><?php if (!(int)$r['is_public']): ?><small title="Private account">🔒</small><?php endif; ?></a>
         <?php if ($st === 'friends'): ?><span class="hint2">Friends ✓</span>
         <?php elseif ($st === 'sent'): ?><?= act('cancel', (int)$r['id'], 'Requested', 'btn sm ghost', $back) ?>
         <?php elseif ($st === 'received'): ?><?= act('accept', (int)$r['id'], 'Accept', 'btn sm primary', $back) ?>
