@@ -1656,3 +1656,18 @@ a.nbcover-link:focus-visible{outline:3px solid var(--accent);outline-offset:6px;
 .rlrow p{margin:0;white-space:pre-wrap;overflow-wrap:anywhere;line-height:1.5}
 .rlhead{display:flex;gap:10px;flex-wrap:wrap;align-items:baseline;font-size:13px}
 .rlmail,.rlwhen{color:var(--muted)}
+
+/* phones: more room for the content (smaller side margins) and less cramped forms, filters and rows */
+@media (max-width:640px){
+  body{padding-inline:6px}
+  .page{padding-inline:12px}
+  .page .addform{gap:10px 8px;margin-block:8px 12px}
+  .page .addform :is(input,select,.btn),.page .field{height:40px;font-size:15px}
+  .page .addform .btn{width:100%}
+  .page .filters{gap:8px;flex-wrap:wrap;padding-block:6px;min-height:0}
+  .page .fbtn{padding:6px 14px}
+  .page .row{padding-block:6px;gap:12px}
+  .page .row .t{line-height:1.4}
+  .page .row .grow{row-gap:4px}
+  .page .legend{padding-top:8px;gap:12px}
+}
