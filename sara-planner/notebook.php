@@ -9,9 +9,16 @@ const SECTIONS     = ['interests', 'blog', 'timetable', 'subjects'];       // th
 const NOTIFY_KEYS  = ['like'];
 // Ready-made covers: plain gradients, then patterned ones (their drawings are the --cov-* variables in assets/style.css)
 const ART_COVERS   = ['blossom', 'library', 'gingham', 'coquette', 'stars', 'clouds', 'lavender', 'daisy', 'checker', 'strawberry', 'terrazzo', 'waves', 'dots', 'sunsetgrain', 'matcha', 'hearts', 'rainbow', 'mountains', 'pinstripe', 'monstera'];
-const BANNERS      = ['dusk', 'peach', 'ocean', 'mint', 'berry', 'sunny', 'night', 'cloud', 'blossom', 'library', 'gingham', 'coquette', 'stars', 'clouds', 'lavender', 'daisy', 'checker', 'strawberry', 'terrazzo', 'waves', 'dots', 'sunsetgrain', 'matcha', 'hearts', 'rainbow', 'mountains', 'pinstripe', 'monstera'];
+const NEW_GRADIENTS = ['sunset', 'forest', 'candy', 'gold', 'slate', 'aurora', 'coral', 'mist', 'ink', 'lagoon'];
+const LABELS       = ['box', 'round', 'arch', 'oval', 'pill', 'ticket', 'band', 'none'];   // the shape of the name plate on the cover
+const LAYOUTS      = ['center', 'top', 'bottom'];
+const PATTERNS     = ['none', 'stripes', 'dots', 'grid', 'waves', 'checker'];            // drawn over any cover
+const BANNERS      = [...NEW_GRADIENTS, 'dusk', 'peach', 'ocean', 'mint', 'berry', 'sunny', 'night', 'cloud', 'blossom', 'library', 'gingham', 'coquette', 'stars', 'clouds', 'lavender', 'daisy', 'checker', 'strawberry', 'terrazzo', 'waves', 'dots', 'sunsetgrain', 'matcha', 'hearts', 'rainbow', 'mountains', 'pinstripe', 'monstera'];
 const COVER_GRADIENTS = [
     'dusk' => ['#6A4DC4', '#E0609A'], 'peach' => ['#F9A826', '#F36B7F'], 'ocean' => ['#1F77C9', '#3FC1C9'], 'mint' => ['#4FA36B', '#B6E3C9'],
+    'sunset' => ['#FF5E62', '#FF9966'], 'forest' => ['#134E5E', '#71B280'], 'candy' => ['#FF9A9E', '#FAD0C4'], 'gold' => ['#F7B733', '#FC4A1A'],
+    'slate' => ['#485563', '#29323C'], 'aurora' => ['#00C9A7', '#845EC2'], 'coral' => ['#FF6F91', '#FFC75F'], 'mist' => ['#C9D6FF', '#E2E2E2'],
+    'ink' => ['#0F2027', '#2C5364'], 'lagoon' => ['#2193B0', '#6DD5ED'],
     'berry' => ['#8E2DE2', '#C2185B'], 'sunny' => ['#FFD452', '#FF9966'], 'night' => ['#1B1740', '#4B3A8F'], 'cloud' => ['#BFD7F5', '#E8DDF8'],
 ];
 const PAPERS       = ['lined', 'grid', 'dots', 'plain'];
@@ -28,7 +35,8 @@ const MAX_STYLES    = 20;
 function default_design(): array
 {
     return ['cover' => 'dusk', 'cover_img' => 0, 'cover_c1' => '', 'cover_c2' => '', 'paper' => 'lined', 'paper_color' => 'white', 'paper_hex' => '',
-        'accent' => 'violet', 'accent_hex' => '', 'font' => 'modern', 'binding' => 'coil', 'stickers' => []];
+        'accent' => 'violet', 'accent_hex' => '', 'font' => 'modern', 'binding' => 'coil', 'stickers' => [],
+        'label' => 'box', 'layout' => 'center', 'pattern' => 'none', 'angle' => 135, 'label_hex' => '', 'text_hex' => '', 'avatar' => 1];
 }
 
 function clean_hex($v): string
@@ -40,10 +48,12 @@ function clean_hex($v): string
 function clean_design(int $uid, array $d, bool $withStickers = true): array
 {
     $out = default_design();
-    foreach (['paper' => PAPERS, 'font' => FONTS, 'binding' => BINDINGS] as $k => $allowed) {
+    foreach (['paper' => PAPERS, 'font' => FONTS, 'binding' => BINDINGS, 'label' => LABELS, 'layout' => LAYOUTS, 'pattern' => PATTERNS] as $k => $allowed) {
         if (isset($d[$k]) && in_array($d[$k], $allowed, true)) $out[$k] = $d[$k];
     }
-    foreach (['cover_c1', 'cover_c2', 'paper_hex', 'accent_hex'] as $k) $out[$k] = clean_hex($d[$k] ?? '');
+    $out['angle'] = max(0, min(360, (int)($d['angle'] ?? 135)));
+    $out['avatar'] = isset($d['avatar']) && !$d['avatar'] ? 0 : 1;
+    foreach (['cover_c1', 'cover_c2', 'paper_hex', 'accent_hex', 'label_hex', 'text_hex'] as $k) $out[$k] = clean_hex($d[$k] ?? '');
     $c = $d['cover'] ?? '';
     if (in_array($c, BANNERS, true) || ($c === 'custom' && $out['cover_c1'] !== '' && $out['cover_c2'] !== '')) $out['cover'] = $c;
     $c = $d['paper_color'] ?? '';

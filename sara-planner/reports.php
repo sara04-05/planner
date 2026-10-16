@@ -1,5 +1,5 @@
 <?php
-// Reports people made about other accounts. Only admins and sub admins can open this page (the "Reports" button in the top bar).
+// Problems people reported with the website. Only admins and sub admins can open this page (the "Reports" button in the top bar).
 // Nothing here is a message: reports are saved, emailed to ADMIN_EMAILS and listed here, and nobody else ever sees them.
 declare(strict_types=1);
 require __DIR__ . '/db.php';
@@ -33,8 +33,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && !$canEdit) {
 }
 
 try {
-    $reports = q('SELECT r.id, r.reason, r.details, r.resolved, r.created_at, r.target_id, t.name AS tname, t.email AS temail, f.name AS fname, f.email AS femail
-        FROM reports r JOIN users t ON t.id = r.target_id JOIN users f ON f.id = r.reporter_id ORDER BY r.resolved, r.id DESC LIMIT 100')->fetchAll();
+    $reports = q('SELECT r.id, r.message, r.resolved, r.created_at, f.name AS fname, f.email AS femail
+        FROM reports r JOIN users f ON f.id = r.reporter_id ORDER BY r.resolved, r.id DESC LIMIT 100')->fetchAll();
 } catch (PDOException $e) {   // reports table couldn't be made on this host
     $reports = [];
 }
@@ -45,22 +45,19 @@ function when(?string $ts): string
     $d = new DateTime($ts, new DateTimeZone(DB_DRIVER === 'sqlite' ? 'UTC' : date_default_timezone_get()));
     return $d->setTimezone(new DateTimeZone(date_default_timezone_get()))->format('j M Y, H:i');
 }
-$labels = ['spam' => 'Spam or fake account', 'harassment' => 'Harassment or bullying', 'inappropriate' => 'Inappropriate content', 'impersonation' => 'Pretending to be someone else', 'other' => 'Something else'];
 
 app_top('Reports', ['active' => 'reports', 'eyebrow' => 'Your notebook', 'h1' => 'Reports']); ?>
     <?php if ($msg): ?><div class="formmsg ok" role="status"><?= h($msg) ?></div><?php endif; ?>
     <?php if ($err): ?><div class="formmsg err" role="alert"><?= h($err) ?></div><?php endif; ?>
-    <?php if (!$reports): ?><p class="auth-sub">Nobody has reported anyone.</p><?php else: ?>
+    <?php if (!$reports): ?><p class="auth-sub">Nobody has reported a problem.</p><?php else: ?>
     <div class="tbl-wrap">
       <table class="tbl">
-        <thead><tr><th>Reported</th><th>By</th><th>Reason</th><th>Details</th><th>When</th><?php if ($canEdit): ?><th></th><?php endif; ?></tr></thead>
+        <thead><tr><th>From</th><th>Problem</th><th>When</th><?php if ($canEdit): ?><th></th><?php endif; ?></tr></thead>
         <tbody>
         <?php foreach ($reports as $r): ?>
           <tr<?= (int)$r['resolved'] ? ' style="opacity:.55"' : '' ?>>
-            <td><a href="u.php?id=<?= (int)$r['target_id'] ?>"><?= h($r['tname']) ?></a><br><span class="email"><?= h($r['temail']) ?></span></td>
             <td><?= h($r['fname']) ?><br><span class="email"><?= h($r['femail']) ?></span></td>
-            <td><?= h($labels[$r['reason']] ?? $r['reason']) ?></td>
-            <td><?= h($r['details']) ?></td>
+                        <td style="white-space:pre-wrap"><?= h($r['message']) ?></td>
             <td><?= h(when($r['created_at'])) ?></td>
             <?php if ($canEdit): ?>
             <td class="admin-acts"><form method="post" class="inline">

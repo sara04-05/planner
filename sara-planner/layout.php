@@ -82,11 +82,34 @@ function design_style(array $d): string
 /** CSS background of a notebook cover: a picture, the colours the user picked, or a ready-made gradient. */
 function cover_css(array $d, string $imgUrl = ''): string
 {
-    if ($imgUrl !== '') return "background:url('" . h($imgUrl) . "') center/cover";
-    if (($d['cover'] ?? '') === 'custom' && !empty($d['cover_c1']) && !empty($d['cover_c2'])) return 'background:linear-gradient(135deg,' . h($d['cover_c1']) . ',' . h($d['cover_c2']) . ')';
-    if (in_array($d['cover'] ?? '', ART_COVERS, true)) return 'background:var(--cov-' . $d['cover'] . ')';
-    $g = COVER_GRADIENTS[$d['cover'] ?? 'dusk'] ?? COVER_GRADIENTS['dusk'];
-    return 'background:linear-gradient(135deg,' . $g[0] . ',' . $g[1] . ')';
+    $ang = max(0, min(360, (int)($d['angle'] ?? 135)));
+    $bg = null;
+    if ($imgUrl !== '') $bg = "url('" . h($imgUrl) . "') center/cover";
+    elseif (($d['cover'] ?? '') === 'custom' && !empty($d['cover_c1']) && !empty($d['cover_c2'])) $bg = "linear-gradient({$ang}deg," . h($d['cover_c1']) . ',' . h($d['cover_c2']) . ')';
+    elseif (in_array($d['cover'] ?? '', ART_COVERS, true)) $bg = 'var(--cov-' . $d['cover'] . ')';
+    else {
+        $g = COVER_GRADIENTS[$d['cover'] ?? 'dusk'] ?? COVER_GRADIENTS['dusk'];
+        $bg = "linear-gradient({$ang}deg,{$g[0]},{$g[1]})";
+    }
+    $pat = [
+        'stripes' => 'repeating-linear-gradient(45deg,rgba(255,255,255,.18) 0 10px,transparent 10px 20px)',
+        'dots'    => 'radial-gradient(rgba(255,255,255,.4) 2px,transparent 2.6px) 0 0/18px 18px',
+        'grid'    => 'linear-gradient(rgba(255,255,255,.22) 1px,transparent 1px) 0 0/22px 22px,linear-gradient(90deg,rgba(255,255,255,.22) 1px,transparent 1px) 0 0/22px 22px',
+        'waves'   => 'repeating-radial-gradient(circle at 0 100%,transparent 0 14px,rgba(255,255,255,.22) 14px 16px)',
+        'checker' => 'conic-gradient(rgba(255,255,255,.18) 25%,transparent 0 50%,rgba(255,255,255,.18) 0 75%,transparent 0) 0 0/28px 28px',
+    ][$d['pattern'] ?? 'none'] ?? '';
+    $css = 'background:' . ($pat !== '' ? $pat . ',' : '') . $bg;
+    if (($c = clean_hex($d['label_hex'] ?? '')) !== '') $css .= ';--lbl-bg:' . $c;
+    if (($c = clean_hex($d['text_hex'] ?? '')) !== '') $css .= ';--lbl-fg:' . $c;
+    return $css;
+}
+
+/** data-attributes for a .nbcover: the shape and place of the name plate, and whether the picture shows. */
+function cover_attrs(array $d): string
+{
+    $l = in_array($d['label'] ?? 'box', LABELS, true) ? $d['label'] : 'box';
+    $y = in_array($d['layout'] ?? 'center', LAYOUTS, true) ? $d['layout'] : 'center';
+    return ' data-label="' . $l . '" data-layout="' . $y . '"' . (isset($d['avatar']) && !$d['avatar'] ? ' data-noavatar="1"' : '');
 }
 
 /** The stickers placed on one page of a notebook ($page = 'cover' or a section name). Pass $edit = true in the owner's editor. */
@@ -161,7 +184,8 @@ function app_nav(?int $uid, string $active = '', bool $planner = false): void
         <button class="btn bell" id="bellBtn" aria-label="Notifications" aria-haspopup="true" aria-expanded="false"><?= $ic('<path d="M18 8a6 6 0 0 0-12 0c0 7-3 9-3 9h18s-3-2-3-9M13.7 21a2 2 0 0 1-3.4 0"/>') ?><span class="badge" id="bellBadge"<?= $unread ? '' : ' hidden' ?>><?= $unread ?></span></button>
         <div class="bellpop" id="bellPop" role="dialog" aria-label="Notifications" hidden></div>
       </div>
-      <?php if (can_view_users($uid)): ?><a class="btn<?= $active === 'admin' ? ' on' : '' ?>" href="admin.php">Users</a> <a class="btn<?= $active === 'reports' ? ' on' : '' ?>" href="reports.php">Reports</a><?php endif; ?>
+      <a class="btn bell<?= in_array($active, ['report', 'reports'], true) ? ' on' : '' ?>" href="<?= can_view_users($uid) ? 'reports.php' : 'report.php' ?>" aria-label="<?= can_view_users($uid) ? 'Reports' : 'Report a problem' ?>" title="<?= can_view_users($uid) ? 'Reports' : 'Report a problem' ?>"><?= $ic('<circle cx="12" cy="12" r="9"/><path d="M12 7v6M12 16.5v.5"/>') ?></a>
+      <?php if (can_view_users($uid)): ?><a class="btn<?= $active === 'admin' ? ' on' : '' ?>" href="admin.php">Users</a><?php endif; ?>
       <button class="btn" data-lang-btn>Shqip</button>
       <button class="btn"<?= $planner ? ' id="themeBtn" data-act="theme"' : ' data-theme-btn' ?> aria-label="Switch theme"></button>
       <form method="post" action="logout.php" class="inline">
