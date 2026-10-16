@@ -1468,4 +1468,4 @@ a.nbtile{text-decoration:none}.nbtiles{margin-bottom:14px}.nbtile.on span{color:
 .page .nbtiles{margin-top:32px}
 
 /* how-to text lives only in the visitor tour: the planner and profile pages show none of it */
-.page p.hint2,.page .xcard>p.sub,.page .xform>p.sub,.page p.hint{display:none}
+body:not(.tour) .page p.hint2,body:not(.tour) .page .xcard>p.sub,body:not(.tour) .page .xform>p.sub,body:not(.tour) .page p.hint{display:none}
