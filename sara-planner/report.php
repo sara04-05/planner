@@ -1,6 +1,6 @@
 <?php
 // Report an account to the site's admins: report.php?id=<user id>.
-// The report is saved (admins see it on admin.php), emailed to the addresses in ADMIN_EMAILS (config.php) and shows in the admins' bell.
+// The report is saved (admins see it on admin.php) and emailed to the addresses in ADMIN_EMAILS (config.php). Nobody else sees it.
 declare(strict_types=1);
 require __DIR__ . '/db.php';
 require __DIR__ . '/social.php';
@@ -37,12 +37,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $rid = (int)db()->lastInsertId();
         $me = person($uid);
 
-        // The owner(s) in ADMIN_EMAILS: a bell notification if they have an account, and an email if Gmail is set up in config.php
+        // Only the admins get the report: emailed to the ADMIN_EMAILS in config.php and listed on admin.php. It is never shown as a message or notification to anyone else.
         $admins = defined('ADMIN_EMAILS') ? ADMIN_EMAILS : [];
-        foreach ($admins as $email) {
-            $row = q('SELECT id FROM users WHERE LOWER(email) = ?', [strtolower((string)$email)])->fetch();
-            if ($row) notify((int)$row['id'], 'report:' . $rid, 'Report: ' . $person['name'] . ' (' . REPORT_REASONS[$reason] . ')', 'admin.php#reports');
-        }
         if ($admins && mail_configured()) {
             $text = "A user reported an account on Splanner.\n\n"
                 . 'Reported: ' . $person['name'] . ' <' . $person['email'] . "> (id $target)\n"

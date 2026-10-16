@@ -83,7 +83,7 @@ try {
 }
 
 try {
-    $reports = q('SELECT r.id, r.reason, r.details, r.resolved, r.created_at, r.target_id, t.name AS tname, t.email AS temail, f.name AS fname, f.email AS femail
+    $reports = q('SELECT r.id, r.reporter_id, r.reason, r.details, r.resolved, r.created_at, r.target_id, t.name AS tname, t.email AS temail, f.name AS fname, f.email AS femail
         FROM reports r JOIN users t ON t.id = r.target_id JOIN users f ON f.id = r.reporter_id ORDER BY r.resolved, r.id DESC LIMIT 100')->fetchAll();
 } catch (PDOException $e) {   // reports table couldn't be made on this host
     $reports = [];
@@ -169,7 +169,7 @@ app_top('Users', ['active' => 'admin', 'eyebrow' => 'Your notebook', 'h1' => 'Us
             <td><?= h($r['details']) ?></td>
             <td><?= h(when($r['created_at'])) ?></td>
             <?php if ($canEdit): ?>
-            <td class="admin-acts"><form method="post" class="inline">
+            <td class="admin-acts"><a class="btn sm" href="messages.php?with=<?= (int)$r['reporter_id'] ?>">Message <?= h($r['fname']) ?></a> <form method="post" class="inline">
               <input type="hidden" name="csrf" value="<?= h(csrf_token()) ?>"><input type="hidden" name="do" value="resolve"><input type="hidden" name="report" value="<?= (int)$r['id'] ?>"><input type="hidden" name="on" value="<?= (int)$r['resolved'] ? 0 : 1 ?>">
               <button class="btn sm"><?= (int)$r['resolved'] ? 'Reopen' : 'Done' ?></button>
             </form></td>
