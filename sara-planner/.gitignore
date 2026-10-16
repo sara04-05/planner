@@ -1,2 +1,4 @@
 data/*.sqlite
 data/schema-*.ok
+data/message.key
+data/msgenc.ok

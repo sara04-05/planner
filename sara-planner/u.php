@@ -23,12 +23,6 @@ function profile_head(array $person, string $slug, array $stats, string $actions
         . '</div>' . ($actions !== '' ? '<div class="phead-btns">' . $actions . '</div>' : '') . '</header>';
     return $out;
 }
-/** Report button for other people's profiles. Admins don't make reports: for them it opens the reports that were made. */
-function report_btn(int $owner): string
-{
-    $me = current_user_id();
-    return $me && can_view_users($me) ? ' <a class="btn ghost" href="admin.php#reports">Reports</a>' : ' <a class="btn ghost" href="report.php?id=' . $owner . '">Report</a>';
-}
 function plural(int $n, string $one, string $many): string
 {
     return $n === 1 ? $one : $many;
@@ -56,7 +50,6 @@ if ($prof && $viewer && !can_view_profile($prof, $viewer)) {
     elseif ($state === 'sent') $actions = $btn('cancel', 'Requested · cancel', 'btn ghost');
     elseif ($state === 'received') $actions = $btn('accept', 'Accept friend request', 'btn primary');
     else $actions = $btn('add', 'Add friend', 'btn primary');
-    $actions .= report_btn($owner);
     app_top($person['name'] . "'s profile", ['active' => 'explore']);
     $nf = count(friend_ids($owner));
     echo profile_head($person, '', [plural($nf, 'friend', 'friends') => $nf], $actions, '<span class="tag2 priv">Private</span>');
@@ -101,7 +94,6 @@ if ($isMe) {
     elseif ($state === 'sent') $actions = friend_btn('cancel', $owner, 'Requested · cancel', 'btn ghost', $back);
     elseif ($state === 'received') $actions = friend_btn('accept', $owner, 'Accept friend request', 'btn primary', $back);
     else $actions = friend_btn('add', $owner, 'Add friend', 'btn primary', $back);
-    $actions .= report_btn($owner);
 } else {
     $actions = '<a class="btn primary" href="login.php">Log in to add friend</a>';
 }
@@ -163,7 +155,7 @@ echo profile_head($person, (string)$prof['slug'], [plural($dayOnly ? 0 : count($
 
 
   <?php if ($page === 'cover'): ?>
-    <div class="nbcover" style="<?= cover_css($design, $cover) ?>">
+    <div class="nbcover"<?= cover_attrs($design) ?> style="<?= cover_css($design, $cover) ?>">
       <div class="nbcover-in">
         <?= avatar_html($person, 'xl') ?>
         <h2 translate="no"><?= h($nb['title']) ?></h2>
