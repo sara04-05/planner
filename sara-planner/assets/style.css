@@ -1577,3 +1577,10 @@ a.nbcover-link:focus-visible{outline:3px solid var(--accent);outline-offset:6px;
 .page :is(.xcard,.xform,.nbe-side) :is(input,textarea,select):focus{outline:none;border-color:var(--accent);box-shadow:0 0 0 3px var(--accent-soft)}
 .page .xrow{align-items:center;gap:8px}
 .page .xrow .btn.sm{height:38px;padding:0 14px}
+
+/* rows with a title and a small line under it grow to fit instead of overlapping the next row; the language button keeps its icon next to its label */
+.page .row{height:auto;min-height:var(--lh)}
+.page .row .grow{min-width:0}
+.page .sec-h h2{white-space:nowrap}
+[data-lang-btn]{display:inline-flex;align-items:center;gap:6px}
+[data-lang-btn] svg{width:18px;height:18px;flex:none}

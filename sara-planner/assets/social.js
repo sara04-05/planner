@@ -361,7 +361,8 @@ function notebooksTab(){
   const secs=SECS.map((s,i)=>`<label><input type="checkbox" name="sections" value="${s[0]}" ${i<2?'checked':''}><span><b>${s[1]} ${s[2]}</b><small>${s[3]}</small></span></label>`).join('');
   const newForm=ui.newNb?`<form class="xcard xform" data-xform="nbnew" autocomplete="off" style="margin:12px 0"><h3>New notebook</h3><p class="sub">One for your interests, one for your plans, one for your blog… make as many as you like.</p>
       <label class="l" for="nn-title">Name</label><input type="text" id="nn-title" name="title" maxlength="80" placeholder="e.g. Things I love" required>
-      <p class="opt-h">Pages</p><div class="secpick">${secs}</div>
+      <p class="opt-h">Pages</p><div class="secpick" id="secpick">${secs}</div>
+      <div class="ownpage"><input type="text" id="ownPageName" maxlength="40" placeholder="Your own page, e.g. Recipes" aria-label="Name of your own page"><button type="button" class="btn sm" data-x="own-page-add">+ Add page</button></div>
       <label class="l" for="nn-look">Look</label><select id="nn-look" name="look"><option value="">Plain to start (you can decorate it next)</option>${PRESETS.map((x,i)=>`<option value="${i}">${x[0]}</option>`).join('')}</select>
       <div class="xrow"><button class="btn primary">Create notebook</button><button type="button" class="btn ghost" data-x="nb-new">Cancel</button></div></form>`:'';
   let editor='';
@@ -537,6 +538,7 @@ function applyLook(look){   // a ready-made or saved look: replaces colours/pape
 }
 
 /* ---------- clicks ---------- */
+document.addEventListener('keydown',e=>{if(e.key==='Enter'&&e.target&&e.target.id==='ownPageName'){e.preventDefault();const b=document.querySelector('[data-x=own-page-add]');if(b)b.click()}});
 document.addEventListener('keydown',e=>{if((e.key==='Enter'||e.key===' ')&&e.target.matches&&e.target.matches('[role=button][data-x]')){e.preventDefault();e.target.click()}});
 document.addEventListener('click',async e=>{
   const b=e.target.closest('[data-x]');if(!b)return;
@@ -595,6 +597,12 @@ document.addEventListener('click',async e=>{
       case 'accent':ui.dd.accent=b.dataset.v;break;
       case 'font':ui.dd.font=b.dataset.v;break;
       case 'binding':ui.dd.binding=b.dataset.v;break;
+      case 'own-page-add':{
+        const inp=$('ownPageName'),t=(inp.value||'').trim().slice(0,40);if(!t){inp.focus();return}
+        const l=document.createElement('label');l.className='ownchip';
+        const c=document.createElement('input');c.type='checkbox';c.name='own';c.value=t;c.checked=true;
+        const sp=document.createElement('span'),bb=document.createElement('b');bb.textContent='✨ '+t;sp.appendChild(bb);l.append(c,sp);
+        $('secpick').appendChild(l);inp.value='';inp.focus();return}
       case 'label-color':ui.dd.label_hex=b.dataset.v;if(ui.dd.label==='none')ui.dd.label='box';markDirty();paintPreview();return;
       case 'label':ui.dd.label=b.dataset.v;if(b.dataset.v==='none')ui.dd.label_hex='';break;
       case 'preset':applyLook(PRESETS[+b.dataset.i][1]);break;
@@ -685,6 +693,7 @@ document.addEventListener('submit',async e=>{
     }else if(x==='nbnew'){
       const look=d.look!==''?PRESETS[+d.look][1]:{};
       const r=await api('x.nb.add',{title:d.title,sections:new FormData(f).getAll('sections'),design:look});
+      for(const t of new FormData(f).getAll('own')){const pr=await api('x.page.save',{notebook_id:r.notebook.id,title:t,emoji:'',body:'',blank:1});r.notebook.pages=pr.pages}
       S.notebooks.push(r.notebook);ui.newNb=false;ui.panel='deco';pick(r.notebook.id);toast('Notebook created. Decorate it, then add things to its pages.');redraw();
     }else if(x==='style'){
       const r=await api('x.style.save',{name:d.name,design:designOut()});

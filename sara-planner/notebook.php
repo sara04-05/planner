@@ -610,7 +610,7 @@ function notebook_action(int $uid, string $action, array $in): void
     case 'x.page.save': {   // a page you add to a notebook yourself
         $title = str_in($in, 'title', 40);
         $body = mb_substr(trim((string)($in['body'] ?? '')), 0, 8000);
-        if ($body === '') fail(400, 'Please write something on the page.');
+        if ($body === '' && empty($in['blank'])) fail(400, 'Please write something on the page.');   // blank: a page made empty when the notebook is created, to write on later
         $emoji = in_array($in['emoji'] ?? '', PAGE_EMOJI, true) ? $in['emoji'] : '';
         $id = (int)($in['id'] ?? 0);
         if ($id > 0) {
