@@ -539,8 +539,11 @@ async function autoSave(){
     const r=await api('x.nb.design',{id:nb.id,design:designOut()});
     nb.design=r.design;nb.cover_url=r.cover_url;ui.dirty=false;
     const sv=$('saveDesign');if(sv)sv.disabled=true;
-    const sm=$('autoSaved');if(sm){sm.textContent='Saved ✓';clearTimeout(sm._t);sm._t=setTimeout(()=>{sm.textContent=''},2000)}
-  }catch(err){toast(err.message)}
+    const sm=$('autoSaved');if(sm){sm.style.color='';sm.textContent='Saved ✓';clearTimeout(sm._t);sm._t=setTimeout(()=>{sm.textContent=''},2000)}
+  }catch(err){
+    const sm=$('autoSaved');if(sm){sm.textContent='Not saved: '+err.message;sm.style.color='var(--bad)'}
+    toast('Not saved: '+err.message)
+  }
 }
 const designOut=()=>{const d=clone(ui.dd);delete d.cover_url;return d};
 const DESIGN_ACTS=['cover','cover-rm','paper','pcolor','accent','font','binding','label','stk-add','stk-size','stk-rot','stk-del','preset','style-apply'];
@@ -633,7 +636,14 @@ document.addEventListener('click',async e=>{
         toast('Design saved.');redraw();return}
       default:return;
     }
-  }catch(err){toast(err.message);if(S&&a!=='retry')load2()}
+  }catch(err){
+    if(a==='design-save'){   // keep what you changed on screen and say what went wrong, instead of reloading and losing it
+      b.disabled=false;const sm=$('autoSaved');
+      if(sm){sm.textContent='Not saved: '+err.message;sm.style.color='var(--bad)'}
+      toast('Not saved: '+err.message);return
+    }
+    toast(err.message);if(S&&a!=='retry')load2()
+  }
   if(DESIGN_ACTS.includes(a)){markDirty();
     if(a==='preset'||a==='style-apply'){redraw()}   // colour pickers hold the new values
     else paintPreview()}
