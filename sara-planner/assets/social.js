@@ -104,7 +104,7 @@ const flipLeaf=(front,cls)=>{   // a page that swings over the spine, like turni
   const k=document.createElement('div');k.className='nbleaf-b';
   const back=L.cloneNode(false);back.removeAttribute('id');back.className=L.className+' nbleaf-pg';k.appendChild(back);
   leaf.append(f,k);bk.appendChild(leaf);
-  leaf.addEventListener('animationend',()=>leaf.remove());setTimeout(()=>leaf.remove(),1500);
+  leaf.addEventListener('animationend',e=>{if(e.target===leaf)leaf.remove()});setTimeout(()=>leaf.remove(),1800);
 };
 const armed=b=>{if(b.dataset.armed)return true;b.dataset.armed='1';b.textContent='Sure?';return false};
 
@@ -556,7 +556,7 @@ document.addEventListener('click',async e=>{
       case 'panel':ui.panel=ui.panel===b.dataset.v?'':b.dataset.v;ui.sel=-1;redraw();return;
       case 'pg':{const old=ui.nbOpen&&b.dataset.v!==ui.pg&&document.getElementById('nbPage');const snap=old&&old.cloneNode(true);ui.pg=b.dataset.v;ui.nbOpen=ui.pg!=='cover';ui.sel=-1;ui.post=null;ui.newList=false;ui.pageEdit=null;redraw();if(snap)flipLeaf(snap,'turn');return}
       case 'nb-open':{const had=!!document.querySelector('.nbclosed')&&!calm();if(had)ui.anim='open';ui.nbOpen=true;if(ui.pg==='cover')ui.pg=(cur().sections[0]||(cur().pages[0]&&'pg:'+cur().pages[0].id)||'day');redraw();if(had)flipLeaf('cover','open');return}
-      case 'nb-close':{const bk=document.querySelector('.nbook');if(bk&&!calm()){bk.classList.add('shut');await sleep(260)}}ui.nbOpen=false;ui.pg='cover';ui.pageEdit=null;redraw();return;
+      case 'nb-close':{const bk=document.querySelector('.nbook');if(bk&&!calm()){bk.classList.add('shut');await sleep(400)}}ui.nbOpen=false;ui.pg='cover';ui.pageEdit=null;redraw();return;
       case 'page-new':ui.pageEdit={id:0,title:'',emoji:PAGE_EMOJI[0],body:''};ui.nbOpen=true;redraw('pg-title');return;
       case 'page-edit':{const p=nb.pages.find(x=>x.id===id);if(!p)return;ui.pageEdit={id:p.id,title:p.title,emoji:p.emoji||PAGE_EMOJI[0],body:p.body};ui.nbOpen=true;redraw('pg-title');return}
       case 'page-cancel':ui.pageEdit=null;redraw();return;

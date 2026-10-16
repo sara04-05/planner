@@ -1333,22 +1333,25 @@ a.nbtile{text-decoration:none}.nbtiles{margin-bottom:14px}.nbtile.on span{color:
 @media (max-width:900px){.nbook .nbp-tabs{display:none}.nbv .nbook{margin-right:0}}
 
 /* ===== opening and closing the notebook: a leaf that turns over the spine ===== */
-.nbook{perspective:2200px}
-.nbook.shut{transition:transform .26s ease,opacity .26s ease;transform:scale(.94);opacity:0}
-.nbleaf{position:absolute;z-index:6;transform-origin:left center;transform-style:preserve-3d;pointer-events:none;animation:leafTurn .95s cubic-bezier(.5,.05,.2,1) forwards}
-.nbleaf.turn{animation-duration:.7s}
-.nbleaf-f,.nbleaf-b{position:absolute;inset:0;backface-visibility:hidden;-webkit-backface-visibility:hidden;overflow:hidden;border-radius:0 8px 8px 0}
-.nbleaf-b{transform:rotateY(180deg);border-radius:8px 0 0 8px}
+.nbook{perspective:2600px}
+.nbook.shut{transition:transform .42s cubic-bezier(.4,0,.2,1),opacity .42s cubic-bezier(.4,0,.2,1);transform:scale(.95) translateY(6px);opacity:0}
+.nbleaf{position:absolute;z-index:6;transform-origin:left center;transform-style:preserve-3d;pointer-events:none;will-change:transform;backface-visibility:hidden;-webkit-backface-visibility:hidden;animation:leafTurn 1.15s cubic-bezier(.45,.02,.2,1) forwards}
+.nbleaf.turn{animation-duration:.85s}
+.nbleaf-f,.nbleaf-b{position:absolute;inset:0;backface-visibility:hidden;-webkit-backface-visibility:hidden;overflow:hidden;border-radius:0 8px 8px 0;transform:translateZ(0)}
+.nbleaf-b{transform:rotateY(180deg) translateZ(0);border-radius:8px 0 0 8px}
 .nbleaf-f.isCover{border-radius:0 12px 12px 0}
 .nbleaf-pg{width:100%!important;height:100%!important;margin:0!important;box-sizing:border-box;box-shadow:none!important}
-.nbleaf::after{content:"";position:absolute;inset:0;border-radius:inherit;background:linear-gradient(90deg,rgba(0,0,0,.28),transparent 40%);opacity:0;animation:leafShade .95s ease-in-out forwards;pointer-events:none}
-.nbleaf.turn::after{animation-duration:.7s}
-@keyframes leafTurn{0%{transform:rotateY(0)}78%{opacity:1}100%{transform:rotateY(-180deg) scaleX(var(--sx,.75));opacity:0}}
-@keyframes leafShade{0%,100%{opacity:0}45%{opacity:1}}
-.nbook[data-anim="open"]{animation:bookIn .5s ease-out}
-.nbook[data-anim="open"] .nbp-left{animation:leftIn .95s ease-out both}
-@keyframes bookIn{from{transform:scale(.9);opacity:0}to{transform:none;opacity:1}}
-@keyframes leftIn{0%,50%{opacity:0}100%{opacity:1}}
+.nbleaf-f::after,.nbleaf-b::after{content:"";position:absolute;inset:0;pointer-events:none;opacity:0;animation:leafShade 1.15s ease-in-out forwards}
+.nbleaf-f::after{background:linear-gradient(90deg,rgba(0,0,0,.32),rgba(0,0,0,.05) 60%,transparent)}
+.nbleaf-b::after{background:linear-gradient(270deg,rgba(0,0,0,.32),rgba(0,0,0,.05) 60%,transparent)}
+.nbleaf.turn .nbleaf-f::after,.nbleaf.turn .nbleaf-b::after{animation-duration:.85s}
+/* same transform list at both ends, so the browser interpolates the angle itself instead of a matrix (that was the jerk) */
+@keyframes leafTurn{0%{transform:rotateY(0) scaleX(1);opacity:1}88%{opacity:1}100%{transform:rotateY(-180deg) scaleX(var(--sx,.75));opacity:0}}
+@keyframes leafShade{0%,100%{opacity:0}50%{opacity:1}}
+.nbook[data-anim="open"]{animation:bookIn .7s cubic-bezier(.22,.8,.3,1)}
+.nbook[data-anim="open"] .nbp-left{animation:leftIn 1.15s ease-out both}
+@keyframes bookIn{from{transform:scale(.93) translateY(8px);opacity:0}to{transform:none;opacity:1}}
+@keyframes leftIn{0%,62%{opacity:0}100%{opacity:1}}
 @media (prefers-reduced-motion: reduce){.nbleaf{display:none}.nbook,.nbook *{animation:none!important;transition:none!important}}
 
 /* ===== phones: everything fits, nothing is cut off ===== */
