@@ -1451,7 +1451,6 @@ a.nbtile{text-decoration:none}.nbtiles{margin-bottom:14px}.nbtile.on span{color:
 .page .row .grow{min-width:0}
 
 /* opened notebook: tidy spread. The planner's own ruled paper is hidden behind the book, each page has one margin line clear of the text, and the contents list sits on the lines */
-.page:has(>.nbook),.binder:has(.nbook)>.page{background-image:none}
 .nbv .nbook .page:not([data-paper]){background-image:linear-gradient(90deg,transparent 24px,var(--margin) 24px,var(--margin) 25.5px,transparent 25.5px),repeating-linear-gradient(to bottom,transparent 0 calc(var(--lh,40px) - 1px),var(--rule) calc(var(--lh,40px) - 1px) var(--lh,40px))}
 .nbv .nbook .page{padding:var(--lh) 26px var(--lh) 44px}
 .nbv .nbook .page .eyebrow{line-height:var(--lh);margin:0}
@@ -1543,3 +1542,20 @@ a.nbcover-link:focus-visible{outline:3px solid var(--accent);outline-offset:6px;
 .nbook .nb-plan li{grid-template-columns:auto 6px minmax(0,1fr);gap:4px 10px;min-height:var(--lh);padding:0}
 .nbook .nb-time{white-space:nowrap}
 .nbook .nb-type{grid-column:3;margin-top:-6px}
+
+/* the notebook's page tabs look like the planner's tabs: vertical, on the page edge */
+@media (min-width:901px){
+  .nbook .nbp-tabs{right:-12px;top:var(--lh);gap:6px}
+  .nbook .nbp-tabs .tab{width:44px;min-height:0;padding:16px 10px 16px 12px;border-radius:0 14px 14px 0;margin:0;font-size:15px;box-shadow:2px 2px 6px rgba(0,0,0,.06);filter:saturate(.9)}
+  .nbook .nbp-tabs .tab[aria-selected="true"]{width:54px;margin-right:0;filter:none;font-weight:700}
+  .nbook .nbp-tabs .tab:hover{transform:translateX(3px)}
+  .nbook .nbp-tabs .tab[aria-selected="true"]:hover{transform:none}
+  .nbv .nbook .nbp-right{padding-right:64px}
+}
+
+/* profile page: closer together */
+.page .phead-btns{margin-bottom:0}
+.page .ptabs{margin:0 0 var(--lh)}
+.page .nbtiles{margin-top:0;margin-bottom:0}
+.page .nbtile small{display:none}
+.page .nbe-bar{margin-top:var(--lh);margin-bottom:0}
