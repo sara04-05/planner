@@ -100,7 +100,7 @@ function upgrade_schema(PDO $pdo): void
             user_id INT UNSIGNED NOT NULL, year SMALLINT UNSIGNED NOT NULL, month TINYINT UNSIGNED NOT NULL,
             income DECIMAL(10,2) NULL, save_target DECIMAL(10,2) NULL,
             PRIMARY KEY (user_id, year, month),
-            FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE) ENGINE=InnoDB');
+            FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4');
     }
 
     // What the user confirmed they really saved in a month. Only adds the column.
@@ -259,15 +259,37 @@ function upgrade_schema(PDO $pdo): void
             ? 'CREATE TABLE IF NOT EXISTS contact_names (user_id INTEGER NOT NULL, contact_id INTEGER NOT NULL, name VARCHAR(80) NOT NULL,
                 PRIMARY KEY (user_id, contact_id), FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE, FOREIGN KEY (contact_id) REFERENCES users(id) ON DELETE CASCADE)'
             : 'CREATE TABLE IF NOT EXISTS contact_names (user_id INT UNSIGNED NOT NULL, contact_id INT UNSIGNED NOT NULL, name VARCHAR(80) NOT NULL,
-                PRIMARY KEY (user_id, contact_id), FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE, FOREIGN KEY (contact_id) REFERENCES users(id) ON DELETE CASCADE) ENGINE=InnoDB');
+                PRIMARY KEY (user_id, contact_id), FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE, FOREIGN KEY (contact_id) REFERENCES users(id) ON DELETE CASCADE) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4');
         // Pages people add to a notebook themselves (a title, an icon and some writing)
         $pdo->exec(DB_DRIVER === 'sqlite'
             ? 'CREATE TABLE IF NOT EXISTS nb_pages (id INTEGER PRIMARY KEY AUTOINCREMENT, user_id INTEGER NOT NULL, notebook_id INTEGER NOT NULL, title VARCHAR(40) NOT NULL,
                 emoji VARCHAR(16) NOT NULL DEFAULT \'\', body TEXT NOT NULL, FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE, FOREIGN KEY (notebook_id) REFERENCES notebooks(id) ON DELETE CASCADE)'
             : 'CREATE TABLE IF NOT EXISTS nb_pages (id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY, user_id INT UNSIGNED NOT NULL, notebook_id INT UNSIGNED NOT NULL, title VARCHAR(40) NOT NULL,
-                emoji VARCHAR(16) NOT NULL DEFAULT \'\', body TEXT NOT NULL, FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE, FOREIGN KEY (notebook_id) REFERENCES notebooks(id) ON DELETE CASCADE) ENGINE=InnoDB');
+                emoji VARCHAR(16) NOT NULL DEFAULT \'\', body TEXT NOT NULL, FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE, FOREIGN KEY (notebook_id) REFERENCES notebooks(id) ON DELETE CASCADE) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4');
     } catch (PDOException $e) {
         error_log('Could not add roles / chat editing columns: ' . $e->getMessage());
+    }
+
+    // Emojis need utf8mb4. Hosts like InfinityFree often create the tables as plain utf8 (3 bytes per character), where an
+    // emoji is refused or turned into "?". Convert any such table once; a table the host refuses to convert is left as it was.
+    if (DB_DRIVER !== 'sqlite') {
+        try {
+            $pdo->exec('ALTER DATABASE `' . DB_NAME . '` CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci');
+        } catch (PDOException $e) {
+            error_log('Could not change the database character set: ' . $e->getMessage());
+        }
+        try {
+            $old = $pdo->query("SELECT TABLE_NAME FROM information_schema.TABLES WHERE TABLE_SCHEMA = DATABASE() AND TABLE_TYPE = 'BASE TABLE' AND TABLE_COLLATION NOT LIKE 'utf8mb4%'")->fetchAll(PDO::FETCH_COLUMN);
+            foreach ($old as $t) {
+                try {
+                    $pdo->exec('ALTER TABLE `' . str_replace('`', '', (string)$t) . '` CONVERT TO CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci');
+                } catch (PDOException $e) {
+                    error_log("Could not convert $t to utf8mb4: " . $e->getMessage());
+                }
+            }
+        } catch (PDOException $e) {
+            error_log('Could not check table character sets: ' . $e->getMessage());
+        }
     }
 }
 
