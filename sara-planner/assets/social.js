@@ -165,7 +165,10 @@ function blogPage(){
       <div class="txt" translate="no">${esc(p.body)}</div>
       <div class="acts"><button class="btn sm" data-x="post-edit" data-id="${p.id}">Edit</button>
         <button class="btn sm" data-x="post-vis" data-id="${p.id}">${p.public?'Make private':'Make public'}</button>
-        <button class="btn sm danger" data-x="post-del" data-id="${p.id}">Delete</button></div></div></article>`).join('');
+        <button class="btn sm danger" data-x="post-del" data-id="${p.id}">Delete</button></div>
+      <div class="cmts"><h4>${p.comments.length} ${p.comments.length===1?'comment':'comments'}</h4>
+        ${p.comments.map(c=>`<div class="cmt"><b translate="no">${esc(c.name)}</b> <span class="hint2">${esc(c.date)}</span>${c.can_delete?`<button type="button" class="cdel" data-x="cmt-del" data-id="${c.id}" aria-label="Delete comment">✕</button>`:''}<p translate="no">${esc(c.body)}</p></div>`).join('')}
+        <form class="cform" data-xform="cmt" data-id="${p.id}" autocomplete="off"><input name="body" maxlength="500" placeholder="Write a comment…" aria-label="Write a comment" required><button class="btn sm primary">Post</button></form></div></div></article>`).join('');
   return `<div class="xrow sp" style="margin-bottom:14px">${ui.post?'<span></span>':'<button class="btn primary" data-x="post-new">+ New post</button>'}<span class="hint2">${SHARE_MSG}</span></div>`+
     postForm()+(posts||(ui.post?'':'<p class="empty">No posts yet. Write about your day, a book you finished, a trip — whatever you like. Each post can be private or public.</p>'));
 }
@@ -596,6 +599,7 @@ document.addEventListener('click',async e=>{
       case 'post-edit':{const p=S.posts.find(x=>x.id===id);if(!p)return;ui.post={id:p.id,title:p.title,body:p.body,public:p.public};ui.pics.post=p.image?{id:p.image_id,url:p.image}:null;redraw('px-title');return}
       case 'post-cancel':ui.post=null;redraw();return;
       case 'post-vis':{const p=S.posts.find(x=>x.id===id);if(!p)return;p.public=!p.public;redraw();await api('x.post.public',{id,public:p.public});return}
+      case 'cmt-del':{const r=await api('x.comment.delete',{id});const p=S.posts.find(x=>x.comments.some(c=>c.id===id));if(p)p.comments=r.comments;redraw();return}
       case 'post-del':{if(!armed(b))return;S.posts=S.posts.filter(x=>x.id!==id);redraw();await api('x.post.delete',{id});return}
       case 'list-new':ui.newList=!ui.newList;redraw(ui.newList?'lx-title':'');return;
       case 'list-quick':{const q=QUICK[+b.dataset.i];const r=await api('x.list.add',{notebook_id:ui.nb,title:q[1],emoji:q[0],layout:q[2]});S.lists.push({id:r.id,nb:ui.nb,title:q[1],emoji:q[0],layout:q[2],public:false,items:[]});redraw('ix-text-'+r.id);return}
@@ -695,6 +699,9 @@ document.addEventListener('submit',async e=>{
       await api('x.post.save',{id:ui.post.id,notebook_id:ui.nb,title:d.title,body:d.body,public:pub,image_id:pic?pic.id:0});
       ui.post=null;ui.pics.post=null;
       const r=await api('x.load');S=Object.assign(S,{posts:r.posts});toast(pub?'Published.':'Saved as private.');redraw();
+    }else if(x==='cmt'){
+      const r=await api('x.comment.add',{post_id:+f.dataset.id,body:d.body});
+      const p=S.posts.find(x=>x.id===+f.dataset.id);if(p)p.comments=r.comments;redraw();
     }else if(x==='acct'){
       await api('x.profile.save',{name:d.name,slug:d.slug,bio:d.bio||''});
       Object.assign(S.profile,{name:d.name.trim(),slug:d.slug.trim().toLowerCase(),bio:(d.bio||'').trim()});toast('Saved.');redraw();
