@@ -709,6 +709,7 @@ try {
 
     // ---------- chat between users ----------
     case 'msg.list': {
+        msg_encrypt_existing();
         // Everyone this user has written with, newest first, with the last message and how many are unread.
         // Messages you deleted for yourself don't count; a chat you deleted is gone until someone writes again.
         $rows = q('SELECT CASE WHEN from_id = ? THEN to_id ELSE from_id END AS other, MAX(id) AS last_id,
@@ -723,7 +724,7 @@ try {
             $nick = contact_name($uid, (int)$u['id']);
             $people[] = ['id' => (int)$u['id'], 'name' => $nick !== '' ? $nick : $u['name'], 'tag' => $nick !== '' ? $u['name'] : name_tag($u['name'], $u['email']),
                 'verified' => is_verified_badge((int)$u['id']),
-                'last' => (int)$m['deleted_all'] === 1 ? 'This message was deleted' : mb_substr($m['body'], 0, 80),
+                'last' => (int)$m['deleted_all'] === 1 ? 'This message was deleted' : mb_substr(msg_decrypt($m['body']), 0, 80),
                 'mine' => (int)$m['from_id'] === $uid, 'at' => (int)$m['sent_at'], 'unread' => (int)$r['unread']];
         }
         ok(['people' => $people, 'unread' => chat_unread($uid)]);
@@ -748,7 +749,7 @@ try {
                    WHERE ((from_id = ? AND to_id = ? AND hidden_from = 0) OR (from_id = ? AND to_id = ? AND hidden_to = 0)) AND id > ?
                    ORDER BY id DESC LIMIT 200', [$uid, $other, $other, $uid, $after])->fetchAll();
         $msgs = array_map(fn($m) => ['id' => (int)$m['id'], 'mine' => (int)$m['from_id'] === $uid,
-            'body' => (int)$m['deleted_all'] === 1 ? '' : $m['body'], 'deleted' => (int)$m['deleted_all'] === 1,
+            'body' => (int)$m['deleted_all'] === 1 ? '' : msg_decrypt($m['body']), 'deleted' => (int)$m['deleted_all'] === 1,
             'edited' => $m['edited_at'] !== null && (int)$m['deleted_all'] === 0, 'at' => (int)$m['sent_at']], array_reverse($rows));
         q('UPDATE messages SET is_read = 1 WHERE to_id = ? AND from_id = ? AND is_read = 0', [$uid, $other]);
         q('UPDATE notifications SET is_read = 1 WHERE user_id = ? AND ref = ?', [$uid, 'msg:' . $other]);   // you have read that chat
@@ -778,7 +779,7 @@ try {
         $m = q('SELECT id, deleted_all FROM messages WHERE id = ? AND from_id = ?', [$id, $uid])->fetch();
         if (!$m) fail(404, 'You can only edit your own messages.');
         if ((int)$m['deleted_all'] === 1) fail(400, 'That message was deleted.');
-        q('UPDATE messages SET body = ?, edited_at = ? WHERE id = ?', [$body, time(), $id]);
+        q('UPDATE messages SET body = ?, edited_at = ? WHERE id = ?', [msg_encrypt($body), time(), $id]);
         ok(['body' => $body]);
     }
 
@@ -809,9 +810,9 @@ try {
         // A small brake against spam: at most 20 messages a minute
         $recent = (int)q('SELECT COUNT(*) AS n FROM messages WHERE from_id = ? AND sent_at > ?', [$uid, time() - 60])->fetch()['n'];
         if ($recent >= 20) fail(429, 'You are sending messages too fast. Wait a minute and try again.');
-        q('INSERT INTO messages (from_id, to_id, body, sent_at) VALUES (?, ?, ?, ?)', [$uid, $to, $body, time()]);
+        q('INSERT INTO messages (from_id, to_id, body, sent_at) VALUES (?, ?, ?, ?)', [$uid, $to, msg_encrypt($body), time()]);
         $me = person($uid);
-        notify_replace($to, 'msg:' . $uid, ($me['name'] ?? 'Someone') . ' sent you a message: “' . mb_substr($body, 0, 80) . (mb_strlen($body) > 80 ? '…' : '') . '”', 'messages.php?with=' . $uid);
+        notify_replace($to, 'msg:' . $uid, ($me['name'] ?? 'Someone') . ' sent you a message', 'messages.php?with=' . $uid);
         ok(['message' => ['id' => (int)db()->lastInsertId(), 'mine' => true, 'body' => $body, 'at' => time()]]);
     }
 
