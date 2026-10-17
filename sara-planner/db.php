@@ -310,9 +310,14 @@ function msg_decrypt(string $stored): string
 {
     if (strncmp($stored, 'enc1:', 5) !== 0) return $stored;
     $bin = base64_decode(substr($stored, 5), true);
-    if ($bin === false || strlen($bin) < 28) return '';
-    $plain = openssl_decrypt(substr($bin, 28), 'aes-256-gcm', msg_key(), OPENSSL_RAW_DATA, substr($bin, 0, 12), substr($bin, 12, 16));
-    return $plain === false ? '' : $plain;
+    $lost = '🔒 This message can\'t be read (the key in data/message.key is missing or different).';
+    if ($bin === false || strlen($bin) < 28) return $lost;
+    try {
+        $plain = openssl_decrypt(substr($bin, 28), 'aes-256-gcm', msg_key(), OPENSSL_RAW_DATA, substr($bin, 0, 12), substr($bin, 12, 16));
+    } catch (Throwable $e) {
+        return '🔒 Messages can\'t be read: make the data folder writable so data/message.key can be saved.';
+    }
+    return $plain === false ? $lost : $plain;
 }
 
 /** Once: encrypt messages that were saved as plain text before this existed. */
