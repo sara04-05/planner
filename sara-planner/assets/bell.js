@@ -86,7 +86,33 @@ pop.addEventListener('click',e=>{
   if(e.target.closest('[data-clear]'))call('x.notes.clear').then(()=>{notes=[];unread=0;paintBadge();paint()}).catch(()=>{});
 });
 // new notifications appear without reloading: check every 30 seconds while the page is visible and the list is closed
-setInterval(()=>{if(document.hidden||!pop.hidden)return;call('x.notes').then(d=>{notes=d.notes;unread=d.unread;paintBadge()}).catch(()=>{})},30000);
+// A new one also slides in at the top of the window, so it shows even when you have scrolled down and the top bar is out of view.
+let seenId=-1,toastEl=null,toastTimer=0;
+function hideToast(){if(toastEl){toastEl.remove();toastEl=null}clearTimeout(toastTimer)}
+function showToast(fresh){
+  hideToast();
+  const n=fresh[0],t=window.SPL_T?window.SPL_T(n.text):n.text,more=fresh.length-1;
+  toastEl=document.createElement('div');toastEl.className='notetoast';toastEl.setAttribute('role','status');
+  toastEl.innerHTML=`<button type="button" class="nt-go" translate="no"><span class="ic">${{like:'♥',friend:'👤',accepted:'🤝',msg:'💬'}[n.kind]||'🔔'}</span><span class="tx">${esc(t)}${more>0?` <small>+${more} more</small>`:''}</span></button><button type="button" class="nt-x" aria-label="Dismiss">✕</button>`;
+  document.body.appendChild(toastEl);
+  toastEl.addEventListener('click',e=>{
+    e.stopPropagation();
+    if(e.target.closest('.nt-x')){hideToast();return}
+    hideToast();window.scrollTo({top:0,behavior:'smooth'});if(pop.hidden)open();
+  });
+  toastTimer=setTimeout(hideToast,8000);
+}
+function check(){
+  if(document.hidden||!pop.hidden)return;
+  call('x.notes').then(d=>{
+    notes=d.notes;unread=d.unread;paintBadge();
+    const top=d.notes.reduce((m,n)=>Math.max(m,n.id),0);
+    if(seenId>=0){const fresh=d.notes.filter(n=>!n.read&&n.id>seenId);if(fresh.length)showToast(fresh)}
+    seenId=Math.max(seenId,top);
+  }).catch(()=>{});
+}
+check();   // the first look only sets what counts as already seen
+setInterval(check,30000);
 document.addEventListener('click',close);
 document.addEventListener('keydown',e=>{if(e.key==='Escape'&&!pop.hidden){close();btn.focus()}});
 })();
