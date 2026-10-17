@@ -342,7 +342,7 @@ function syncControls(){
 const hm=m=>String(Math.floor(m/60)).padStart(2,'0')+':'+String(m%60).padStart(2,'0');
 const avatarHtml=(p,cls='xl')=>p.avatar?`<img class="avatar ${cls}" src="${esc(p.avatar)}" alt="">`:`<span class="avatar ${cls} letter" aria-hidden="true">${esc(((p.name||'S')[0]||'S').toUpperCase())}</span>`;
 const AUD=[['visitor','🌐','Visitor','Someone with no account'],['user','👤','Signed-in person','Someone with an account, not a friend'],['friend','🤝','Friend','Someone you accepted']];
-const PTABS=[['notebooks','📓','Notebooks'],['posts','🖼️','Posts'],['friends','👥','Friends'],['preview','👁️','What others see'],['settings','⚙️','Settings']];
+const PTABS=[['notebooks','📓','Notebooks'],['friends','👥','Friends'],['preview','👁️','What others see'],['settings','⚙️','Settings']];
 
 function profileHead(){
   const p=S.profile,likes=S.posts.reduce((n,x)=>n+x.likes,0);
@@ -352,7 +352,7 @@ function profileHead(){
     <div class="phead-av">${avatarHtml(p)}</div>
     <div class="phead-main">
       <div class="phead-top"><h2 translate="no">@${esc(p.slug)}</h2><span class="tag2 ${p.public?'':'priv'}">${p.public?'Public':'Private'}</span><button type="button" class="btn ghost sm" data-x="copy-link" data-link="${esc(link)}">Copy link</button></div>
-      <div class="pstats">${stat(S.notebooks.length,S.notebooks.length===1?'notebook':'notebooks','notebooks')}${stat(S.posts.length,S.posts.length===1?'post':'posts','posts')}${stat(p.friends,p.friends===1?'friend':'friends','friends')}<span class="pstat"><b>${likes}</b><span>likes</span></span></div>
+      <div class="pstats">${stat(S.notebooks.length,S.notebooks.length===1?'notebook':'notebooks','notebooks')}<span class="pstat"><b>${S.posts.length}</b><span>${S.posts.length===1?'post':'posts'}</span></span>${stat(p.friends,p.friends===1?'friend':'friends','friends')}<span class="pstat"><b>${likes}</b><span>likes</span></span></div>
       <p class="pname2" translate="no">${esc(p.name)}</p>
       ${p.bio?`<p class="pbio2" translate="no">${esc(p.bio)}</p>`:'<p class="hint2">No bio yet. Add one in Settings.</p>'}
     </div>
@@ -378,11 +378,6 @@ function notebooksTab(){
   }else if(nb)editor='<p class="hint2" style="margin-top:12px">Press a notebook above to open it.</p>';
   else editor='<p class="empty">You have no notebooks yet. Press <b>+ New notebook</b> to make your first one.</p>';
   return tiles+newForm+editor;
-}
-function postsTab(){
-  if(!S.posts.length)return '<p class="empty">No posts yet. Open a notebook with a Blog page and press <b>+ New post</b>.</p>';
-  const nbName=id=>(S.notebooks.find(n=>n.id===id)||{title:''}).title;
-  return `<div class="pgrid">${S.posts.map(p=>`<button class="ptile" data-x="post-open" data-id="${p.id}">${p.image?`<img src="${esc(p.image)}" alt="" loading="lazy">`:`<span class="ptxt" translate="no"><b>${esc(p.title)}</b>${esc(p.body.slice(0,120))}</span>`}<span class="pov"><span>♥ ${p.likes}</span><span>${p.public?'🌍':'🔒'}</span></span><small translate="no">${esc(nbName(p.nb))}</small></button>`).join('')}</div>`;
 }
 function friendsTab(){
   const f=S.friends||[];
@@ -514,7 +509,7 @@ function settingsTab(){
   <section class="xcard st-sec" id="st-danger"><h3>Delete account</h3><p class="sub">Logs you out and removes your account and everything in it for good.</p><a class="btn" href="change-password.php">Change my password</a> <a class="btn danger" href="delete-account.php">Delete my account</a></section>`;
 }
 function profileHtml(){
-  const body=ui.ptab==='posts'?postsTab():ui.ptab==='friends'?friendsTab():ui.ptab==='preview'?previewTab():ui.ptab==='settings'?settingsTab():notebooksTab();
+  const body=ui.ptab==='friends'?friendsTab():ui.ptab==='preview'?previewTab():ui.ptab==='settings'?settingsTab():notebooksTab();
   return hdr('Your notebook','Profile','')+profileHead()+`<div class="ptab-body">${body}</div>`;
 }
 
@@ -582,7 +577,6 @@ document.addEventListener('click',async e=>{
       case 'cover-pick':{await api('x.profile.save',{cover:b.dataset.v});S.profile.cover=b.dataset.v;redraw();return}
       case 'avatar-rm':{await api('x.profile.save',{remove_avatar:true});S.profile.avatar='';redraw();return}
       case 'aud':ui.aud=b.dataset.v;redraw();return;
-      case 'post-open':{const p=S.posts.find(x=>x.id===id);if(!p)return;pick(p.nb);ui.pg='blog';ui.nbOpen=true;ui.ptab='notebooks';redraw();return}
       case 'nb-new':ui.newNb=!ui.newNb;redraw(ui.newNb?'nn-title':'');return;
       case 'panel':ui.panel=ui.panel===b.dataset.v?'':b.dataset.v;ui.sel=-1;redraw();return;
       case 'pg':{const old=ui.nbOpen&&b.dataset.v!==ui.pg&&document.getElementById('nbPage');const snap=old&&old.cloneNode(true);ui.pg=b.dataset.v;ui.nbOpen=ui.pg!=='cover';ui.sel=-1;ui.post=null;ui.newList=false;ui.pageEdit=null;redraw();if(snap)flipLeaf(snap,'turn');return}
