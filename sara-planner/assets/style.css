@@ -584,6 +584,14 @@ img.stk{width:calc(var(--s,1)*56px);height:auto;font-size:0}
 .post .acts{display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-top:12px}
 .tag2{display:inline-block;font-size:11px;font-weight:700;padding:2px 9px;border-radius:999px;background:var(--accent-soft);color:var(--accent)}
 .tag2.priv{background:var(--paper);border:1px solid var(--line);color:var(--muted)}
+.cmts{margin-top:14px;border-top:1px dashed var(--line);padding-top:10px}
+.cmts h4{font-size:13px;margin-bottom:6px}
+.cmt{position:relative;padding:6px 26px 6px 0;font-size:14px}
+.cmt p{white-space:pre-wrap;word-wrap:break-word;line-height:1.5;margin:2px 0 0}
+.cmt .cdel{position:absolute;top:4px;right:0;border:0;background:none;color:var(--muted);cursor:pointer;font-size:12px;padding:4px}
+.cmt .cdel:hover{color:var(--bad)}
+.cform{display:flex;gap:8px;margin-top:8px}
+.cform input{flex:1;min-width:0;border:1px solid var(--line);background:var(--paper);color:inherit;border-radius:999px;padding:7px 14px;font-size:14px}
 .likebtn{border:1px solid var(--line);background:var(--paper);border-radius:999px;padding:5px 12px;font-size:13px;font-weight:600;cursor:pointer;display:inline-flex;align-items:center;gap:6px}
 .likebtn:hover{border-color:var(--bad);color:var(--bad)}
 .likebtn.on{background:var(--bad-soft);border-color:var(--bad);color:var(--bad)}

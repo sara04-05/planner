@@ -217,6 +217,19 @@ echo profile_head($person, (string)$prof['slug'], [plural($dayOnly ? 0 : count($
               <span class="hint2">♥ <?= $p['likes'] ?> · <a href="login.php">Log in</a> to like</span>
             <?php endif; ?>
           </div>
+          <div class="cmts" data-cmts="<?= $p['id'] ?>">
+            <h4><?= count($p['comments']) ?> <?= count($p['comments']) === 1 ? 'comment' : 'comments' ?></h4>
+            <div class="clist"><?php foreach ($p['comments'] as $c): ?>
+              <div class="cmt"><b><?= h($c['name']) ?></b> <span class="hint2"><?= h($c['date']) ?></span>
+                <?php if ($c['can_delete']): ?><button type="button" class="cdel" data-cdel="<?= $c['id'] ?>" aria-label="Delete comment">✕</button><?php endif; ?>
+                <p><?= h($c['body']) ?></p></div>
+            <?php endforeach; ?></div>
+            <?php if ($viewer): ?>
+              <form class="cform" data-cpost="<?= $p['id'] ?>"><input name="body" maxlength="500" placeholder="Write a comment…" aria-label="Write a comment" required><button class="btn sm primary">Post</button></form>
+            <?php else: ?>
+              <p class="hint2"><a href="login.php">Log in</a> to comment</p>
+            <?php endif; ?>
+          </div>
         </div>
       </article>
     <?php endforeach; else: ?><p class="empty">Nothing here yet.</p><?php endif; ?>
@@ -319,6 +332,29 @@ echo profile_head($person, (string)$prof['slug'], [plural($dayOnly ? 0 : count($
     e.preventDefault();swapBook(a.href,true);
   });
   window.addEventListener('popstate',function(){location.reload()});
+  function drawComments(box,list){
+    box.querySelector('h4').textContent=list.length+(list.length===1?' comment':' comments');
+    var el=box.querySelector('.clist');el.textContent='';
+    list.forEach(function(c){
+      var d=document.createElement('div');d.className='cmt';
+      var n=document.createElement('b');n.textContent=c.name;d.appendChild(n);
+      var t=document.createElement('span');t.className='hint2';t.textContent=' '+c.date;d.appendChild(t);
+      if(c.can_delete){var x=document.createElement('button');x.type='button';x.className='cdel';x.dataset.cdel=c.id;x.setAttribute('aria-label','Delete comment');x.textContent='✕';d.appendChild(x)}
+      var p=document.createElement('p');p.textContent=c.body;d.appendChild(p);
+      el.appendChild(d);
+    });
+  }
+  document.addEventListener('submit',function(e){
+    var f=e.target.closest('[data-cpost]');if(!f)return;
+    e.preventDefault();
+    var box=f.closest('[data-cmts]'),inp=f.elements.body;
+    call('x.comment.add',{post_id:+f.dataset.cpost,body:inp.value}).then(function(r){inp.value='';drawComments(box,r.comments)}).catch(function(e){alert(e.message)});
+  });
+  document.addEventListener('click',function(e){
+    var b=e.target.closest('[data-cdel]');if(!b)return;
+    var box=b.closest('[data-cmts]');
+    call('x.comment.delete',{id:+b.dataset.cdel}).then(function(r){drawComments(box,r.comments)}).catch(function(e){alert(e.message)});
+  });
   document.addEventListener('click',function(e){
     var b=e.target.closest('[data-like]');if(!b)return;
     call('x.like',{post_id:+b.dataset.like}).then(function(r){b.classList.toggle('on',r.liked);b.querySelector('span').textContent=r.likes}).catch(function(e){alert(e.message)});

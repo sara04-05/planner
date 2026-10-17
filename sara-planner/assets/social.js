@@ -161,7 +161,7 @@ function blogPage(){
   const posts=S.posts.filter(p=>p.nb===ui.nb).map(p=>`<article class="post">
     ${p.image?`<img class="pimg" src="${esc(p.image)}" alt="">`:''}
     <div class="pb"><h3 translate="no">${esc(p.title)}</h3>
-      <div class="meta2"><span>${esc(p.date)}</span><span class="tag2 ${p.public?'':'priv'}">${p.public?'Public':'Only me'}</span><span>♥ ${p.likes}</span></div>
+      <div class="meta2"><span>${esc(p.date)}</span><span class="tag2 ${p.public?'':'priv'}">${p.public?'Public':'Only me'}</span><span>♥ ${p.likes}</span><span>💬 ${p.comments.length}</span></div>
       <div class="txt" translate="no">${esc(p.body)}</div>
       <div class="acts"><button class="btn sm" data-x="post-edit" data-id="${p.id}">Edit</button>
         <button class="btn sm" data-x="post-vis" data-id="${p.id}">${p.public?'Make private':'Make public'}</button>
@@ -504,7 +504,8 @@ function settingsTab(){
     ${sw('Visible without logging in','Also show it to visitors who have no account. Needs a public profile.',p.guest&&p.public,'data-xsw="guest"',!p.public)}
     ${sw('Show me in Explore','Off by default: Explore only lists people who switch this on. Friends and your link work either way.',p.explore,'data-xsw="explore"')}
     <label class="l">Who can see my day (today’s hour-by-hour plan, nothing else of your planner)</label>${dsel}
-    ${sw('Alert when someone likes my post','Shows in the bell at the top of the page.',!!(p.notify&&p.notify.like),'data-xsw="notify" data-k="like"')}</section>
+    ${sw('Alert when someone likes my post','Shows in the bell at the top of the page.',!!(p.notify&&p.notify.like),'data-xsw="notify" data-k="like"')}
+    ${sw('Alert when someone comments on my post','Shows in the bell at the top of the page.',!(p.notify&&(p.notify.comment===0||p.notify.comment===false)),'data-xsw="notify" data-k="comment"')}</section>
   <section class="xcard st-sec" id="st-notebooks"><h3>Notebooks and Explore card</h3><p class="sub">Pick a notebook to change its look, name, pages and who sees it. Your first notebook is also your card on Explore, so its cover is what people see there.</p>${nbTiles}
     ${nb?`<div class="st-nb">${quickLook(nb)}${settingsPanel(nb)}${pages}<div class="xrow" style="margin-top:12px"><button class="btn" data-x="st-deco">🎨 Look, colours and stickers</button><span class="hint2">Make your own cover colours, use your own picture, and make stickers from your pictures.</span></div></div>`:''}</section>
   <section class="xcard st-sec" id="st-danger"><h3>Delete account</h3><p class="sub">Logs you out and removes your account and everything in it for good.</p><a class="btn" href="change-password.php">Change my password</a> <a class="btn danger" href="delete-account.php">Delete my account</a></section>`;
