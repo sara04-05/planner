@@ -449,7 +449,7 @@ function load_comments(array $postIds, ?int $viewer, int $owner): array
     foreach (q("SELECT c.*, u.name FROM post_comments c JOIN users u ON u.id = c.user_id WHERE c.post_id IN ($in) ORDER BY c.id", $postIds)->fetchAll() as $c) {
         $mine = $viewer !== null && (int)$c['user_id'] === $viewer;
         $out[(int)$c['post_id']][] = ['id' => (int)$c['id'], 'name' => $c['name'], 'body' => $c['body'], 'date' => substr((string)$c['created_at'], 0, 10),
-            'mine' => $mine, 'can_delete' => $mine || ($viewer !== null && $viewer === $owner)];
+            'mine' => $mine, 'can_delete' => $mine || ($viewer !== null && $viewer === $owner), 'can_report' => $viewer !== null && !$mine];
     }
     return $out;
 }
@@ -892,6 +892,33 @@ function notebook_action(int $uid, string $action, array $in): void
         if (!$c || ((int)$c['user_id'] !== $uid && (int)$c['owner'] !== $uid)) fail(404, 'That comment was not found.');
         q('DELETE FROM post_comments WHERE id = ?', [$cid]);
         ok(['comments' => load_comments([(int)$c['post_id']], $uid, (int)$c['owner'])[(int)$c['post_id']] ?? []]);
+    }
+
+    case 'x.comment.report': {   // tell the admins about someone else's comment (listed with the other reports)
+        $cid = id_in($in);
+        $c = q('SELECT c.*, u.name AS cname FROM post_comments c JOIN users u ON u.id = c.user_id WHERE c.id = ?', [$cid])->fetch();
+        if (!$c) fail(404, 'That comment was not found.');
+        $post = readable_post((int)$c['post_id'], $uid);
+        if ((int)$c['user_id'] === $uid) fail(400, 'This is your own comment. You can delete it instead.');
+        $details = mb_substr('Comment #' . $cid . ' by ' . $c['cname'] . ' on the post “' . mb_substr($post['title'], 0, 60) . '”: ' . $c['body'], 0, 1000);
+        if (q("SELECT 1 FROM reports WHERE reporter_id = ? AND reason = 'comment' AND resolved = 0 AND details LIKE ?", [$uid, 'Comment #' . $cid . ' by %'])->fetch()) ok([]);   // already reported
+        if ((int)q('SELECT COUNT(*) n FROM reports WHERE reporter_id = ? AND resolved = 0', [$uid])->fetch()['n'] >= 5) fail(429, 'You already have several open reports. The admins will look at them soon.');
+        q('INSERT INTO reports (reporter_id, target_id, reason, details) VALUES (?, ?, ?, ?)', [$uid, (int)$c['user_id'], 'comment', $details]);
+        $admins = defined('ADMIN_EMAILS') ? ADMIN_EMAILS : [];
+        if ($admins) {
+            require_once __DIR__ . '/mail.php';
+            if (mail_configured()) {
+                $me = person($uid);
+                foreach ($admins as $email) {
+                    try {
+                        send_mail((string)$email, 'Splanner comment reported by ' . $me['name'], "A comment was reported on Splanner.\n\nReported by: " . $me['name'] . ' <' . $me['email'] . ">\n" . $details . "\n\nSee all reports on the Users page (admin.php).\n");
+                    } catch (RuntimeException $e) {
+                        error_log('Report email: ' . $e->getMessage());   // the report is still saved
+                    }
+                }
+            }
+        }
+        ok([]);
     }
 
     case 'x.notes':

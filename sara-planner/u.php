@@ -222,6 +222,7 @@ echo profile_head($person, (string)$prof['slug'], [plural($dayOnly ? 0 : count($
             <div class="clist"><?php foreach ($p['comments'] as $c): ?>
               <div class="cmt"><b><?= h($c['name']) ?></b> <span class="hint2"><?= h($c['date']) ?></span>
                 <?php if ($c['can_delete']): ?><button type="button" class="cdel" data-cdel="<?= $c['id'] ?>" aria-label="Delete comment">✕</button><?php endif; ?>
+                <?php if ($c['can_report']): ?><button type="button" class="crep" data-crep="<?= $c['id'] ?>">Report</button><?php endif; ?>
                 <p><?= h($c['body']) ?></p></div>
             <?php endforeach; ?></div>
             <?php if ($viewer): ?>
@@ -340,6 +341,7 @@ echo profile_head($person, (string)$prof['slug'], [plural($dayOnly ? 0 : count($
       var n=document.createElement('b');n.textContent=c.name;d.appendChild(n);
       var t=document.createElement('span');t.className='hint2';t.textContent=' '+c.date;d.appendChild(t);
       if(c.can_delete){var x=document.createElement('button');x.type='button';x.className='cdel';x.dataset.cdel=c.id;x.setAttribute('aria-label','Delete comment');x.textContent='✕';d.appendChild(x)}
+      if(c.can_report){var r=document.createElement('button');r.type='button';r.className='crep';r.dataset.crep=c.id;r.textContent='Report';d.appendChild(r)}
       var p=document.createElement('p');p.textContent=c.body;d.appendChild(p);
       el.appendChild(d);
     });
@@ -349,6 +351,11 @@ echo profile_head($person, (string)$prof['slug'], [plural($dayOnly ? 0 : count($
     e.preventDefault();
     var box=f.closest('[data-cmts]'),inp=f.elements.body;
     call('x.comment.add',{post_id:+f.dataset.cpost,body:inp.value}).then(function(r){inp.value='';drawComments(box,r.comments)}).catch(function(e){alert(e.message)});
+  });
+  document.addEventListener('click',function(e){
+    var b=e.target.closest('[data-crep]');if(!b||b.disabled)return;
+    if(!confirm('Report this comment to the admins?'))return;
+    call('x.comment.report',{id:+b.dataset.crep}).then(function(){b.textContent='Reported';b.disabled=true}).catch(function(e){alert(e.message)});
   });
   document.addEventListener('click',function(e){
     var b=e.target.closest('[data-cdel]');if(!b)return;
