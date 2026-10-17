@@ -206,7 +206,7 @@ function upgrade_schema(PDO $pdo): void
         // An early test version kept pictures as files on disk; that table has no "data" column. Set it aside.
         $up = $pdo->query(DB_DRIVER === 'sqlite' ? "SELECT name FROM sqlite_master WHERE type = 'table' AND name = 'uploads'" : "SHOW TABLES LIKE 'uploads'")->fetch();
         if ($up && !in_array('data', $colsOf('uploads'), true)) $pdo->exec('ALTER TABLE uploads RENAME TO uploads_old_files');
-        foreach (['uploads', 'posts', 'post_likes', 'interest_lists', 'interest_items', 'notifications', 'notebooks', 'notebook_styles'] as $t) {
+        foreach (['uploads', 'posts', 'post_likes', 'post_comments', 'interest_lists', 'interest_items', 'notifications', 'notebooks', 'notebook_styles'] as $t) {
             if (preg_match("/CREATE TABLE IF NOT EXISTS $t \\(.*?\\n\\)[^;]*;/s", $sql, $m)) $pdo->exec($m[0]);
         }
         // Blog posts and interest lists now belong to one notebook

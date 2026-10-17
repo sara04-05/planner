@@ -6,7 +6,7 @@ declare(strict_types=1);
 
 const SHARE_KEYS   = ['blog', 'interests', 'timetable', 'subjects'];   // kept for the old share column (used once, when moving to notebooks)
 const SECTIONS     = ['interests', 'blog', 'timetable', 'subjects'];       // the pages a notebook can have, besides its cover
-const NOTIFY_KEYS  = ['like'];
+const NOTIFY_KEYS  = ['like', 'comment'];
 // Ready-made covers: plain gradients, then patterned ones (their drawings are the --cov-* variables in assets/style.css)
 const ART_COVERS   = ['blossom', 'library', 'gingham', 'coquette', 'stars', 'clouds', 'lavender', 'daisy', 'checker', 'strawberry', 'terrazzo', 'waves', 'dots', 'sunsetgrain', 'matcha', 'hearts', 'rainbow', 'mountains', 'pinstripe', 'monstera'];
 const BANNERS      = ['dusk', 'peach', 'ocean', 'mint', 'berry', 'sunny', 'night', 'cloud', 'blossom', 'library', 'gingham', 'coquette', 'stars', 'clouds', 'lavender', 'daisy', 'checker', 'strawberry', 'terrazzo', 'waves', 'dots', 'sunsetgrain', 'matcha', 'hearts', 'rainbow', 'mountains', 'pinstripe', 'monstera'];
@@ -338,7 +338,7 @@ function wants_notice(int $uid, string $type): bool
 {
     $row = ensure_profile($uid);
     $n = json_col($row['notify'] ?? null, ['like' => 1]);
-    return !empty($n[$type]);
+    return !empty($n[$type] ?? 1);   // an alert nobody has switched off yet is on
 }
 
 /** The page name of someone's shared notebook, or '' when their notebook is private (friends of the owner always get it). */
@@ -415,13 +415,13 @@ function save_image(int $uid, array $file, string $kind): int
 
 // ---------- loading ----------
 
-function post_row(array $p, int $likes, bool $liked = false): array
+function post_row(array $p, int $likes, bool $liked = false, array $comments = []): array
 {
     return [
         'id' => (int)$p['id'], 'nb' => (int)$p['notebook_id'], 'title' => $p['title'], 'body' => $p['body'],
         'image' => upload_url($p['image_id'] ? (int)$p['image_id'] : null), 'image_id' => (int)($p['image_id'] ?? 0),
         'public' => (int)$p['is_public'] === 1, 'date' => substr((string)$p['created_at'], 0, 10),
-        'likes' => $likes, 'liked' => $liked,
+        'likes' => $likes, 'liked' => $liked, 'comments' => $comments,
     ];
 }
 
@@ -431,11 +431,40 @@ function load_posts(int $owner, bool $onlyPublic, ?int $viewer, int $notebook = 
     $sql = 'SELECT p.*, (SELECT COUNT(*) FROM post_likes l WHERE l.post_id = p.id) AS likes FROM posts p WHERE p.user_id = ?'
         . ($notebook ? ' AND p.notebook_id = ?' : '') . ($onlyPublic ? ' AND p.is_public = 1' : '') . ' ORDER BY p.created_at DESC, p.id DESC';
     $out = [];
-    foreach (q($sql, $notebook ? [$owner, $notebook] : [$owner])->fetchAll() as $p) {
+    $rows = q($sql, $notebook ? [$owner, $notebook] : [$owner])->fetchAll();
+    $comments = load_comments(array_map(fn($p) => (int)$p['id'], $rows), $viewer, $owner);
+    foreach ($rows as $p) {
         $liked = $viewer !== null && (bool)q('SELECT 1 FROM post_likes WHERE post_id = ? AND user_id = ?', [$p['id'], $viewer])->fetch();
-        $out[] = post_row($p, (int)$p['likes'], $liked);
+        $out[] = post_row($p, (int)$p['likes'], $liked, $comments[(int)$p['id']] ?? []);
     }
     return $out;
+}
+
+/** Comments of these posts, oldest first, keyed by post id. "mine" = you wrote it; you can delete your own and any on your own posts. */
+function load_comments(array $postIds, ?int $viewer, int $owner): array
+{
+    if (!$postIds) return [];
+    $in = implode(',', array_fill(0, count($postIds), '?'));
+    $out = [];
+    foreach (q("SELECT c.*, u.name FROM post_comments c JOIN users u ON u.id = c.user_id WHERE c.post_id IN ($in) ORDER BY c.id", $postIds)->fetchAll() as $c) {
+        $mine = $viewer !== null && (int)$c['user_id'] === $viewer;
+        $out[(int)$c['post_id']][] = ['id' => (int)$c['id'], 'name' => $c['name'], 'body' => $c['body'], 'date' => substr((string)$c['created_at'], 0, 10),
+            'mine' => $mine, 'can_delete' => $mine || ($viewer !== null && $viewer === $owner)];
+    }
+    return $out;
+}
+
+/** A post this person may read (their own, or a public one in a shared notebook they can open). Fails with 404 otherwise. */
+function readable_post(int $pid, int $uid): array
+{
+    $post = q('SELECT * FROM posts WHERE id = ?', [$pid])->fetch();
+    if (!$post) fail(404, 'That post was not found.');
+    $owner = (int)$post['user_id'];
+    if ($owner !== $uid) {
+        $nb = q('SELECT * FROM notebooks WHERE id = ? AND user_id = ? AND is_public = 1', [(int)$post['notebook_id'], $owner])->fetch();
+        if (!$nb || !in_array('blog', nb_sections($nb), true) || !can_view_profile(ensure_profile($owner), $uid) || !(int)$post['is_public']) fail(404, 'That post is private.');
+    }
+    return $post;
 }
 
 function load_lists(int $owner, bool $onlyPublic, int $notebook = 0): array
@@ -825,14 +854,8 @@ function notebook_action(int $uid, string $action, array $in): void
 
     case 'x.like': {
         $pid = id_in($in, 'post_id');
-        $post = q('SELECT * FROM posts WHERE id = ?', [$pid])->fetch();
-        if (!$post) fail(404, 'That post was not found.');
+        $post = readable_post($pid, $uid);
         $owner = (int)$post['user_id'];
-        $prof = ensure_profile($owner);
-        if ($owner !== $uid) {
-            $nb = q('SELECT * FROM notebooks WHERE id = ? AND user_id = ? AND is_public = 1', [(int)$post['notebook_id'], $owner])->fetch();
-            if (!$nb || !in_array('blog', nb_sections($nb), true) || !can_view_profile($prof, $uid) || !(int)$post['is_public']) fail(404, 'That post is private.');
-        }
         $have = q('SELECT 1 FROM post_likes WHERE post_id = ? AND user_id = ?', [$pid, $uid])->fetch();
         if ($have) {
             q('DELETE FROM post_likes WHERE post_id = ? AND user_id = ?', [$pid, $uid]);
@@ -844,6 +867,31 @@ function notebook_action(int $uid, string $action, array $in): void
             }
         }
         ok(['liked' => !$have, 'likes' => (int)q('SELECT COUNT(*) c FROM post_likes WHERE post_id = ?', [$pid])->fetch()['c']]);
+    }
+
+    case 'x.comment.add': {
+        $pid = id_in($in, 'post_id');
+        $post = readable_post($pid, $uid);
+        $owner = (int)$post['user_id'];
+        $body = mb_substr(trim((string)($in['body'] ?? '')), 0, 500);
+        if ($body === '') fail(400, 'Please write a comment first.');
+        if ((int)q('SELECT COUNT(*) c FROM post_comments WHERE user_id = ? AND created_at > ?', [$uid, date('Y-m-d H:i:s', time() - 60)])->fetch()['c'] >= 10) fail(429, 'Slow down a little: please wait a minute.');
+        if ((int)q('SELECT COUNT(*) c FROM post_comments WHERE post_id = ?', [$pid])->fetch()['c'] >= 300) fail(400, 'This post has reached its comment limit.');
+        q('INSERT INTO post_comments (post_id, user_id, body) VALUES (?, ?, ?)', [$pid, $uid, $body]);
+        $cid = (int)db()->lastInsertId();
+        if ($owner !== $uid && wants_notice($owner, 'comment')) {
+            $name = (string)q('SELECT name FROM users WHERE id = ?', [$uid])->fetch()['name'];
+            notify($owner, "comment:$cid", "$name commented on your post “" . mb_substr($post['title'], 0, 40) . '”: ' . mb_substr($body, 0, 80), '');
+        }
+        ok(['comments' => load_comments([$pid], $uid, $owner)[$pid] ?? []]);
+    }
+
+    case 'x.comment.delete': {
+        $cid = id_in($in);
+        $c = q('SELECT c.*, p.user_id AS owner FROM post_comments c JOIN posts p ON p.id = c.post_id WHERE c.id = ?', [$cid])->fetch();
+        if (!$c || ((int)$c['user_id'] !== $uid && (int)$c['owner'] !== $uid)) fail(404, 'That comment was not found.');
+        q('DELETE FROM post_comments WHERE id = ?', [$cid]);
+        ok(['comments' => load_comments([(int)$c['post_id']], $uid, (int)$c['owner'])[(int)$c['post_id']] ?? []]);
     }
 
     case 'x.notes':

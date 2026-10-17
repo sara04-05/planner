@@ -46,6 +46,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $share['day'] = max(0, min(3, (int)($_POST['day'] ?? 0)));
             $notify = json_col($prof['notify'] ?? null, ['like' => 1]);
             $notify['like'] = !empty($_POST['notify_like']) ? 1 : 0;
+            $notify['comment'] = !empty($_POST['notify_comment']) ? 1 : 0;
             q('UPDATE profiles SET is_public = ?, guest_view = ?, share = ?, notify = ? WHERE user_id = ?',
                 [$public, $public && !empty($_POST['guest']) ? 1 : 0, json_encode($share), json_encode($notify), $uid]);
             try {
@@ -109,6 +110,7 @@ app_top('Edit profile & settings', ['tab' => 'profile', 'covers' => true, 'eyebr
         </select></label>
       <h2 class="nb-h2">Alerts</h2>
       <?= $switch('notify_like', 'Alert when someone likes my post', 'Shows in the bell at the top of the page.', !empty($notify['like'])) ?>
+      <?= $switch('notify_comment', 'Alert when someone comments on my post', 'Shows in the bell at the top of the page.', !empty($notify['comment'] ?? 1)) ?>
       <button class="btn primary">Save everything</button>
     </form>
     <h2 class="nb-h2">Account</h2>
