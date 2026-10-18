@@ -3,6 +3,7 @@
 declare(strict_types=1);
 require __DIR__ . '/db.php';
 require __DIR__ . '/layout.php';
+require __DIR__ . '/notes-lib.php';
 
 $uid = require_login(true);
 $error = '';
@@ -15,6 +16,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         sleep(1);
         $error = "That password isn't right.";
     } else {
+        notes_wipe($uid);   // study files and whiteboards are kept on disk, not in the database
         q('DELETE FROM users WHERE id = ?', [$uid]);   // everything else (planner, notebooks, messages, friends…) goes with it
         $_SESSION = [];
         if (ini_get('session.use_cookies')) {

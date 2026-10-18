@@ -355,3 +355,34 @@ CREATE TABLE IF NOT EXISTS music_saved (
   image   VARCHAR(255) NOT NULL DEFAULT '',
   FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- Study notebook (notes.php): pages of notes and whiteboards, with study files. Only their owner sees them.
+-- chapter_id: the chapter (Study tab) the page is material for, if any.
+-- The files themselves (and whiteboard drawings) are kept on disk in data/notes/<user id>/.
+CREATE TABLE IF NOT EXISTS notes (
+  id         INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+  user_id    INT UNSIGNED NOT NULL,
+  kind       VARCHAR(10) NOT NULL DEFAULT 'note',
+  title      VARCHAR(120) NOT NULL DEFAULT '',
+  subject    VARCHAR(80) NOT NULL DEFAULT '',
+  chapter_id INT UNSIGNED NULL,
+  body       MEDIUMTEXT NULL,
+  paper      VARCHAR(10) NOT NULL DEFAULT 'lined',
+  board      VARCHAR(80) NULL,
+  created_at INT NOT NULL DEFAULT 0,
+  updated_at INT NOT NULL DEFAULT 0,
+  FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+CREATE TABLE IF NOT EXISTS note_files (
+  id         INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+  user_id    INT UNSIGNED NOT NULL,
+  note_id    INT UNSIGNED NOT NULL,
+  name       VARCHAR(160) NOT NULL,
+  mime       VARCHAR(100) NOT NULL,
+  size       INT UNSIGNED NOT NULL DEFAULT 0,
+  path       VARCHAR(80) NOT NULL,
+  created_at INT NOT NULL DEFAULT 0,
+  FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
+  FOREIGN KEY (note_id) REFERENCES notes(id) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;

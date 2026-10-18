@@ -409,6 +409,31 @@ Object.assign(T,{
 'Added to My playlists.':'U shtua te Listat e mia.','Removed from My playlists.':'U hoq nga Listat e mia.','My playlists is full. Remove one to add another.':'Listat e mia janë plot. Hiq një për të shtuar tjetër.',"Couldn't add it. Try again in a minute.":'Nuk u shtua. Provo përsëri pas një minute.',
 'Nothing found.':'Nuk u gjet asgjë.',"Couldn't search Spotify. Try again in a minute.":'Kërkimi në Spotify nuk funksionoi. Provo përsëri pas një minute.',"Couldn't reach Spotify":'Spotify nuk u arrit'
 });
+// study notebook (notes.php)
+Object.assign(T,{'Notes':'Shënimet','Your study notebook':'Fletorja jote e studimit','🎨 New whiteboard':'🎨 Tabelë e re','📝 New page':'📝 Faqe e re','Search your notes':'Kërko te shënimet','All':'Të gjitha',
+'No pages match.':'Asnjë faqe nuk përputhet.','No pages yet. Start one with “New page” or “New whiteboard”.':'Ende pa faqe. Fillo një me “Faqe e re” ose “Tabelë e re”.','Files':'Skedarët',
+'Everything here is private. Only you can see it.':'Gjithçka këtu është private. Vetëm ti e sheh.','Notes page':'Faqe shënimesh','Write lecture notes and keep the files for that lesson with them.':'Shkruaj shënimet e ligjëratës dhe mbaj skedarët e asaj ore bashkë me to.',
+'Whiteboard':'Tabela','Draw, write by hand, label diagrams and sketch over pictures.':'Vizato, shkruaj me dorë, shëno diagramet dhe skico mbi fotot.','Upload study files':'Ngarko skedarë studimi',
+'PDFs, slides, Word, pictures and music. A page is made for them.':'PDF, prezantime, Word, foto dhe muzikë. Bëhet një faqe për to.','Up to':'Deri në','a file':'për skedar','in total':'gjithsej','Study files':'Skedarë studimi',
+'All pages':'Të gjitha faqet','Whiteboard title':'Titulli i tabelës','Page title':'Titulli i faqes','Paper':'Letra','Lined paper':'Letër me vija','Squared paper':'Letër me katrorë','Dotted paper':'Letër me pika','Plain paper':'Letër e bardhë','Blackboard':'Dërrasë e zezë',
+'All saved':'U ruajt','Saving…':'Po ruhet…','Not saved':'Nuk u ruajt','Delete page':'Fshi faqen','Page deleted.':'Faqja u fshi.','Sure? Click again':'Je i sigurt? Kliko përsëri',
+'Start writing… Your notes save by themselves.':'Fillo të shkruash… Shënimet ruhen vetë.','Untitled page':'Faqe pa titull','Untitled whiteboard':'Tabelë pa titull','Your whiteboard':'Tabela jote',
+'This whiteboard is empty. Open it to start drawing.':'Kjo tabelë është bosh. Hape për të filluar vizatimin.','Open the whiteboard':'Hap tabelën','Study files & pictures':'Skedarë studimi dhe foto','Add files':'Shto skedarë',
+'Drop files here, or use “Add files”.':'Lësho skedarët këtu, ose përdor “Shto skedarë”.','PDF, Word, PowerPoint, Excel, pictures, music and short videos, up to':'PDF, Word, PowerPoint, Excel, foto, muzikë dhe video të shkurtra, deri në','each.':'secili.',
+'Draw on it':'Vizato mbi të','Download':'Shkarko','Delete':'Fshi','Close':'Mbyll',"this kind of file can't be added.":'ky lloj skedari nuk mund të shtohet.','too big. The most is':'shumë i madh. Maksimumi është',
+'Pen':'Stilolaps','Highlighter':'Theksues','Eraser':'Gomë','Line':'Vijë','Arrow':'Shigjetë','Box':'Kuti','Circle':'Rreth','Text':'Tekst','Picture':'Foto','Colour':'Ngjyra','Any colour':'Çdo ngjyrë','Size':'Madhësia',
+'Undo':'Zhbëj','Redo':'Ribëj','Clear the board':'Pastro tabelën','Save as picture':'Ruaje si foto','Done':'Kryer','Not saved. Click Done again to leave anyway.':'Nuk u ruajt. Kliko përsëri Kryer për të dalë gjithsesi.',
+'Type, then click outside':'Shkruaj, pastaj kliko jashtë','Drag to resize':'Tërhiq për të ndryshuar madhësinë','Place picture':'Vendos foton','Cancel':'Anulo','That picture could not be opened.':'Kjo foto nuk u hap dot.',
+'That file is too big.':'Ky skedar është shumë i madh.','No connection. Try again.':'Pa lidhje. Provo përsëri.','The file did not upload. Try again.':'Skedari nuk u ngarkua. Provo përsëri.',
+"That kind of file can't be added. You can add PDF, Word, PowerPoint, Excel, text, pictures, music and short videos.":'Ky lloj skedari nuk mund të shtohet. Mund të shtosh PDF, Word, PowerPoint, Excel, tekst, foto, muzikë dhe video të shkurtra.',
+'That page was not found. It may have been deleted.':'Kjo faqe nuk u gjet. Mund të jetë fshirë.','The drawing did not save. Try again.':'Vizatimi nuk u ruajt. Provo përsëri.','Study material: files, notes and whiteboards':'Materiali i studimit: skedarë, shënime dhe tabela','Add the slides, PDFs, pictures or your own notes for this chapter.':'Shto prezantimet, PDF-të, fotot ose shënimet e tua për këtë kapitull.','📎 Upload files':'📎 Ngarko skedarë','📝 Write notes':'📝 Shkruaj shënime','🎨 Whiteboard':'🎨 Tabela','Material for chapter':'Material për kapitullin','That picture seems to be broken. Try saving it again as a JPG or PNG.':'Kjo foto duket e dëmtuar. Provo ta ruash përsëri si JPG ose PNG.','The file could not be saved on the server. Try again.':'Skedari nuk u ruajt dot në server. Provo përsëri.'});
+P.push(
+ [/^That file is too big\. The most you can upload is (\d+) MB a file\.$/,(m,a)=>`Ky skedar është shumë i madh. Mund të ngarkosh deri në ${a} MB për skedar.`],
+ [/^Your notebook is full \((\d+) MB of files\)\. Delete some old files first\.$/,(m,a)=>`Fletorja jote është plot (${a} MB skedarë). Fshi disa skedarë të vjetër më parë.`],
+ [/^Uploading (.+)…$/,(m,a)=>`Po ngarkohet ${a}…`],
+ [/^(.+\.[A-Za-z0-9]{2,5}) added\.$/,(m,a)=>`${a} u shtua.`],
+ [/^Study material for (.+)$/,(m,a)=>`Materiali i studimit për ${a}`],
+ [/^You have (\d+) (files|pages) already\. Delete some old ones first\.$/,(m,a,b)=>`Ke tashmë ${a} ${b==='files'?'skedarë':'faqe'}. Fshi disa të vjetra më parë.`]);
 function tr(s){
   if(lang!=='sq'||!s)return s;
   const m=/^(\s*)([\s\S]*?)(\s*)$/.exec(s),core=m[2];

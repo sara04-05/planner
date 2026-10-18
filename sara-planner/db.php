@@ -280,6 +280,17 @@ function upgrade_schema(PDO $pdo): void
         error_log('Could not add the music tables: ' . $e->getMessage());
     }
 
+    // Study notebook: notes, whiteboards and study files (same tables as in the schema file)
+    try {
+        $sql = file_get_contents(__DIR__ . (DB_DRIVER === 'sqlite' ? '/sql/schema-sqlite.sql' : '/sql/schema.sql'));
+        foreach (['notes', 'note_files'] as $t) {
+            if (preg_match("/CREATE TABLE IF NOT EXISTS $t \\(.*?\\n\\)[^;]*;/s", $sql, $m)) $pdo->exec($m[0]);
+        }
+        if (DB_DRIVER === 'sqlite') $pdo->exec('CREATE INDEX IF NOT EXISTS idx_notes_user ON notes(user_id,updated_at)');
+    } catch (PDOException $e) {
+        error_log('Could not add the study notebook tables: ' . $e->getMessage());
+    }
+
     // Emojis need utf8mb4. Hosts like InfinityFree often create the tables as plain utf8 (3 bytes per character), where an
     // emoji is refused or turned into "?". Convert any such table once; a table the host refuses to convert is left as it was.
     if (DB_DRIVER !== 'sqlite') {
