@@ -529,6 +529,35 @@ const findS=id=>state.subjects.find(s=>s.id===id);
 const findC=(sid,cid)=>{const s=findS(sid);return s?s.chapters.find(c=>c.id===cid):null};
 const chDone=c=>c.topics.length?c.topics.every(t=>t.done):c.done;
 const sItems=s=>s.chapters.flatMap(c=>c.topics.length?c.topics:[c]);
+const matOpen=new Set(); // chapters whose study material box is open while still empty
+const hasMat=c=>!!(c.mat&&(c.mat.pages.length||c.mat.files.length));
+/** A chapter's study material: its pages in the study notebook (notes.php), the files on them, and buttons to add more. */
+function matPanel(c){
+  const m=c.mat||{pages:[],files:[]},ic={pdf:'📕',audio:'🎵',image:'🖼️'};
+  const pages=m.pages.map(p=>`<a class="mat-chip" href="notes.php?page=${p.id}">${p.kind==='board'?'🎨':'📝'} <span translate="no">${esc(p.title||(p.kind==='board'?'Whiteboard':'Notes'))}</span></a>`).join('');
+  const files=m.files.map(f=>`<a class="mat-chip" href="notefile.php?id=${f.id}${['pdf','image','audio'].includes(f.kind)?'':'&amp;dl=1'}" target="_blank" rel="noopener">${ic[f.kind]||'📄'} <span translate="no">${esc(f.name)}</span></a>`).join('');
+  return `<div class="mat" id="mat-${c.id}">${pages||files?`<div class="mat-list">${pages}${files}</div>`:'<p class="mat-empty">Add the slides, PDFs, pictures or your own notes for this chapter.</p>'}
+    <div class="mat-add"><label class="btn sm">📎 Upload files<input type="file" multiple hidden data-matup="${c.id}"></label><a class="btn sm" href="notes.php?chapter=${c.id}&amp;new=note">📝 Write notes</a><a class="btn sm" href="notes.php?chapter=${c.id}&amp;new=board">🎨 Whiteboard</a></div></div>`;
+}
+/** Upload files from the Study tab: they go on the chapter's notes page (made the first time). */
+async function matUpload(cid,files){
+  let c=null;for(const s of state.subjects)for(const x of s.chapters)if(x.id===cid)c=x;
+  if(!c)return;
+  for(const f of files){
+    toast('Uploading '+f.name+'…');
+    const fd=new FormData();fd.append('chapter_id',cid);fd.append('file',f);
+    try{
+      const r=await fetch('noteapi.php?action=file.add',{method:'POST',credentials:'same-origin',headers:{'X-CSRF-Token':CSRF},body:fd});
+      let j={};try{j=await r.json()}catch(e){}
+      if(!r.ok||j.error)throw new Error(j.error||(r.status===413?'That file is too big.':'Something went wrong. Try again.'));
+      if(!c.mat.pages.some(p=>p.id===j.page))c.mat.pages.push({id:j.page,kind:'note',title:c.title});
+      c.mat.files.push({id:j.file.id,page:j.page,name:j.file.name,kind:j.file.kind});
+      toast(f.name+' added.');
+    }catch(e){toast(f.name+': '+e.message)}
+  }
+  render();
+}
+
 function subjectsSection(){
   const all=state.subjects.flatMap(sItems),allDone=all.filter(x=>x.done).length;
   const cards=state.subjects.map(s=>{
@@ -536,8 +565,9 @@ function subjectsSection(){
     let exam='<span class="pill muted">No exam date</span>';
     if(s.exam){const ed=parse(s.exam),n=dayDiff(ed,TODAY);exam=n<0?`<span class="pill muted">Exam was ${short(ed)}</span>`:`<span class="pill ${n<=7?'bad':n<=21?'warn':''}">Exam ${short(ed)} · ${n} day${n===1?'':'s'}</span>`}
     const chs=s.chapters.map(c=>{const d=chDone(c),tn=c.topics.filter(t=>t.done).length,a=`data-sid="${s.id}" data-cid="${c.id}"`;
-      return `<div class="ch ${d?'done':''}"><div class="ch-h"><input type="checkbox" data-chk="ch" ${a} ${d?'checked':''} aria-label="Learned: ${esc(c.title)}">${nameOrEdit('ch',c.id,c.title,a,150)}${c.topics.length?`<span class="cnt">${tn}/${c.topics.length}</span>`:''}<button class="srcbtn ${c.src?'on':''}" data-act="src" ${a} title="Where to find this chapter (book, author, literature)" aria-label="Where to find ${esc(c.title)}" aria-expanded="${srcOpen.has(c.id)||!!c.src}">📖</button><button class="x sm" data-act="del-ch" ${a} data-confirm aria-label="Delete ${esc(c.title)}">×</button></div>
+      return `<div class="ch ${d?'done':''}"><div class="ch-h"><input type="checkbox" data-chk="ch" ${a} ${d?'checked':''} aria-label="Learned: ${esc(c.title)}">${nameOrEdit('ch',c.id,c.title,a,150)}${c.topics.length?`<span class="cnt">${tn}/${c.topics.length}</span>`:''}<button class="srcbtn ${c.src?'on':''}" data-act="src" ${a} title="Where to find this chapter (book, author, literature)" aria-label="Where to find ${esc(c.title)}" aria-expanded="${srcOpen.has(c.id)||!!c.src}">📖</button><button class="srcbtn ${hasMat(c)?'on':''}" data-act="mat" ${a} title="Study material: files, notes and whiteboards" aria-label="Study material for ${esc(c.title)}" aria-expanded="${matOpen.has(c.id)||hasMat(c)}">📎</button><button class="x sm" data-act="del-ch" ${a} data-confirm aria-label="Delete ${esc(c.title)}">×</button></div>
       ${c.src||srcOpen.has(c.id)?`<textarea class="src" id="src-${c.id}" data-src ${a} rows="2" placeholder="Where to find it, e.g.&#10;Book: Java e pesëmbëdhjetë, by …&#10;Literatura: Manuali i BASIC për 8051" aria-label="Where to find ${esc(c.title)}">${esc(c.src||'')}</textarea>`:''}
+      ${hasMat(c)||matOpen.has(c.id)?matPanel(c):''}
       ${c.topics.length?`<ul class="topics">${c.topics.map(t=>`<li class="${t.done?'dn':''}"><input type="checkbox" data-chk="topic" ${a} data-tid="${t.id}" ${t.done?'checked':''} aria-label="Learned: ${esc(t.t)}">${nameOrEdit('tp',t.id,t.t,a,200)}<button class="x sm" data-act="del-topic" ${a} data-tid="${t.id}" aria-label="Delete ${esc(t.t)}">×</button></li>`).join('')}</ul>`:''}
       <form class="mini" data-form="topic" ${a} autocomplete="off" style="margin-left:28px"><input id="tp-${c.id}" name="t" placeholder="+ Add something to learn" aria-label="Add something to learn in ${esc(c.title)}"></form></div>`}).join('');
     return `<div class="subj" style="--sc:var(--c-${s.c})"><div class="subj-h"><div><h3>${esc(s.name)}</h3><div style="margin-top:6px">${exam}</div></div><button class="x" data-act="del-subj" data-id="${s.id}" data-confirm aria-label="Delete ${esc(s.name)}">×</button></div>
@@ -788,6 +818,9 @@ document.addEventListener('click',e=>{
   switch(a){
     case 'del-subj':state.subjects=state.subjects.filter(s=>s.id!==b.dataset.id);sync('subject.delete',{id:b.dataset.id});break;
     case 'del-ch':{const s=findS(b.dataset.sid);if(s)s.chapters=s.chapters.filter(c=>c.id!==b.dataset.cid);sync('chapter.delete',{id:b.dataset.cid});break}
+    case 'mat':{const c=findC(b.dataset.sid,b.dataset.cid);if(!c)return;
+      if(hasMat(c)){const el=document.getElementById('mat-'+c.id);if(el)el.scrollIntoView({block:'nearest'});return}
+      if(matOpen.has(c.id))matOpen.delete(c.id);else matOpen.add(c.id);break}
     case 'src':{const c=findC(b.dataset.sid,b.dataset.cid);if(!c)return;
       if(c.src||srcOpen.has(c.id)){const el=document.getElementById('src-'+c.id);if(el&&document.activeElement!==el){el.focus();return}}
       if(!c.src&&srcOpen.has(c.id)){srcOpen.delete(c.id);break}
@@ -835,6 +868,7 @@ document.addEventListener('click',e=>{
 document.addEventListener('change',e=>{
   if(!state)return;
   const t=e.target;
+  if(t.dataset.matup){const fs=[...(t.files||[])];t.value='';if(fs.length)matUpload(t.dataset.matup,fs);return}
   if(t.id==='impFile'){const f=t.files&&t.files[0];t.value='';if(f)importFile(f,t.dataset.date);return}
   if(t.dataset.imp!=null){if(impList&&impList[+t.dataset.imp])impList[+t.dataset.imp].type=t.value;return}
   if(t.id==='bk-date'&&t.value){const fh=document.getElementById('freeh');if(fh)fh.innerHTML=freeChips(t.value);return}

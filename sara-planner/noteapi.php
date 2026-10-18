@@ -50,6 +50,27 @@ function my_note(int $uid, $id): array
     return $n;
 }
 
+/** One of my chapters (Study tab) with its subject's name, or null. */
+function my_chapter(int $uid, $id): ?array
+{
+    if (!is_numeric($id) || (int)$id < 1) return null;
+    return q('SELECT c.id, c.title, s.name subject FROM chapters c JOIN subjects s ON s.id = c.subject_id WHERE c.id = ? AND s.user_id = ?', [(int)$id, $uid])->fetch() ?: null;
+}
+
+/** Add a page; $ch = the chapter it is material for (its title and subject fill in what's missing). */
+function add_note(int $uid, string $kind, string $title, string $subject, ?array $ch, ?string $paper = null): array
+{
+    if ((int)q('SELECT COUNT(*) c FROM notes WHERE user_id = ?', [$uid])->fetch()['c'] >= NOTE_MAX_PAGES) nfail(400, 'You have ' . NOTE_MAX_PAGES . ' pages already. Delete some old ones first.');
+    if ($ch) {
+        if ($title === '') $title = mb_substr($ch['title'], 0, 120);
+        if ($subject === '') $subject = mb_substr($ch['subject'], 0, 80);
+    }
+    $paper = in_array($paper, NOTE_PAPERS, true) ? $paper : ($kind === 'board' ? 'plain' : 'lined');
+    q('INSERT INTO notes (user_id, kind, title, subject, chapter_id, body, paper, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)',
+        [$uid, $kind, $title, $subject, $ch ? (int)$ch['id'] : null, '', $paper, time(), time()]);
+    return my_note($uid, db()->lastInsertId());
+}
+
 function clean_text($v, int $max): string
 {
     $v = trim(preg_replace('/[\x00-\x08\x0B\x0C\x0E-\x1F]/u', '', (string)$v) ?? '');
@@ -64,11 +85,18 @@ function note_summary(array $n, array $counts): array
         'thumb' => $n['kind'] === 'board' && $n['board'] ? 'notefile.php?board=' . (int)$n['id'] . '&v=' . (int)$n['updated_at'] : ''];
 }
 
+/** "Chapter title" of the chapter a page belongs to, or '' (also when the chapter was deleted since). */
+function chapter_label(int $uid, $id): string
+{
+    $ch = $id ? my_chapter($uid, $id) : null;
+    return $ch ? $ch['title'] : '';
+}
+
 function note_full(int $uid, array $n): array
 {
     $files = q('SELECT * FROM note_files WHERE note_id = ? AND user_id = ? ORDER BY id', [(int)$n['id'], $uid])->fetchAll();
     return ['id' => (int)$n['id'], 'kind' => $n['kind'], 'title' => $n['title'], 'subject' => $n['subject'], 'body' => (string)($n['body'] ?? ''),
-        'paper' => $n['paper'], 'updated' => (int)$n['updated_at'],
+        'paper' => $n['paper'], 'updated' => (int)$n['updated_at'], 'chapter' => chapter_label($uid, $n['chapter_id'] ?? null),
         'board' => $n['board'] ? 'notefile.php?board=' . (int)$n['id'] . '&v=' . (int)$n['updated_at'] : '',
         'files' => array_map('note_file_out', $files)];
 }
@@ -99,11 +127,8 @@ switch ($action) {
 
     case 'note.add':
         $kind = in_array($in['kind'] ?? '', NOTE_KINDS, true) ? $in['kind'] : 'note';
-        if ((int)q('SELECT COUNT(*) c FROM notes WHERE user_id = ?', [$uid])->fetch()['c'] >= NOTE_MAX_PAGES) nfail(400, 'You have ' . NOTE_MAX_PAGES . ' pages already. Delete some old ones first.');
-        $paper = in_array($in['paper'] ?? '', NOTE_PAPERS, true) ? $in['paper'] : ($kind === 'board' ? 'plain' : 'lined');
-        q('INSERT INTO notes (user_id, kind, title, subject, body, paper, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?)',
-            [$uid, $kind, clean_text($in['title'] ?? '', 120), clean_text($in['subject'] ?? '', 80), '', $paper, time(), time()]);
-        nok(['note' => note_full($uid, my_note($uid, db()->lastInsertId()))]);
+        $n = add_note($uid, $kind, clean_text($in['title'] ?? '', 120), clean_text($in['subject'] ?? '', 80), my_chapter($uid, $in['chapter_id'] ?? null), $in['paper'] ?? null);
+        nok(['note' => note_full($uid, $n)]);
 
     case 'note.save':
         $n = my_note($uid, $in['id'] ?? null);
@@ -124,7 +149,15 @@ switch ($action) {
         nok();
 
     case 'file.add':
-        $n = my_note($uid, $in['note_id'] ?? null);
+        if (!empty($in['chapter_id'])) {
+            // Uploaded from a chapter in the Study tab: it goes on that chapter's notes page (made the first time)
+            $ch = my_chapter($uid, $in['chapter_id']);
+            if (!$ch) nfail(404, 'That chapter was not found. It may have been deleted.');
+            $n = q("SELECT * FROM notes WHERE user_id = ? AND chapter_id = ? AND kind = 'note' ORDER BY id LIMIT 1", [$uid, (int)$ch['id']])->fetch()
+                ?: add_note($uid, 'note', '', '', $ch);
+        } else {
+            $n = my_note($uid, $in['note_id'] ?? null);
+        }
         $f = $_FILES['file'] ?? null;
         $max = note_file_max();
         $mb = round($max / 1048576);
@@ -155,7 +188,7 @@ switch ($action) {
         q('INSERT INTO note_files (user_id, note_id, name, mime, size, path, created_at) VALUES (?, ?, ?, ?, ?, ?, ?)', [$uid, (int)$n['id'], $name, $mime, (int)$f['size'], $path, time()]);
         $id = (int)db()->lastInsertId();
         q('UPDATE notes SET updated_at = ? WHERE id = ?', [time(), (int)$n['id']]);
-        nok(['file' => note_file_out(q('SELECT * FROM note_files WHERE id = ?', [$id])->fetch()), 'used' => usage($uid)]);
+        nok(['file' => note_file_out(q('SELECT * FROM note_files WHERE id = ?', [$id])->fetch()), 'page' => (int)$n['id'], 'used' => usage($uid)]);
 
     case 'file.delete':
         $f = is_numeric($in['id'] ?? null) ? q('SELECT * FROM note_files WHERE id = ? AND user_id = ?', [(int)$in['id'], $uid])->fetch() : null;

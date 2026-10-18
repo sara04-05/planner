@@ -403,10 +403,13 @@ Object.assign(T,{'Notes':'Shënimet','Your study notebook':'Fletorja jote e stud
 'Type, then click outside':'Shkruaj, pastaj kliko jashtë','Drag to resize':'Tërhiq për të ndryshuar madhësinë','Place picture':'Vendos foton','Cancel':'Anulo','That picture could not be opened.':'Kjo foto nuk u hap dot.',
 'That file is too big.':'Ky skedar është shumë i madh.','No connection. Try again.':'Pa lidhje. Provo përsëri.','The file did not upload. Try again.':'Skedari nuk u ngarkua. Provo përsëri.',
 "That kind of file can't be added. You can add PDF, Word, PowerPoint, Excel, text, pictures, music and short videos.":'Ky lloj skedari nuk mund të shtohet. Mund të shtosh PDF, Word, PowerPoint, Excel, tekst, foto, muzikë dhe video të shkurtra.',
-'That page was not found. It may have been deleted.':'Kjo faqe nuk u gjet. Mund të jetë fshirë.','The drawing did not save. Try again.':'Vizatimi nuk u ruajt. Provo përsëri.','That picture seems to be broken. Try saving it again as a JPG or PNG.':'Kjo foto duket e dëmtuar. Provo ta ruash përsëri si JPG ose PNG.','The file could not be saved on the server. Try again.':'Skedari nuk u ruajt dot në server. Provo përsëri.'});
+'That page was not found. It may have been deleted.':'Kjo faqe nuk u gjet. Mund të jetë fshirë.','The drawing did not save. Try again.':'Vizatimi nuk u ruajt. Provo përsëri.','Study material: files, notes and whiteboards':'Materiali i studimit: skedarë, shënime dhe tabela','Add the slides, PDFs, pictures or your own notes for this chapter.':'Shto prezantimet, PDF-të, fotot ose shënimet e tua për këtë kapitull.','📎 Upload files':'📎 Ngarko skedarë','📝 Write notes':'📝 Shkruaj shënime','🎨 Whiteboard':'🎨 Tabela','Material for chapter':'Material për kapitullin','That picture seems to be broken. Try saving it again as a JPG or PNG.':'Kjo foto duket e dëmtuar. Provo ta ruash përsëri si JPG ose PNG.','The file could not be saved on the server. Try again.':'Skedari nuk u ruajt dot në server. Provo përsëri.'});
 P.push(
  [/^That file is too big\. The most you can upload is (\d+) MB a file\.$/,(m,a)=>`Ky skedar është shumë i madh. Mund të ngarkosh deri në ${a} MB për skedar.`],
  [/^Your notebook is full \((\d+) MB of files\)\. Delete some old files first\.$/,(m,a)=>`Fletorja jote është plot (${a} MB skedarë). Fshi disa skedarë të vjetër më parë.`],
+ [/^Uploading (.+)…$/,(m,a)=>`Po ngarkohet ${a}…`],
+ [/^(.+\.[A-Za-z0-9]{2,5}) added\.$/,(m,a)=>`${a} u shtua.`],
+ [/^Study material for (.+)$/,(m,a)=>`Materiali i studimit për ${a}`],
  [/^You have (\d+) (files|pages) already\. Delete some old ones first\.$/,(m,a,b)=>`Ke tashmë ${a} ${b==='files'?'skedarë':'faqe'}. Fshi disa të vjetra më parë.`]);
 function tr(s){
   if(lang!=='sq'||!s)return s;

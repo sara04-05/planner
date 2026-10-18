@@ -1846,6 +1846,7 @@ a.nbcover-link:focus-visible{outline:3px solid var(--accent);outline-offset:6px;
 .nt-state{font-size:12px;color:var(--muted);margin-left:auto}
 .nt-state[data-s="Not saved"]{color:var(--bad);font-weight:700}
 .nt-del{color:var(--bad)}
+.nt-chapter{align-self:flex-start;font-size:13px;color:var(--accent);text-decoration:none;background:var(--accent-soft);border-radius:999px;padding:4px 12px}
 .nt-body{display:block;width:100%;min-height:420px;resize:vertical;border:1px solid var(--line);border-radius:12px;padding:6px 18px 18px 58px;font:inherit;font-size:16px;line-height:32px;color:var(--ink);background-color:var(--paper);background-attachment:local;outline-offset:0}
 .nt-body,.nt-board-prev,.wb-sheet{--ln:color-mix(in srgb,var(--accent) 16%,var(--line))}
 .nt-body[data-paper="lined"]{background-image:linear-gradient(90deg,transparent 44px,var(--margin) 44px,var(--margin) 46px,transparent 46px),repeating-linear-gradient(transparent 0 31px,var(--ln) 31px 32px);background-position:0 0,0 6px}
@@ -1924,3 +1925,13 @@ body.wb-open .toast{z-index:1002}
 .wb-handle{position:absolute;right:-9px;bottom:-9px;width:18px;height:18px;border-radius:50%;background:var(--accent);border:2px solid #fff;cursor:nwse-resize}
 .wb-place-bar{position:absolute;left:0;top:calc(100% + 8px);display:flex;gap:6px;white-space:nowrap}
 @media (max-width:760px){.wb-title{display:none}.wb-size input{width:70px}.wb-stage{padding:8px;align-items:flex-start}.wb-sheet{width:100%}.wb-bar{gap:4px 8px;padding:6px 8px}.wb-tool{min-width:32px;height:32px}}
+
+/* study material on a chapter (Study tab) */
+.mat{margin:6px 0 8px 28px;line-height:1.4;padding:8px 10px;border-radius:10px;background:color-mix(in srgb,var(--t-notes) 45%,transparent);display:flex;flex-direction:column;gap:8px}
+.mat-list{display:flex;flex-wrap:wrap;gap:6px}
+.mat-chip{display:inline-flex;align-items:center;gap:4px;max-width:100%;padding:3px 9px;border-radius:999px;background:var(--paper);border:1px solid var(--line);color:var(--ink);text-decoration:none;font-size:12px;font-weight:600}
+.mat-chip span{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:180px}
+.mat-chip:hover{border-color:var(--accent)}
+.mat-empty{font-size:12px;color:var(--muted);line-height:1.4}
+.mat-add{display:flex;flex-wrap:wrap;gap:6px}
+.mat-add .btn.sm{padding:5px 9px;font-size:12px;border-radius:8px;text-decoration:none;color:var(--ink)}

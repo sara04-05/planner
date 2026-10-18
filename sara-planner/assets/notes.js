@@ -79,8 +79,11 @@ function drawList(){
 async function load(){
   try{Object.assign(S,await api('note.list'))}catch(e){listEl.replaceChildren(el('li','empty',T(e.message)));return}
   drawList();
-  const want=+box.dataset.open;
-  if(want&&S.notes.some(n=>n.id===want))open(want);else if(!cur)welcome();
+  const want=+box.dataset.open,qs=new URLSearchParams(location.search);
+  if(qs.get('chapter')&&qs.get('new')){   // "Notes" / "Whiteboard" on a chapter in the Study tab
+    const n=await create(qs.get('new')==='board'?'board':'note',{chapter_id:+qs.get('chapter')});
+    if(!n)welcome();
+  }else if(want&&S.notes.some(n=>n.id===want))open(want);else if(!cur)welcome();
 }
 
 /* ---------- empty state ---------- */
@@ -99,9 +102,9 @@ function welcome(){
 }
 async function create(kind,extra={}){
   try{
-    const r=await api('note.add',{kind,subject:subject||'',...extra});
+    const r=await api('note.add',{kind,subject:extra.chapter_id?'':subject||'',...extra});
     upsert(r.note);cur=r.note;history.replaceState(null,'','?page='+cur.id);drawList();
-    if(kind==='board')openBoard(extra.picture||null);else{drawNote();const t=$('ntTitle');if(t)t.focus()}
+    if(kind==='board')openBoard(extra.picture||null);else{drawNote();const t=$('ntTitle');if(t&&!t.value)t.focus();else if($('ntBody'))$('ntBody').focus()}
     return r.note;
   }catch(e){toast(e.message)}
 }
@@ -163,6 +166,7 @@ function head(n){
       history.replaceState(null,'','notes.php');toast('Page deleted.');welcome()}catch(err){toast(err.message)}});
   row.append(st,del);
   h.append(back,title,row);
+  if(n.chapter){const a=el('a','nt-chapter');a.href='index.php?tab=study';a.append(el('span',null,'📚 '+T('Material for chapter')+' '),mine(el('b',null,n.chapter)));h.append(a)}
   return h;
 }
 function drawNote(){
