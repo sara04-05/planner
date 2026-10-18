@@ -34,7 +34,35 @@ if(form)form.addEventListener('submit',e=>{
   e.preventDefault();show(input.value,true);
 });
 if(input)input.addEventListener('input',()=>input.setCustomValidity(''));
-root.querySelectorAll('[data-sp-link]').forEach(b=>b.addEventListener('click',()=>{if(input)input.value=b.dataset.spLink;show(b.dataset.spLink,true)}));
+root.addEventListener('click',e=>{const b=e.target.closest('[data-sp-link]');if(!b)return;show(b.dataset.spLink,true);embed.scrollIntoView({behavior:'smooth',block:'nearest'})});
+
+/* ---------- My playlists: links people saved once, shown as buttons ---------- */
+const shelf=$('spSaved'),saveForm=$('spSaveForm'),saveIn=$('spSaveLink');
+const post=(data)=>{const f=new FormData();f.append('csrf',csrf);for(const k in data)f.append(k,data[k]);return fetch('music.php',{method:'POST',body:f,headers:{'X-Requested-With':'fetch'}})};
+const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+if(saveForm)saveForm.addEventListener('submit',async e=>{
+  e.preventDefault();
+  if(!parse(saveIn.value)){saveIn.setCustomValidity(t("That doesn't look like a Spotify link. Copy it in Spotify with Share → Copy link."));saveIn.reportValidity();return}
+  const btn=saveForm.querySelector('button');btn.disabled=true;
+  try{
+    const r=await post({do:'save',link:saveIn.value});
+    if(r.status===409){saveIn.setCustomValidity(t('My playlists is full. Remove one to add another.'));saveIn.reportValidity();return}
+    if(!r.ok)throw 0;
+    const row=await r.json();
+    if(!shelf.querySelector('[data-sp-link="'+CSS.escape(row.link)+'"]')){
+      shelf.insertAdjacentHTML('beforeend',`<div class="sp-saved"><button class="sp-item" type="button" data-sp-link="${esc(row.link)}" translate="no">`
+        +(row.image?`<img alt="" src="${esc(row.image)}" loading="lazy">`:'<i aria-hidden="true">♪</i>')
+        +`<span><b>${esc(row.title)}</b></span></button><form method="post" action="music.php"><input type="hidden" name="do" value="unsave"><input type="hidden" name="id" value="${+row.id}"><button class="sp-x" aria-label="Remove">×</button></form></div>`);
+    }
+    saveIn.value='';show(row.link,true);
+  }catch(x){saveIn.setCustomValidity(t("Couldn't add it. Try again in a minute."));saveIn.reportValidity()}
+  finally{btn.disabled=false}
+});
+if(saveIn)saveIn.addEventListener('input',()=>saveIn.setCustomValidity(''));
+if(shelf)shelf.addEventListener('submit',e=>{
+  e.preventDefault();const box=e.target.closest('.sp-saved');
+  post({do:'unsave',id:e.target.querySelector('[name=id]').value}).then(r=>{if(r.ok)box.remove()});
+});
 
 // A small window keeps the music going while you move around the planner (every page change reloads the page)
 const pop=$('spPop');
@@ -59,7 +87,6 @@ async function api(path,opt={},retry=true){
   if(r.status===401&&retry){token=null;return api(path,opt,false)}
   return r;
 }
-const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 function card(item,kind){
   const img=(kind==='track'?item.album?.images:item.images)||[];
   const pic=img.length?img[img.length>1?img.length-2:0].url:'';
@@ -82,7 +109,7 @@ async function play(uri,url){
   embed.scrollIntoView({behavior:'smooth',block:'nearest'});
 }
 function noPremium(){premium=false;const n=$('spPremium');if(n)n.hidden=false;const p=$('spPlayer');if(p)p.hidden=true}
-root.addEventListener('click',e=>{const b=e.target.closest('.sp-item');if(b)play(b.dataset.uri,b.dataset.url)});
+root.addEventListener('click',e=>{const b=e.target.closest('.sp-item[data-uri]');if(b)play(b.dataset.uri,b.dataset.url)});
 
 const lists=$('spPlaylists');
 async function loadPlaylists(){

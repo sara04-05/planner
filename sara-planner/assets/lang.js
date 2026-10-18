@@ -404,7 +404,10 @@ Object.assign(T,{
 "That doesn't look like a Spotify link. Copy it in Spotify with Share → Copy link.":'Kjo nuk duket si lidhje Spotify. Kopjoje në Spotify me Share → Copy link.',
 'Saved. This plays next time you open Music.':'U ruajt. Kjo luhet herën tjetër që hap Muzikën.',"Couldn't connect Spotify. Please try again.":'Spotify nuk u lidh. Provo përsëri.',
 'No playlists in your Spotify yet.':'Ende pa lista në Spotify-n tënd.',"Couldn't load your playlists. Try again in a minute.":'Listat nuk u hapën. Provo përsëri pas një minute.',
-'Searching…':'Po kërkohet…','Nothing found.':'Nuk u gjet asgjë.',"Couldn't search Spotify. Try again in a minute.":'Kërkimi në Spotify nuk funksionoi. Provo përsëri pas një minute.',"Couldn't reach Spotify":'Spotify nuk u arrit'
+'Searching…':'Po kërkohet…','My playlists':'Listat e mia','Play any Spotify link':'Luaj çdo lidhje Spotify','Paste the link to one of your Spotify playlists':'Ngjit lidhjen e një liste tënde në Spotify','Link to your playlist':'Lidhja e listës tënde','My playlist':'Lista ime','Album':'Album','Song':'Këngë','Artist':'Artist','Podcast episode':'Episod podkasti','Podcast':'Podkast',
+"In Spotify, open your playlist, tap ⋯ → Share → Copy link to playlist, and paste it here. You only do this once per playlist; after that it's a button here. If a playlist doesn't play, make it public in Spotify (⋯ → Make public).":'Në Spotify, hap listën tënde, shtyp ⋯ → Share → Copy link to playlist dhe ngjite këtu. Këtë e bën vetëm një herë për çdo listë; pastaj ajo bëhet buton këtu. Nëse një listë nuk luhet, bëje publike në Spotify (⋯ → Make public).',
+'Added to My playlists.':'U shtua te Listat e mia.','Removed from My playlists.':'U hoq nga Listat e mia.','My playlists is full. Remove one to add another.':'Listat e mia janë plot. Hiq një për të shtuar tjetër.',"Couldn't add it. Try again in a minute.":'Nuk u shtua. Provo përsëri pas një minute.',
+'Nothing found.':'Nuk u gjet asgjë.',"Couldn't search Spotify. Try again in a minute.":'Kërkimi në Spotify nuk funksionoi. Provo përsëri pas një minute.',"Couldn't reach Spotify":'Spotify nuk u arrit'
 });
 function tr(s){
   if(lang!=='sq'||!s)return s;

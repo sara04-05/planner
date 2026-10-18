@@ -345,3 +345,13 @@ CREATE TABLE IF NOT EXISTS user_music (
   link    VARCHAR(255) NOT NULL DEFAULT '',
   FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- Playlists (or albums, songs) someone saved on their Music page, shown as buttons
+CREATE TABLE IF NOT EXISTS music_saved (
+  id      INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+  user_id INT UNSIGNED NOT NULL,
+  link    VARCHAR(255) NOT NULL,
+  title   VARCHAR(190) NOT NULL DEFAULT '',
+  image   VARCHAR(255) NOT NULL DEFAULT '',
+  FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;

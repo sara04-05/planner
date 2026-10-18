@@ -32,6 +32,30 @@ function user_link(int $uid): string
     }
 }
 
+function saved_list(int $uid): array
+{
+    try {
+        return q('SELECT id, link, title, image FROM music_saved WHERE user_id = ? ORDER BY id', [$uid])->fetchAll();
+    } catch (PDOException $e) {
+        return [];
+    }
+}
+
+/** The name and cover picture of a Spotify link, from Spotify's public oEmbed (no login needed). Empty when Spotify can't be reached. */
+function spotify_info(string $link): array
+{
+    try {
+        $ch = curl_init('https://open.spotify.com/oembed?url=' . rawurlencode($link));
+        curl_setopt_array($ch, [CURLOPT_RETURNTRANSFER => true, CURLOPT_TIMEOUT => 8, CURLOPT_FOLLOWLOCATION => true]);
+        $r = json_decode((string)curl_exec($ch), true) ?: [];
+        return ['title' => mb_substr((string)($r['title'] ?? ''), 0, 190), 'image' => str_starts_with((string)($r['thumbnail_url'] ?? ''), 'https://') ? mb_substr($r['thumbnail_url'], 0, 255) : ''];
+    } catch (Throwable $e) {
+        return ['title' => '', 'image' => ''];
+    }
+}
+
+const SAVED_NAMES = ['playlist' => 'My playlist', 'album' => 'Album', 'track' => 'Song', 'artist' => 'Artist', 'episode' => 'Podcast episode', 'show' => 'Podcast'];
+
 // ---- the browser player asks for a token (it lasts an hour, so this is asked rarely) ----
 if (isset($_GET['token'])) {
     header('Content-Type: application/json');
@@ -66,6 +90,34 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         q('INSERT INTO user_music (user_id, link) VALUES (?, ?)', [$uid, mb_substr($link, 0, 255)]);
         if ($ajax) { http_response_code(204); exit; }
         back('saved');
+    }
+    if ($do === 'save') {   // add a playlist to "My playlists"
+        $p = spotify_parse_link((string)($_POST['link'] ?? ''));
+        if (!$p) {
+            if ($ajax) { http_response_code(400); exit; }
+            back('bad-link');
+        }
+        $link = 'https://open.spotify.com/' . $p[0] . '/' . $p[1];
+        $list = saved_list($uid);
+        $have = array_values(array_filter($list, fn($r) => $r['link'] === $link));
+        if ($have) {
+            $row = $have[0];
+        } elseif (count($list) >= 40) {
+            if ($ajax) { http_response_code(409); exit; }
+            back('full');
+        } else {
+            $info = spotify_info($link);
+            $title = $info['title'] !== '' ? $info['title'] : SAVED_NAMES[$p[0]];
+            q('INSERT INTO music_saved (user_id, link, title, image) VALUES (?, ?, ?, ?)', [$uid, $link, $title, $info['image']]);
+            $row = ['id' => (int)db()->lastInsertId(), 'link' => $link, 'title' => $title, 'image' => $info['image']];
+        }
+        if ($ajax) { header('Content-Type: application/json'); echo json_encode($row); exit; }
+        back('added');
+    }
+    if ($do === 'unsave') {
+        q('DELETE FROM music_saved WHERE id = ? AND user_id = ?', [(int)($_POST['id'] ?? 0), $uid]);
+        if ($ajax) { http_response_code(204); exit; }
+        back('removed');
     }
     if ($do === 'disconnect') {
         spotify_forget($uid);   // Spotify has no revoke call; people can also remove Splanner under "Manage apps" in their Spotify account
@@ -132,9 +184,13 @@ $notes = [
     'not-set-up'   => ['bad', 'Connecting Spotify is not set up on this site yet.'],
     'bad-link'     => ['bad', "That doesn't look like a Spotify link. Copy it in Spotify with Share → Copy link."],
     'saved'        => ['ok', 'Saved. This plays next time you open Music.'],
+    'added'        => ['ok', 'Added to My playlists.'],
+    'removed'      => ['ok', 'Removed from My playlists.'],
+    'full'         => ['bad', 'My playlists is full. Remove one to add another.'],
     'error'        => ['bad', "Couldn't connect Spotify. Please try again."],
 ];
 $note = $notes[(string)($_GET['sp'] ?? '')] ?? null;
+$saved = saved_list($uid);
 
 ob_start(); ?>
 <div class="music<?= $mini ? ' mini' : '' ?>" id="music" data-csrf="<?= h(csrf_token()) ?>" data-connected="<?= $acc ? '1' : '' ?>">
@@ -160,9 +216,26 @@ ob_start(); ?>
       allow="autoplay; clipboard-write; encrypted-media; fullscreen; picture-in-picture"></iframe>
   </section>
 
+  <section class="panel">
+    <div class="sec-h"><h2>My playlists</h2><?php if (!$mini): ?><button class="btn sm" id="spPop" type="button">Pop out player ↗</button><?php endif; ?></div>
+    <div class="sp-list" id="spSaved"><?php foreach ($saved as $r): ?>
+      <div class="sp-saved"><button class="sp-item" type="button" data-sp-link="<?= h($r['link']) ?>" translate="no"><?php if ($r['image']): ?><img alt="" src="<?= h($r['image']) ?>" loading="lazy"><?php else: ?><i aria-hidden="true">♪</i><?php endif; ?><span><b><?= h($r['title']) ?></b></span></button>
+        <form method="post" action="music.php"><input type="hidden" name="csrf" value="<?= h(csrf_token()) ?>"><input type="hidden" name="do" value="unsave"><input type="hidden" name="id" value="<?= (int)$r['id'] ?>"><button class="sp-x" aria-label="Remove">×</button></form></div>
+    <?php endforeach; ?></div>
+    <?php if (!$mini): ?>
+    <form class="music-link" id="spSaveForm" method="post" action="music.php">
+      <input type="hidden" name="csrf" value="<?= h(csrf_token()) ?>">
+      <input type="hidden" name="do" value="save">
+      <input type="url" name="link" id="spSaveLink" placeholder="Paste the link to one of your Spotify playlists" required aria-label="Link to your playlist">
+      <button class="btn primary">Add</button>
+    </form>
+    <p class="music-tip">In Spotify, open your playlist, tap ⋯ → Share → Copy link to playlist, and paste it here. You only do this once per playlist; after that it's a button here. If a playlist doesn't play, make it public in Spotify (⋯ → Make public).</p>
+    <?php endif; ?>
+  </section>
+
   <?php if (!$mini): ?>
   <section class="panel">
-    <div class="sec-h"><h2>Play a Spotify link</h2><button class="btn sm" id="spPop" type="button">Pop out player ↗</button></div>
+    <div class="sec-h"><h2>Play any Spotify link</h2></div>
     <form class="music-link" id="spLinkForm" method="post" action="music.php">
       <input type="hidden" name="csrf" value="<?= h(csrf_token()) ?>">
       <input type="hidden" name="do" value="link">

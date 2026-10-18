@@ -337,3 +337,13 @@ CREATE TABLE IF NOT EXISTS user_music (
   link    VARCHAR(255) NOT NULL DEFAULT '',
   FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
 );
+
+-- Playlists (or albums, songs) someone saved on their Music page, shown as buttons
+CREATE TABLE IF NOT EXISTS music_saved (
+  id      INTEGER PRIMARY KEY AUTOINCREMENT,
+  user_id INTEGER NOT NULL,
+  link    VARCHAR(255) NOT NULL,
+  title   VARCHAR(190) NOT NULL DEFAULT '',
+  image   VARCHAR(255) NOT NULL DEFAULT '',
+  FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+);
