@@ -330,6 +330,32 @@ CREATE TABLE IF NOT EXISTS reports (
   FOREIGN KEY (target_id) REFERENCES users(id) ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
+-- Music: people's own Spotify accounts (the music player) and the Spotify link they last picked
+CREATE TABLE IF NOT EXISTS spotify_accounts (
+  user_id       INT UNSIGNED PRIMARY KEY,
+  spotify_name  VARCHAR(190) NOT NULL DEFAULT '',
+  refresh_token TEXT NOT NULL,
+  access_token  TEXT NULL,
+  expires_at    INT UNSIGNED NOT NULL DEFAULT 0,
+  FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+CREATE TABLE IF NOT EXISTS user_music (
+  user_id INT UNSIGNED PRIMARY KEY,
+  link    VARCHAR(255) NOT NULL DEFAULT '',
+  FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- Playlists (or albums, songs) someone saved on their Music page, shown as buttons
+CREATE TABLE IF NOT EXISTS music_saved (
+  id      INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+  user_id INT UNSIGNED NOT NULL,
+  link    VARCHAR(255) NOT NULL,
+  title   VARCHAR(190) NOT NULL DEFAULT '',
+  image   VARCHAR(255) NOT NULL DEFAULT '',
+  FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
 -- Study notebook (notes.php): pages of notes and whiteboards, with study files. Only their owner sees them.
 -- chapter_id: the chapter (Study tab) the page is material for, if any.
 -- The files themselves (and whiteboard drawings) are kept on disk in data/notes/<user id>/.

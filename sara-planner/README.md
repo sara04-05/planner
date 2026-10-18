@@ -23,6 +23,8 @@ sara-planner/
 ├── friend.php         A friend's notebook with today's plan
 ├── profile.php        Edit your name, picture and cover (the rest of your profile is the Profile tab)
 ├── messages.php       Messages between users
+├── music.php          Music page: Spotify player, Connect Spotify, the pop-out window
+├── spotify.php        Talks to Spotify for music.php
 ├── notebook.php       Notebooks: pages, designs, styles, blog, interest lists, likes, alerts, pictures (used by api.php)
 ├── u.php              A profile (u.php?u=pagename): its notebooks, opened in the same notebook layout
 ├── explore.php        Everyone on the site, friend requests and your friends (see ../MESSAGES.md)
@@ -115,6 +117,29 @@ To turn it on (once, as the site owner):
 
 If Google says *redirect_uri_mismatch*, the address in step 4 must match exactly (http vs https, folder name).
 You can also set it by hand in `GOOGLE_REDIRECT_URI`.
+
+## Music: a Spotify player
+
+The **Music** button in the top bar opens a page with Spotify's player. Anyone can paste a Spotify link
+(playlist, album, song or podcast) or pick one of the study playlists, and it plays right on the page:
+whole songs for people logged in to Spotify in that browser, 30-second previews for everyone else.
+**Pop out player** opens a small window that keeps playing while you use the planner.
+
+People can also **Connect Spotify** to see their own playlists, search, and play in the page with
+Spotify Premium. You don't make a code for each user: the whole site uses one Client ID, and every
+person logs in to Spotify once. To turn it on (once, as the site owner):
+
+1. Go to https://developer.spotify.com/dashboard and **Create app**. Tick **Web API** and **Web Playback SDK**.
+2. Under **Redirect URIs** add the address of `music.php` on your site, for example `https://your-site.com/music.php`.
+   Spotify only accepts `https://` addresses (or `http://127.0.0.1/...` on your own computer).
+3. Copy the **Client ID** and **Client secret** into `SPOTIFY_CLIENT_ID` and `SPOTIFY_CLIENT_SECRET` in `config.php`.
+4. Under **User Management** add the name and Spotify email of each person who may connect.
+
+Spotify's limits (since February 2026): an app in development mode can have **5 users**, and the
+account that owns the app needs **Spotify Premium**. Going past 5 needs Spotify's *Extended Quota*,
+which they only give to registered businesses with a large audience. Everyone else can still use the
+link player above, which has no limit. If Spotify says *INVALID_CLIENT: Invalid redirect URI*, the
+address in step 2 must match exactly; you can also set it by hand in `SPOTIFY_REDIRECT_URI`.
 
 ## Check that new users typed their email right (Gmail)
 

@@ -322,6 +322,32 @@ CREATE TABLE IF NOT EXISTS reports (
   FOREIGN KEY (target_id) REFERENCES users(id) ON DELETE CASCADE
 );
 
+-- Music: people's own Spotify accounts (the music player) and the Spotify link they last picked
+CREATE TABLE IF NOT EXISTS spotify_accounts (
+  user_id       INTEGER PRIMARY KEY,
+  spotify_name  VARCHAR(190) NOT NULL DEFAULT '',
+  refresh_token TEXT NOT NULL,
+  access_token  TEXT NULL,
+  expires_at    INTEGER NOT NULL DEFAULT 0,
+  FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+);
+
+CREATE TABLE IF NOT EXISTS user_music (
+  user_id INTEGER PRIMARY KEY,
+  link    VARCHAR(255) NOT NULL DEFAULT '',
+  FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+);
+
+-- Playlists (or albums, songs) someone saved on their Music page, shown as buttons
+CREATE TABLE IF NOT EXISTS music_saved (
+  id      INTEGER PRIMARY KEY AUTOINCREMENT,
+  user_id INTEGER NOT NULL,
+  link    VARCHAR(255) NOT NULL,
+  title   VARCHAR(190) NOT NULL DEFAULT '',
+  image   VARCHAR(255) NOT NULL DEFAULT '',
+  FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+);
+
 -- Study notebook (notes.php): pages of notes and whiteboards, with study files. Only their owner sees them.
 -- chapter_id: the chapter (Study tab) the page is material for, if any.
 -- The files themselves (and whiteboard drawings) are kept on disk in data/notes/<user id>/.

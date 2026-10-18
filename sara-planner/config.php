@@ -39,5 +39,14 @@ const GMAIL_USER         = '';   // e.g. 'splanner.app@gmail.com'
 const GMAIL_APP_PASSWORD = '';   // the 16-letter app password
 const MAIL_FROM_NAME     = 'Splanner';
 
+// ---- Spotify music player (optional) ----
+// Lets people connect their own Spotify account on the Music page. One Client ID serves everyone; nobody needs their own code.
+// Make an app at developer.spotify.com/dashboard and paste its Client ID and Client secret here (steps in README.md).
+// Leave empty and the Music page still plays any Spotify link you paste.
+const SPOTIFY_CLIENT_ID     = '';
+const SPOTIFY_CLIENT_SECRET = '';
+// Leave empty to work it out automatically (e.g. https://your-site/music.php). Must match the dashboard exactly.
+const SPOTIFY_REDIRECT_URI  = '';
+
 // Your time zone, so "today" is right
 date_default_timezone_set('Europe/Tirane');

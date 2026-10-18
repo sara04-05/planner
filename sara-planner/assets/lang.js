@@ -386,6 +386,29 @@ Object.assign(T,{'📖 Open the notebook':'📖 Hap fletoren','Pages':'Faqet','A
 'Search by name':'Kërko sipas emrit',
 'Cherry blossom':'Lulëzim qershie','Dark academia':'Akademi e errët','Gingham':'Katrorë gingham','Bows':'Fjongo','Starry night':'Natë me yje','Clouds':'Re','Lavender':'Livando','Daisies':'Margarita','Checkerboard':'Tabelë shahu','Strawberries':'Luleshtrydhe','Terrazzo':'Terrazo','Waves':'Valë','Polka dots':'Pika','Sunset':'Perëndim dielli'
 });
+// music (Spotify)
+Object.assign(T,{
+'Music':'Muzika','Play a Spotify link':'Luaj një lidhje Spotify','Play':'Luaj','Pop out player ↗':'Hap luajtësin veçmas ↗','Playing in the small window ↗':'Po luan në dritaren e vogël ↗',
+'In Spotify, open a playlist, album, song or podcast and use Share → Copy link. Without a Spotify login you hear 30-second previews; logged in to Spotify in this browser, whole songs play.':'Në Spotify, hap një listë, album, këngë ose podkast dhe përdor Share → Copy link. Pa u kyçur në Spotify dëgjon pjesë 30-sekondëshe; kur je kyçur në Spotify në këtë shfletues, luhen këngët e plota.',
+'Your Spotify':'Spotify yt','Connected as':'I lidhur si','Disconnect':'Shkëput','Search songs and playlists':'Kërko këngë dhe lista','Search Spotify':'Kërko në Spotify','Your playlists':'Listat e tua','Loading your playlists…':'Po hapen listat e tua…',
+'Playing on this page needs Spotify Premium. Your playlists open in the player above instead.':'Për të luajtur në këtë faqe duhet Spotify Premium. Listat e tua hapen në luajtësin më lart.',
+'Connect your Spotify':'Lidh Spotify-n tënd','See your own playlists here and play them while you plan.':'Shiko listat e tua këtu dhe luaji ndërsa planifikon.','Connect Spotify':'Lidh Spotify',
+"Playing inside Splanner needs Spotify Premium. While Splanner's Spotify app is in test mode, only people the site owner added in the Spotify dashboard can connect.":'Për të luajtur brenda Splanner duhet Spotify Premium. Sa kohë aplikacioni Spotify i Splanner është në modalitet testimi, mund të lidhen vetëm njerëzit që pronari i faqes i ka shtuar në panelin e Spotify.',
+'Let people connect their Spotify':'Lejo njerëzit të lidhin Spotify-n e tyre','Only you see this. Put SPOTIFY_CLIENT_ID and SPOTIFY_CLIENT_SECRET in config.php (steps in README.md), and add this Redirect URI in the Spotify dashboard:':'Këtë e sheh vetëm ti. Vendos SPOTIFY_CLIENT_ID dhe SPOTIFY_CLIENT_SECRET te config.php (hapat te README.md), dhe shto këtë Redirect URI në panelin e Spotify:',
+'Nothing playing yet':'Ende nuk po luhet asgjë','Previous song':'Kënga e mëparshme','Next song':'Kënga tjetër','Play or pause':'Luaj ose ndalo','Volume':'Volumi','Spotify player':'Luajtësi Spotify','Spotify link':'Lidhja Spotify',
+'Spotify is connected. Pick one of your playlists below.':'Spotify u lidh. Zgjidh një nga listat e tua më poshtë.',
+'Spotify is disconnected. You can also remove Splanner under "Manage apps" in your Spotify account.':'Spotify u shkëput. Mund ta heqësh Splanner edhe te "Manage apps" në llogarinë tënde Spotify.',
+'Spotify was not connected.':'Spotify nuk u lidh.',
+"This Spotify account can't connect yet. Splanner's Spotify app is in test mode, so the site owner has to add your Spotify email in the Spotify dashboard first.":'Kjo llogari Spotify ende nuk mund të lidhet. Aplikacioni Spotify i Splanner është në modalitet testimi, prandaj pronari i faqes duhet ta shtojë më parë email-in tënd të Spotify në panelin e Spotify.',
+'Connecting Spotify is not set up on this site yet.':'Lidhja me Spotify ende nuk është konfiguruar në këtë faqe.',
+"That doesn't look like a Spotify link. Copy it in Spotify with Share → Copy link.":'Kjo nuk duket si lidhje Spotify. Kopjoje në Spotify me Share → Copy link.',
+'Saved. This plays next time you open Music.':'U ruajt. Kjo luhet herën tjetër që hap Muzikën.',"Couldn't connect Spotify. Please try again.":'Spotify nuk u lidh. Provo përsëri.',
+'No playlists in your Spotify yet.':'Ende pa lista në Spotify-n tënd.',"Couldn't load your playlists. Try again in a minute.":'Listat nuk u hapën. Provo përsëri pas një minute.',
+'Searching…':'Po kërkohet…','My playlists':'Listat e mia','Play any Spotify link':'Luaj çdo lidhje Spotify','Paste the link to one of your Spotify playlists':'Ngjit lidhjen e një liste tënde në Spotify','Link to your playlist':'Lidhja e listës tënde','My playlist':'Lista ime','Album':'Album','Song':'Këngë','Artist':'Artist','Podcast episode':'Episod podkasti','Podcast':'Podkast',
+"In Spotify, open your playlist, tap ⋯ → Share → Copy link to playlist, and paste it here. You only do this once per playlist; after that it's a button here. If a playlist doesn't play, make it public in Spotify (⋯ → Make public).":'Në Spotify, hap listën tënde, shtyp ⋯ → Share → Copy link to playlist dhe ngjite këtu. Këtë e bën vetëm një herë për çdo listë; pastaj ajo bëhet buton këtu. Nëse një listë nuk luhet, bëje publike në Spotify (⋯ → Make public).',
+'Added to My playlists.':'U shtua te Listat e mia.','Removed from My playlists.':'U hoq nga Listat e mia.','My playlists is full. Remove one to add another.':'Listat e mia janë plot. Hiq një për të shtuar tjetër.',"Couldn't add it. Try again in a minute.":'Nuk u shtua. Provo përsëri pas një minute.',
+'Nothing found.':'Nuk u gjet asgjë.',"Couldn't search Spotify. Try again in a minute.":'Kërkimi në Spotify nuk funksionoi. Provo përsëri pas një minute.',"Couldn't reach Spotify":'Spotify nuk u arrit'
+});
 // study notebook (notes.php)
 Object.assign(T,{'Notes':'Shënimet','Your study notebook':'Fletorja jote e studimit','🎨 New whiteboard':'🎨 Tabelë e re','📝 New page':'📝 Faqe e re','Search your notes':'Kërko te shënimet','All':'Të gjitha',
 'No pages match.':'Asnjë faqe nuk përputhet.','No pages yet. Start one with “New page” or “New whiteboard”.':'Ende pa faqe. Fillo një me “Faqe e re” ose “Tabelë e re”.','Files':'Skedarët',

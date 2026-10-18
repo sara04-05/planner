@@ -270,6 +270,16 @@ function upgrade_schema(PDO $pdo): void
         error_log('Could not add roles / chat editing columns: ' . $e->getMessage());
     }
 
+    // Music player: Spotify accounts, each person's last Spotify link and their saved playlists. Same tables as in the schema file.
+    try {
+        $sql = file_get_contents(__DIR__ . (DB_DRIVER === 'sqlite' ? '/sql/schema-sqlite.sql' : '/sql/schema.sql'));
+        foreach (['spotify_accounts', 'user_music', 'music_saved'] as $t) {
+            if (preg_match("/CREATE TABLE IF NOT EXISTS $t \\(.*?\\n\\)[^;]*;/s", $sql, $m)) $pdo->exec($m[0]);
+        }
+    } catch (PDOException $e) {
+        error_log('Could not add the music tables: ' . $e->getMessage());
+    }
+
     // Study notebook: notes, whiteboards and study files (same tables as in the schema file)
     try {
         $sql = file_get_contents(__DIR__ . (DB_DRIVER === 'sqlite' ? '/sql/schema-sqlite.sql' : '/sql/schema.sql'));
