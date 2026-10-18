@@ -321,3 +321,19 @@ CREATE TABLE IF NOT EXISTS reports (
   FOREIGN KEY (reporter_id) REFERENCES users(id) ON DELETE CASCADE,
   FOREIGN KEY (target_id) REFERENCES users(id) ON DELETE CASCADE
 );
+
+-- Music: people's own Spotify accounts (the music player) and the Spotify link they last picked
+CREATE TABLE IF NOT EXISTS spotify_accounts (
+  user_id       INTEGER PRIMARY KEY,
+  spotify_name  VARCHAR(190) NOT NULL DEFAULT '',
+  refresh_token TEXT NOT NULL,
+  access_token  TEXT NULL,
+  expires_at    INTEGER NOT NULL DEFAULT 0,
+  FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+);
+
+CREATE TABLE IF NOT EXISTS user_music (
+  user_id INTEGER PRIMARY KEY,
+  link    VARCHAR(255) NOT NULL DEFAULT '',
+  FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+);

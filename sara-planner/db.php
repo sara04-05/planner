@@ -270,6 +270,16 @@ function upgrade_schema(PDO $pdo): void
         error_log('Could not add roles / chat editing columns: ' . $e->getMessage());
     }
 
+    // Music player: Spotify accounts and each person's last Spotify link. Same tables as in the schema file.
+    try {
+        $sql = file_get_contents(__DIR__ . (DB_DRIVER === 'sqlite' ? '/sql/schema-sqlite.sql' : '/sql/schema.sql'));
+        foreach (['spotify_accounts', 'user_music'] as $t) {
+            if (preg_match("/CREATE TABLE IF NOT EXISTS $t \\(.*?\\n\\)[^;]*;/s", $sql, $m)) $pdo->exec($m[0]);
+        }
+    } catch (PDOException $e) {
+        error_log('Could not add the music tables: ' . $e->getMessage());
+    }
+
     // Emojis need utf8mb4. Hosts like InfinityFree often create the tables as plain utf8 (3 bytes per character), where an
     // emoji is refused or turned into "?". Convert any such table once; a table the host refuses to convert is left as it was.
     if (DB_DRIVER !== 'sqlite') {
