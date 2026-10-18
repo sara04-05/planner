@@ -321,3 +321,34 @@ CREATE TABLE IF NOT EXISTS reports (
   FOREIGN KEY (reporter_id) REFERENCES users(id) ON DELETE CASCADE,
   FOREIGN KEY (target_id) REFERENCES users(id) ON DELETE CASCADE
 );
+
+-- Study notebook (notes.php): pages of notes and whiteboards, with study files. Only their owner sees them.
+-- chapter_id: the chapter (Study tab) the page is material for, if any.
+-- The files themselves (and whiteboard drawings) are kept on disk in data/notes/<user id>/.
+CREATE TABLE IF NOT EXISTS notes (
+  id         INTEGER PRIMARY KEY AUTOINCREMENT,
+  user_id    INTEGER NOT NULL,
+  kind       VARCHAR(10) NOT NULL DEFAULT 'note',
+  title      VARCHAR(120) NOT NULL DEFAULT '',
+  subject    VARCHAR(80) NOT NULL DEFAULT '',
+  chapter_id INTEGER NULL,
+  body       TEXT NULL,
+  paper      VARCHAR(10) NOT NULL DEFAULT 'lined',
+  board      VARCHAR(80) NULL,
+  created_at INTEGER NOT NULL DEFAULT 0,
+  updated_at INTEGER NOT NULL DEFAULT 0,
+  FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+);
+
+CREATE TABLE IF NOT EXISTS note_files (
+  id         INTEGER PRIMARY KEY AUTOINCREMENT,
+  user_id    INTEGER NOT NULL,
+  note_id    INTEGER NOT NULL,
+  name       VARCHAR(160) NOT NULL,
+  mime       VARCHAR(100) NOT NULL,
+  size       INTEGER NOT NULL DEFAULT 0,
+  path       VARCHAR(80) NOT NULL,
+  created_at INTEGER NOT NULL DEFAULT 0,
+  FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
+  FOREIGN KEY (note_id) REFERENCES notes(id) ON DELETE CASCADE
+);

@@ -134,14 +134,16 @@ function person_card(array $r, array $nbs): string
 /** The side tabs of the planner. $planner = true on index.php (buttons that switch tab), false elsewhere (links into the planner). */
 function planner_tabs_html(string $active = '', bool $planner = false): string
 {
-    $tabs = [['day', 'Day'], ['week', 'Week'], ['month', 'Month'], ['year', 'Year'], null, ['study', 'Study'], ['tasks', 'Tasks'], ['money', 'Expenses']];
+    $tabs = [['day', 'Day'], ['week', 'Week'], ['month', 'Month'], ['year', 'Year'], null, ['study', 'Study'], ['notes', 'Notes'], ['tasks', 'Tasks'], ['money', 'Expenses']];
     $o = '';
     foreach ($tabs as $t) {
         if ($t === null) { $o .= '<div class="tab-gap"></div>'; continue; }
         [$k, $label] = $t;
-        $o .= $planner
+        $o .= $k === 'notes'   // the study notebook is its own page (notes.php)
+            ? '<a class="tab" role="tab" href="notes.php" data-tab="notes"' . ($active === 'notes' ? ' aria-selected="true"' : '') . '>' . $label . '</a>'
+            : ($planner
             ? '<button class="tab" role="tab" data-act="tab" data-tab="' . $k . '">' . $label . '</button>'
-            : '<a class="tab" role="tab" href="index.php?tab=' . $k . '" data-tab="' . $k . '"' . ($active === $k ? ' aria-selected="true"' : '') . '>' . $label . '</a>';
+            : '<a class="tab" role="tab" href="index.php?tab=' . $k . '" data-tab="' . $k . '"' . ($active === $k ? ' aria-selected="true"' : '') . '>' . $label . '</a>');
     }
     return $o;
 }

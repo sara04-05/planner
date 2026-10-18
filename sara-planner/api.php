@@ -227,7 +227,7 @@ function bootstrap(int $uid): array
     }
     foreach ($rows as $c) {
         $chapters[(int)$c['id']] = ['sid' => (int)$c['subject_id'], 'id' => (string)$c['id'],
-            'title' => $c['title'], 'done' => (bool)$c['done'], 'src' => $c['source'] ?? '', 'topics' => []];
+            'title' => $c['title'], 'done' => (bool)$c['done'], 'src' => $c['source'] ?? '', 'topics' => [], 'mat' => ['pages' => [], 'files' => []]];
     }
     $sql = 'SELECT t.id, t.chapter_id, t.title, t.done FROM topics t JOIN chapters c ON c.id = t.chapter_id
             JOIN subjects s ON s.id = c.subject_id WHERE s.user_id = ? ORDER BY t.id';
@@ -236,6 +236,26 @@ function bootstrap(int $uid): array
         if (isset($chapters[$cid])) {
             $chapters[$cid]['topics'][] = ['id' => (string)$t['id'], 't' => $t['title'], 'done' => (bool)$t['done']];
         }
+    }
+    // Study material for each chapter: its pages in the study notebook (notes.php) and the files on them
+    try {
+        $sql = 'SELECT id, kind, title, chapter_id FROM notes WHERE user_id = ? AND chapter_id IS NOT NULL ORDER BY id';
+        $pageOf = [];
+        foreach (q($sql, [$uid]) as $n) {
+            $cid = (int)$n['chapter_id'];
+            if (!isset($chapters[$cid])) continue;
+            $chapters[$cid]['mat']['pages'][] = ['id' => (int)$n['id'], 'kind' => $n['kind'], 'title' => $n['title']];
+            $pageOf[(int)$n['id']] = $cid;
+        }
+        if ($pageOf) {
+            foreach (q('SELECT id, note_id, name, mime FROM note_files WHERE user_id = ? ORDER BY id', [$uid]) as $f) {
+                $cid = $pageOf[(int)$f['note_id']] ?? 0;
+                if ($cid) $chapters[$cid]['mat']['files'][] = ['id' => (int)$f['id'], 'page' => (int)$f['note_id'], 'name' => $f['name'],
+                    'kind' => str_starts_with($f['mime'], 'image/') ? 'image' : (str_starts_with($f['mime'], 'audio/') ? 'audio' : ($f['mime'] === 'application/pdf' ? 'pdf' : 'file'))];
+            }
+        }
+    } catch (PDOException $e) {
+        // the study notebook tables are not there yet
     }
     foreach ($chapters as $c) {
         $sid = $c['sid'];
