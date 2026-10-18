@@ -7,6 +7,7 @@ require __DIR__ . '/db.php';
 require __DIR__ . '/social.php';
 require __DIR__ . '/notebook.php';
 require __DIR__ . '/layout.php';
+require __DIR__ . '/notes-lib.php';
 
 $uid = require_login();
 $canEdit = is_admin($uid);
@@ -43,6 +44,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && !$canEdit) {
         if ($target === $uid) $err = 'Use "Delete my account" on your profile to remove your own account.';
         elseif (is_admin($target)) $err = 'Admin accounts cannot be deleted here.';
         else {
+            notes_wipe($target);   // their study files and whiteboards (kept on disk)
             q('DELETE FROM users WHERE id = ?', [$target]);   // everything that belongs to them goes with it
             $msg = 'Deleted ' . $row['name'] . ' (' . $row['email'] . ').';
         }
