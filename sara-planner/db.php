@@ -48,6 +48,40 @@ if (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off') {
 }
 session_start();
 
+/**
+ * SQLite only: a transaction that reads first and writes later fails at once with "database is locked" when someone else saved in
+ * between. Taking the write lock when the transaction starts makes people wait their turn instead.
+ */
+class SqliteWritePDO extends PDO
+{
+    private bool $inTx = false;
+
+    public function beginTransaction(): bool
+    {
+        $this->exec('BEGIN IMMEDIATE');
+        return $this->inTx = true;
+    }
+
+    public function commit(): bool
+    {
+        $this->exec('COMMIT');
+        $this->inTx = false;
+        return true;
+    }
+
+    public function rollBack(): bool
+    {
+        $this->exec('ROLLBACK');
+        $this->inTx = false;
+        return true;
+    }
+
+    public function inTransaction(): bool
+    {
+        return $this->inTx;
+    }
+}
+
 /** The one shared database connection. */
 function db(): PDO
 {
@@ -62,8 +96,10 @@ function db(): PDO
 
     if (DB_DRIVER === 'sqlite') {
         $isNew = !file_exists(SQLITE_PATH);
-        $pdo = new PDO('sqlite:' . SQLITE_PATH, null, null, $opts);
+        $pdo = new SqliteWritePDO('sqlite:' . SQLITE_PATH, null, null, $opts);
         $pdo->exec('PRAGMA foreign_keys = ON');
+        // Several people saving at once: wait for each other instead of failing with "database is locked"
+        $pdo->exec('PRAGMA busy_timeout = 10000');
         if ($isNew) {
             $pdo->exec(file_get_contents(__DIR__ . '/sql/schema-sqlite.sql'));
         }
@@ -100,7 +136,7 @@ function upgrade_schema(PDO $pdo): void
             user_id INT UNSIGNED NOT NULL, year SMALLINT UNSIGNED NOT NULL, month TINYINT UNSIGNED NOT NULL,
             income DECIMAL(10,2) NULL, save_target DECIMAL(10,2) NULL,
             PRIMARY KEY (user_id, year, month),
-            FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE) ENGINE=InnoDB');
+            FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4');
     }
 
     // What the user confirmed they really saved in a month. Only adds the column.
@@ -167,7 +203,7 @@ function upgrade_schema(PDO $pdo): void
     // Chat, profiles and friends: same tables as in the schema file.
     try {
         $sql = file_get_contents(__DIR__ . (DB_DRIVER === 'sqlite' ? '/sql/schema-sqlite.sql' : '/sql/schema.sql'));
-        foreach (['messages', 'profiles', 'friends'] as $t) {
+        foreach (['messages', 'profiles', 'friends', 'reports'] as $t) {
             if (preg_match("/CREATE TABLE IF NOT EXISTS $t \\(.*?\\n\\)[^;]*;/s", $sql, $m)) $pdo->exec($m[0]);
         }
         if (DB_DRIVER === 'sqlite') {
@@ -206,7 +242,7 @@ function upgrade_schema(PDO $pdo): void
         // An early test version kept pictures as files on disk; that table has no "data" column. Set it aside.
         $up = $pdo->query(DB_DRIVER === 'sqlite' ? "SELECT name FROM sqlite_master WHERE type = 'table' AND name = 'uploads'" : "SHOW TABLES LIKE 'uploads'")->fetch();
         if ($up && !in_array('data', $colsOf('uploads'), true)) $pdo->exec('ALTER TABLE uploads RENAME TO uploads_old_files');
-        foreach (['uploads', 'posts', 'post_likes', 'interest_lists', 'interest_items', 'notifications', 'notebooks', 'notebook_styles'] as $t) {
+        foreach (['uploads', 'posts', 'post_likes', 'post_comments', 'interest_lists', 'interest_items', 'notifications', 'notebooks', 'notebook_styles'] as $t) {
             if (preg_match("/CREATE TABLE IF NOT EXISTS $t \\(.*?\\n\\)[^;]*;/s", $sql, $m)) $pdo->exec($m[0]);
         }
         // Blog posts and interest lists now belong to one notebook
@@ -235,6 +271,83 @@ function upgrade_schema(PDO $pdo): void
     } catch (PDOException $e) {
         error_log('Could not add the Google / email tables: ' . $e->getMessage());
     }
+    // Roles, verified badge, "hide me from Explore", deleting / editing chat messages and contact names. Only adds columns and a table.
+    try {
+        $colsOf = fn(string $t): array => DB_DRIVER === 'sqlite'
+            ? array_column($pdo->query("PRAGMA table_info($t)")->fetchAll(), 'name')
+            : array_column($pdo->query("SHOW COLUMNS FROM $t")->fetchAll(), 'Field');
+        $add = function (string $t, string $c, string $def) use ($pdo, $colsOf): void {
+            if (!in_array($c, $colsOf($t), true)) $pdo->exec("ALTER TABLE $t ADD COLUMN $c $def");
+        };
+        $add('users', 'role', "VARCHAR(12) NOT NULL DEFAULT 'user'");
+        $add('users', 'verified_badge', 'TINYINT(1) NOT NULL DEFAULT 0');
+        // A site with nobody in ADMIN_EMAILS and no admin yet: the first account made on the site becomes its admin
+        // (otherwise nobody could ever open the Users page or give anyone a role).
+        if (!(defined('ADMIN_EMAILS') && ADMIN_EMAILS) && !$pdo->query("SELECT 1 FROM users WHERE role = 'admin'")->fetch()) {
+            $first = $pdo->query('SELECT MIN(id) AS m FROM users')->fetch()['m'] ?? null;
+            if ($first) $pdo->exec("UPDATE users SET role = 'admin' WHERE id = " . (int)$first);
+        }
+        $add('profiles', 'in_explore', 'TINYINT(1) NOT NULL DEFAULT 0');   // opt in: only people who switch it on are listed in Explore
+        $add('profiles', 'cover_img', 'INT NULL');
+        foreach (['hidden_from', 'hidden_to', 'deleted_all'] as $c) $add('messages', $c, 'TINYINT(1) NOT NULL DEFAULT 0');
+        $add('messages', 'edited_at', 'INT NULL');
+        $pdo->exec(DB_DRIVER === 'sqlite'
+            ? 'CREATE TABLE IF NOT EXISTS contact_names (user_id INTEGER NOT NULL, contact_id INTEGER NOT NULL, name VARCHAR(80) NOT NULL,
+                PRIMARY KEY (user_id, contact_id), FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE, FOREIGN KEY (contact_id) REFERENCES users(id) ON DELETE CASCADE)'
+            : 'CREATE TABLE IF NOT EXISTS contact_names (user_id INT UNSIGNED NOT NULL, contact_id INT UNSIGNED NOT NULL, name VARCHAR(80) NOT NULL,
+                PRIMARY KEY (user_id, contact_id), FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE, FOREIGN KEY (contact_id) REFERENCES users(id) ON DELETE CASCADE) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4');
+        // Pages people add to a notebook themselves (a title, an icon and some writing)
+        $pdo->exec(DB_DRIVER === 'sqlite'
+            ? 'CREATE TABLE IF NOT EXISTS nb_pages (id INTEGER PRIMARY KEY AUTOINCREMENT, user_id INTEGER NOT NULL, notebook_id INTEGER NOT NULL, title VARCHAR(40) NOT NULL,
+                emoji VARCHAR(16) NOT NULL DEFAULT \'\', body TEXT NOT NULL, FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE, FOREIGN KEY (notebook_id) REFERENCES notebooks(id) ON DELETE CASCADE)'
+            : 'CREATE TABLE IF NOT EXISTS nb_pages (id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY, user_id INT UNSIGNED NOT NULL, notebook_id INT UNSIGNED NOT NULL, title VARCHAR(40) NOT NULL,
+                emoji VARCHAR(16) NOT NULL DEFAULT \'\', body TEXT NOT NULL, FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE, FOREIGN KEY (notebook_id) REFERENCES notebooks(id) ON DELETE CASCADE) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4');
+    } catch (PDOException $e) {
+        error_log('Could not add roles / chat editing columns: ' . $e->getMessage());
+    }
+
+    // Music player: Spotify accounts, each person's last Spotify link and their saved playlists. Same tables as in the schema file.
+    try {
+        $sql = file_get_contents(__DIR__ . (DB_DRIVER === 'sqlite' ? '/sql/schema-sqlite.sql' : '/sql/schema.sql'));
+        foreach (['spotify_accounts', 'user_music', 'music_saved'] as $t) {
+            if (preg_match("/CREATE TABLE IF NOT EXISTS $t \\(.*?\\n\\)[^;]*;/s", $sql, $m)) $pdo->exec($m[0]);
+        }
+    } catch (PDOException $e) {
+        error_log('Could not add the music tables: ' . $e->getMessage());
+    }
+
+    // Study notebook: notes, whiteboards and study files (same tables as in the schema file)
+    try {
+        $sql = file_get_contents(__DIR__ . (DB_DRIVER === 'sqlite' ? '/sql/schema-sqlite.sql' : '/sql/schema.sql'));
+        foreach (['notes', 'note_files'] as $t) {
+            if (preg_match("/CREATE TABLE IF NOT EXISTS $t \\(.*?\\n\\)[^;]*;/s", $sql, $m)) $pdo->exec($m[0]);
+        }
+        if (DB_DRIVER === 'sqlite') $pdo->exec('CREATE INDEX IF NOT EXISTS idx_notes_user ON notes(user_id,updated_at)');
+    } catch (PDOException $e) {
+        error_log('Could not add the study notebook tables: ' . $e->getMessage());
+    }
+
+    // Emojis need utf8mb4. Hosts like InfinityFree often create the tables as plain utf8 (3 bytes per character), where an
+    // emoji is refused or turned into "?". Convert any such table once; a table the host refuses to convert is left as it was.
+    if (DB_DRIVER !== 'sqlite') {
+        try {
+            $pdo->exec('ALTER DATABASE `' . DB_NAME . '` CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci');
+        } catch (PDOException $e) {
+            error_log('Could not change the database character set: ' . $e->getMessage());
+        }
+        try {
+            $old = $pdo->query("SELECT TABLE_NAME FROM information_schema.TABLES WHERE TABLE_SCHEMA = DATABASE() AND TABLE_TYPE = 'BASE TABLE' AND TABLE_COLLATION NOT LIKE 'utf8mb4%'")->fetchAll(PDO::FETCH_COLUMN);
+            foreach ($old as $t) {
+                try {
+                    $pdo->exec('ALTER TABLE `' . str_replace('`', '', (string)$t) . '` CONVERT TO CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci');
+                } catch (PDOException $e) {
+                    error_log("Could not convert $t to utf8mb4: " . $e->getMessage());
+                }
+            }
+        } catch (PDOException $e) {
+            error_log('Could not check table character sets: ' . $e->getMessage());
+        }
+    }
 }
 
 /** Run a prepared statement: q('SELECT * FROM x WHERE id = ?', [$id]) */
@@ -243,6 +356,62 @@ function q(string $sql, array $params = []): PDOStatement
     $stmt = db()->prepare($sql);
     $stmt->execute($params);
     return $stmt;
+}
+
+/**
+ * Messages are stored encrypted (AES-256-GCM), so reading the database (phpMyAdmin, a backup, a leaked dump) shows only scrambled text.
+ * The key is made once and kept in data/message.key (blocked from the web by data/.htaccess). Keep it safe: without it old messages can't be read.
+ */
+function msg_key(): string
+{
+    static $key = null;
+    if ($key !== null) return $key;
+    $file = __DIR__ . '/data/message.key';
+    $raw = is_file($file) ? trim((string)file_get_contents($file)) : '';
+    if (strlen($raw) !== 64 || !ctype_xdigit($raw)) {
+        $raw = bin2hex(random_bytes(32));
+        if (file_put_contents($file, $raw, LOCK_EX) === false) throw new RuntimeException("Can't save data/message.key. Make the data folder writable.");
+        @chmod($file, 0600);
+    }
+    return $key = hex2bin($raw);
+}
+
+function msg_encrypt(string $text): string
+{
+    $iv = random_bytes(12);
+    $ct = openssl_encrypt($text, 'aes-256-gcm', msg_key(), OPENSSL_RAW_DATA, $iv, $tag);
+    if ($ct === false) throw new RuntimeException("Couldn't encrypt the message.");
+    return 'enc1:' . base64_encode($iv . $tag . $ct);
+}
+
+/** Old messages written before encryption existed come back unchanged. */
+function msg_decrypt(string $stored): string
+{
+    if (strncmp($stored, 'enc1:', 5) !== 0) return $stored;
+    $bin = base64_decode(substr($stored, 5), true);
+    $lost = '🔒 This message can\'t be read (the key in data/message.key is missing or different).';
+    if ($bin === false || strlen($bin) < 28) return $lost;
+    try {
+        $plain = openssl_decrypt(substr($bin, 28), 'aes-256-gcm', msg_key(), OPENSSL_RAW_DATA, substr($bin, 0, 12), substr($bin, 12, 16));
+    } catch (Throwable $e) {
+        return '🔒 Messages can\'t be read: make the data folder writable so data/message.key can be saved.';
+    }
+    return $plain === false ? $lost : $plain;
+}
+
+/** Once: encrypt messages that were saved as plain text before this existed. */
+function msg_encrypt_existing(): void
+{
+    $marker = __DIR__ . '/data/msgenc.ok';
+    if (is_file($marker)) return;
+    foreach (q("SELECT id, body FROM messages WHERE body <> '' AND body NOT LIKE 'enc1:%'")->fetchAll() as $r) {
+        q('UPDATE messages SET body = ? WHERE id = ?', [msg_encrypt($r['body']), $r['id']]);
+    }
+    try {   // old alerts quoted the start of the message: make them plain
+        q("UPDATE notifications SET text = SUBSTR(text, 1, INSTR(text, ' sent you a message') + 18) WHERE ref LIKE 'msg:%' AND text LIKE '% sent you a message: %'");
+    } catch (PDOException $e) {
+    }
+    @file_put_contents($marker, '1');
 }
 
 function csrf_token(): string
@@ -308,8 +477,11 @@ function login_user(int $id): void
     }
 }
 
-/** Is this user allowed to open admin.php? (ADMIN_EMAILS is set in config.php) */
-function is_admin(int $uid): bool
+/**
+ * Roles. The owner is whoever's email is in ADMIN_EMAILS (config.php): always an admin and can't be changed.
+ * Other people have a role stored on their account: 'admin' (full Users page), 'subadmin' (can only look at the Users page) or 'user'.
+ */
+function is_owner(int $uid): bool
 {
     $admins = defined('ADMIN_EMAILS') ? array_map('strtolower', ADMIN_EMAILS) : [];
     if (!$admins) return false;
@@ -317,11 +489,44 @@ function is_admin(int $uid): bool
     return $row && in_array(strtolower($row['email']), $admins, true);
 }
 
+function user_role(int $uid): string
+{
+    if (is_owner($uid)) return 'admin';
+    try {
+        $r = (string)(q('SELECT role FROM users WHERE id = ?', [$uid])->fetch()['role'] ?? 'user');
+    } catch (PDOException $e) {   // role column couldn't be added on this host
+        return 'user';
+    }
+    return in_array($r, ['admin', 'subadmin'], true) ? $r : 'user';
+}
+
+/** May this user change accounts on admin.php (edit, delete, verify, roles)? */
+function is_admin(int $uid): bool
+{
+    return user_role($uid) === 'admin';
+}
+
+/** May this user open admin.php? Admins can change things there, sub admins can only look. */
+function can_view_users(int $uid): bool
+{
+    return user_role($uid) !== 'user';
+}
+
+/** The name this user gave a contact ('' = none, the real name is used). */
+function contact_name(int $uid, int $contact): string
+{
+    try {
+        return (string)(q('SELECT name FROM contact_names WHERE user_id = ? AND contact_id = ?', [$uid, $contact])->fetch()['name'] ?? '');
+    } catch (PDOException $e) {
+        return '';
+    }
+}
+
 /** How many chat messages this user hasn't read yet (0 if the messages table couldn't be made on this host). */
 function chat_unread(int $uid): int
 {
     try {
-        return (int)q('SELECT COUNT(*) AS n FROM messages WHERE to_id = ? AND is_read = 0', [$uid])->fetch()['n'];
+        return (int)q('SELECT COUNT(*) AS n FROM messages WHERE to_id = ? AND is_read = 0 AND hidden_to = 0', [$uid])->fetch()['n'];
     } catch (PDOException $e) {
         return 0;
     }

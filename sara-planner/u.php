@@ -12,7 +12,7 @@ require __DIR__ . '/layout.php';
 function profile_head(array $person, string $slug, array $stats, string $actions, string $badge = ''): string
 {
     $out = '<header class="phead"><div class="phead-av">' . avatar_html($person, 'xl') . '</div><div class="phead-main">'
-        . '<div class="phead-top"><h2 translate="no">' . ($slug !== '' ? '@' . h($slug) : h($person['name'])) . '</h2>' . $badge . '</div>';
+        . '<div class="phead-top"><h2 translate="no">' . ($slug !== '' ? '@' . h($slug) : h($person['name'])) . vbadge(!empty($person['verified'])) . '</h2>' . $badge . '</div>';
     if ($stats) {
         $out .= '<div class="pstats">';
         foreach ($stats as $label => $n) $out .= '<span class="pstat"><b>' . (int)$n . '</b><span>' . h($label) . '</span></span>';
@@ -22,6 +22,11 @@ function profile_head(array $person, string $slug, array $stats, string $actions
         . ($person['bio'] !== '' ? '<p class="pbio2" translate="no">' . h($person['bio']) . '</p>' : '')
         . '</div>' . ($actions !== '' ? '<div class="phead-btns">' . $actions . '</div>' : '') . '</header>';
     return $out;
+}
+/** Profiles have no report button: problems with the website are reported to the admins from the top bar (the popup in assets/bell.js). */
+function report_btn(int $owner): string
+{
+    return '';
 }
 function plural(int $n, string $one, string $many): string
 {
@@ -46,10 +51,11 @@ if ($prof && $viewer && !can_view_profile($prof, $viewer)) {
     $btn = function (string $do, string $label, string $cls) use ($owner, $back): string {
         return '<form method="post" action="explore.php" class="inline"><input type="hidden" name="csrf" value="' . h(csrf_token()) . '"><input type="hidden" name="do" value="' . $do . '"><input type="hidden" name="id" value="' . $owner . '"><input type="hidden" name="back" value="' . h($back) . '"><button class="' . $cls . '">' . h($label) . '</button></form>';
     };
-    if ($state === 'friends') $actions = '<a class="btn primary" href="messages.php?with=' . $owner . '">Message</a> <a class="btn" href="friend.php?id=' . $owner . '">Today\'s plan</a> <a class="btn" href="hangout.php?with=' . $owner . '">🗓️ Find time together</a>';
+    if ($state === 'friends') $actions = '<a class="btn primary" href="messages.php?with=' . $owner . '">Message</a> <a class="btn" href="hangout.php?with=' . $owner . '">🗓️ Find time together</a>';
     elseif ($state === 'sent') $actions = $btn('cancel', 'Requested · cancel', 'btn ghost');
     elseif ($state === 'received') $actions = $btn('accept', 'Accept friend request', 'btn primary');
     else $actions = $btn('add', 'Add friend', 'btn primary');
+    $actions .= report_btn($owner);
     app_top($person['name'] . "'s profile", ['active' => 'explore']);
     $nf = count(friend_ids($owner));
     echo profile_head($person, '', [plural($nf, 'friend', 'friends') => $nf], $actions, '<span class="tag2 priv">Private</span>');
@@ -90,10 +96,11 @@ $actions = '';
 if ($isMe) {
     $actions = '<a class="btn" href="index.php?tab=profile">Edit my notebooks</a>';
 } elseif ($viewer) {
-    if ($state === 'friends') $actions = '<a class="btn primary" href="messages.php?with=' . $owner . '">Message</a> <a class="btn" href="friend.php?id=' . $owner . '">Today\'s plan</a> <a class="btn" href="hangout.php?with=' . $owner . '">🗓️ Find time together</a>';
+    if ($state === 'friends') $actions = '<a class="btn primary" href="messages.php?with=' . $owner . '">Message</a> <a class="btn" href="hangout.php?with=' . $owner . '">🗓️ Find time together</a>';
     elseif ($state === 'sent') $actions = friend_btn('cancel', $owner, 'Requested · cancel', 'btn ghost', $back);
     elseif ($state === 'received') $actions = friend_btn('accept', $owner, 'Accept friend request', 'btn primary', $back);
     else $actions = friend_btn('add', $owner, 'Add friend', 'btn primary', $back);
+    $actions .= report_btn($owner);
 } else {
     $actions = '<a class="btn primary" href="login.php">Log in to add friend</a>';
 }
@@ -122,21 +129,23 @@ $design = $nb['design'];
 $sections = $nb['sections'];
 $page = (string)($_GET['p'] ?? 'cover');
 $showDay = can_see_day($owner, $viewer);   // the Day page: today's plan, for whoever the owner allowed
-if ($page !== 'cover' && !in_array($page, $sections, true) && !($page === 'day' && $showDay)) $page = 'cover';
+$pagesById = [];
+foreach ($nb['pages'] ?? [] as $cp) $pagesById['pg:' . $cp['id']] = $cp;
+if ($page !== 'cover' && !in_array($page, $sections, true) && !isset($pagesById[$page]) && !($page === 'day' && $showDay)) $page = 'cover';
 $cover = $nb['cover_url'];
 $base = ((string)$prof['slug'] !== '' ? 'u.php?u=' . rawurlencode($prof['slug']) : 'u.php?id=' . $owner) . '&nb=' . $nb['id'];
 
 $LABEL = ['cover' => 'Cover', 'interests' => 'Interests', 'blog' => 'Blog', 'timetable' => 'Timetable', 'subjects' => 'Studying', 'day' => 'Day'];
 $tabs = '';
-foreach ($dayOnly ? ['day'] : array_merge(['cover'], $sections, $showDay ? ['day'] : []) as $k) {
-    $tabs .= '<a class="tab" role="tab" data-tab="' . $k . '" href="' . h($base . ($k === 'cover' ? '' : '&p=' . $k)) . '"' . ($k === $page ? ' aria-selected="true"' : '') . '>' . $LABEL[$k] . '</a>';
+foreach ($pagesById as $k => $cp) $LABEL[$k] = trim($cp['emoji'] . ' ' . $cp['title']);
+foreach ($dayOnly ? ['day'] : array_merge(['cover'], $sections, array_keys($pagesById), $showDay ? ['day'] : []) as $k) {
+    $tabs .= '<a class="tab" role="tab" data-tab="' . $k . '" href="' . h($base . ($k === 'cover' ? '' : '&p=' . $k)) . '"' . ($k === $page ? ' aria-selected="true"' : '') . '>' . h($LABEL[$k]) . '</a>';
 }
 
 $nPosts = 0;   // public posts in the notebooks this viewer can open
 foreach ($notebooks as $n) if (in_array('blog', $n['sections'], true)) $nPosts += count(load_posts($owner, !$isMe, null, $n['id']));
 $nFriends = count(friend_ids($owner));
-$topOpts = ['tab' => '', 'active' => $isMe ? '' : 'explore', 'design' => $design, 'tabs' => $tabs, 'covers' => true];
-if ($page !== 'cover') $topOpts += ['eyebrow' => $name . ' · ' . $nb['title'], 'h1' => $LABEL[$page]];
+$topOpts = ['tab' => '', 'active' => $isMe ? '' : 'explore', 'notabs' => true, 'covers' => true];
 app_top($nb['title'] . ' · ' . $name, $topOpts);
 echo profile_head($person, (string)$prof['slug'], [plural($dayOnly ? 0 : count($notebooks), 'notebook', 'notebooks') => $dayOnly ? 0 : count($notebooks), plural($nPosts, 'post', 'posts') => $nPosts, plural($nFriends, 'friend', 'friends') => $nFriends], $actions,
     $isMe ? '' : ((int)$prof['is_public'] ? '' : '<span class="tag2 priv">Private</span>'));
@@ -151,7 +160,30 @@ echo profile_head($person, (string)$prof['slug'], [plural($dayOnly ? 0 : count($
 
 
 
+<?php if ($page !== 'cover'):   // the notebook opened flat: contents on the left page, the page you are on on the right, the cover around it
+    $tocKeys = $dayOnly ? ['day'] : array_merge(['cover'], $sections, array_keys($pagesById), $showDay ? ['day'] : []);
+    $tocHtml = '';
+    foreach ($tocKeys as $i => $k) {
+        $tocHtml .= '<li><a href="' . h($base . ($k === 'cover' ? '' : '&p=' . $k)) . '"' . ($k === $page ? ' aria-current="page"' : '') . '><span translate="no">' . h($LABEL[$k]) . '</span><i>' . ($i + 1) . '</i></a></li>';
+    } ?>
+  <div class="nbv" id="nbv"<?= design_attrs($design, 'accent') . design_style($design) ?>>
+  <div class="nbook"<?= ($design['binding'] ?? 'coil') !== 'coil' ? ' data-binding="' . h($design['binding']) . '"' : '' ?> style="<?= cover_css($design, $cover) ?>">
+    <div class="page nbp-left"<?= design_attrs($design, 'page') ?>>
+      <p class="eyebrow">Contents</p><h2 class="nbp-title" translate="no"><?= h($nb['title']) ?></h2>
+      <ol class="nbp-toc"><?= $tocHtml ?></ol>
+    </div>
+    <div class="nbp-gutter" aria-hidden="true"></div>
+    <div class="page nbp-right"<?= design_attrs($design, 'page') ?>>
+      <div class="vh"><div><p class="eyebrow"><?= h($nb['title']) ?></p><h1><?= h($LABEL[$page]) ?></h1></div></div>
+<?php endif; ?>
   <?php if ($page === 'cover'): ?>
+    <?php $firstPg = $sections[0] ?? (array_key_first($pagesById) ?? ($showDay ? 'day' : null));
+      $lblShape = in_array($design['label'] ?? 'box', ['round', 'oval', 'arch', 'pill', 'ticket', 'band', 'hexagon', 'diamond', 'tag', 'stamp', 'custom', 'none'], true) ? ' data-label="' . h($design['label']) . '"' : '';
+      if ((int)($design['label_w'] ?? 0) > 0 && ($design['label'] ?? 'box') !== 'none') $lblShape .= ' data-lbw="1"'; ?>
+    <div class="nbv" id="nbv"<?= design_attrs($design, 'accent') . $lblShape . design_style($design) ?>>
+    <div class="nbclosed" id="nbBinder"<?= ($design['binding'] ?? 'coil') !== 'coil' ? ' data-binding="' . h($design['binding']) . '"' : '' ?>>
+    <div class="nbclosed-hit">
+    <?php if ($firstPg !== null): ?><a class="nbcover-link" href="<?= h($base . '&p=' . $firstPg) ?>" title="Open the notebook" aria-label="Open the notebook"><?php endif; ?>
     <div class="nbcover" style="<?= cover_css($design, $cover) ?>">
       <div class="nbcover-in">
         <?= avatar_html($person, 'xl') ?>
@@ -159,8 +191,15 @@ echo profile_head($person, (string)$prof['slug'], [plural($dayOnly ? 0 : count($
         <p class="by" translate="no">by <?= h($name) ?> · @<?= h($prof['slug']) ?></p>
       </div>
     </div>
+    <?php if ($firstPg !== null): ?></a><?php endif; ?>
     <?php if ($nb['intro'] !== ''): ?><p class="nb-intro" translate="no"><?= nl2br(h($nb['intro'])) ?></p><?php endif; ?>
     <?php if (!$sections): ?><p class="hint2" style="margin-top:14px">No pages in this notebook yet.</p><?php endif; ?>
+    </div>
+    <div class="nbclosed-go"><?= stickers_html($design, 'cover') ?></div>
+    </div></div>
+
+  <?php elseif (isset($pagesById[$page])): ?>
+    <div class="nb-text" translate="no"><?= nl2br(h($pagesById[$page]['body'])) ?></div>
 
   <?php elseif ($page === 'blog'):
     $posts = load_posts($owner, !$isMe, $viewer, $nb['id']);
@@ -176,6 +215,20 @@ echo profile_head($person, (string)$prof['slug'], [plural($dayOnly ? 0 : count($
               <button class="likebtn<?= $p['liked'] ? ' on' : '' ?>" data-like="<?= $p['id'] ?>">♥ <span><?= $p['likes'] ?></span></button>
             <?php else: ?>
               <span class="hint2">♥ <?= $p['likes'] ?> · <a href="login.php">Log in</a> to like</span>
+            <?php endif; ?>
+          </div>
+          <div class="cmts" data-cmts="<?= $p['id'] ?>">
+            <h4><?= count($p['comments']) ?> <?= count($p['comments']) === 1 ? 'comment' : 'comments' ?></h4>
+            <div class="clist"><?php foreach ($p['comments'] as $c): ?>
+              <div class="cmt"><b><?= h($c['name']) ?></b> <span class="hint2"><?= h($c['date']) ?></span>
+                <?php if ($c['can_delete']): ?><button type="button" class="cdel" data-cdel="<?= $c['id'] ?>" aria-label="Delete comment">✕</button><?php endif; ?>
+                <?php if ($c['can_report']): ?><button type="button" class="crep" data-crep="<?= $c['id'] ?>">Report</button><?php endif; ?>
+                <p><?= h($c['body']) ?></p></div>
+            <?php endforeach; ?></div>
+            <?php if ($viewer): ?>
+              <form class="cform" data-cpost="<?= $p['id'] ?>"><input name="body" maxlength="500" placeholder="Write a comment…" aria-label="Write a comment" required><button class="btn sm primary">Post</button></form>
+            <?php else: ?>
+              <p class="hint2"><a href="login.php">Log in</a> to comment</p>
             <?php endif; ?>
           </div>
         </div>
@@ -240,15 +293,80 @@ echo profile_head($person, (string)$prof['slug'], [plural($dayOnly ? 0 : count($
     </div><?php else: ?><p class="empty">No subjects yet.</p><?php endif; ?>
   <?php endif; ?>
 
-<?php app_inside(stickers_html($design, $page)); ?>
+<?php if ($page !== 'cover'): ?>
+      <?= stickers_html($design, $page) ?>
+    </div>
+    <nav class="tabs nbp-tabs" role="tablist" aria-label="Pages"><?= $tabs ?></nav>
+  </div></div>
+<?php endif; ?>
 <script>
 (function(){
   var csrf=(document.querySelector('meta[name="csrf-token"]')||{}).content||'';
   function call(action,data){return fetch('api.php?action='+action,{method:'POST',credentials:'same-origin',headers:{'Content-Type':'application/json','X-CSRF-Token':csrf},body:JSON.stringify(data)}).then(function(r){return r.json().then(function(b){if(!r.ok)throw new Error(b.error||'Something went wrong.');return b})})}
+  // The notebook opens, turns its pages and closes without reloading the site (same as on your own page): only the notebook (#nbv) is swapped
+  var busy=false,anim=function(){return window.NBANIM&&!NBANIM.calm()};
+  function swapBook(url,push){
+    if(busy)return Promise.resolve();busy=true;
+    return fetch(url,{credentials:'same-origin'}).then(function(r){return r.text()}).then(function(html){
+      var doc=new DOMParser().parseFromString(html,'text/html');
+      var nv=doc.getElementById('nbv'),old=document.getElementById('nbv');
+      if(!nv||!old){location.href=url;return}
+      var oldBook=old.querySelector('.nbook'),newBook=nv.querySelector('.nbook');
+      var oldPg=oldBook&&oldBook.querySelector('.nbp-right'),snap=oldPg&&newBook&&anim()?oldPg.cloneNode(true):null;
+      var closing=oldBook&&!newBook&&anim();
+      var done=function(){
+        old.replaceWith(nv);
+        document.title=doc.title;
+        if(push)history.pushState({u:1},'',url);
+        if(!oldBook&&newBook&&anim()){newBook.setAttribute('data-anim','open');NBANIM.flip('cover','open')}   // cover -> open book
+        else if(snap)NBANIM.flip(snap,'turn');                                                                // page -> page
+      };
+      if(closing){oldBook.classList.add('shut');return new Promise(function(r){setTimeout(function(){done();r()},400)})}
+      done();
+    }).catch(function(){location.href=url}).then(function(){busy=false});
+  }
+  document.addEventListener('click',function(e){
+    var a=e.target.closest('.nbcover-link, .nbook .nbp-tabs a, .nbook .nbp-toc a');
+    if(!a||e.ctrlKey||e.metaKey||e.shiftKey||e.button)return;
+    var u=new URL(a.href,location.href);
+    if(u.pathname!==location.pathname)return;
+    e.preventDefault();swapBook(a.href,true);
+  });
+  window.addEventListener('popstate',function(){location.reload()});
+  function drawComments(box,list){
+    box.querySelector('h4').textContent=list.length+(list.length===1?' comment':' comments');
+    var el=box.querySelector('.clist');el.textContent='';
+    list.forEach(function(c){
+      var d=document.createElement('div');d.className='cmt';
+      var n=document.createElement('b');n.textContent=c.name;d.appendChild(n);
+      var t=document.createElement('span');t.className='hint2';t.textContent=' '+c.date;d.appendChild(t);
+      if(c.can_delete){var x=document.createElement('button');x.type='button';x.className='cdel';x.dataset.cdel=c.id;x.setAttribute('aria-label','Delete comment');x.textContent='✕';d.appendChild(x)}
+      if(c.can_report){var r=document.createElement('button');r.type='button';r.className='crep';r.dataset.crep=c.id;r.textContent='Report';d.appendChild(r)}
+      var p=document.createElement('p');p.textContent=c.body;d.appendChild(p);
+      el.appendChild(d);
+    });
+  }
+  document.addEventListener('submit',function(e){
+    var f=e.target.closest('[data-cpost]');if(!f)return;
+    e.preventDefault();
+    var box=f.closest('[data-cmts]'),inp=f.elements.body;
+    call('x.comment.add',{post_id:+f.dataset.cpost,body:inp.value}).then(function(r){inp.value='';drawComments(box,r.comments)}).catch(function(e){alert(e.message)});
+  });
+  document.addEventListener('click',function(e){
+    var b=e.target.closest('[data-crep]');if(!b||b.disabled)return;
+    if(!confirm('Report this comment to the admins?'))return;
+    call('x.comment.report',{id:+b.dataset.crep}).then(function(){b.textContent='Reported';b.disabled=true}).catch(function(e){alert(e.message)});
+  });
+  document.addEventListener('click',function(e){
+    var b=e.target.closest('[data-cdel]');if(!b)return;
+    var box=b.closest('[data-cmts]');
+    call('x.comment.delete',{id:+b.dataset.cdel}).then(function(r){drawComments(box,r.comments)}).catch(function(e){alert(e.message)});
+  });
   document.addEventListener('click',function(e){
     var b=e.target.closest('[data-like]');if(!b)return;
     call('x.like',{post_id:+b.dataset.like}).then(function(r){b.classList.toggle('on',r.liked);b.querySelector('span').textContent=r.likes}).catch(function(e){alert(e.message)});
   });
 })();
 </script>
+<script src="assets/nbanim.js?v=<?= filemtime(__DIR__ . '/assets/nbanim.js') ?>"></script>
 <?php app_bottom();

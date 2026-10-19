@@ -247,6 +247,16 @@ CREATE TABLE IF NOT EXISTS post_likes (
   FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
 );
 
+CREATE TABLE IF NOT EXISTS post_comments (
+  id         INTEGER PRIMARY KEY AUTOINCREMENT,
+  post_id    INTEGER NOT NULL,
+  user_id    INTEGER NOT NULL,
+  body       VARCHAR(500) NOT NULL,
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  FOREIGN KEY (post_id) REFERENCES posts(id) ON DELETE CASCADE,
+  FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+);
+
 CREATE TABLE IF NOT EXISTS interest_lists (
   id        INTEGER PRIMARY KEY AUTOINCREMENT,
   user_id   INTEGER NOT NULL,
@@ -297,4 +307,74 @@ CREATE TABLE IF NOT EXISTS notebook_styles (
   name    VARCHAR(60) NOT NULL,
   design  TEXT NOT NULL,
   FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+);
+
+-- Reports: someone reports another account. They are emailed to the ADMIN_EMAILS in config.php and listed on admin.php.
+CREATE TABLE IF NOT EXISTS reports (
+  id          INTEGER PRIMARY KEY AUTOINCREMENT,
+  reporter_id INTEGER NOT NULL,
+  target_id   INTEGER NOT NULL,
+  reason      VARCHAR(40) NOT NULL,
+  details     VARCHAR(1000) NOT NULL DEFAULT '',
+  resolved    TINYINT(1) NOT NULL DEFAULT 0,
+  created_at  TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  FOREIGN KEY (reporter_id) REFERENCES users(id) ON DELETE CASCADE,
+  FOREIGN KEY (target_id) REFERENCES users(id) ON DELETE CASCADE
+);
+
+-- Music: people's own Spotify accounts (the music player) and the Spotify link they last picked
+CREATE TABLE IF NOT EXISTS spotify_accounts (
+  user_id       INTEGER PRIMARY KEY,
+  spotify_name  VARCHAR(190) NOT NULL DEFAULT '',
+  refresh_token TEXT NOT NULL,
+  access_token  TEXT NULL,
+  expires_at    INTEGER NOT NULL DEFAULT 0,
+  FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+);
+
+CREATE TABLE IF NOT EXISTS user_music (
+  user_id INTEGER PRIMARY KEY,
+  link    VARCHAR(255) NOT NULL DEFAULT '',
+  FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+);
+
+-- Playlists (or albums, songs) someone saved on their Music page, shown as buttons
+CREATE TABLE IF NOT EXISTS music_saved (
+  id      INTEGER PRIMARY KEY AUTOINCREMENT,
+  user_id INTEGER NOT NULL,
+  link    VARCHAR(255) NOT NULL,
+  title   VARCHAR(190) NOT NULL DEFAULT '',
+  image   VARCHAR(255) NOT NULL DEFAULT '',
+  FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+);
+
+-- Study notebook (notes.php): pages of notes and whiteboards, with study files. Only their owner sees them.
+-- chapter_id: the chapter (Study tab) the page is material for, if any.
+-- The files themselves (and whiteboard drawings) are kept on disk in data/notes/<user id>/.
+CREATE TABLE IF NOT EXISTS notes (
+  id         INTEGER PRIMARY KEY AUTOINCREMENT,
+  user_id    INTEGER NOT NULL,
+  kind       VARCHAR(10) NOT NULL DEFAULT 'note',
+  title      VARCHAR(120) NOT NULL DEFAULT '',
+  subject    VARCHAR(80) NOT NULL DEFAULT '',
+  chapter_id INTEGER NULL,
+  body       TEXT NULL,
+  paper      VARCHAR(10) NOT NULL DEFAULT 'lined',
+  board      VARCHAR(80) NULL,
+  created_at INTEGER NOT NULL DEFAULT 0,
+  updated_at INTEGER NOT NULL DEFAULT 0,
+  FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+);
+
+CREATE TABLE IF NOT EXISTS note_files (
+  id         INTEGER PRIMARY KEY AUTOINCREMENT,
+  user_id    INTEGER NOT NULL,
+  note_id    INTEGER NOT NULL,
+  name       VARCHAR(160) NOT NULL,
+  mime       VARCHAR(100) NOT NULL,
+  size       INTEGER NOT NULL DEFAULT 0,
+  path       VARCHAR(80) NOT NULL,
+  created_at INTEGER NOT NULL DEFAULT 0,
+  FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
+  FOREIGN KEY (note_id) REFERENCES notes(id) ON DELETE CASCADE
 );

@@ -7,34 +7,12 @@ require __DIR__ . '/social.php';
 require __DIR__ . '/notebook.php';
 
 $uid = require_login();
+if ($_SERVER['REQUEST_METHOD'] !== 'POST') {   // all settings live in one place now: the Settings tab of your profile
+    header('Location: index.php?tab=profile&ptab=settings');
+    exit;
+}
 $error = '';
 $saved = isset($_GET['saved']);
-
-/** Turn an uploaded picture into a 256×256 JPEG (cropped to a square). Returns "image/jpeg;<base64>" or an error. */
-function avatar_from_upload(array $f): array
-{
-    if ($f['error'] === UPLOAD_ERR_INI_SIZE || $f['error'] === UPLOAD_ERR_FORM_SIZE || $f['size'] > 5 * 1024 * 1024) {
-        return [null, 'That picture is too big. Pick one under 5 MB.'];
-    }
-    if ($f['error'] !== UPLOAD_ERR_OK || !is_uploaded_file($f['tmp_name'])) return [null, 'The picture could not be uploaded. Try again.'];
-    $info = @getimagesize($f['tmp_name']);
-    $types = [IMAGETYPE_JPEG => 'image/jpeg', IMAGETYPE_PNG => 'image/png', IMAGETYPE_WEBP => 'image/webp', IMAGETYPE_GIF => 'image/gif'];
-    if (!$info || !isset($types[$info[2]])) return [null, 'Pick a JPG, PNG, WebP or GIF picture.'];
-    $raw = file_get_contents($f['tmp_name']);
-
-    if (function_exists('imagecreatefromstring') && ($src = @imagecreatefromstring($raw))) {
-        $w = imagesx($src); $hgt = imagesy($src); $side = min($w, $hgt);
-        $dst = imagecreatetruecolor(256, 256);
-        imagefill($dst, 0, 0, imagecolorallocate($dst, 255, 255, 255));   // transparent PNGs get a white background
-        imagecopyresampled($dst, $src, 0, 0, intdiv($w - $side, 2), intdiv($hgt - $side, 2), 256, 256, $side, $side);
-        ob_start();
-        imagejpeg($dst, null, 85);
-        return ['image/jpeg;' . base64_encode((string)ob_get_clean()), ''];
-    }
-    // Host without the GD image library: keep the file as it is, if it's small
-    if (strlen($raw) > 600 * 1024) return [null, 'That picture is too big. Pick one under 600 KB.'];
-    return [$types[$info[2]] . ';' . base64_encode($raw), ''];
-}
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     if (!check_csrf($_POST['csrf'] ?? null)) {
@@ -68,6 +46,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $share['day'] = max(0, min(3, (int)($_POST['day'] ?? 0)));
             $notify = json_col($prof['notify'] ?? null, ['like' => 1]);
             $notify['like'] = !empty($_POST['notify_like']) ? 1 : 0;
+            $notify['comment'] = !empty($_POST['notify_comment']) ? 1 : 0;
             q('UPDATE profiles SET is_public = ?, guest_view = ?, share = ?, notify = ? WHERE user_id = ?',
                 [$public, $public && !empty($_POST['guest']) ? 1 : 0, json_encode($share), json_encode($notify), $uid]);
             try {
@@ -131,11 +110,12 @@ app_top('Edit profile & settings', ['tab' => 'profile', 'covers' => true, 'eyebr
         </select></label>
       <h2 class="nb-h2">Alerts</h2>
       <?= $switch('notify_like', 'Alert when someone likes my post', 'Shows in the bell at the top of the page.', !empty($notify['like'])) ?>
+      <?= $switch('notify_comment', 'Alert when someone comments on my post', 'Shows in the bell at the top of the page.', !empty($notify['comment'] ?? 1)) ?>
       <button class="btn primary">Save everything</button>
     </form>
     <h2 class="nb-h2">Account</h2>
     <p class="hint2">Logs you out and removes your account and everything in it for good.</p>
-    <p style="margin-top:10px"><a class="btn danger" href="delete-account.php">Delete my account</a></p>
+    <p style="margin-top:10px"><a class="btn" href="change-password.php">Change my password</a> <a class="btn danger" href="delete-account.php">Delete my account</a></p>
     <template id="coverTpl"><?php foreach (COVERS as $k => $x): ?><div data-cover="<?= $k ?>"><?= cover_html($me, false, $k) ?></div><?php endforeach; ?></template>
     <script>
     (function(){

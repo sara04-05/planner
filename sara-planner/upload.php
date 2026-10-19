@@ -22,8 +22,18 @@ if (!check_csrf($_SERVER['HTTP_X_CSRF_TOKEN'] ?? null)) up_fail(403, 'Your sessi
 if (!is_verified($uid)) up_fail(403, 'Confirm your email first.');
 
 $kind = (string)($_POST['kind'] ?? 'photo');
-if (!in_array($kind, ['photo', 'cover', 'sticker'], true)) up_fail(400, 'Unknown picture type.');
+if (!in_array($kind, ['photo', 'cover', 'sticker', 'avatar'], true)) up_fail(400, 'Unknown picture type.');
 if (empty($_FILES['file'])) up_fail(400, 'Choose a picture first (it may be bigger than the server allows).');
+
+if ($kind === 'avatar') {   // your profile picture (cropped to a square)
+    [$data, $err] = avatar_from_upload($_FILES['file']);
+    if (!$data) up_fail(400, $err);
+    ensure_profile($uid);
+    q('UPDATE profiles SET avatar = ?, avatar_v = ? WHERE user_id = ?', [$data, time(), $uid]);
+    $v = (int)q('SELECT avatar_v FROM profiles WHERE user_id = ?', [$uid])->fetch()['avatar_v'];
+    echo json_encode(['ok' => true, 'url' => 'avatar.php?id=' . $uid . '&v=' . $v]);
+    exit;
+}
 
 try {
     $id = save_image($uid, $_FILES['file'], $kind);

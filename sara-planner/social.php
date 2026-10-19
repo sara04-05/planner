@@ -9,6 +9,26 @@ const COVERS = [
     'woodland' => ['Woodland', 'vintage'], 'cocoa' => ['Pressed ferns', 'vintage'], 'rose' => ['Rose vine', 'vintage'],
     'blush' => ['Blush', 'spiral'], 'petal' => ['Pink bow', 'spiral'], 'rosewood' => ['Rosewood', 'spiral'],
     'ivory' => ['White & bow', 'spiral'], 'nude' => ['Nude', 'spiral'],
+    'art-blossom' => ['Cherry blossom', 'top'],
+    'art-library' => ['Dark academia', 'vintage'],
+    'art-gingham' => ['Gingham', 'top'],
+    'art-coquette' => ['Bows', 'top'],
+    'art-stars' => ['Starry night', 'spiral'],
+    'art-clouds' => ['Clouds', 'top'],
+    'art-lavender' => ['Lavender', 'top'],
+    'art-daisy' => ['Daisies', 'top'],
+    'art-checker' => ['Checkerboard', 'top'],
+    'art-strawberry' => ['Strawberries', 'top'],
+    'art-terrazzo' => ['Terrazzo', 'vintage'],
+    'art-waves' => ['Waves', 'spiral'],
+    'art-dots' => ['Polka dots', 'top'],
+    'art-sunsetgrain' => ['Sunset', 'spiral'],
+    'art-matcha' => ['Matcha', 'spiral'],
+    'art-hearts' => ['Hearts', 'vintage'],
+    'art-rainbow' => ['Rainbows', 'vintage'],
+    'art-mountains' => ['Mountains', 'vintage'],
+    'art-pinstripe' => ['Pinstripe', 'vintage'],
+    'art-monstera' => ['Monstera', 'vintage'],
 ];
 const DEFAULT_COVER = 'meadow';
 // Hour types and the colour each one has in the planner (same as HT in assets/app.js)
@@ -17,20 +37,63 @@ const HOUR_COLORS = ['uni' => 'school', 'work' => 'transport', 'study' => 'food'
 const HOUR_NAMES = ['uni' => 'Uni', 'work' => 'Work', 'study' => 'Study', 'personal' => 'Personal',
     'health' => 'Health', 'sleep' => 'Sleep'];
 
+/** Turn an uploaded picture into a 256×256 JPEG (cropped to a square). Returns "image/jpeg;<base64>" or an error. */
+function avatar_from_upload(array $f): array
+{
+    if ($f['error'] === UPLOAD_ERR_INI_SIZE || $f['error'] === UPLOAD_ERR_FORM_SIZE || $f['size'] > 5 * 1024 * 1024) {
+        return [null, 'That picture is too big. Pick one under 5 MB.'];
+    }
+    if ($f['error'] !== UPLOAD_ERR_OK || !is_uploaded_file($f['tmp_name'])) return [null, 'The picture could not be uploaded. Try again.'];
+    $info = @getimagesize($f['tmp_name']);
+    $types = [IMAGETYPE_JPEG => 'image/jpeg', IMAGETYPE_PNG => 'image/png', IMAGETYPE_WEBP => 'image/webp', IMAGETYPE_GIF => 'image/gif'];
+    if (!$info || !isset($types[$info[2]])) return [null, 'Pick a JPG, PNG, WebP or GIF picture.'];
+    $raw = file_get_contents($f['tmp_name']);
+
+    if (function_exists('imagecreatefromstring') && ($src = @imagecreatefromstring($raw))) {
+        $w = imagesx($src); $hgt = imagesy($src); $side = min($w, $hgt);
+        $dst = imagecreatetruecolor(256, 256);
+        imagefill($dst, 0, 0, imagecolorallocate($dst, 255, 255, 255));   // transparent PNGs get a white background
+        imagecopyresampled($dst, $src, 0, 0, intdiv($w - $side, 2), intdiv($hgt - $side, 2), 256, 256, $side, $side);
+        ob_start();
+        imagejpeg($dst, null, 85);
+        return ['image/jpeg;' . base64_encode((string)ob_get_clean()), ''];
+    }
+    // Host without the GD image library: keep the file as it is, if it's small
+    if (strlen($raw) > 600 * 1024) return [null, 'That picture is too big. Pick one under 600 KB.'];
+    return [$types[$info[2]] . ';' . base64_encode($raw), ''];
+}
+
+/** Does this account have the blue verified tick? (given by an admin on admin.php) */
+function is_verified_badge(int $id): bool
+{
+    try {
+        return (int)(q('SELECT verified_badge FROM users WHERE id = ?', [$id])->fetch()['verified_badge'] ?? 0) === 1;
+    } catch (PDOException $e) {   // column couldn't be added on this host
+        return false;
+    }
+}
+
+/** The small blue tick next to the name of a verified account. */
+function vbadge(bool $on): string
+{
+    return $on ? ' <span class="vbadge" title="Verified account" aria-label="Verified account">✓</span>' : '';
+}
+
 /** Name, bio, cover and picture version of one user, or null if the account doesn't exist. */
 function person(int $id): ?array
 {
     $u = q('SELECT id, name, email FROM users WHERE id = ?', [$id])->fetch();
     if (!$u) return null;
+    $u['verified'] = is_verified_badge($id);
     try {
-        $p = q('SELECT bio, cover, words, avatar_v FROM profiles WHERE user_id = ?', [$id])->fetch();
-    } catch (PDOException $e) {   // words column couldn't be added on this host
-        $p = q("SELECT bio, cover, '' AS words, avatar_v FROM profiles WHERE user_id = ?", [$id])->fetch();
+        $p = q('SELECT bio, cover, words, avatar_v, cover_img FROM profiles WHERE user_id = ?', [$id])->fetch();
+    } catch (PDOException $e) {   // words / cover_img column couldn't be added on this host
+        $p = q("SELECT bio, cover, '' AS words, avatar_v, NULL AS cover_img FROM profiles WHERE user_id = ?", [$id])->fetch();
     }
-    $p = $p ?: ['bio' => '', 'cover' => DEFAULT_COVER, 'words' => '', 'avatar_v' => 0];
+    $p = $p ?: ['bio' => '', 'cover' => DEFAULT_COVER, 'words' => '', 'avatar_v' => 0, 'cover_img' => null];
     return ['id' => (int)$u['id'], 'name' => $u['name'], 'email' => $u['email'], 'bio' => $p['bio'],
-        'cover' => isset(COVERS[$p['cover']]) ? $p['cover'] : DEFAULT_COVER, 'words' => (string)$p['words'], 'avatar_v' => (int)$p['avatar_v'],
-        'same_name' => same_name_count($u['name']) > 1];
+        'cover' => isset(COVERS[$p['cover']]) || ($p['cover'] === 'custom' && $p['cover_img']) ? $p['cover'] : DEFAULT_COVER, 'cover_img' => $p['cover_img'] ? (int)$p['cover_img'] : 0, 'words' => (string)$p['words'], 'avatar_v' => (int)$p['avatar_v'],
+        'same_name' => same_name_count($u['name']) > 1, 'verified' => $u['verified']];
 }
 
 /** How many accounts use this name. When it's more than one, the email is shown next to it to tell them apart. */
@@ -91,10 +154,13 @@ function avatar_html(array $p, string $size = ''): string
 function cover_html(array $p, bool $mini = false, ?string $cover = null): string
 {
     $cover = $cover ?? $p['cover'];
-    $style = COVERS[$cover][1];
+    $custom = $cover === 'custom' && !empty($p['cover_img']);
+    if (!$custom && !isset(COVERS[$cover])) $cover = DEFAULT_COVER;
+    $style = $custom ? 'top' : COVERS[$cover][1];
     $cls = 'nbc cv-' . $cover . ($style === 'spiral' ? ' spiral' : '') . ($style === 'top' ? ' top' : '') . ($mini ? ' mini' : '');
     $lightSpine = in_array($cover, ['cherry', 'rose'], true) ? ' light' : '';
-    $out = '<span class="' . $cls . '" aria-hidden="true"><span class="nbc-art"></span><span class="nbc-spine' . $lightSpine . '"></span>';
+    $art = $custom ? ' style="background-image:url(\'' . h((string)upload_url((int)$p['cover_img'])) . '\');background-size:cover;background-position:center"' : '';
+    $out = '<span class="' . $cls . '" aria-hidden="true"><span class="nbc-art"' . $art . '></span><span class="nbc-spine' . $lightSpine . '"></span>';
     if (!$mini) {
         if ($style === 'spiral') {
             $words = trim($p['words']);
@@ -112,7 +178,7 @@ function cover_html(array $p, bool $mini = false, ?string $cover = null): string
 /** Name, plus the email underneath when someone else has the same name. */
 function name_html(array $p): string
 {
-    return '<span class="pname">' . h($p['name']) . '</span>'
+    return '<span class="pname">' . h($p['name']) . '</span>' . vbadge(!empty($p['verified']))
         . ($p['same_name'] ? '<span class="pmail" translate="no">' . h($p['email']) . '</span>' : '');
 }
 
@@ -120,8 +186,9 @@ function name_html(array $p): string
  * One user's hour-by-hour plan for a day, the same way their planner shows it: that day's own entries,
  * else the weekly ones. Hours that run on (17:15–19:45) are joined into one entry.
  * Returns [['from' => minutes, 'to' => minutes, 'text' => ..., 'type' => ...], ...]
+ * $typed: also count an hour that has a type picked (Work, Uni…) but no text, because the planner shows it as taken. Used for free time.
  */
-function day_schedule(int $uid, string $date): array
+function day_schedule(int $uid, string $date, bool $typed = false): array
 {
     $wd = ((int)date('N', strtotime($date))) - 1;
     $day = $week = [];
@@ -131,7 +198,7 @@ function day_schedule(int $uid, string $date): array
     $prev = null;
     for ($h = 0; $h < 24; $h++) {
         $e = $day[$h] ?? $week[$h] ?? null;
-        if (!$e || trim((string)$e['text']) === '') { $prev = null; continue; }
+        if (!$e || (trim((string)$e['text']) === '' && !($typed && in_array($e['type'], ['uni', 'work', 'study', 'health', 'sleep'], true)))) { $prev = null; continue; }
         $from = $h * 60 + (int)$e['start_min'];
         $to   = $h * 60 + (int)$e['end_min'];
         $last = count($out) - 1;
@@ -158,7 +225,7 @@ const FREE_TO   = 23 * 60;
 function free_slots(int $uid, string $date, int $after = 0): array
 {
     $free = [[max(FREE_FROM, $after), FREE_TO]];
-    foreach (day_schedule($uid, $date) as $e) {
+    foreach (day_schedule($uid, $date, true) as $e) {
         $next = [];
         foreach ($free as [$a, $b]) {
             if ($e['to'] <= $a || $e['from'] >= $b) { $next[] = [$a, $b]; continue; }
@@ -190,7 +257,7 @@ function common_slots(array $a, array $b, int $min = 30): array
 function guest_people(int $limit = 12, string $term = ''): array
 {
     $sql = 'SELECT u.id, u.name, p.slug, p.bio FROM users u JOIN profiles p ON p.user_id = u.id
-            WHERE u.email_verified = 1 AND p.is_public = 1 AND p.guest_view = 1 AND p.slug IS NOT NULL AND p.slug <> \'\'';
+            WHERE u.email_verified = 1 AND p.is_public = 1 AND p.guest_view = 1 AND p.slug IS NOT NULL AND p.slug <> \'\' AND COALESCE(p.in_explore, 0) = 1';
     $args = [];
     if ($term !== '') {
         $sql .= " AND u.name LIKE ? ESCAPE '|'";

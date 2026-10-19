@@ -13,7 +13,7 @@ if (current_user_id()) {
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <meta name="description" content="A free study, task and money planner for students. Plan your day, track exams and see where your money goes.">
+  <meta name="description" content="A free study, task and money planner for students. Plan your day, keep study notes, track exams, see where your money goes, and share a notebook with friends.">
   <title>Splanner · Study, tasks & money in one notebook</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -104,6 +104,41 @@ if (current_user_id()) {
       .demo .tab[aria-selected="true"]{width:auto}
       .demo-badge{position:static;display:inline-block;margin:0 0 10px 6px}
     }
+    /* phones: everything scales down with the screen so it fits any width (320px and up) */
+    @media (max-width:640px){
+      .land{padding-inline:2px}
+      .lnav{padding:12px 0;gap:8px}
+      .lnav .brand b{font-size:20px}
+      .hero{gap:28px;padding:14px 0 36px}
+      .hero h1{font-size:clamp(26px,8.4vw,36px);line-height:1.1}
+      .hero .lead{font-size:clamp(15px,4.2vw,17px);margin:14px 0 20px}
+      .cta{gap:8px}
+      .hero .cta .btn{flex:1 1 100%;text-align:center;justify-content:center;padding:12px 14px}
+      .trust{margin-top:18px;gap:6px 14px;font-size:12.5px}
+      .demo .page{padding:16px 14px;min-height:0}
+      .demo h2.dh{font-size:22px}
+      .demo .tab{padding:7px 10px 10px;font-size:12.5px}
+      section.blk{padding:34px 0}
+      .sh{margin-bottom:20px}
+      .sh h2,.final h2{font-size:clamp(22px,6.4vw,28px)}
+      .sh p{font-size:15px}
+      .feat{grid-template-columns:1fr 1fr;gap:10px}
+      .fc{padding:14px 14px 16px;border-radius:14px}
+      .fc h3{font-size:16px}
+      .fc p{font-size:13px}
+      .step{padding:16px}
+      .safe{gap:16px}
+      .safe-card{padding:18px}
+      .faq details{padding:12px 14px}
+      .faq summary{font-size:15.5px}
+      .final{padding:34px 16px;margin:12px 0;border-radius:20px}
+      .final .cta .btn{flex:1 1 100%;text-align:center}
+      .lfoot{padding:18px 0 28px}
+    }
+    @media (max-width:380px){
+      .feat{grid-template-columns:1fr}
+      .trust{font-size:12px}
+    }
   </style>
 <script src="assets/lang.js?v=<?= filemtime(__DIR__ . '/assets/lang.js') ?>"></script>
 </head>
@@ -115,6 +150,8 @@ if (current_user_id()) {
     <nav aria-label="Main">
       <a href="tour.php">Look inside</a>
       <a href="#features">Features</a>
+      <a href="#more">Friends &amp; music</a>
+      <a href="explore.php">Explore</a>
       <a href="#safety">Is it safe?</a>
       <a href="#faq">FAQ</a>
       <button class="linkbtn langsw" data-lang-btn>Shqip</button>
@@ -130,7 +167,7 @@ if (current_user_id()) {
     <div>
       <p class="eyebrow">Free student planner · no ads</p>
       <h1>Your studies, tasks and money in one notebook.</h1>
-      <p class="lead">Plan your day hour by hour, count down to exams, tick off chapters and see exactly where your money goes each week. Try it right here before you sign up.</p>
+      <p class="lead">Plan your day hour by hour, keep your study notes, count down to exams and see exactly where your money goes. Then make a notebook of your own, add friends and play your music. Try it right here before you sign up.</p>
       <div class="cta">
         <a class="btn primary" href="tour.php">Look inside the planner</a>
         <a class="btn" href="register.php">Create free account</a>
@@ -152,6 +189,7 @@ if (current_user_id()) {
           <button class="tab" role="tab" data-tab="day">Day</button>
           <button class="tab" role="tab" data-tab="week">Week</button>
           <button class="tab" role="tab" data-tab="study">Study</button>
+          <button class="tab" role="tab" data-tab="notes">Notes</button>
           <button class="tab" role="tab" data-tab="tasks">Tasks</button>
           <button class="tab" role="tab" data-tab="money">Expenses</button>
         </nav>
@@ -163,7 +201,7 @@ if (current_user_id()) {
   <section class="blk" id="look">
     <div class="sh">
       <h2>Look inside the planner</h2>
-      <p>Open the real planner with sample data and click through every page: Day, Week, Month, Year, Study, Tasks and Expenses. It is view only, so nothing is saved until you have an account.</p>
+      <p>Open the real planner with sample data and click through every page: Day, Week, Month, Year, Study, Notes, Tasks and Expenses. It is view only, so nothing is saved until you have an account.</p>
     </div>
     <div class="cta"><a class="btn primary" href="tour.php">Look inside the planner</a></div>
   </section>
@@ -171,7 +209,7 @@ if (current_user_id()) {
   <!-- FEATURES -->
   <section class="blk" id="features">
     <div class="sh">
-      <h2>Seven pages, one planner</h2>
+      <h2>Eight pages, one planner</h2>
       <p>Each tab is a page in the notebook. Use the ones you need and ignore the rest.</p>
     </div>
     <div class="feat">
@@ -180,8 +218,27 @@ if (current_user_id()) {
       <div class="fc" style="--fc:var(--t-month)"><h3>Month</h3><p>A calendar with how much you spent each day and which days have deadlines.</p></div>
       <div class="fc" style="--fc:var(--t-year)"><h3>Year</h3><p>Month-by-month totals and how much you've managed to save.</p></div>
       <div class="fc" style="--fc:var(--t-study)"><h3>Study</h3><p>Subjects split into chapters and topics, with exam countdowns and progress bars.</p></div>
+      <div class="fc" style="--fc:var(--t-notes)"><h3>Notes</h3><p>Your study notebook: pages of notes, whiteboards to draw on, and PDFs, slides and pictures, filed under each subject.</p></div>
       <div class="fc" style="--fc:var(--t-tasks)"><h3>Tasks</h3><p>To-dos with due dates and priorities, grouped into overdue, today and later.</p></div>
       <div class="fc" style="--fc:var(--t-money)"><h3>Expenses</h3><p>Log what you spend in seconds, set a weekly budget and see it by category.</p></div>
+    </div>
+  </section>
+
+  <!-- MORE THAN A PLANNER -->
+  <section class="blk" id="more">
+    <div class="sh">
+      <h2>More than a planner</h2>
+      <p>Your planner stays private. Everything below is optional, and you decide who sees what.</p>
+    </div>
+    <div class="feat">
+      <div class="fc" style="--fc:var(--t-month)"><h3>Your own notebook</h3><p>Pick a cover, add a picture and a bio, and fill pages with a blog and lists of what you love. Keep it private or share it with a link.</p></div>
+      <div class="fc" style="--fc:var(--t-week)"><h3>Friends</h3><p>Add friends by name or email. They can open your notebook cover and see your plan for today, and nothing else from your planner.</p></div>
+      <div class="fc" style="--fc:var(--t-year)"><h3>Explore</h3><p>Switch it on and others can find your notebook. Leave it off and nobody will see you in the list.</p></div>
+      <div class="fc" style="--fc:var(--t-day)"><h3>Messages</h3><p>Write to friends, edit or delete what you sent, and give people your own nicknames. Messages are stored scrambled.</p></div>
+      <div class="fc" style="--fc:var(--t-study)"><h3>Music</h3><p>Paste a Spotify playlist, album or song and it plays on the page. Save your favourites and keep a small player open while you plan.</p></div>
+      <div class="fc" style="--fc:var(--t-tasks)"><h3>Alerts</h3><p>A bell tells you about friend requests, new messages and likes, so you don't have to keep checking.</p></div>
+      <div class="fc" style="--fc:var(--t-money)"><h3>English and Shqip</h3><p>Switch the whole site between English and Albanian with one button, and pick light or dark to suit your eyes.</p></div>
+      <div class="fc" style="--fc:var(--t-notes)"><h3>Google Calendar</h3><p>Send your hour-by-hour plan to your Google Calendar if you'd like it on your phone's calendar too, or bring in a planner you already have.</p></div>
     </div>
   </section>
 
@@ -206,7 +263,8 @@ if (current_user_id()) {
         <h3>What we do</h3>
         <ul class="checks yes">
           <li><i>✓</i><div><b>Store your password scrambled</b><span>It's hashed, so not even the site owner can read it.</span></div></li>
-          <li><i>✓</i><div><b>Keep your planner private</b><span>Every save is tied to your account. No one else can see it.</span></div></li>
+          <li><i>✓</i><div><b>Keep your planner private</b><span>Every save is tied to your account. Friends and visitors only see what you choose to share.</span></div></li>
+          <li><i>✓</i><div><b>Scramble your messages</b><span>Messages are stored encrypted, and only the two people in a chat can read them.</span></div></li>
           <li><i>✓</i><div><b>Use a secure connection</b><span>Look for the padlock in the address bar.</span></div></li>
           <li><i>✓</i><div><b>Let you leave anytime</b><span>Delete your account and all your data is gone.</span></div></li>
         </ul>
@@ -217,7 +275,8 @@ if (current_user_id()) {
           <li><i>✕</i><div><b>Ask for your university or email password</b><span>Make a new password just for this site.</span></div></li>
           <li><i>✕</i><div><b>Ask for card or bank details</b><span>The expense tracker is just numbers you type in.</span></div></li>
           <li><i>✕</i><div><b>Show ads or sell your data</b><span>Your data is used only to run your planner.</span></div></li>
-          <li><i>✕</i><div><b>Send you emails you didn't ask for</b><span>Your email is only used to log in.</span></div></li>
+          <li><i>✕</i><div><b>Send you emails you didn't ask for</b><span>Your email is only used to log in and to check it is really yours.</span></div></li>
+          <li><i>✕</i><div><b>Show your plans or messages to strangers</b><span>Nobody is listed in Explore unless they switch it on.</span></div></li>
         </ul>
       </div>
     </div>
@@ -233,7 +292,11 @@ if (current_user_id()) {
     <details><summary>Does it connect to my bank?</summary><p>No. You type in what you spend yourself. The planner never sees your bank account or card.</p></details>
     <details><summary>What currency does it use?</summary><p>Amounts are shown in euros (€).</p></details>
     <details><summary>Is there a dark mode?</summary><p>Yes. It follows your device setting, and you can switch it with one button at the top of the planner.</p></details>
-    <details><summary>Can other people see my planner?</summary><p>No. Your planner is only visible when you're logged in to your own account.</p></details>
+    <details><summary>Can other people see my planner?</summary><p>No. Your planner, tasks, money and notes are only visible when you're logged in to your own account. Friends you accept can see your plan for today, and only that.</p></details>
+    <details><summary>What is Explore?</summary><p>A list of people who chose to show their notebook. You are only in it if you switch "Show me in Explore" on, and you can switch it off again at any time.</p></details>
+    <details><summary>Who can read my messages?</summary><p>Only you and the person you wrote to. Messages are stored encrypted, and you can edit or delete yours.</p></details>
+    <details><summary>Do I need Spotify to use the Music page?</summary><p>No. Paste any Spotify link and it plays in Spotify's own player. Connecting your Spotify account is optional, where the site has it turned on.</p></details>
+    <details><summary>Can I use it in Albanian?</summary><p>Yes. Press the Shqip button at the top of any page to switch the whole site, and English to switch back.</p></details>
   </section>
 
   <div class="final">
@@ -244,7 +307,7 @@ if (current_user_id()) {
 
   <footer class="lfoot">
     <span class="logo sm">Splanner<span style="font-family:var(--body);font-size:13px;font-weight:500;letter-spacing:0;color:var(--muted);margin-left:6px">© 2026</span></span>
-    <span><a href="#safety">Privacy</a></span>
+    <span><a href="explore.php">Explore</a> · <a href="#safety">Privacy</a></span>
   </footer>
 </div>
 
@@ -265,6 +328,8 @@ if (current_user_id()) {
       return head('Week 39','This week')+'<div class="wk-scroll" style="margin:0"><div class="weekgrid" style="grid-template-columns:repeat(7,minmax(110px,1fr))">'+d.map(function(n,i){return '<div class="wd'+(i===5?' is-today':'')+'" style="min-height:150px"><div class="wd-h"><b>'+(21+i)+'</b><span>'+n+'</span></div><ul>'+items[i].map(function(t){return '<li><span class="dot" style="background:var(--accent)"></span>'+t+'</li>'}).join('')+'</ul><div class="foot"><span>Spent</span><span class="amt">€'+[6,4.5,11,8,3,12.3,0][i]+'</span></div></div>'}).join('')+'</div></div>'},
     study:function(){var s=[['Databases','var(--c-school)',62,'Exam in 9 days','warn'],['Algorithms','var(--c-transport)',40,'Exam in 23 days','muted'],['OOP','var(--c-food)',85,'Lab due today','bad']];
       return head('3 subjects','Study')+'<div class="stack" style="gap:14px">'+s.map(function(x){return '<div class="subj" style="--sc:'+x[1]+';padding:14px 16px"><div class="subj-h" style="margin-bottom:8px"><h3>'+x[0]+'</h3><span class="pill '+x[4]+'">'+x[3]+'</span></div><div class="meter"><span style="width:'+x[2]+'%;background:'+x[1]+'"></span></div><div class="s" style="font-size:12px;color:var(--muted);margin-top:6px">'+x[2]+'% of topics done</div></div>'}).join('')+'</div>'},
+    notes:function(){var pages=[['📝','Databases, chapter 4','Normal forms: 1NF, 2NF, 3NF…'],['🎨','ER diagram sketch','Whiteboard'],['📄','Algorithms slides.pdf','Study file'],['📝','OOP lab checklist','Inheritance vs. composition']];
+      return head('Your study notebook','Notes')+'<div class="panel">'+pages.map(function(x){return '<div class="row"><span style="font-size:20px" aria-hidden="true">'+x[0]+'</span><div class="grow"><div class="t">'+x[1]+'</div><div class="s">'+x[2]+'</div></div></div>'}).join('')+'</div>'},
     tasks:function(){return head(tasks.filter(function(x){return !x.d}).length+' left','Tasks')+'<div class="panel">'+taskRows(tasks)+'</div>'},
     money:function(){var tot=cats.reduce(function(a,c){return a+c[2]},0),max=Math.max.apply(null,cats.map(function(c){return c[2]}));
       return head('This week','Expenses','<span class="pill good">€'+(80-tot).toFixed(2)+' left of €80</span>')+

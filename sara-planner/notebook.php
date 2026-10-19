@@ -6,28 +6,29 @@ declare(strict_types=1);
 
 const SHARE_KEYS   = ['blog', 'interests', 'timetable', 'subjects'];   // kept for the old share column (used once, when moving to notebooks)
 const SECTIONS     = ['interests', 'blog', 'timetable', 'subjects'];       // the pages a notebook can have, besides its cover
-const NOTIFY_KEYS  = ['like'];
+const NOTIFY_KEYS  = ['like', 'comment'];
 // Ready-made covers: plain gradients, then patterned ones (their drawings are the --cov-* variables in assets/style.css)
-const ART_COVERS   = ['blossom', 'library', 'gingham', 'coquette', 'stars', 'clouds', 'lavender', 'daisy', 'checker', 'strawberry', 'terrazzo', 'waves', 'dots', 'sunsetgrain', 'matcha'];
-const BANNERS      = ['dusk', 'peach', 'ocean', 'mint', 'berry', 'sunny', 'night', 'cloud', 'blossom', 'library', 'gingham', 'coquette', 'stars', 'clouds', 'lavender', 'daisy', 'checker', 'strawberry', 'terrazzo', 'waves', 'dots', 'sunsetgrain', 'matcha'];
+const ART_COVERS   = ['blossom', 'library', 'gingham', 'coquette', 'stars', 'clouds', 'lavender', 'daisy', 'checker', 'strawberry', 'terrazzo', 'waves', 'dots', 'sunsetgrain', 'matcha', 'hearts', 'rainbow', 'mountains', 'pinstripe', 'monstera'];
+const BANNERS      = ['dusk', 'peach', 'ocean', 'mint', 'berry', 'sunny', 'night', 'cloud', 'blossom', 'library', 'gingham', 'coquette', 'stars', 'clouds', 'lavender', 'daisy', 'checker', 'strawberry', 'terrazzo', 'waves', 'dots', 'sunsetgrain', 'matcha', 'hearts', 'rainbow', 'mountains', 'pinstripe', 'monstera'];
 const COVER_GRADIENTS = [
     'dusk' => ['#6A4DC4', '#E0609A'], 'peach' => ['#F9A826', '#F36B7F'], 'ocean' => ['#1F77C9', '#3FC1C9'], 'mint' => ['#4FA36B', '#B6E3C9'],
     'berry' => ['#8E2DE2', '#C2185B'], 'sunny' => ['#FFD452', '#FF9966'], 'night' => ['#1B1740', '#4B3A8F'], 'cloud' => ['#BFD7F5', '#E8DDF8'],
 ];
 const PAPERS       = ['lined', 'grid', 'dots', 'plain'];
 const PAPER_COLORS = ['white', 'cream', 'blush', 'mint', 'sky', 'lilac'];
-const ACCENTS      = ['violet', 'rose', 'ocean', 'forest', 'sunset', 'graphite'];
+const ACCENTS      = ['violet', 'rose', 'ocean', 'forest', 'sunset', 'graphite', 'white'];
 const FONTS        = ['modern', 'hand', 'serif', 'mono'];
 const BINDINGS     = ['coil', 'stitch', 'none'];
 const STICKERS     = ['⭐', '💜', '🌸', '🎀', '🦋', '☁️', '🌙', '✨', '🍓', '🎧', '📚', '☕', '🐱', '🌈', '🔥', '🍒', '🎬', '🎵', '👗', '👠', '🧸', '🌷', '🍀', '💌', '📌', '✏️', '🎨', '🪩', '💫', '🍑', '🌻', '🧿'];
 const LIST_EMOJI   = ['🎬', '🎤', '👗', '📚', '🍕', '🎮', '🎧', '✈️', '🐾', '💄', '🎨', '⭐'];
+const PAGE_EMOJI   = ['📝', '📖', '🌸', '✈️', '🍳', '💡', '🎨', '🏋️', '🎵', '🐾', '🧘', '💌'];   // icons for pages people add themselves
 const MAX_NOTEBOOKS = 12;
 const MAX_STYLES    = 20;
 
 function default_design(): array
 {
     return ['cover' => 'dusk', 'cover_img' => 0, 'cover_c1' => '', 'cover_c2' => '', 'paper' => 'lined', 'paper_color' => 'white', 'paper_hex' => '',
-        'accent' => 'violet', 'accent_hex' => '', 'font' => 'modern', 'binding' => 'coil', 'stickers' => []];
+        'accent' => 'violet', 'accent_hex' => '', 'font' => 'modern', 'binding' => 'coil', 'label' => 'box', 'label_hex' => '', 'label_r' => 0, 'label_w' => 0, 'label_h' => 0, 'font_size' => 0, 'stickers' => []];
 }
 
 function clean_hex($v): string
@@ -42,7 +43,13 @@ function clean_design(int $uid, array $d, bool $withStickers = true): array
     foreach (['paper' => PAPERS, 'font' => FONTS, 'binding' => BINDINGS] as $k => $allowed) {
         if (isset($d[$k]) && in_array($d[$k], $allowed, true)) $out[$k] = $d[$k];
     }
-    foreach (['cover_c1', 'cover_c2', 'paper_hex', 'accent_hex'] as $k) $out[$k] = clean_hex($d[$k] ?? '');
+    foreach (['cover_c1', 'cover_c2', 'paper_hex', 'accent_hex', 'label_hex'] as $k) $out[$k] = clean_hex($d[$k] ?? '');
+    if (in_array($d['label'] ?? '', ['round', 'oval', 'arch', 'pill', 'ticket', 'band', 'hexagon', 'diamond', 'tag', 'stamp', 'custom', 'none'], true)) $out['label'] = $d['label'];
+    // the shape you shape yourself: roundness of the corners (0-50 %), width (30-100 % of the cover, 0 = automatic) and height (0 = automatic, else 15-80 % of the cover)
+    $out['font_size'] = ($fs = (int)($d['font_size'] ?? 0)) > 0 ? max(12, min(24, $fs)) : 0;   // text size inside the notebook, in px (0 = normal)
+    $out['label_r'] = max(0, min(50, (int)($d['label_r'] ?? 0)));
+    $out['label_w'] = ($w = (int)($d['label_w'] ?? 0)) > 0 ? max(30, min(100, $w)) : 0;
+    $out['label_h'] = ($hh = (int)($d['label_h'] ?? 0)) > 0 ? max(15, min(80, $hh)) : 0;
     $c = $d['cover'] ?? '';
     if (in_array($c, BANNERS, true) || ($c === 'custom' && $out['cover_c1'] !== '' && $out['cover_c2'] !== '')) $out['cover'] = $c;
     $c = $d['paper_color'] ?? '';
@@ -61,7 +68,7 @@ function clean_design(int $uid, array $d, bool $withStickers = true): array
             continue;
         }
         $page = (string)($s['p'] ?? 'cover');
-        if ($page !== 'cover' && !in_array($page, SECTIONS, true) && $page !== 'day') $page = 'cover';
+        if ($page !== 'cover' && !in_array($page, SECTIONS, true) && $page !== 'day' && !preg_match('/^pg:\d+$/', $page)) $page = 'cover';
         $out['stickers'][] = [
             'k' => $key, 'p' => $page,
             'x' => max(0, min(100, round((float)($s['x'] ?? 50), 1))),
@@ -205,11 +212,22 @@ function nb_design(array $nb): array
     return json_col($nb['design'] ?? null, default_design());
 }
 
+/** The pages someone added to a notebook themselves, in the order they were made. */
+function nb_pages(int $nbId): array
+{
+    try {
+        return array_map(fn($p) => ['id' => (int)$p['id'], 'title' => $p['title'], 'emoji' => $p['emoji'], 'body' => $p['body']],
+            q('SELECT id, title, emoji, body FROM nb_pages WHERE notebook_id = ? ORDER BY id', [$nbId])->fetchAll());
+    } catch (PDOException $e) {   // table couldn't be made on this host
+        return [];
+    }
+}
+
 function nb_row(array $r): array
 {
     $d = nb_design($r);
     return ['id' => (int)$r['id'], 'title' => $r['title'], 'intro' => $r['intro'], 'sections' => nb_sections($r), 'public' => (int)$r['is_public'] === 1,
-        'design' => $d, 'cover_url' => upload_url($d['cover_img'] ? (int)$d['cover_img'] : null)];
+        'pages' => nb_pages((int)$r['id']), 'design' => $d, 'cover_url' => upload_url($d['cover_img'] ? (int)$d['cover_img'] : null)];
 }
 
 /** A user's notebooks. $onlyPublic = what other people may see. */
@@ -305,11 +323,22 @@ function notify(int $to, string $ref, string $text, string $link): void
     }
 }
 
+/** Like notify(), but a newer event of the same kind replaces the older one and shows as unread again (friend requests, messages). */
+function notify_replace(int $to, string $ref, string $text, string $link): void
+{
+    try {
+        q('DELETE FROM notifications WHERE user_id = ? AND ref = ?', [$to, $ref]);
+    } catch (PDOException $e) {
+        return;
+    }
+    notify($to, $ref, $text, $link);
+}
+
 function wants_notice(int $uid, string $type): bool
 {
     $row = ensure_profile($uid);
     $n = json_col($row['notify'] ?? null, ['like' => 1]);
-    return !empty($n[$type]);
+    return !empty($n[$type] ?? 1);   // an alert nobody has switched off yet is on
 }
 
 /** The page name of someone's shared notebook, or '' when their notebook is private (friends of the owner always get it). */
@@ -386,13 +415,13 @@ function save_image(int $uid, array $file, string $kind): int
 
 // ---------- loading ----------
 
-function post_row(array $p, int $likes, bool $liked = false): array
+function post_row(array $p, int $likes, bool $liked = false, array $comments = []): array
 {
     return [
         'id' => (int)$p['id'], 'nb' => (int)$p['notebook_id'], 'title' => $p['title'], 'body' => $p['body'],
         'image' => upload_url($p['image_id'] ? (int)$p['image_id'] : null), 'image_id' => (int)($p['image_id'] ?? 0),
         'public' => (int)$p['is_public'] === 1, 'date' => substr((string)$p['created_at'], 0, 10),
-        'likes' => $likes, 'liked' => $liked,
+        'likes' => $likes, 'liked' => $liked, 'comments' => $comments,
     ];
 }
 
@@ -402,11 +431,40 @@ function load_posts(int $owner, bool $onlyPublic, ?int $viewer, int $notebook = 
     $sql = 'SELECT p.*, (SELECT COUNT(*) FROM post_likes l WHERE l.post_id = p.id) AS likes FROM posts p WHERE p.user_id = ?'
         . ($notebook ? ' AND p.notebook_id = ?' : '') . ($onlyPublic ? ' AND p.is_public = 1' : '') . ' ORDER BY p.created_at DESC, p.id DESC';
     $out = [];
-    foreach (q($sql, $notebook ? [$owner, $notebook] : [$owner])->fetchAll() as $p) {
+    $rows = q($sql, $notebook ? [$owner, $notebook] : [$owner])->fetchAll();
+    $comments = load_comments(array_map(fn($p) => (int)$p['id'], $rows), $viewer, $owner);
+    foreach ($rows as $p) {
         $liked = $viewer !== null && (bool)q('SELECT 1 FROM post_likes WHERE post_id = ? AND user_id = ?', [$p['id'], $viewer])->fetch();
-        $out[] = post_row($p, (int)$p['likes'], $liked);
+        $out[] = post_row($p, (int)$p['likes'], $liked, $comments[(int)$p['id']] ?? []);
     }
     return $out;
+}
+
+/** Comments of these posts, oldest first, keyed by post id. "mine" = you wrote it; you can delete your own and any on your own posts. */
+function load_comments(array $postIds, ?int $viewer, int $owner): array
+{
+    if (!$postIds) return [];
+    $in = implode(',', array_fill(0, count($postIds), '?'));
+    $out = [];
+    foreach (q("SELECT c.*, u.name FROM post_comments c JOIN users u ON u.id = c.user_id WHERE c.post_id IN ($in) ORDER BY c.id", $postIds)->fetchAll() as $c) {
+        $mine = $viewer !== null && (int)$c['user_id'] === $viewer;
+        $out[(int)$c['post_id']][] = ['id' => (int)$c['id'], 'name' => $c['name'], 'body' => $c['body'], 'date' => substr((string)$c['created_at'], 0, 10),
+            'mine' => $mine, 'can_delete' => $mine || ($viewer !== null && $viewer === $owner), 'can_report' => $viewer !== null && !$mine];
+    }
+    return $out;
+}
+
+/** A post this person may read (their own, or a public one in a shared notebook they can open). Fails with 404 otherwise. */
+function readable_post(int $pid, int $uid): array
+{
+    $post = q('SELECT * FROM posts WHERE id = ?', [$pid])->fetch();
+    if (!$post) fail(404, 'That post was not found.');
+    $owner = (int)$post['user_id'];
+    if ($owner !== $uid) {
+        $nb = q('SELECT * FROM notebooks WHERE id = ? AND user_id = ? AND is_public = 1', [(int)$post['notebook_id'], $owner])->fetch();
+        if (!$nb || !in_array('blog', nb_sections($nb), true) || !can_view_profile(ensure_profile($owner), $uid) || !(int)$post['is_public']) fail(404, 'That post is private.');
+    }
+    return $post;
 }
 
 function load_lists(int $owner, bool $onlyPublic, int $notebook = 0): array
@@ -457,7 +515,9 @@ function notebook_bootstrap(int $uid): array
         $plan[] = ['from' => $e['from'], 'to' => min($e['to'], 1440), 'text' => $e['text'], 'label' => HOUR_NAMES[$t], 'color' => HOUR_COLORS[$t]];
     }
     return [
-        'profile' => ['slug' => $p['slug'], 'bio' => $p['bio'], 'public' => (int)$p['is_public'] === 1, 'guest' => (int)$p['guest_view'] === 1,
+        'profile' => ['slug' => $p['slug'], 'bio' => $p['bio'], 'public' => (int)$p['is_public'] === 1, 'guest' => (int)$p['guest_view'] === 1, 'explore' => (int)($p['in_explore'] ?? 0) === 1,
+            'cover' => $me['cover'], 'cover_url' => $me['cover_img'] ? upload_url((int)$me['cover_img']) : '', 'words' => $me['words'],
+            'covers' => array_map(fn($k, $c) => [$k, $c[0], $c[1]], array_keys(COVERS), array_values(COVERS)),
             'notify' => $notify, 'friends' => count($friends), 'name' => $me['name'], 'day' => day_level($p),
             'avatar' => $me['avatar_v'] ? 'avatar.php?id=' . $uid . '&v=' . $me['avatar_v'] : ''],
         'friends' => $friends, 'me_id' => $uid,
@@ -533,8 +593,22 @@ function notebook_action(int $uid, string $action, array $in): void
             if ($taken) fail(409, 'Someone already uses that page name. Try another.');
             q('UPDATE profiles SET slug = ? WHERE user_id = ?', [$slug, $uid]);
         }
+        if (array_key_exists('name', $in)) q('UPDATE users SET name = ? WHERE id = ?', [str_in($in, 'name', 80), $uid]);
+        if (array_key_exists('cover', $in)) {   // the picture on your Explore card: a ready-made cover, or one of your own pictures
+            $cv = (string)$in['cover'];
+            if ($cv === 'custom') {
+                $img = (int)($in['cover_img'] ?? 0);
+                if (!$img || !own_upload($uid, $img, 'cover')) fail(400, 'Pick a picture first.');
+                q('UPDATE profiles SET cover = ?, cover_img = ? WHERE user_id = ?', ['custom', $img, $uid]);
+            } elseif (isset(COVERS[$cv])) {
+                q('UPDATE profiles SET cover = ?, cover_img = NULL WHERE user_id = ?', [$cv, $uid]);
+            }
+        }
+        if (array_key_exists('words', $in)) q('UPDATE profiles SET words = ? WHERE user_id = ?', [mb_substr(trim((string)$in['words']), 0, 60), $uid]);
+        if (!empty($in['remove_avatar'])) q('UPDATE profiles SET avatar = NULL, avatar_v = 0 WHERE user_id = ?', [$uid]);
         if (array_key_exists('bio', $in)) q('UPDATE profiles SET bio = ? WHERE user_id = ?', [mb_substr(trim((string)$in['bio']), 0, 300), $uid]);
         if (array_key_exists('public', $in)) q('UPDATE profiles SET is_public = ? WHERE user_id = ?', [!empty($in['public']) ? 1 : 0, $uid]);
+        if (array_key_exists('explore', $in)) q('UPDATE profiles SET in_explore = ? WHERE user_id = ?', [!empty($in['explore']) ? 1 : 0, $uid]);
         if (array_key_exists('guest', $in)) q('UPDATE profiles SET guest_view = ? WHERE user_id = ?', [!empty($in['guest']) ? 1 : 0, $uid]);
         if (array_key_exists('day', $in)) {   // who may see today's hour-by-hour plan (0-3, see day_level)
             $sh = profile_share($p);
@@ -550,15 +624,88 @@ function notebook_action(int $uid, string $action, array $in): void
     }
 
     // ----- notebooks -----
+    case 'x.report': {   // a problem with the website, sent to the admins (the "!" button in the top bar opens a popup for it)
+        if (can_view_users($uid)) fail(400, 'Admins read the reports on the Users page.');
+        $details = trim((string)($in['details'] ?? ''));
+        if ($details === '') fail(400, 'Tell the admins what went wrong.');
+        if (mb_strlen($details) > 1000) fail(400, 'Keep it under 1000 characters.');
+        if ((int)q('SELECT COUNT(*) n FROM reports WHERE reporter_id = ? AND resolved = 0', [$uid])->fetch()['n'] >= 5) fail(429, 'You already have several open reports. The admins will look at them soon.');
+        // a problem report has no other account in it: the "reported" account is the sender themselves
+        q('INSERT INTO reports (reporter_id, target_id, reason, details) VALUES (?, ?, ?, ?)', [$uid, $uid, 'problem', $details]);
+        $admins = defined('ADMIN_EMAILS') ? ADMIN_EMAILS : [];
+        if ($admins) {
+            require_once __DIR__ . '/mail.php';
+            if (mail_configured()) {
+                $me = person($uid);
+                $text = "A user reported a problem on Splanner.\n\nFrom: " . $me['name'] . ' <' . $me['email'] . ">\nProblem: " . $details . "\n\nSee all reports on the Users page (admin.php).\n";
+                foreach ($admins as $email) {
+                    try {
+                        send_mail((string)$email, 'Splanner problem: ' . $me['name'], $text);
+                    } catch (RuntimeException $e) {
+                        error_log('Report email: ' . $e->getMessage());   // the report is still saved and shown on admin.php
+                    }
+                }
+            }
+        }
+        ok([]);
+    }
+
+    case 'x.reports': {   // the problems people reported: admins and sub admins read them in a popup
+        if (!can_view_users($uid)) fail(403, 'Only admins can read the reports.');
+        try {
+            $rows = q('SELECT r.id, r.details, r.resolved, r.created_at, f.name AS fname, f.email AS femail
+                FROM reports r JOIN users f ON f.id = r.reporter_id ORDER BY r.resolved, r.id DESC LIMIT 100')->fetchAll();
+        } catch (PDOException $e) {
+            $rows = [];
+        }
+        ok(['reports' => array_map(fn($r) => ['id' => (int)$r['id'], 'details' => (string)$r['details'], 'resolved' => (int)$r['resolved'], 'when' => (string)$r['created_at'], 'name' => (string)$r['fname'], 'email' => (string)$r['femail']], $rows), 'can_edit' => is_admin($uid)]);
+    }
+
+    case 'x.report.resolve': {   // admins only: mark a report done or open it again
+        if (!is_admin($uid)) fail(403, 'Only admins can change reports.');
+        q('UPDATE reports SET resolved = ? WHERE id = ?', [!empty($in['on']) ? 1 : 0, id_in($in)]);
+        ok([]);
+    }
+
     case 'x.nb.add': {
         ensure_notebooks($uid);
         if ((int)q('SELECT COUNT(*) c FROM notebooks WHERE user_id = ?', [$uid])->fetch()['c'] >= MAX_NOTEBOOKS) fail(400, 'That is plenty of notebooks! Delete one first.');
         $title = str_in($in, 'title', 80);
         $sections = clean_sections($in['sections'] ?? []);
-        $design = clean_design($uid, (array)($in['design'] ?? []), false);
+        $dsn = (array)($in['design'] ?? []);
+        if (empty($dsn['cover'])) $dsn['cover'] = BANNERS[array_rand(BANNERS)];   // every new notebook starts with a different cover
+        $design = clean_design($uid, $dsn, false);
         q('INSERT INTO notebooks (user_id, title, sections, design, is_public) VALUES (?, ?, ?, ?, 0)', [$uid, $title, implode(',', $sections), json_encode($design)]);
         $id = (int)db()->lastInsertId();
         ok(['notebook' => nb_row(own_notebook($uid, $id))]);
+    }
+
+    case 'x.page.save': {   // a page you add to a notebook yourself
+        $title = str_in($in, 'title', 40);
+        $body = mb_substr(trim((string)($in['body'] ?? '')), 0, 8000);
+        if ($body === '' && empty($in['blank'])) fail(400, 'Please write something on the page.');   // blank: a page made empty when the notebook is created, to write on later
+        $emoji = in_array($in['emoji'] ?? '', PAGE_EMOJI, true) ? $in['emoji'] : '';
+        $id = (int)($in['id'] ?? 0);
+        if ($id > 0) {
+            $p = q('SELECT notebook_id FROM nb_pages WHERE id = ? AND user_id = ?', [$id, $uid])->fetch();
+            if (!$p) fail(404, 'That page was not found.');
+            q('UPDATE nb_pages SET title = ?, emoji = ?, body = ? WHERE id = ?', [$title, $emoji, $body, $id]);
+            $nbId = (int)$p['notebook_id'];
+        } else {
+            $nbId = notebook_in($uid, $in);
+            if ((int)q('SELECT COUNT(*) c FROM nb_pages WHERE notebook_id = ?', [$nbId])->fetch()['c'] >= 12) fail(400, 'That is plenty of pages! Delete one first.');
+            q('INSERT INTO nb_pages (user_id, notebook_id, title, emoji, body) VALUES (?, ?, ?, ?, ?)', [$uid, $nbId, $title, $emoji, $body]);
+            $id = (int)db()->lastInsertId();
+        }
+        ok(['id' => $id, 'pages' => nb_pages($nbId)]);
+    }
+
+    case 'x.page.delete': {
+        $id = id_in($in);
+        $p = q('SELECT notebook_id FROM nb_pages WHERE id = ? AND user_id = ?', [$id, $uid])->fetch();
+        if (!$p) fail(404, 'That page was not found.');
+        q('DELETE FROM nb_pages WHERE id = ?', [$id]);
+        ok(['pages' => nb_pages((int)$p['notebook_id'])]);
     }
 
     case 'x.nb.save': {
@@ -707,14 +854,8 @@ function notebook_action(int $uid, string $action, array $in): void
 
     case 'x.like': {
         $pid = id_in($in, 'post_id');
-        $post = q('SELECT * FROM posts WHERE id = ?', [$pid])->fetch();
-        if (!$post) fail(404, 'That post was not found.');
+        $post = readable_post($pid, $uid);
         $owner = (int)$post['user_id'];
-        $prof = ensure_profile($owner);
-        if ($owner !== $uid) {
-            $nb = q('SELECT * FROM notebooks WHERE id = ? AND user_id = ? AND is_public = 1', [(int)$post['notebook_id'], $owner])->fetch();
-            if (!$nb || !in_array('blog', nb_sections($nb), true) || !can_view_profile($prof, $uid) || !(int)$post['is_public']) fail(404, 'That post is private.');
-        }
         $have = q('SELECT 1 FROM post_likes WHERE post_id = ? AND user_id = ?', [$pid, $uid])->fetch();
         if ($have) {
             q('DELETE FROM post_likes WHERE post_id = ? AND user_id = ?', [$pid, $uid]);
@@ -726,6 +867,58 @@ function notebook_action(int $uid, string $action, array $in): void
             }
         }
         ok(['liked' => !$have, 'likes' => (int)q('SELECT COUNT(*) c FROM post_likes WHERE post_id = ?', [$pid])->fetch()['c']]);
+    }
+
+    case 'x.comment.add': {
+        $pid = id_in($in, 'post_id');
+        $post = readable_post($pid, $uid);
+        $owner = (int)$post['user_id'];
+        $body = mb_substr(trim((string)($in['body'] ?? '')), 0, 500);
+        if ($body === '') fail(400, 'Please write a comment first.');
+        if ((int)q('SELECT COUNT(*) c FROM post_comments WHERE user_id = ? AND created_at > ?', [$uid, date('Y-m-d H:i:s', time() - 60)])->fetch()['c'] >= 10) fail(429, 'Slow down a little: please wait a minute.');
+        if ((int)q('SELECT COUNT(*) c FROM post_comments WHERE post_id = ?', [$pid])->fetch()['c'] >= 300) fail(400, 'This post has reached its comment limit.');
+        q('INSERT INTO post_comments (post_id, user_id, body) VALUES (?, ?, ?)', [$pid, $uid, $body]);
+        $cid = (int)db()->lastInsertId();
+        if ($owner !== $uid && wants_notice($owner, 'comment')) {
+            $name = (string)q('SELECT name FROM users WHERE id = ?', [$uid])->fetch()['name'];
+            notify($owner, "comment:$cid", "$name commented on your post “" . mb_substr($post['title'], 0, 40) . '”: ' . mb_substr($body, 0, 80), '');
+        }
+        ok(['comments' => load_comments([$pid], $uid, $owner)[$pid] ?? []]);
+    }
+
+    case 'x.comment.delete': {
+        $cid = id_in($in);
+        $c = q('SELECT c.*, p.user_id AS owner FROM post_comments c JOIN posts p ON p.id = c.post_id WHERE c.id = ?', [$cid])->fetch();
+        if (!$c || ((int)$c['user_id'] !== $uid && (int)$c['owner'] !== $uid)) fail(404, 'That comment was not found.');
+        q('DELETE FROM post_comments WHERE id = ?', [$cid]);
+        ok(['comments' => load_comments([(int)$c['post_id']], $uid, (int)$c['owner'])[(int)$c['post_id']] ?? []]);
+    }
+
+    case 'x.comment.report': {   // tell the admins about someone else's comment (listed with the other reports)
+        $cid = id_in($in);
+        $c = q('SELECT c.*, u.name AS cname FROM post_comments c JOIN users u ON u.id = c.user_id WHERE c.id = ?', [$cid])->fetch();
+        if (!$c) fail(404, 'That comment was not found.');
+        $post = readable_post((int)$c['post_id'], $uid);
+        if ((int)$c['user_id'] === $uid) fail(400, 'This is your own comment. You can delete it instead.');
+        $details = mb_substr('Comment #' . $cid . ' by ' . $c['cname'] . ' on the post “' . mb_substr($post['title'], 0, 60) . '”: ' . $c['body'], 0, 1000);
+        if (q("SELECT 1 FROM reports WHERE reporter_id = ? AND reason = 'comment' AND resolved = 0 AND details LIKE ?", [$uid, 'Comment #' . $cid . ' by %'])->fetch()) ok([]);   // already reported
+        if ((int)q('SELECT COUNT(*) n FROM reports WHERE reporter_id = ? AND resolved = 0', [$uid])->fetch()['n'] >= 5) fail(429, 'You already have several open reports. The admins will look at them soon.');
+        q('INSERT INTO reports (reporter_id, target_id, reason, details) VALUES (?, ?, ?, ?)', [$uid, (int)$c['user_id'], 'comment', $details]);
+        $admins = defined('ADMIN_EMAILS') ? ADMIN_EMAILS : [];
+        if ($admins) {
+            require_once __DIR__ . '/mail.php';
+            if (mail_configured()) {
+                $me = person($uid);
+                foreach ($admins as $email) {
+                    try {
+                        send_mail((string)$email, 'Splanner comment reported by ' . $me['name'], "A comment was reported on Splanner.\n\nReported by: " . $me['name'] . ' <' . $me['email'] . ">\n" . $details . "\n\nSee all reports on the Users page (admin.php).\n");
+                    } catch (RuntimeException $e) {
+                        error_log('Report email: ' . $e->getMessage());   // the report is still saved
+                    }
+                }
+            }
+        }
+        ok([]);
     }
 
     case 'x.notes':

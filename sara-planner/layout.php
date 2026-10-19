@@ -63,6 +63,8 @@ function design_attrs(array $d, string $part = 'all'): string
     $acc = ($d['accent'] ?? 'violet') !== 'violet' ? ' data-accent="' . h($d['accent']) . '"' : '';
     if ($part === 'accent') return $acc;
     if ($part === 'all') $o .= $acc;
+    if (in_array($d['label'] ?? 'box', ['round', 'oval', 'arch', 'pill', 'ticket', 'band', 'hexagon', 'diamond', 'tag', 'stamp', 'custom', 'none'], true)) $o .= ' data-label="' . h($d['label']) . '"';
+    if ((int)($d['label_w'] ?? 0) > 0 && ($d['label'] ?? 'box') !== 'none') $o .= ' data-lbw="1"';
     if (($d['paper'] ?? 'lined') !== 'lined') $o .= ' data-paper="' . h($d['paper']) . '"';
     if (($d['paper_color'] ?? 'white') !== 'white') $o .= ' data-pcolor="' . h($d['paper_color']) . '"';
     if (($d['font'] ?? 'modern') !== 'modern') $o .= ' data-font="' . h($d['font']) . '"';
@@ -76,6 +78,13 @@ function design_style(array $d): string
     $v = '';
     if (($d['accent'] ?? '') === 'custom' && !empty($d['accent_hex'])) $v .= '--c-accent:' . h($d['accent_hex']) . ';--c-on:' . (hex_lum($d['accent_hex']) > 0.55 ? '#17121F' : '#FFFFFF') . ';';
     if (($d['paper_color'] ?? '') === 'custom' && !empty($d['paper_hex'])) $v .= '--c-paper:' . h($d['paper_hex']) . ';';
+    if (!empty($d['label_hex'])) $v .= '--c-label:' . h($d['label_hex']) . ';--c-label-ink:' . (hex_lum($d['label_hex']) > 0.5 ? '#2B2118' : '#FFFFFF') . ';';
+    if (($d['label'] ?? 'box') !== 'none') {   // corners, width and height of the label apply on top of any shape
+        if ((int)($d['label_r'] ?? 0) > 0) $v .= '--lb-r:' . max(0, min(50, (int)$d['label_r'])) . '%;';
+        if ((int)($d['label_w'] ?? 0) > 0) $v .= '--lb-w:' . max(30, min(100, (int)$d['label_w'])) . '%;';
+        if ((int)($d['label_h'] ?? 0) > 0) $v .= '--lb-h:' . max(15, min(80, (int)$d['label_h'])) . '%;';
+    }
+    if ((int)($d['font_size'] ?? 0) > 0) $v .= '--nb-fs:' . max(12, min(24, (int)$d['font_size'])) . 'px;';
     return $v !== '' ? ' style="' . $v . '"' : '';
 }
 
@@ -125,14 +134,16 @@ function person_card(array $r, array $nbs): string
 /** The side tabs of the planner. $planner = true on index.php (buttons that switch tab), false elsewhere (links into the planner). */
 function planner_tabs_html(string $active = '', bool $planner = false): string
 {
-    $tabs = [['day', 'Day'], ['week', 'Week'], ['month', 'Month'], ['year', 'Year'], null, ['study', 'Study'], ['tasks', 'Tasks'], ['money', 'Expenses']];
+    $tabs = [['day', 'Day'], ['week', 'Week'], ['month', 'Month'], ['year', 'Year'], null, ['study', 'Study'], ['notes', 'Notes'], ['tasks', 'Tasks'], ['money', 'Expenses']];
     $o = '';
     foreach ($tabs as $t) {
         if ($t === null) { $o .= '<div class="tab-gap"></div>'; continue; }
         [$k, $label] = $t;
-        $o .= $planner
+        $o .= $k === 'notes'   // the study notebook is its own page (notes.php)
+            ? '<a class="tab" role="tab" href="notes.php" data-tab="notes"' . ($active === 'notes' ? ' aria-selected="true"' : '') . '>' . $label . '</a>'
+            : ($planner
             ? '<button class="tab" role="tab" data-act="tab" data-tab="' . $k . '">' . $label . '</button>'
-            : '<a class="tab" role="tab" href="index.php?tab=' . $k . '" data-tab="' . $k . '"' . ($active === $k ? ' aria-selected="true"' : '') . '>' . $label . '</a>';
+            : '<a class="tab" role="tab" href="index.php?tab=' . $k . '" data-tab="' . $k . '"' . ($active === $k ? ' aria-selected="true"' : '') . '>' . $label . '</a>');
     }
     return $o;
 }
@@ -151,28 +162,30 @@ function app_nav(?int $uid, string $active = '', bool $planner = false): void
         <?php else: ?><a class="hello" href="index.php?tab=profile" title="My profile"><?= $hello ?></a><?php endif; ?>
       <?php endif; ?>
     </div>
-    <div class="top-r">
+    <div class="top-r<?= $uid ? '' : ' guest' ?>">
     <?php if ($uid):
         $unread = unread_count($uid); $chatUnread = chat_unread($uid); $requests = friend_requests_count($uid); ?>
-      <span class="date-pill"><?= $ic('<rect x="3" y="5" width="18" height="16" rx="3"/><path d="M3 10h18M8 3v4M16 3v4"/>') ?><span class="chip-date" id="todayChip"><?= h(date('l, j F')) ?></span></span>
-      <a class="btn bell<?= $active === 'explore' ? ' on' : '' ?>" href="explore.php" aria-label="Explore"><?= $ic('<circle cx="12" cy="12" r="9"/><path d="M15.5 8.5l-2 5-5 2 2-5z"/>') ?>Explore<?php if ($requests): ?><span class="badge"><?= $requests ?></span><?php endif; ?></a>
-      <a class="btn bell<?= $active === 'messages' ? ' on' : '' ?>" href="messages.php" id="msgBtn" aria-label="Messages"><?= $ic('<path d="M21 12a8 8 0 0 1-11.6 7.1L3 21l1.9-5.4A8 8 0 1 1 21 12z"/>') ?>Messages<?php if ($chatUnread): ?><span class="badge"><?= $chatUnread ?></span><?php endif; ?></a>
+      <span class="date-pill" title="<?= h(date('l, j F')) ?>"><?= $ic('<rect x="3" y="5" width="18" height="16" rx="3"/><path d="M3 10h18M8 3v4M16 3v4"/>') ?><span class="chip-date" id="todayChip"><?= h(date('l, j F')) ?></span></span>
+      <a class="btn bell<?= $active === 'explore' ? ' on' : '' ?>" href="explore.php" aria-label="Explore"><?= $ic('<circle cx="12" cy="12" r="9"/><path d="M15.5 8.5l-2 5-5 2 2-5z"/>') ?><span class="lbl">Explore</span><?php if ($requests): ?><span class="badge"><?= $requests ?></span><?php endif; ?></a>
+      <a class="btn bell<?= $active === 'messages' ? ' on' : '' ?>" href="messages.php" id="msgBtn" aria-label="Messages"><?= $ic('<path d="M21 12a8 8 0 0 1-11.6 7.1L3 21l1.9-5.4A8 8 0 1 1 21 12z"/>') ?><span class="lbl">Messages</span><?php if ($chatUnread): ?><span class="badge"><?= $chatUnread ?></span><?php endif; ?></a>
+      <a class="btn bell<?= $active === 'music' ? ' on' : '' ?>" href="music.php" aria-label="Music"><?= $ic('<path d="M9 18V5l12-2v13"/><circle cx="6" cy="18" r="3"/><circle cx="18" cy="16" r="3"/>') ?><span class="lbl">Music</span></a>
       <div class="bellwrap">
         <button class="btn bell" id="bellBtn" aria-label="Notifications" aria-haspopup="true" aria-expanded="false"><?= $ic('<path d="M18 8a6 6 0 0 0-12 0c0 7-3 9-3 9h18s-3-2-3-9M13.7 21a2 2 0 0 1-3.4 0"/>') ?><span class="badge" id="bellBadge"<?= $unread ? '' : ' hidden' ?>><?= $unread ?></span></button>
         <div class="bellpop" id="bellPop" role="dialog" aria-label="Notifications" hidden></div>
       </div>
-      <?php if (is_admin($uid)): ?><a class="btn<?= $active === 'admin' ? ' on' : '' ?>" href="admin.php">Users</a><?php endif; ?>
-      <button class="btn" data-lang-btn>Shqip</button>
+      <button type="button" class="btn" id="reportBtn"<?= can_view_users($uid) ? ' data-admin="1" aria-label="Reports" title="Reports"' : ' aria-label="Report a problem" title="Report a problem"' ?> aria-haspopup="dialog"><?= $ic('<circle cx="12" cy="12" r="9"/><path d="M12 7.5v5.5M12 16.5v.01"/>') ?></button>
+      <?php if (can_view_users($uid)): ?><a class="btn<?= $active === 'admin' ? ' on' : '' ?>" href="admin.php" aria-label="Users" title="Users"><?= $ic('<circle cx="9" cy="8" r="3.5"/><path d="M2.5 20c0-3.6 2.9-6 6.5-6s6.5 2.4 6.5 6M16 4.6a3.5 3.5 0 0 1 0 6.8M18 14.3c2.3.7 3.5 2.6 3.5 5.7"/>') ?><span class="lbl">Users</span></a><?php endif; ?>
+      <button class="btn" data-lang-btn aria-label="Language">Shqip</button>
       <button class="btn"<?= $planner ? ' id="themeBtn" data-act="theme"' : ' data-theme-btn' ?> aria-label="Switch theme"></button>
       <form method="post" action="logout.php" class="inline">
         <input type="hidden" name="csrf" value="<?= h(csrf_token()) ?>">
-        <button class="btn ghost logout" aria-label="Log out"><?= $ic('<path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4M16 17l5-5-5-5M21 12H9"/>') ?>Log out</button>
+        <button class="btn ghost logout" aria-label="Log out"><?= $ic('<path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4M16 17l5-5-5-5M21 12H9"/>') ?><span class="lbl">Log out</span></button>
       </form>
     <?php else: ?>
       <a class="btn<?= $active === 'explore' ? ' on' : '' ?>" href="explore.php">Explore</a>
       <a class="btn" href="login.php">Log in</a>
       <a class="btn primary" href="register.php">Create free account</a>
-      <button class="btn" data-lang-btn>Shqip</button>
+      <button class="btn" data-lang-btn aria-label="Language">Shqip</button>
       <button class="btn"<?= $planner ? ' id="themeBtn" data-act="theme"' : ' data-theme-btn' ?> aria-label="Switch theme"></button>
     <?php endif; ?>
     </div>

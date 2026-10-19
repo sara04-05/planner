@@ -2,10 +2,10 @@ html,body{margin:0}
 img{max-width:100%}
 [hidden]{display:none!important}
 
-:root{
+:root{--lh:36px;
   --bg:#E9E4F1; --paper:#FFFFFF; --paper-2:#F6F3FA; --ink:#2A2338; --muted:#6F6781; --line:#E4DDEC;
   --accent:#6A4DC4; --accent-soft:#ECE6FB; --on-accent:#FFFFFF;
-  --t-day:#FBE7B0; --t-week:#CBEBDA; --t-month:#F7D3DD; --t-year:#DAD1F5; --t-study:#F9D2BC; --t-tasks:#CDDCF5; --t-money:#E7DACA;
+  --t-day:#FBE7B0; --t-week:#CBEBDA; --t-month:#F7D3DD; --t-year:#DAD1F5; --t-study:#F9D2BC; --t-tasks:#CDDCF5; --t-money:#E7DACA; --t-notes:#D4EEF2;
   --good:#23804D; --good-soft:#DDF2E6; --warn:#A86C06; --warn-soft:#FBEFD2; --bad:#BF3651; --bad-soft:#F9DDE3;
   --c-food:#E07A5F; --c-coffee:#A47148; --c-transport:#3D8FD1; --c-groceries:#4FA36B; --c-school:#8B6AD8; --c-phone:#D9A21B; --c-fun:#E0609A; --c-clothes:#179C95; --c-gifts:#8FA31E; --c-work:#4C5FA8; --c-other:#8A8F99;
   --sticky:#FBEBB5; --sticky-ink:#4A3B10; --soon:#FBE3EA;
@@ -20,7 +20,7 @@ img{max-width:100%}
     color-scheme:dark;
     --bg:#14111B; --paper:#1E1A27; --paper-2:#27222F; --ink:#EDE9F5; --muted:#A49CB5; --line:#352E42;
     --accent:#A98FF6; --accent-soft:#302849; --on-accent:#17121F;
-    --t-day:#4D4222; --t-week:#1F4032; --t-month:#4A2A3B; --t-year:#372D5C; --t-study:#4D3022; --t-tasks:#243655; --t-money:#40362B;
+    --t-day:#4D4222; --t-week:#1F4032; --t-month:#4A2A3B; --t-year:#372D5C; --t-study:#4D3022; --t-tasks:#243655; --t-money:#40362B; --t-notes:#1F3F45;
     --good:#62C98E; --good-soft:#1B3526; --warn:#E8B656; --warn-soft:#3A2F16; --bad:#F2819A; --bad-soft:#3F1F2A;
     --c-food:#EE8E74; --c-coffee:#C79468; --c-transport:#5DA9E8; --c-groceries:#66C084; --c-school:#A88EEE; --c-phone:#EABB3E; --c-fun:#EF80B3; --c-clothes:#45C4BC; --c-gifts:#B5C93F; --c-work:#8C9CE0; --c-other:#A1A6B0;
     --sticky:#4A4020; --sticky-ink:#F6E6B0; --soon:#3A2230;
@@ -33,7 +33,7 @@ img{max-width:100%}
   color-scheme:dark;
   --bg:#14111B; --paper:#1E1A27; --paper-2:#27222F; --ink:#EDE9F5; --muted:#A49CB5; --line:#352E42;
   --accent:#A98FF6; --accent-soft:#302849; --on-accent:#17121F;
-  --t-day:#4D4222; --t-week:#1F4032; --t-month:#4A2A3B; --t-year:#372D5C; --t-study:#4D3022; --t-tasks:#243655; --t-money:#40362B;
+  --t-day:#4D4222; --t-week:#1F4032; --t-month:#4A2A3B; --t-year:#372D5C; --t-study:#4D3022; --t-tasks:#243655; --t-money:#40362B; --t-notes:#1F3F45;
   --good:#62C98E; --good-soft:#1B3526; --warn:#E8B656; --warn-soft:#3A2F16; --bad:#F2819A; --bad-soft:#3F1F2A;
   --c-food:#EE8E74; --c-coffee:#C79468; --c-transport:#5DA9E8; --c-groceries:#66C084; --c-school:#A88EEE; --c-phone:#EABB3E; --c-fun:#EF80B3; --c-clothes:#45C4BC; --c-gifts:#B5C93F; --c-work:#8C9CE0; --c-other:#A1A6B0;
   --sticky:#4A4020; --sticky-ink:#F6E6B0; --soon:#3A2230;
@@ -79,7 +79,7 @@ button,input,select,textarea{font:inherit;color:inherit}
 .page{position:relative;background-color:var(--paper);border-radius:6px 20px 20px 6px;padding:28px 30px 32px 62px;min-height:640px;transition:background-color .25s;
   background-image:linear-gradient(90deg,transparent 50px,var(--margin) 50px,var(--margin) 51.5px,transparent 51.5px,transparent 54px,var(--margin) 54px,var(--margin) 55px,transparent 55px),
     linear-gradient(var(--paper) 0 96px,transparent 96px),
-    repeating-linear-gradient(to bottom,transparent 0 31px,var(--rule) 31px 32px);
+    repeating-linear-gradient(to bottom,transparent 0 calc(var(--lh,36px) - 1px),var(--rule) calc(var(--lh,36px) - 1px) var(--lh,36px));
   box-shadow:4px 4px 0 -1px var(--edge),4px 4px 0 0 var(--line),8px 8px 0 -1px var(--edge2),8px 8px 0 0 var(--line),var(--shadow)}
 .coil{position:absolute;left:-17px;top:24px;bottom:24px;width:46px;overflow:hidden;display:flex;flex-direction:column;gap:17px;pointer-events:none;z-index:2}
 .coil span{flex:0 0 auto;position:relative;height:13px}
@@ -96,7 +96,7 @@ h1{display:inline;background:linear-gradient(transparent 58%,var(--hl) 58%,var(-
 .tab:hover{transform:translateX(3px)}
 .tab[aria-selected="true"]{width:54px;font-weight:700;filter:none;transform:none}
 .tab[data-tab="day"]{--tc:var(--t-day)} .tab[data-tab="week"]{--tc:var(--t-week)} .tab[data-tab="month"]{--tc:var(--t-month)}
-.tab[data-tab="year"]{--tc:var(--t-year)} .tab[data-tab="study"]{--tc:var(--t-study)} .tab[data-tab="tasks"]{--tc:var(--t-tasks)} .tab[data-tab="money"]{--tc:var(--t-money)}
+.tab[data-tab="year"]{--tc:var(--t-year)} .tab[data-tab="study"]{--tc:var(--t-study)} .tab[data-tab="tasks"]{--tc:var(--t-tasks)} .tab[data-tab="money"]{--tc:var(--t-money)} .tab[data-tab="notes"]{--tc:var(--t-notes)}
 .tab-gap{height:10px}
 
 .vh{display:flex;justify-content:space-between;align-items:flex-end;gap:16px;flex-wrap:wrap;margin-bottom:24px}
@@ -333,7 +333,7 @@ input[type=checkbox]{accent-color:var(--accent);width:18px;height:18px;cursor:po
   .tab-gap{display:none}
   .page{padding:22px 18px 26px;border-radius:18px}
   .coil{display:none}
-  .page{padding:22px 18px 26px;border-radius:18px;background-image:linear-gradient(var(--paper) 0 84px,transparent 84px),repeating-linear-gradient(to bottom,transparent 0 31px,var(--rule) 31px 32px);box-shadow:3px 3px 0 -1px var(--edge),3px 3px 0 0 var(--line),var(--shadow)}
+  .page{padding:22px 18px 26px;border-radius:18px;background-image:linear-gradient(var(--paper) 0 84px,transparent 84px),repeating-linear-gradient(to bottom,transparent 0 calc(var(--lh,36px) - 1px),var(--rule) calc(var(--lh,36px) - 1px) var(--lh,36px));box-shadow:3px 3px 0 -1px var(--edge),3px 3px 0 0 var(--line),var(--shadow)}
   .addform,.addform.task{grid-template-columns:repeat(2,minmax(0,1fr))}
   .addform input[name=desc],.addform input[name=title],.addform input[name=name]{grid-column:1/-1}
   .hr{grid-template-columns:42px 86px minmax(0,1fr) 28px;padding-left:6px}
@@ -372,7 +372,7 @@ td>.cellin{width:calc(100% - 16px);max-width:110px}
 /* login / sign-up */
 .auth{min-height:100vh;display:grid;place-items:center;padding-block:48px}
 .auth-card{width:100%;max-width:420px;background-color:var(--paper);border-radius:6px 20px 20px 6px;padding:32px 30px;box-shadow:4px 4px 0 -1px var(--edge),4px 4px 0 0 var(--line),var(--shadow);
-  background-image:linear-gradient(var(--paper) 0 70px,transparent 70px),repeating-linear-gradient(to bottom,transparent 0 31px,var(--rule) 31px 32px)}
+  background-image:linear-gradient(var(--paper) 0 70px,transparent 70px),repeating-linear-gradient(to bottom,transparent 0 calc(var(--lh,36px) - 1px),var(--rule) calc(var(--lh,36px) - 1px) var(--lh,36px))}
 .auth-card h1{margin-bottom:6px}
 .auth-sub{color:var(--muted);font-size:14px;margin:10px 0 18px}
 .auth-form{display:flex;flex-direction:column;gap:14px}
@@ -431,37 +431,16 @@ table.ex tr:last-child td{border-bottom:0}
 .wd[data-act]{cursor:pointer}
 .wd[data-act]:hover{border-color:var(--accent)}
 
-/* Year table on phones: each month becomes a card (name + status on top, then the numbers) */
+/* Year table on phones: same table as on the laptop, just tighter; it scrolls sideways and the month name stays pinned */
 @media (max-width:760px){
-  .ytbl{min-width:0}
-  .ytbl thead{display:none}
-  .ytbl,.ytbl tbody,.ytbl tfoot{display:block}
-  .ytbl tbody{display:grid;gap:10px}
-  .ytbl tr{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));grid-template-areas:"mn mn mn" "st st st" "sp inc lo" "tg sv sv";gap:12px 10px;align-items:start;padding:14px;background:var(--paper-2);border:1px solid var(--line);border-radius:16px}
-  .ytbl td{display:block;border:0!important;padding:0!important;text-align:left!important;font-size:15px!important;font-weight:600;min-width:0;background:none!important}
-  .ytbl tr.now{background:var(--accent-soft);border-color:var(--accent)}
-  .ytbl tr.fut{opacity:.7}
-  .ytbl td[data-l]::before{content:attr(data-l);display:block;font-size:10px;text-transform:uppercase;letter-spacing:.08em;color:var(--muted);font-weight:700;margin-bottom:4px}
-  .ytbl td.mn{grid-area:mn;font-family:var(--display);font-weight:700;font-size:18px!important;align-self:center}
-  .ytbl td.st{grid-area:st;justify-self:start;font-size:12px!important;margin-top:-6px}
-  .ytbl td[data-l="Spent"]{grid-area:sp}
-  .ytbl td[data-l="Income"]{grid-area:inc}
-  .ytbl td[data-l="Left over"]{grid-area:lo}
-  .ytbl td[data-l="Target"]{grid-area:tg}
-  .ytbl td[data-l="I saved"]{grid-area:sv}
-  .ytbl td[data-l="Income"],.ytbl td[data-l="I saved"]{display:flex;flex-wrap:wrap;align-items:center;gap:6px}
-  .ytbl td[data-l]::before{flex:0 0 100%;margin-bottom:0}
-  .ytbl td .cellin,.ytbl .r .cellin{flex:1 1 0;width:auto!important;min-width:0;max-width:110px;text-align:left!important;background:var(--paper);border:1px solid var(--line);border-radius:10px;padding:8px 10px;font-weight:600}
-  .ytbl td .cellin:focus{border-color:var(--accent);outline:0}
-  .ytbl td input[type=checkbox]{width:22px;height:22px;margin:0;accent-color:var(--accent)}
-  .ytbl tfoot tr{margin-top:14px;background:transparent;border:0;border-top:2px solid var(--ink);border-radius:0;padding:14px 4px 4px;grid-template-areas:"mn mn mn" "sp inc lo" "tg sv sv";row-gap:12px}
-  .ytbl tfoot td.st{display:none}
-  .ytbl tr.off{grid-template-columns:minmax(0,1fr) auto;grid-template-areas:"mn inc";align-items:center;padding:10px 14px;opacity:.75}
-  .ytbl tr.off td[data-l]:not([data-l="Income"]),.ytbl tr.off td.st{display:none}
-  .ytbl tr.off td.mn{font-size:16px!important}
-  .ytbl tr.off td[data-l="Income"]{flex-wrap:nowrap}
-  .ytbl tr.off td[data-l="Income"]::before{flex:0 0 auto;margin:0 2px 0 0}
-  .ytbl tr.off td .cellin{max-width:90px;flex:0 1 90px}
+  .ytbl{min-width:640px;font-size:13px}
+  .ytbl th{padding:8px 6px;font-size:10px}
+  .ytbl td{padding:8px 6px}
+  .ytbl .cellin{width:64px!important;padding:4px 6px;font-size:13px}
+  .ytbl td.mn,.ytbl th:first-child{position:sticky;left:0;z-index:1;background:var(--paper)}
+  .ytbl tr.now td.mn{background:var(--accent-soft)}
+  .ytbl td.st .pill{white-space:nowrap}
+  .ytbl td input[type=checkbox]{width:18px;height:18px;accent-color:var(--accent)}
 }
 
 /* ================= Notebook sharing: design choices, blog, interests, public pages ================= */
@@ -472,6 +451,7 @@ table.ex tr:last-child td{border-bottom:0}
 [data-accent="forest"]{--ac-l:#2B8A5B;--ac-d:#6FD0A0;--ac-on-l:#fff;--ac-on-d:#08201A}
 [data-accent="sunset"]{--ac-l:#D2661E;--ac-d:#F5A15E;--ac-on-l:#fff;--ac-on-d:#2A1406}
 [data-accent="graphite"]{--ac-l:#4A4F5C;--ac-d:#B8BDCB;--ac-on-l:#fff;--ac-on-d:#14161C}
+[data-accent="white"]{--ac-l:#FFFFFF;--ac-d:#FFFFFF;--ac-on-l:#17121F;--ac-on-d:#17121F}
 [data-accent]{--accent:var(--ac-l);--on-accent:var(--ac-on-l);--accent-soft:color-mix(in srgb,var(--ac-l) 13%,var(--paper))}
 @media (prefers-color-scheme: dark){
   :root:not([data-theme="light"]) [data-accent],:root:not([data-theme="light"])[data-accent]{--accent:var(--ac-d);--on-accent:var(--ac-on-d);--accent-soft:color-mix(in srgb,var(--ac-d) 22%,var(--paper))}
@@ -489,7 +469,7 @@ table.ex tr:last-child td{border-bottom:0}
 }
 :root[data-theme="dark"] [data-pcolor]{--paper:var(--pc-d);--paper-2:color-mix(in srgb,var(--pc-d) 90%,#fff)}
 
-.page[data-paper="grid"],.nbx-page[data-paper="grid"]{background-image:repeating-linear-gradient(to bottom,transparent 0 31px,var(--rule) 31px 32px),repeating-linear-gradient(to right,transparent 0 31px,var(--rule) 31px 32px)}
+.page[data-paper="grid"],.nbx-page[data-paper="grid"]{background-image:repeating-linear-gradient(to bottom,transparent 0 calc(var(--lh,36px) - 1px),var(--rule) calc(var(--lh,36px) - 1px) var(--lh,36px)),repeating-linear-gradient(to right,transparent 0 calc(var(--lh,36px) - 1px),var(--rule) calc(var(--lh,36px) - 1px) var(--lh,36px))}
 .page[data-paper="dots"],.nbx-page[data-paper="dots"]{background-image:radial-gradient(var(--rule) 1.6px,transparent 1.8px);background-size:24px 24px}
 .page[data-paper="plain"],.nbx-page[data-paper="plain"]{background-image:none}
 [data-font="hand"]{--body:"Caveat","Segoe Print",cursive;--display:"Caveat","Segoe Print",cursive;font-size:18px}
@@ -604,6 +584,17 @@ img.stk{width:calc(var(--s,1)*56px);height:auto;font-size:0}
 .post .acts{display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-top:12px}
 .tag2{display:inline-block;font-size:11px;font-weight:700;padding:2px 9px;border-radius:999px;background:var(--accent-soft);color:var(--accent)}
 .tag2.priv{background:var(--paper);border:1px solid var(--line);color:var(--muted)}
+.cmts{margin-top:14px;border-top:1px dashed var(--line);padding-top:10px}
+.cmts h4{font-size:13px;margin-bottom:6px}
+.cmt{position:relative;padding:6px 26px 6px 0;font-size:14px}
+.cmt p{white-space:pre-wrap;word-wrap:break-word;line-height:1.5;margin:2px 0 0}
+.cmt .cdel{position:absolute;top:4px;right:0;border:0;background:none;color:var(--muted);cursor:pointer;font-size:12px;padding:4px}
+.cmt .cdel:hover{color:var(--bad)}
+.cmt .crep{border:0;background:none;color:var(--muted);cursor:pointer;font-size:12px;padding:0 0 0 6px;text-decoration:underline}
+.cmt .crep:hover{color:var(--bad)}
+.cmt .crep:disabled{cursor:default;text-decoration:none}
+.cform{display:flex;gap:8px;margin-top:8px}
+.cform input{flex:1;min-width:0;border:1px solid var(--line);background:var(--paper);color:inherit;border-radius:999px;padding:7px 14px;font-size:14px}
 .likebtn{border:1px solid var(--line);background:var(--paper);border-radius:999px;padding:5px 12px;font-size:13px;font-weight:600;cursor:pointer;display:inline-flex;align-items:center;gap:6px}
 .likebtn:hover{border-color:var(--bad);color:var(--bad)}
 .likebtn.on{background:var(--bad-soft);border-color:var(--bad);color:var(--bad)}
@@ -824,7 +815,6 @@ a.btn:hover{text-decoration:none}
 .nb,.nb-new{display:flex;flex-direction:column;align-items:center;text-decoration:none;color:var(--ink);gap:4px;text-align:center}
 .nb-new{justify-content:center;aspect-ratio:3/4;border:2px dashed var(--good);border-radius:8px 16px 16px 8px;color:var(--muted);font-size:13px;font-weight:600}
 .nb-new span{width:34px;height:34px;border-radius:50%;background:var(--good);color:#fff;display:flex;align-items:center;justify-content:center;font-size:22px;margin-bottom:6px}
-.nb:hover .nb-title{font-weight:700;font-size:14px;margin-top:6px}
 .nb-sub{font-size:11px;color:var(--muted);word-break:break-all}
 
 /* profile form */
@@ -870,8 +860,6 @@ a.btn:hover{text-decoration:none}
   .shelf{grid-template-columns:repeat(2,minmax(0,1fr))}
 }
 
-.nb .nbc{transition:transform .2s}
-.nb:hover .nbc{transform:translateY(-5px) rotate(-1.5deg)}
 
 .nb-who{display:flex;gap:12px;align-items:center;margin-bottom:22px}
 .nb-bio{margin:2px 0 0;font-size:14px;color:var(--muted);overflow-wrap:anywhere}
@@ -916,7 +904,7 @@ a.tab{display:block;text-decoration:none;box-sizing:border-box}
 /* binding styles */
 .binder[data-binding="stitch"]>.coil,.binder[data-binding="none"]>.coil{display:none}
 .binder[data-binding="stitch"]>.page{border-left:4px dashed var(--wire)}
-.binder[data-binding="none"]>.page{padding-left:36px;background-image:repeating-linear-gradient(to bottom,transparent 0 31px,var(--rule) 31px 32px)}
+.binder[data-binding="none"]>.page{padding-left:36px;background-image:repeating-linear-gradient(to bottom,transparent 0 calc(var(--lh,36px) - 1px),var(--rule) calc(var(--lh,36px) - 1px) var(--lh,36px))}
 
 /* a notebook's cover page and the shelf of notebooks */
 .nbcover{border-radius:6px 18px 18px 6px;min-height:320px;display:grid;place-items:center;padding:28px;color:#fff;position:relative;overflow:hidden;box-shadow:inset 10px 0 0 rgba(0,0,0,.18),var(--shadow);isolation:isolate}
@@ -959,6 +947,14 @@ a.tab{display:block;text-decoration:none;box-sizing:border-box}
 @media (max-width:640px){.nbcover-in h2{font-size:26px}.nbe .binder{margin-inline:0}}
 
 /* ---- bell dropdown, user list, account zone ---- */
+.notetoast{position:fixed;top:calc(12px + env(safe-area-inset-top,0px));left:50%;transform:translateX(-50%);z-index:70;display:flex;align-items:stretch;max-width:min(420px,calc(100% - 32px));width:max-content;background:var(--paper);color:var(--ink);border:1px solid var(--line);border-radius:14px;box-shadow:0 12px 36px rgba(20,12,40,.3);animation:ntin .25s ease-out}
+.notetoast button{border:0;background:none;color:inherit;font:inherit;cursor:pointer}
+.notetoast .nt-go{display:flex;gap:10px;align-items:center;text-align:left;padding:10px 6px 10px 14px;font-size:14px;font-weight:600;min-width:0}
+.notetoast .tx{overflow:hidden;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical}
+.notetoast small{color:var(--muted);font-weight:500}
+.notetoast .nt-x{padding:0 14px;color:var(--muted);font-size:12px}
+@keyframes ntin{from{opacity:0;transform:translate(-50%,-12px)}to{opacity:1;transform:translate(-50%,0)}}
+@media (prefers-reduced-motion:reduce){.notetoast{animation:none}}
 .bellwrap{position:relative;display:inline-flex}
 .bellpop{position:absolute;top:calc(100% + 10px);right:0;width:min(360px,calc(100vw - 32px));max-height:min(70vh,480px);display:flex;flex-direction:column;background:var(--paper);color:var(--ink);border:1px solid var(--line);border-radius:18px;box-shadow:0 18px 48px rgba(20,12,40,.28);z-index:60;overflow:hidden}
 .bellpop[hidden]{display:none}
@@ -1102,10 +1098,10 @@ a.nbtile{text-decoration:none}.nbtiles{margin-bottom:14px}.nbtile.on span{color:
 }
 
 /* ---------- writing on the lines ----------
-   The page is ruled every 32px (--lh). Text, headings, rows and fields are sized in whole lines, so every line of writing sits
+   The page is ruled every var(--lh) (--lh). Text, headings, rows and fields are sized in whole lines, so every line of writing sits
    on a rule and the rules never run through letters. Boxes (panels, cards) are snapped to whole lines by assets/ruled.js. */
-.page{--lh:32px;line-height:var(--lh);padding-top:32px}
-.page .vh{height:64px;margin:0;flex-wrap:nowrap;align-items:flex-end}
+.page{--lh:36px;line-height:var(--lh);padding-top:var(--lh)}
+.page .vh{height:calc(var(--lh)*2);margin:0;flex-wrap:nowrap;align-items:flex-end}
 .page .vh>*{min-width:0}
 .page .vh .eyebrow{line-height:24px;margin:0}
 .page .vh h1{line-height:40px;padding-block:0}
@@ -1133,3 +1129,848 @@ a.nbtile{text-decoration:none}.nbtiles{margin-bottom:14px}.nbtile.on span{color:
 .page .legend{min-height:var(--lh);align-items:center;margin:0;padding:0}
 .page p[style],.page .s[style]{margin-block:0 !important}
 .page .gcal,.page .onboard,.page .soon{margin-block:0}
+/* pages people add to a notebook themselves */
+.nb-text{white-space:pre-wrap;font-size:15px;line-height:var(--lh);overflow-wrap:anywhere}
+.tab.add-page{--tc:var(--line);opacity:.85;font-weight:700}
+.pagebar{display:flex;gap:8px;flex-wrap:wrap;min-height:var(--lh);align-items:center}
+
+/* profile header written on the lines: avatar = 4 lines, name / numbers / full name / bio = one line each */
+.page .phead{gap:0 28px;margin:0;align-items:start}
+.page .phead-av .avatar.xl{width:128px;height:128px;font-size:50px;box-sizing:border-box}
+.page .phead-main{min-height:128px}
+.page .phead-top{min-height:var(--lh);gap:10px}
+.page .phead-top h2{line-height:var(--lh)}
+.page .phead-top .tag2{line-height:18px}
+.page .pstats{min-height:var(--lh);margin:0;gap:22px;align-items:center}
+.page .pstat{line-height:var(--lh);align-items:center}
+.page .pname2,.page .pbio2{margin:0;line-height:var(--lh)}
+.page .phead-btns{min-height:var(--lh);align-items:center;margin-bottom:0}
+.page .phead-btns .btn{height:28px;padding-block:0}
+.page .ptabs{border-top:0;border-bottom:1px solid var(--line);margin:var(--lh) 0 var(--lh);height:var(--lh);overflow-y:hidden}
+.page .ptabs button{border-top:0;margin:0;height:calc(var(--lh) - 1px);padding:0 14px;line-height:calc(var(--lh) - 2px);box-sizing:border-box}
+.page .ptabs button[aria-selected="true"]{box-shadow:inset 0 -2px 0 var(--ink)}
+.page .nbtiles{margin-bottom:var(--lh)}
+.page .nbtile i{aspect-ratio:auto;height:160px}
+.page .nbtile span,.page .nbtile small{line-height:var(--lh)}
+.page .nbtiles{gap:var(--lh) 14px}
+/* verified tick */
+.vbadge{display:inline-grid;place-items:center;width:1.05em;height:1.05em;border-radius:50%;background:#1d9bf0;color:#fff;font-size:.62em;font-weight:800;line-height:1;vertical-align:.18em;margin-left:.3em}
+/* messages: options on each message, chat tools */
+.msg{position:relative}
+.msg.gone .msg-body{font-style:italic;opacity:.65}
+.msg-more{border:0;background:none;color:inherit;opacity:.45;cursor:pointer;font-size:16px;line-height:1;padding:0 4px;margin-left:6px;border-radius:6px}
+.msg:hover .msg-more,.msg-more:focus-visible{opacity:.9}
+.msg-menu{position:absolute;z-index:6;top:100%;right:0;display:flex;flex-direction:column;min-width:190px;background:var(--paper);color:var(--ink);border:1px solid var(--line);border-radius:12px;box-shadow:var(--shadow);padding:6px}
+.msg.mine .msg-menu{right:0}.msg:not(.mine) .msg-menu{left:0;right:auto}
+.msg-menu button{border:0;background:none;text-align:left;font:inherit;font-size:13px;font-weight:600;color:inherit;padding:8px 10px;border-radius:8px;cursor:pointer}
+.msg-menu button:hover{background:var(--accent-soft)}
+.msg-menu button.danger{color:var(--bad)}
+.msg-edit{width:100%;min-width:220px;font:inherit;border:1px solid var(--line);border-radius:10px;padding:8px;background:var(--paper);color:var(--ink)}
+.msg-edit-row{display:flex;gap:6px;margin-top:6px}
+.chat-tools{display:flex;gap:8px;flex-wrap:wrap;margin-top:8px}
+.chat-tools .danger{color:var(--bad)}
+
+/* Settings: account and notebooks on one page */
+.st-nav{display:flex;gap:8px;flex-wrap:wrap;margin:0 0 var(--lh)}
+.st-nav .chipbtn{text-decoration:none;color:inherit}
+.st-sec{margin-bottom:var(--lh)}
+.st-sec h3{font-size:20px}
+.st-avatar{display:flex;align-items:center;gap:16px;margin-bottom:12px}
+.st-avatar .avatar.xl{width:96px;height:96px;font-size:38px}
+.st-avatar>div{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
+.covers{display:grid;grid-template-columns:repeat(auto-fill,minmax(96px,1fr));gap:8px;margin-bottom:12px}
+.xcard .cover-opt{display:flex;flex-direction:column;align-items:center;gap:6px;font:inherit;font-size:12px;font-weight:600;color:var(--ink);background:var(--paper);border:1px solid var(--line);border-radius:12px;padding:10px 6px;cursor:pointer;text-align:center}
+.xcard .cover-opt input[type=file]{position:absolute;opacity:0;pointer-events:none;width:1px;height:1px}
+.xcard .cover-opt:hover{border-color:var(--accent)}
+.xcard .cover-opt[aria-pressed="true"],.xcard .cover-opt.on{border-color:var(--accent);background:var(--accent-soft)}
+.nbc.mini.own-pic{display:grid;place-items:center;font-size:22px;color:var(--muted);background:var(--paper-2);border:2px dashed var(--line);box-shadow:none}
+.st-nb .xcard{border:0;padding:0;box-shadow:none;background:none}
+.st-sec label.l{display:block;margin-top:14px;margin-bottom:6px}
+.st-sec input[type=text],.st-sec textarea{width:100%;box-sizing:border-box}
+.st-sec .userlist li{display:flex;gap:8px;align-items:center}
+.st-sec .userlist .un{flex:1;min-width:0;overflow-wrap:anywhere}
+/* chips keep their own height (the page's 32px line height is only for writing) */
+.page .hsum span,.page .chipbtn,.page .tag2,.page .stk-lib button,.page .swatch{line-height:1.3}
+.page .hsum{align-items:center;min-height:var(--lh)}
+
+/* ===== cards that look like real notebooks ===== */
+/* notebook tiles (profile, settings, someone's profile): a book with a stitched spine, an elastic band and a shadow */
+.nbtile i{position:relative;height:160px;aspect-ratio:auto;border:0;border-radius:4px 14px 14px 4px;box-shadow:0 12px 18px -10px rgba(20,12,40,.55),inset -4px 0 8px rgba(0,0,0,.14);transition:transform .18s}
+.nbtile i::before{content:"";position:absolute;left:0;top:0;bottom:0;width:15%;border-radius:4px 0 0 4px;background:radial-gradient(circle,rgba(255,255,255,.7) 1.6px,transparent 2.2px) 50% 0/100% 16px,linear-gradient(90deg,rgba(0,0,0,.38),rgba(0,0,0,.1))}
+.nbtile i::after{content:"";position:absolute;inset:0;border-radius:inherit;background:linear-gradient(90deg,transparent 78%,rgba(0,0,0,.3) 78%,rgba(0,0,0,.3) 83%,transparent 83%),linear-gradient(135deg,rgba(255,255,255,.22),transparent 45%)}
+.nbtile:hover i{transform:translateY(-5px) rotate(-1.2deg)}
+.nbtile.on i{outline:3px solid var(--accent);outline-offset:3px}
+.nbtile span{margin-top:6px;font-family:var(--display);font-weight:700}
+.nbtile.add{aspect-ratio:auto;height:160px;border:2px dashed var(--line);border-radius:4px 14px 14px 4px;background:repeating-linear-gradient(to bottom,transparent 0 calc(var(--lh,36px) - 1px),var(--rule) calc(var(--lh,36px) - 1px) var(--lh,36px)),var(--paper)}
+/* people on Explore: a card with their cover */
+.userlist.cards{display:grid;grid-template-columns:repeat(auto-fill,minmax(230px,1fr));gap:16px}
+.userlist.cards li{display:flex;flex-direction:column;align-items:stretch;gap:10px;padding:14px;background:var(--paper);border:1px solid var(--line);border-radius:6px 16px 16px 6px;box-shadow:4px 4px 0 -1px var(--edge),4px 4px 0 0 var(--line);transition:transform .15s}
+.userlist.cards li:hover{transform:translateY(-3px)}
+.userlist.cards .ulink{display:flex;align-items:center;gap:14px;text-decoration:none;color:inherit}
+.userlist.cards .ucover{flex:none;width:58px}
+.userlist.cards .ucover .nbc.mini{width:58px}
+.userlist.cards .un{font-family:var(--display);font-weight:700;font-size:17px;overflow-wrap:anywhere}
+.userlist.cards li>form,.userlist.cards li>.hint2{align-self:flex-start}
+/* people cards (visitors) */
+.person{border-radius:6px 18px 18px 6px;box-shadow:4px 4px 0 -1px var(--edge),4px 4px 0 0 var(--line),var(--shadow)}
+.person .nb-banner{height:120px;border-radius:4px 14px 0 0;position:relative}
+.person .nb-banner::before{content:"";position:absolute;left:0;top:0;bottom:0;width:12%;background:radial-gradient(circle,rgba(255,255,255,.7) 1.6px,transparent 2.2px) 50% 0/100% 16px,linear-gradient(90deg,rgba(0,0,0,.38),rgba(0,0,0,.1))}
+
+/* more notebook covers (second batch) */
+:root{
+  --cov-hearts:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='56' height='56' viewBox='0 0 56 56'%3E%3Cpath transform='translate(14 16) scale(1.1)' d='M0 6 C-10 -2 -6 -10 0 -4 C6 -10 10 -2 0 6Z' fill='%23E5384F'/%3E%3Cpath transform='translate(42 40) scale(0.9)' d='M0 6 C-10 -2 -6 -10 0 -4 C6 -10 10 -2 0 6Z' fill='%23F7A1B8'/%3E%3Cpath transform='translate(44 10) scale(0.6)' d='M0 6 C-10 -2 -6 -10 0 -4 C6 -10 10 -2 0 6Z' fill='%23F7A1B8'/%3E%3Cpath transform='translate(10 46) scale(0.6)' d='M0 6 C-10 -2 -6 -10 0 -4 C6 -10 10 -2 0 6Z' fill='%23E5384F'/%3E%3C/svg%3E") 0 0/56px 56px, #FBE3E8;
+  --cov-rainbow:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='90' height='50' viewBox='0 0 90 50'%3E%3Cg transform='translate(0 0)'%3E%3Cpath d='M10 48 A35 35 0 0 1 80 48' fill='none' stroke='%23F28B82' stroke-width='4.2'/%3E%3Cpath d='M15 48 A30 30 0 0 1 75 48' fill='none' stroke='%23FBBC04' stroke-width='4.2'/%3E%3Cpath d='M20 48 A25 25 0 0 1 70 48' fill='none' stroke='%2381C995' stroke-width='4.2'/%3E%3Cpath d='M25 48 A20 20 0 0 1 65 48' fill='none' stroke='%238AB4F8' stroke-width='4.2'/%3E%3C/g%3E%3C/svg%3E") 0 0/90px 50px, #FFF6EC;
+  --cov-mountains:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='110' height='70' viewBox='0 0 110 70'%3E%3Cpath d='M0 60 L20 28 L36 46 L56 14 L80 52 L96 36 L110 60Z' fill='%236D8E7C'/%3E%3Cpath d='M0 60 L14 44 L30 56 L46 34 L66 60Z' fill='%234F6F63'/%3E%3Ccircle cx='84' cy='14' r='6' fill='%23F6D88F'/%3E%3C/svg%3E") 0 0/110px 70px, linear-gradient(180deg,#BFD9E8,#F3E9D6);
+  --cov-pinstripe:repeating-linear-gradient(90deg,rgba(214,176,92,.55) 0 1.5px,transparent 1.5px 14px),linear-gradient(160deg,#1F2A44,#141B30);
+  --cov-monstera:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='100' height='70' viewBox='0 0 100 70'%3E%3Cpath d='M10 56 C10 30 26 12 52 8 C50 34 36 52 10 56Z' fill='%233F7D58'/%3E%3Cpath d='M10 56 C22 42 32 28 46 14' stroke='%238FC7A3' stroke-width='1.6' fill='none'/%3E%3Cpath d='M64 62 C64 44 74 32 92 28 C90 46 82 58 64 62Z' fill='%235BA373'/%3E%3C/svg%3E") 0 0/100px 70px, #E8F1E3;
+}
+/* quick look in Settings */
+.st-lookrow{display:flex;gap:20px;align-items:flex-start;flex-wrap:wrap}
+.st-prev{flex:none;width:120px}
+.st-prev i{display:block;position:relative;height:160px;border-radius:4px 14px 14px 4px;box-shadow:0 12px 18px -10px rgba(20,12,40,.55),inset -4px 0 8px rgba(0,0,0,.14);overflow:hidden}
+.st-prev i::before{content:"";position:absolute;left:0;top:0;bottom:0;width:15%;background:radial-gradient(circle,rgba(255,255,255,.7) 1.6px,transparent 2.2px) 50% 0/100% 16px,linear-gradient(90deg,rgba(0,0,0,.38),rgba(0,0,0,.1))}
+.st-prev i::after{content:"";position:absolute;inset:0;background:linear-gradient(90deg,transparent 78%,rgba(0,0,0,.3) 78%,rgba(0,0,0,.3) 83%,transparent 83%),linear-gradient(135deg,rgba(255,255,255,.22),transparent 45%)}
+.st-lookopts{flex:1;min-width:240px}
+/* one book style for tiles, Explore cards and the Quick look preview */
+.bk{display:block;position:relative;height:100%;min-height:76px;border-radius:4px 12px 12px 4px;box-shadow:0 8px 12px -8px rgba(20,12,40,.55),inset -3px 0 6px rgba(0,0,0,.14);overflow:hidden}
+.bk::before{content:"";position:absolute;left:0;top:0;bottom:0;width:15%;background:radial-gradient(circle,rgba(255,255,255,.7) 1.4px,transparent 2px) 50% 0/100% 12px,linear-gradient(90deg,rgba(0,0,0,.38),rgba(0,0,0,.1))}
+.bk::after{content:"";position:absolute;inset:0;background:linear-gradient(90deg,transparent 78%,rgba(0,0,0,.3) 78%,rgba(0,0,0,.3) 83%,transparent 83%),linear-gradient(135deg,rgba(255,255,255,.22),transparent 45%)}
+.userlist.cards .ucover{width:58px;height:78px}
+.shelf-book{display:block;width:100%;aspect-ratio:3/4;max-width:150px}
+.shelf-book .bk{height:100%}
+/* messages: the Delete chat button is an outlined red button (text was the same colour as the background) */
+.chat-tools .btn.del{background:transparent;color:var(--bad);border-color:color-mix(in srgb,var(--bad) 55%,transparent)}
+.chat-tools .btn.del:hover{background:color-mix(in srgb,var(--bad) 12%,transparent)}
+.chat-log{scroll-padding-bottom:140px}
+/* Quick look: a little page that shows the binding, the paper and the accent colour as you click */
+.st-page{position:relative;flex:none;width:150px;height:160px;box-sizing:border-box;border-radius:6px 12px 12px 6px;background-color:var(--paper);border:1px solid var(--line);padding:16px 12px 10px 34px;box-shadow:0 8px 14px -10px rgba(20,12,40,.5);overflow:hidden}
+.st-page b{display:block;font-family:var(--display);font-size:13px;color:var(--ac);border-bottom:2px solid var(--ac);padding-bottom:4px;margin-bottom:10px;overflow:hidden;white-space:nowrap;text-overflow:ellipsis}
+.st-page span{display:block;height:8px;border-radius:4px;background:color-mix(in srgb,var(--ac) 22%,transparent);margin-bottom:10px;width:90%}
+.st-page span:nth-of-type(2){width:70%}.st-page span:nth-of-type(3){width:80%}
+.st-page[data-paper="lined"]{background-image:repeating-linear-gradient(to bottom,transparent 0 21px,color-mix(in srgb,var(--ac) 25%,transparent) 21px 22px)}
+.st-page[data-paper="grid"]{background-image:repeating-linear-gradient(to bottom,transparent 0 15px,color-mix(in srgb,var(--ac) 22%,transparent) 15px 16px),repeating-linear-gradient(to right,transparent 0 15px,color-mix(in srgb,var(--ac) 22%,transparent) 15px 16px)}
+.st-page[data-paper="dots"]{background-image:radial-gradient(color-mix(in srgb,var(--ac) 40%,transparent) 1.4px,transparent 1.8px);background-size:16px 16px}
+.st-page[data-binding="coil"]::before{content:"";position:absolute;left:3px;top:0;bottom:0;width:22px;background:radial-gradient(ellipse at 12px 50%,#8e8a99 0 5px,transparent 5.5px) 0 0/22px 18px repeat-y;filter:drop-shadow(1px 1px 1px rgba(0,0,0,.35))}
+.st-page[data-binding="stitch"]::before{content:"";position:absolute;left:16px;top:8px;bottom:8px;border-left:3px dashed var(--ac)}
+.st-page[data-binding="none"]::before{content:"";position:absolute;left:0;top:0;bottom:0;width:8px;background:linear-gradient(90deg,rgba(0,0,0,.14),transparent)}
+.st-inside{margin-top:10px}
+.st-inside .page{min-height:340px}
+/* the notebook opened flat: two pages and the binding in the middle, resting on its cover */
+.st-inside .spread{position:relative;display:grid;grid-template-columns:minmax(0,1fr) 38px minmax(0,1fr);min-height:320px;padding:14px;border-radius:10px;box-shadow:0 18px 26px -16px rgba(20,12,40,.6);font-family:var(--sp-font,inherit)}
+.spread .sp-page{position:relative;background-color:var(--sp-paper);color:var(--sp-ink);padding:22px 20px 20px;min-width:0;overflow:hidden}
+.spread .sp-page.left{border-radius:6px 0 0 6px;box-shadow:inset -22px 0 24px -22px rgba(0,0,0,.35)}
+.spread .sp-page.right{border-radius:0 6px 6px 0;box-shadow:inset 22px 0 24px -22px rgba(0,0,0,.35)}
+.spread[data-paper="lined"] .sp-page{background-image:repeating-linear-gradient(to bottom,transparent 0 31px,var(--sp-rule) 31px var(--lh));background-position:0 18px}
+.spread[data-paper="grid"] .sp-page{background-image:repeating-linear-gradient(to bottom,transparent 0 23px,var(--sp-rule) 23px 24px),repeating-linear-gradient(to right,transparent 0 23px,var(--sp-rule) 23px 24px)}
+.spread[data-paper="dots"] .sp-page{background-image:radial-gradient(var(--sp-rule) 1.8px,transparent 2.2px);background-size:24px 24px}
+.spread .sp-gutter{position:relative;background:linear-gradient(90deg,rgba(0,0,0,.18),rgba(0,0,0,.05) 35%,rgba(0,0,0,.05) 65%,rgba(0,0,0,.18))}
+.spread[data-binding="coil"] .sp-gutter{background:linear-gradient(90deg,rgba(0,0,0,.16),rgba(0,0,0,.03) 40%,rgba(0,0,0,.03) 60%,rgba(0,0,0,.16))}
+.spread[data-binding="coil"] .sp-gutter::before{content:"";position:absolute;left:-10px;right:-10px;top:0;bottom:0;background:radial-gradient(ellipse 16px 6px at 50% 50%,#d9d6e2 0 55%,#8d8999 56% 100%) 0 0/100% 26px repeat-y;filter:drop-shadow(0 2px 2px rgba(0,0,0,.4))}
+.spread[data-binding="stitch"] .sp-gutter::before{content:"";position:absolute;left:50%;top:10px;bottom:10px;border-left:3px dashed var(--sp-ac);transform:translateX(-50%)}
+.spread .sp-eyebrow{font-size:11px;letter-spacing:.1em;text-transform:uppercase;font-weight:700;color:var(--sp-ac);margin:0 0 4px}
+.spread h3{font-size:22px;line-height:1.1;margin:0 0 14px;color:var(--sp-ink);overflow-wrap:anywhere}
+.spread ol{list-style:none;margin:0;padding:0}
+.spread ol li{display:flex;justify-content:space-between;gap:8px;font-size:15px;line-height:var(--lh);border-bottom:1px dotted var(--sp-rule)}
+.spread ol li i{font-style:normal;color:var(--sp-ac);font-weight:700}
+.spread .sp-intro{font-size:15px;line-height:var(--lh);margin:0;white-space:pre-wrap;overflow-wrap:anywhere}
+.spread .sp-by{font-size:14px;line-height:var(--lh);margin:6px 0 0;color:var(--sp-ac);font-weight:600}
+.spread .sp-stk{position:absolute;font-size:28px;line-height:1}
+@media (max-width:760px){.st-inside .spread{grid-template-columns:minmax(0,1fr);}.spread .sp-gutter{display:none}.spread .sp-page.left,.spread .sp-page.right{border-radius:6px;box-shadow:none}.spread .sp-page.right{margin-top:10px}}
+
+/* ===== the notebook editor: opened flat like a real notebook (contents on the left, the page you are on at the right) ===== */
+.nbv .nbook{position:relative;display:grid;grid-template-columns:minmax(0,1fr) 40px minmax(0,1.35fr);align-items:stretch;padding:16px;border-radius:12px;box-shadow:0 20px 30px -18px rgba(20,12,40,.65)}
+.nbv .nbook .page{min-height:520px;padding:26px 26px 28px 30px;border:0;box-shadow:none;box-sizing:border-box;min-width:0}
+.nbv .nbook .nbp-left{border-radius:8px 0 0 8px;box-shadow:inset -24px 0 26px -24px rgba(0,0,0,.38)}
+.nbv .nbook .nbp-right{border-radius:0 8px 8px 0;box-shadow:inset 24px 0 26px -24px rgba(0,0,0,.38)}
+.nbv .nbook .page .vh h1{font-size:28px}
+.nbp-title{font-family:var(--display);font-size:24px;line-height:1.1;margin:0 0 14px;overflow-wrap:anywhere}
+.nbp-toc{list-style:none;margin:0;padding:0}
+.nbp-toc li{border-bottom:1px dotted var(--rule)}
+.nbp-toc button{display:flex;justify-content:space-between;align-items:center;gap:8px;width:100%;border:0;background:none;font:inherit;font-size:15px;color:inherit;text-align:left;padding:0;min-height:var(--lh);cursor:pointer;border-radius:6px}
+.nbp-toc button:hover{color:var(--accent)}
+.nbp-toc button i{font-style:normal;font-weight:700;color:var(--accent)}
+.nbp-toc button[aria-current="page"]{color:var(--accent);font-weight:700}
+.nbp-toc button[aria-current="page"] span::before{content:"▸ "}
+.nbp-toc .nbp-add{color:var(--muted);font-weight:600;font-size:14px}
+/* the binding in the middle */
+.nbp-gutter{position:relative;background:linear-gradient(90deg,rgba(0,0,0,.16),rgba(0,0,0,.03) 40%,rgba(0,0,0,.03) 60%,rgba(0,0,0,.16))}
+.nbook:not([data-binding]) .nbp-gutter::before,.nbook[data-binding="coil"] .nbp-gutter::before{content:"";position:absolute;left:-10px;right:-10px;top:0;bottom:0;background:radial-gradient(ellipse 16px 6px at 50% 50%,#d9d6e2 0 55%,#8d8999 56% 100%) 0 0/100% 26px repeat-y;filter:drop-shadow(0 2px 2px rgba(0,0,0,.4))}
+.nbook[data-binding="stitch"] .nbp-gutter::before{content:"";position:absolute;left:50%;top:10px;bottom:10px;border-left:3px dashed var(--accent);transform:translateX(-50%)}
+@media (max-width:900px){
+  .nbv .nbook{grid-template-columns:minmax(0,1fr);padding:10px}
+  .nbp-gutter{display:none}
+  .nbv .nbook .nbp-left,.nbv .nbook .nbp-right{border-radius:8px;box-shadow:none;min-height:0}
+  .nbv .nbook .nbp-right{margin-top:10px}
+}
+
+/* white accent: keep text readable on a light page (the white shows on buttons, tabs and borders) */
+:root:not([data-theme="dark"]) [data-accent="white"] .page :is(.eyebrow,.sp-eyebrow){color:var(--muted)}
+.swatch[data-v="white"]{box-shadow:0 0 0 1px var(--line),inset 0 0 0 1px rgba(0,0,0,.12)}
+.st-anycolor{display:inline-flex;align-items:center;gap:8px;font-size:13px;font-weight:600;margin-left:6px}
+.st-anycolor input[type=color]{width:38px;height:34px;padding:0;border:2px solid var(--line);border-radius:10px;background:none;cursor:pointer}
+.st-anycolor.on input[type=color]{border-color:var(--accent);box-shadow:0 0 0 2px var(--accent)}
+
+/* ===== closed notebook: a rectangular book with a label, a stitched spine and an elastic band ===== */
+.nbcover{width:min(100%,320px);aspect-ratio:3/4;min-height:0;margin:10px auto 0;border-radius:6px 18px 18px 6px;display:grid;padding:0;box-sizing:border-box;overflow:hidden;box-shadow:0 22px 30px -16px rgba(20,12,40,.65),inset -4px 0 8px rgba(0,0,0,.18)}
+.nbcover::before{content:"";position:absolute;left:0;top:0;bottom:0;width:14%;z-index:1;background:radial-gradient(circle,rgba(255,255,255,.75) 2px,transparent 2.6px) 50% 0/100% 22px,linear-gradient(90deg,rgba(0,0,0,.4),rgba(0,0,0,.1))}
+.nbcover::after{z-index:1;pointer-events:none;background:linear-gradient(90deg,transparent 80%,rgba(0,0,0,.3) 80%,rgba(0,0,0,.3) 85%,transparent 85%),linear-gradient(135deg,rgba(255,255,255,.2),transparent 45%)}
+.nbcover-in{position:absolute;left:22%;right:9%;top:50%;transform:translateY(-50%);z-index:2;box-sizing:border-box;background:var(--c-label,#EFE2C8);color:var(--c-label-ink,#4A3426);text-shadow:none;border-radius:4px;padding:16px 12px;gap:8px;box-shadow:0 0 0 3px var(--c-label,#EFE2C8),0 0 0 4px rgba(74,52,38,.5),0 5px 12px rgba(0,0,0,.25)}
+[data-label="none"] .nbcover-in{background:none;box-shadow:none;color:#fff;text-shadow:0 1px 8px rgba(0,0,0,.55)}
+.nbcover-in h2{font-size:22px;overflow-wrap:anywhere}
+.nbcover-in .by{font-size:12px;opacity:.8;overflow-wrap:anywhere}
+.nbcover .avatar{border:3px solid var(--accent)}
+.nbclosed[data-binding="stitch"] .nbcover::before{background:linear-gradient(90deg,transparent 0 8%,transparent) ,repeating-linear-gradient(to bottom,var(--accent) 0 9px,transparent 9px 17px) 62% 0/3px 100% no-repeat}
+.nbclosed[data-binding="none"] .nbcover::before{background:linear-gradient(90deg,rgba(0,0,0,.35),rgba(0,0,0,.05))}
+.nbclosed{position:relative;padding:6px 0 10px}
+.nbclosed-go{position:relative;text-align:center;margin-top:16px}
+/* tabs on the edge of the opened notebook, one for each page */
+.nbv .nbook{margin-right:48px;position:relative}
+.nbook .nbp-tabs{position:absolute;right:-46px;top:26px;display:flex;flex-direction:column;gap:6px;z-index:3;padding:0}
+.nbook .nbp-tabs .tab{width:38px;min-height:76px;padding:12px 6px;margin:0;border-radius:0 12px 12px 0;white-space:nowrap}
+.nbook .nbp-tabs .tab[aria-selected="true"]{width:46px;margin-right:-8px;position:relative}
+.nbook .nbp-tabs .tab.add-page{min-height:70px}
+@media (max-width:900px){.nbook .nbp-tabs{display:none}.nbv .nbook{margin-right:0}}
+
+/* ===== opening and closing the notebook: a leaf that turns over the spine ===== */
+.nbook{perspective:2600px}
+.nbook.shut{transition:transform .42s cubic-bezier(.4,0,.2,1),opacity .42s cubic-bezier(.4,0,.2,1);transform:scale(.95) translateY(6px);opacity:0}
+.nbleaf{position:absolute;z-index:6;transform-origin:left center;transform-style:preserve-3d;pointer-events:none;will-change:transform;backface-visibility:hidden;-webkit-backface-visibility:hidden;animation:leafTurn 1.15s cubic-bezier(.45,.02,.2,1) forwards}
+.nbleaf.turn{animation-duration:.85s}
+.nbleaf-f,.nbleaf-b{position:absolute;inset:0;backface-visibility:hidden;-webkit-backface-visibility:hidden;overflow:hidden;border-radius:0 8px 8px 0;transform:translateZ(0)}
+.nbleaf-b{transform:rotateY(180deg) translateZ(0);border-radius:8px 0 0 8px}
+.nbleaf-f.isCover{border-radius:0 12px 12px 0}
+.nbleaf-pg{width:100%!important;height:100%!important;margin:0!important;box-sizing:border-box;box-shadow:none!important}
+.nbleaf-f::after,.nbleaf-b::after{content:"";position:absolute;inset:0;pointer-events:none;opacity:0;animation:leafShade 1.15s ease-in-out forwards}
+.nbleaf-f::after{background:linear-gradient(90deg,rgba(0,0,0,.32),rgba(0,0,0,.05) 60%,transparent)}
+.nbleaf-b::after{background:linear-gradient(270deg,rgba(0,0,0,.32),rgba(0,0,0,.05) 60%,transparent)}
+.nbleaf.turn .nbleaf-f::after,.nbleaf.turn .nbleaf-b::after{animation-duration:.85s}
+/* same transform list at both ends, so the browser interpolates the angle itself instead of a matrix (that was the jerk) */
+@keyframes leafTurn{0%{transform:rotateY(0) scaleX(1);opacity:1}88%{opacity:1}100%{transform:rotateY(-180deg) scaleX(var(--sx,.75));opacity:0}}
+@keyframes leafShade{0%,100%{opacity:0}50%{opacity:1}}
+.nbook[data-anim="open"]{animation:bookIn .7s cubic-bezier(.22,.8,.3,1)}
+.nbook[data-anim="open"] .nbp-left{animation:leftIn 1.15s ease-out both}
+@keyframes bookIn{from{transform:scale(.93) translateY(8px);opacity:0}to{transform:none;opacity:1}}
+@keyframes leftIn{0%,62%{opacity:0}100%{opacity:1}}
+@media (min-width:901px){.nbleaf{display:none}.nbook,.nbook *{animation:none!important;transition:none!important}}
+@media (prefers-reduced-motion: reduce){.nbleaf{display:none}.nbook,.nbook *{animation:none!important;transition:none!important}}
+
+/* ===== phones: everything fits, nothing is cut off ===== */
+@media (max-width:760px){
+  .tabs{flex-wrap:nowrap;overflow-x:auto;overflow-y:hidden;padding:0 4px;gap:4px;-webkit-overflow-scrolling:touch}
+  .tab{flex:0 0 auto;margin:0 0 -6px;border-radius:12px 12px 0 0;padding:9px 14px 12px;font-size:14px;white-space:nowrap}
+  .tab[aria-selected="true"]{padding-top:12px}
+  .onboard{flex-direction:column;align-items:flex-start;height:auto!important;min-height:0!important;margin-bottom:var(--lh)!important}
+  .onboard .btn{align-self:flex-start}
+}
+@media (max-width:640px){
+  .page .phead-main{min-height:0}
+  .phead-top h2{font-size:18px;overflow-wrap:anywhere;min-width:0}
+  .page .phead-top h2{line-height:28px}
+  .page .phead-av .avatar.xl{width:72px;height:72px;font-size:28px}
+  .pstats{flex-wrap:wrap;row-gap:4px}
+}
+@media (max-width:900px){
+  .nbook .nbp-tabs{display:flex;position:static;flex-direction:row;flex-wrap:wrap;gap:6px;order:-1;margin:0 0 10px}
+  .nbook .nbp-tabs .tab,.nbook .nbp-tabs .tab[aria-selected="true"]{writing-mode:horizontal-tb;width:auto;min-height:0;margin:0;padding:8px 12px;border-radius:10px}
+  .nbook .nbp-tabs .tab.add-page{min-height:0}
+  .nbv .nbook .nbp-left{display:none}
+  .nbv .nbook .nbp-right{margin-top:0}
+}
+
+/* day view: the money panel stays in its own column and never rides up over the header or down over the hours */
+.page .cols{align-items:start}
+.page .cols>.panel{position:static;margin:0;min-width:0;overflow:hidden}
+@media (max-width:760px){
+  .page .cols>.panel .addform{grid-template-columns:minmax(0,1fr) minmax(0,1fr)}
+  .page .cols>.panel .addform input[name=desc]{grid-column:1/-1}
+  .page .cols>.panel .addform .btn{grid-column:1/-1;justify-content:center}
+}
+.page .cols>.stack{min-width:0}
+
+/* phones: section headings sit left, with their small note on the right; date header wraps cleanly */
+@media (max-width:760px){
+  .page .sec-h{flex-direction:row;flex-wrap:wrap;align-items:baseline;justify-content:space-between;gap:0 10px}
+  .page .vh{flex-wrap:wrap;gap:4px 10px;align-items:flex-end}
+  .page .vh{height:auto;min-height:calc(var(--lh)*2)}
+  .page .vh h1{font-size:clamp(22px,7vw,28px);line-height:var(--lh)}
+}
+
+/* chart: the limit label ("daily €17") sits under its dashed line and the chart starts below the heading row, so it never covers the status pill */
+.chart{margin-top:var(--lh)}
+.plot{height:160px;padding-top:26px}
+.plot .lim em{bottom:auto;top:3px}
+
+
+/* every row is exactly one ruled line tall with its text centred, so writing sits between the lines */
+.page .catrow{height:var(--lh);min-height:var(--lh);padding:0;align-items:center;box-sizing:border-box}
+.page .total-line{min-height:var(--lh);margin:0;padding:0;align-items:center;box-sizing:border-box}
+.page .xl{height:var(--lh);align-items:center}
+.page .legend{min-height:var(--lh)}
+.page .addform{gap:4px 8px;row-gap:4px}
+.page .row .t,.page .row .s{line-height:var(--lh)}
+
+/* only the notebook's own ruled lines: no extra separator lines between rows (the bold total line stays) */
+.page :is(.row,.ch,.subj-row,.vrow,.vitem,.hr,.dgroup,.sw){border-top-color:transparent;border-bottom-color:transparent}
+.page .ilist li{border-top:0}
+.page .tbl :is(th,td){border-top:0;border-bottom:0;padding-block:0;height:var(--lh)}
+.page .tbl tfoot td{border-top:2px solid var(--ink)}
+.page .wd .foot{border-top:0}
+.page .ptabs{border-bottom:0}
+.page .plot{border-bottom:0}
+
+/* subjects: masonry columns, so each card starts right under the end of the one above it with no empty gaps */
+.subjects{display:block;column-width:290px;column-gap:16px}
+.subjects>.subj{break-inside:avoid;-webkit-column-break-inside:avoid;margin:0 0 16px;display:block}
+
+/* top bar: icons only (the date stays as text); the logo keeps the brand violet whatever accent colour the notebook uses */
+.top-r .btn .lbl{display:none}
+.top-r .btn{gap:0;padding:8px 11px}
+.top-r .btn[data-lang-btn] svg,.top-r a.btn[href="admin.php"] svg{width:18px;height:18px}
+.brand .logo,.logo{color:#6A4DC4}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]) .brand .logo,:root:not([data-theme="light"]) .logo{color:#A98FF6}}
+:root[data-theme="dark"] .brand .logo,:root[data-theme="dark"] .logo{color:#A98FF6}
+
+/* tables (admin lists, year table): one row = one ruled line, and no separator lines of their own */
+.page .tbl{border-collapse:collapse}
+.page .tbl tr{height:var(--lh);border:0}
+.page .tbl :is(th,td){border:0;padding-block:0;height:var(--lh);line-height:1.2}
+.page .tbl tfoot td{border-top:2px solid var(--ink)}
+.page .tbl .btn{padding-block:3px;font-size:12px}
+.page .tbl .admin-acts{align-items:center}
+
+/* table cells: every cell lines up on the same row, text sits on the ruled lines */
+.page .tbl td{vertical-align:middle;line-height:var(--lh)}
+.page .tbl td small,.page .tbl td .s{line-height:var(--lh)}
+.page .tbl td :is(.btn,form,.admin-acts){line-height:1.2;vertical-align:middle}
+.page .tbl td form{display:inline-flex;align-items:center;margin:0}
+}
+
+/* date headings in the expense list: one line tall, no line of their own, so the rows below stay on the ruled lines */
+.page .dgroup{height:var(--lh);min-height:var(--lh);padding:0;margin:0;border:0;align-items:center;box-sizing:border-box}
+.page .foot-note{margin-top:0;min-height:var(--lh);align-items:center}
+.page .row{box-sizing:border-box;height:var(--lh);align-items:center}
+.page .row .grow{min-width:0}
+
+/* opened notebook: tidy spread. The planner's own ruled paper is hidden behind the book, each page has one margin line clear of the text, and the contents list sits on the lines */
+.nbv .nbook .page:not([data-paper]){background-image:linear-gradient(90deg,transparent 24px,var(--margin) 24px,var(--margin) 25.5px,transparent 25.5px),repeating-linear-gradient(to bottom,transparent 0 calc(var(--lh,36px) - 1px),var(--rule) calc(var(--lh,36px) - 1px) var(--lh,36px))}
+.nbv .nbook .page{padding:var(--lh) 26px var(--lh) 44px}
+.nbv .nbook .page .eyebrow{line-height:var(--lh);margin:0}
+.nbv .nbook .page .vh{height:auto;min-height:calc(var(--lh)*2);margin:0}
+.nbv .nbook .page h1{font-size:28px;line-height:40px}
+.nbp-title{line-height:var(--lh);margin:0 0 var(--lh);font-size:24px}
+.nbp-toc li{border-bottom:0;margin:0}
+.nbp-toc button,.nbp-toc a{display:flex;justify-content:space-between;align-items:center;width:100%;min-height:var(--lh);height:var(--lh);padding:0;color:var(--ink);text-decoration:none;font:inherit;font-size:15px}
+.nbp-toc button i,.nbp-toc a i{font-style:normal;font-weight:700;color:var(--accent);font-size:13px}
+.nbp-toc button:hover,.nbp-toc a:hover{color:var(--accent)}
+
+/* a little air between a profile's action buttons and the notebook tiles under them */
+.page .phead-btns{margin-bottom:var(--lh)}
+.page .nbtiles{margin-top:var(--lh)}
+
+/* how-to text lives only in the visitor tour: the planner and profile pages show none of it */
+body:not(.tour) .page p.hint2,body:not(.tour) .page .xcard>p.sub,body:not(.tour) .page .xform>p.sub,body:not(.tour) .page p.hint{display:none}
+
+/* the picture on a notebook cover is always a round circle, never squeezed into an oval */
+.nbcover-in .avatar,.nbcover-in img.avatar{width:96px;height:96px;min-width:96px;min-height:96px;max-width:96px;max-height:96px;aspect-ratio:1/1;border-radius:50%;object-fit:cover;flex:0 0 96px;box-sizing:border-box;border:3px solid rgba(255,255,255,.9)}
+.nbcover-in .avatar.letter{font-size:38px}
+.nbcover-in{display:flex;flex-direction:column;align-items:center}
+
+/* the top bar always uses the Splanner brand colours, whatever accent colour (even white) a notebook design picks */
+.top{--accent:#6A4DC4;--on-accent:#FFFFFF;--accent-soft:#ECE6FB}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]) .top{--accent:#A98FF6;--on-accent:#17121F;--accent-soft:#302849}}
+:root[data-theme="dark"] .top{--accent:#A98FF6;--on-accent:#17121F;--accent-soft:#302849}
+
+/* page tabs sit inside the notebook, on the edge of the page, not out on the table */
+@media (min-width:901px){
+  .nbv .nbook{margin-right:0}
+  .nbook .nbp-tabs{right:16px;top:var(--lh)}
+  .nbook .nbp-tabs .tab,.nbook .nbp-tabs .tab[aria-selected="true"]{border-radius:12px;margin-right:0}
+  .nbv .nbook .nbp-right{padding-right:76px}
+}
+@media (min-width:761px){
+  .nbv .binder>.tabs{margin-left:-58px;position:relative;z-index:3}
+  .nbv .binder>.page{padding-right:70px}
+}
+
+/* the box on your own cover opens the Decorate panel when you press it */
+.nbcover-edit{cursor:pointer}
+.nbcover-edit:hover{filter:brightness(1.04)}
+.nbcover-pen{position:absolute;top:6px;right:8px;font-size:14px;opacity:.55}
+.nbcover-edit:hover .nbcover-pen{opacity:1}
+
+/* the closed notebook opens when you press it */
+.nbclosed-hit{cursor:pointer}
+.nbclosed-hit:focus-visible{outline:3px solid var(--accent);outline-offset:6px;border-radius:12px}
+
+/* a visitor presses the cover to open the notebook */
+a.nbcover-link{display:block;width:min(100%,320px);margin:0 auto;color:inherit;text-decoration:none}
+a.nbcover-link .nbcover{width:100%;margin:10px 0 0}
+a.nbcover-link:focus-visible{outline:3px solid var(--accent);outline-offset:6px;border-radius:12px}
+
+/* shapes for the label on the cover */
+[data-label="round"] .nbcover-in{left:24%;right:12%;aspect-ratio:1/1;border-radius:50%;justify-content:center;padding:10px}
+[data-label="oval"] .nbcover-in{border-radius:50%;padding:30px 22px}
+[data-label="arch"] .nbcover-in{border-radius:999px 999px 8px 8px;padding:34px 12px 18px}
+[data-label="pill"] .nbcover-in{border-radius:999px;padding:22px 20px}
+[data-label="ticket"] .nbcover-in{border-radius:6px;box-shadow:none;-webkit-mask:radial-gradient(circle 9px at 0 50%,#0000 97%,#000) left/51% 100% no-repeat,radial-gradient(circle 9px at 100% 50%,#0000 97%,#000) right/51% 100% no-repeat;mask:radial-gradient(circle 9px at 0 50%,#0000 97%,#000) left/51% 100% no-repeat,radial-gradient(circle 9px at 100% 50%,#0000 97%,#000) right/51% 100% no-repeat}
+[data-label="band"] .nbcover-in{left:14%;right:0;border-radius:0;box-shadow:0 0 0 1px rgba(74,52,38,.4)}
+[data-label="round"] .nbcover-in .avatar,[data-label="oval"] .nbcover-in .avatar,[data-label="pill"] .nbcover-in .avatar{width:calc(var(--lh)*2);height:calc(var(--lh)*2);min-width:calc(var(--lh)*2);min-height:calc(var(--lh)*2);max-width:calc(var(--lh)*2);max-height:calc(var(--lh)*2);flex-basis:calc(var(--lh)*2)}
+[data-label="round"] .nbcover-in h2,[data-label="oval"] .nbcover-in h2{font-size:18px}
+
+/* breathing room: a full line between the page heading and what follows, and between blocks */
+.page .vh{margin-bottom:var(--lh)}
+.page .tiles{margin-bottom:var(--lh)}
+.page .sec-h{margin-top:0}
+
+/* more label shapes */
+[data-label="hexagon"] .nbcover-in{clip-path:polygon(25% 0,75% 0,100% 50%,75% 100%,25% 100%,0 50%);box-shadow:none;padding:30px 30px;border-radius:0}
+[data-label="diamond"] .nbcover-in{clip-path:polygon(50% 0,100% 50%,50% 100%,0 50%);box-shadow:none;padding:60px 18px;border-radius:0;left:24%;right:12%}
+[data-label="tag"] .nbcover-in{clip-path:polygon(0 0,86% 0,100% 50%,86% 100%,0 100%);box-shadow:none;padding:18px 34px 18px 14px;border-radius:0 0 0 0}
+[data-label="stamp"] .nbcover-in{border-radius:4px;box-shadow:none;outline:3px dashed var(--c-label-ink,#4A3426);outline-offset:-9px;padding:24px 18px}
+[data-label="hexagon"] .nbcover-in .avatar,[data-label="diamond"] .nbcover-in .avatar{width:64px;height:64px;min-width:64px;min-height:64px;max-width:64px;max-height:64px;flex-basis:64px}
+[data-label="diamond"] .nbcover-in h2{font-size:16px}
+/* the shape you make yourself: corners, width and height from the sliders */
+[data-label="custom"] .nbcover-in{border-radius:var(--lb-r,6%);width:var(--lb-w,69%);left:calc(14% + (86% - var(--lb-w,69%)) / 2);right:auto;min-height:var(--lb-h,0%)}
+[data-label="custom"] .nbcover-in{justify-content:center}
+.lbrange{display:flex;gap:10px;flex-wrap:wrap;margin-top:8px}
+.lbrange label{display:flex;flex-direction:column;gap:2px;font-size:12px;font-weight:600;color:var(--muted);flex:1 1 90px}
+.lbrange input[type=range]{width:100%;accent-color:var(--accent)}
+.lbsw{margin-top:8px}
+
+/* the day plan inside the open notebook: the text gets the room, words never break letter by letter */
+.nb-what{overflow-wrap:break-word;word-break:normal;min-width:0}
+.nbook .nb-plan{margin-top:0}
+.nbook .nb-plan li{grid-template-columns:auto 6px minmax(0,1fr);gap:4px 10px;min-height:var(--lh);padding:0}
+.nbook .nb-time{white-space:nowrap}
+.nbook .nb-type{grid-column:3;margin-top:-6px}
+
+/* the notebook's page tabs look like the planner's tabs: vertical, on the page edge */
+@media (min-width:901px){
+  .nbook .nbp-tabs{right:-12px;top:var(--lh);gap:6px}
+  .nbook .nbp-tabs .tab{width:44px;min-height:0;padding:16px 10px 16px 12px;border-radius:0 14px 14px 0;margin:0;font-size:15px;box-shadow:2px 2px 6px rgba(0,0,0,.06);filter:saturate(.9)}
+  .nbook .nbp-tabs .tab[aria-selected="true"]{width:54px;margin-right:0;filter:none;font-weight:700}
+  .nbook .nbp-tabs .tab:hover{transform:translateX(3px)}
+  .nbook .nbp-tabs .tab[aria-selected="true"]:hover{transform:none}
+  .nbv .nbook .nbp-right{padding-right:64px}
+}
+
+/* profile page: closer together */
+.page .phead-btns{margin-bottom:0}
+.page .ptabs{margin:0 0 var(--lh)}
+.page .nbtiles{margin-top:0;margin-bottom:0}
+.page .nbtile small{display:none}
+.page .nbe-bar{margin-top:var(--lh);margin-bottom:0}
+
+/* report a problem */
+.reportbox{max-width:640px;background:var(--paper-2);border:1px solid var(--line);border-radius:16px;padding:20px 22px;display:flex;flex-direction:column;gap:10px;box-shadow:var(--shadow)}
+.reportbox label{font-family:var(--display);font-size:17px;font-weight:700;line-height:var(--lh)}
+.reportbox textarea{width:100%;box-sizing:border-box;min-height:calc(var(--lh)*5);resize:vertical;background:var(--paper);color:var(--ink);border:1px solid var(--line);border-radius:12px;padding:12px 14px;font:inherit;font-size:15px;line-height:1.5;transition:border-color .15s,box-shadow .15s}
+.reportbox textarea::placeholder{color:var(--muted);opacity:.8}
+.reportbox textarea:focus{outline:none;border-color:var(--accent);box-shadow:0 0 0 3px var(--accent-soft)}
+.reportfoot{display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap}
+.reportfoot .count{font-size:12px;color:var(--muted);font-weight:600;font-variant-numeric:tabular-nums}
+.reportfoot .acts{display:flex;gap:8px}
+
+/* every text box in the settings and decorate panels looks the same: rounded, on the paper, with an accent ring when you type */
+.page :is(.xcard,.xform,.nbe-side) :is(input:not([type]),input[type=text],input[type=search],input[type=url],input[type=email],input[type=password],input[type=number],input[type=date],textarea,select){
+  background:var(--paper);color:var(--ink);border:1px solid var(--line);border-radius:12px;padding:9px 12px;font:inherit;font-size:14px;line-height:1.4;box-sizing:border-box;min-height:38px;transition:border-color .15s,box-shadow .15s}
+.page :is(.xcard,.xform,.nbe-side) :is(input,textarea,select)::placeholder{color:var(--muted);opacity:.85}
+.page :is(.xcard,.xform,.nbe-side) :is(input,textarea,select):focus{outline:none;border-color:var(--accent);box-shadow:0 0 0 3px var(--accent-soft)}
+.page .xrow{align-items:center;gap:8px}
+.page .xrow .btn.sm{height:38px;padding:0 14px}
+
+/* rows with a title and a small line under it grow to fit instead of overlapping the next row; the language button keeps its icon next to its label */
+.page .row{height:auto;min-height:var(--lh)}
+.page .row .grow{min-width:0}
+.page .sec-h h2{white-space:nowrap}
+[data-lang-btn]{display:inline-flex;align-items:center;gap:6px}
+[data-lang-btn] svg{width:18px;height:18px;flex:none}
+
+/* ---------- first-time setup: notebook style, then the intro ---------- */
+.auth-card.setup-card{max-width:560px}
+.setup-dots{display:flex;justify-content:center;gap:8px;list-style:none;margin:0 0 18px;padding:0}
+.setup-dots li{width:9px;height:9px;border-radius:50%;background:var(--line)}
+.setup-dots li.on{background:var(--accent);transform:scale(1.25)}
+.setup-dots li.done{background:color-mix(in srgb,var(--accent) 55%,var(--line))}
+.look-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(110px,1fr));gap:10px;margin:14px 0}
+.look{display:flex;flex-direction:column;gap:6px;align-items:center;padding:8px;border:2px solid var(--line);border-radius:12px;background:var(--paper);color:var(--ink);cursor:pointer;font:inherit}
+.look b{font-size:12px}
+.look.on{border-color:var(--accent);box-shadow:0 0 0 2px var(--accent)}
+.look-cover{display:block;width:100%;aspect-ratio:3/4;max-height:96px;border-radius:4px 10px 10px 4px}
+.look-extra{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px;margin-bottom:14px}
+.look-extra label{display:flex;flex-direction:column;gap:4px;font-size:12px;font-weight:700;color:var(--muted)}
+.look-extra select{padding:8px;border:1px solid var(--line);border-radius:10px;background:var(--paper);color:var(--ink);font-size:14px}
+.setup-preview{display:grid;place-items:center;padding:14px;border-radius:12px;border:1px solid var(--line)}
+.setup-preview[data-paper="lined"]{background-image:repeating-linear-gradient(to bottom,transparent 0 23px,var(--line) 23px 24px)}
+.setup-preview[data-paper="grid"]{background-image:repeating-linear-gradient(to bottom,transparent 0 23px,var(--line) 23px 24px),repeating-linear-gradient(to right,transparent 0 23px,var(--line) 23px 24px)}
+.setup-preview[data-paper="dots"]{background-image:radial-gradient(var(--line) 1.8px,transparent 2.2px);background-size:24px 24px}
+.nbcover.mini{width:150px;position:relative}
+.nbcover.mini .nbcover-in h2{font-size:14px}
+.setup-nav{display:flex;justify-content:space-between;align-items:center;gap:10px;margin-top:20px}
+.slide-ic{font-size:56px;text-align:center;margin:10px 0}
+.step h1{text-align:center}
+.slide-tx{font-size:16px;line-height:1.6;color:var(--muted);text-align:center;max-width:36em;margin:10px auto 0}
+.setup-skip{text-align:center;margin-top:16px}
+@media (max-width:480px){.look-extra{grid-template-columns:1fr 1fr}}
+.setup-nav .btn.primary{margin-left:auto}
+
+/* first-time setup, polished: bigger look cards, tidy selects and buttons */
+.setup .look{transition:transform .12s,box-shadow .15s,border-color .15s}
+.setup .look:hover{transform:translateY(-2px)}
+.setup .look b{font-family:var(--display);font-size:13px}
+.setup .look-extra select{width:100%;min-height:40px;font:inherit;font-size:14px}
+.setup .setup-preview{background-color:var(--paper-2);padding:18px}
+.setup .setup-preview .nbcover{width:min(100%,150px);margin:0 auto}
+.setup .setup-preview .nbcover.mini h2{font-size:15px}
+.setup h1{font-size:clamp(24px,5vw,30px);margin:0 0 6px}
+.setup .auth-sub{margin:0 0 6px}
+.setup-nav .btn{min-height:40px;padding:0 18px}
+
+/* report a problem: popup */
+.reportmodal{width:min(520px,100%);gap:12px}
+.reportmodal h3{font-family:var(--display);font-size:20px;margin:0}
+.reportmodal .reportbox{max-width:none;background:none;border:0;padding:0;box-shadow:none}
+.reportmodal .rpmsg{color:var(--bad);font-size:13px;font-weight:600;margin:0}
+.reportmodal .rpdone{margin:0;color:var(--muted)}
+
+/* profile heads: room between the details, the buttons and the notebook below */
+.page .phead-btns{margin-top:var(--lh);margin-bottom:var(--lh)}
+.page .pbio2,.page .pname2{margin-bottom:0}
+.page .phead{margin-bottom:var(--lh)}
+.page .phead+.nbtiles,.page .phead-btns+.nbtiles{margin-top:0}
+.nbv{margin-top:var(--lh)}
+.page .nbtiles{margin-bottom:var(--lh)}
+
+/* while you decorate, the notebook stays in view (sticky) as the long options panel scrolls */
+@media (min-width:981px){
+  .nbe.panel-open>div:first-child{position:sticky;top:16px;align-self:start;z-index:2}
+}
+.nbe.panel-open .nbe-side{position:static}
+
+/* corners, width and height from the sliders work on top of any ready-made shape; text size from the slider */
+[data-label="box"] .nbcover-in,[data-label="stamp"] .nbcover-in,[data-label="ticket"] .nbcover-in,[data-label="band"] .nbcover-in,:not([data-label]) .nbcover-in{border-radius:var(--lb-r,4px)}
+[data-lbw] .nbcover-in{width:var(--lb-w,69%);left:calc(14% + (86% - var(--lb-w,69%)) / 2);right:auto}
+.nbcover-in{min-height:var(--lb-h,0%)}
+[data-label="custom"] .nbcover-in{border-radius:var(--lb-r,6%)}
+.nbv .nbook .page,.nbv .binder .page{font-size:var(--nb-fs,15px)}
+.nbv :is(.nb-text,.nb-what,.nb-intro,.nbp-toc a,.nbp-toc button,.post .txt,.ilist li,.tx){font-size:var(--nb-fs,15px)}
+.nbv .nbook .page h1{font-size:calc(var(--nb-fs,15px) * 1.9)}
+.lbrange b{font-weight:700;color:var(--ink);margin-left:6px}
+
+/* money panel: the add form in one row again (what, category, amount, date, Add) */
+@media (min-width:761px){
+  .page .panel .addform{grid-template-columns:minmax(0,1.1fr) minmax(0,.8fr) minmax(0,1.1fr) auto;align-items:center;margin-bottom:var(--lh)}
+  .page .panel .addform input[name=desc]{grid-column:1/-1}
+  .page .panel .addform .btn{grid-column:auto;justify-content:center;width:auto;padding:0 18px}
+}
+
+/* chart limit label ("budget €658", "daily €17") sits above its dashed line at the left end, clear of the bars and their amounts */
+.plot .lim em{top:auto;bottom:3px;left:0;right:auto;background:none;padding:0 2px}
+
+/* reported problems list (admins, sub admins): popup */
+.reportlist{width:min(640px,100%);max-height:min(80vh,640px)}
+.reportlist .rlbody{overflow:auto;display:flex;flex-direction:column;gap:10px;min-height:60px}
+.rlrow{border:1px solid var(--line);border-radius:12px;padding:12px 14px;background:var(--paper-2);display:flex;flex-direction:column;gap:6px;align-items:flex-start}
+.rlrow.done{opacity:.55}
+.rlrow p{margin:0;white-space:pre-wrap;overflow-wrap:anywhere;line-height:1.5}
+.rlhead{display:flex;gap:10px;flex-wrap:wrap;align-items:baseline;font-size:13px}
+.rlmail,.rlwhen{color:var(--muted)}
+
+/* phones: more room for the content (smaller side margins) and less cramped forms, filters and rows */
+@media (max-width:640px){
+  body{padding-inline:6px}
+  .page{padding-inline:12px}
+  .page .addform{gap:10px 8px;margin-block:8px 12px}
+  .page .addform :is(input,select,.btn),.page .field{height:40px;font-size:15px}
+  .page .addform .btn{width:100%}
+  .page .filters{gap:8px;flex-wrap:wrap;padding-block:6px;min-height:0}
+  .page .fbtn{padding:6px 14px}
+  .page .row{padding-block:6px;gap:12px}
+  .page .row .t{line-height:1.4}
+  .page .row .grow{row-gap:4px}
+  .page .legend{padding-top:8px;gap:12px}
+}
+
+/* phones: Expenses (and the other planner tabs that share these parts) get the same roomy dark-notebook look */
+@media (max-width:640px){
+  .page .cols,.page .cols.wide-l,.page .stack{gap:22px}
+  .page .tiles{grid-template-columns:repeat(2,minmax(0,1fr));gap:10px;margin-block:12px 18px}
+  .page .tile{padding:12px 14px;border-radius:14px}
+  .page .tile p{line-height:1.3;margin:0}
+  .page .tile .v{font-size:22px;margin-block:4px}
+  .page .seg{display:grid;grid-auto-flow:column;grid-auto-columns:1fr;width:100%}
+  .page .seg button{padding:9px 6px}
+  .page .panel{padding:16px 14px;border-radius:14px}
+  .page .sec-h{margin-bottom:6px;gap:8px;flex-wrap:wrap}
+  .page .dgroup{min-height:44px;padding-top:12px;align-items:flex-end}
+  .page .catrow{height:auto;min-height:40px;padding:8px 0;gap:10px;grid-template-columns:96px minmax(0,1fr) 72px}
+  .page .catrow .track{height:10px}
+  .page .total-line{min-height:48px;padding-top:6px}
+}
+
+/* phones: Tasks, a compact form and each task as its own card */
+@media (max-width:640px){
+  .page .addform.task{grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:8px;margin:10px 0 14px}
+  .page .addform.task input[name=title]{grid-column:1/-1}
+  .page .addform.task input[type=date]{grid-column:1;min-width:0}
+  .page .addform.task select{grid-column:2}
+  .page .addform.task input[name=tag]{grid-column:1}
+  .page .addform.task .btn{grid-column:2;width:100%}
+  .page .filters{margin-bottom:12px;gap:6px}
+  .page .fbtn{padding:5px 12px;font-size:13px}
+  .page .row{flex-wrap:wrap;align-items:center;gap:6px 10px;min-height:0;padding:10px 12px;margin-bottom:8px;background:var(--paper-2);border:1px solid var(--line);border-radius:14px;box-sizing:border-box}
+  .page .row:last-child{border:1px solid var(--line)}
+  .page .row.done{opacity:.65}
+  .page .row>input[type=checkbox]{width:20px;height:20px;margin:0;flex:none}
+  .page .row .grow{flex:1 1 0;min-width:0}
+  .page .row .t{line-height:1.35;overflow-wrap:anywhere}
+  .page .row .x{margin-left:auto;font-size:20px;padding:2px 8px}
+  .page .row>.pill,.page .row>.tag{font-size:11.5px;line-height:1.3;padding:3px 9px;white-space:nowrap}
+  .page .row>.pill{margin-left:0}
+  .page .legend{margin-top:14px!important}
+}
+
+/* shared notebooks: the cover is a link wrapping the cover, laid out like your own closed notebook */
+.nbclosed-hit .nbcover-link{display:block;color:inherit;text-decoration:none}
+
+/* first-time setup: the preview is the whole notebook (cover + the opened pages), in the paper, binding and colour you pick */
+.setup .look-pvh{margin:14px 0 6px;font-size:12px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--muted)}
+.setup .setup-preview{display:flex;flex-wrap:wrap;align-items:center;justify-content:center;gap:18px;background-image:none!important;padding:18px 14px}
+.setup .setup-preview .nbcover{width:104px;margin:0;flex:none}
+.setup .setup-preview .nbcover .nbcover-in{left:24%;right:8%;padding:8px 6px}
+.setup .setup-preview .nbcover .nbcover-in h2{font-size:11px}
+.setup-preview .spread{--lh:26px;--sp-paper:#fff;--sp-ink:#2A2338;--sp-rule:rgba(60,40,90,.14);--sp-ac:var(--accent);flex:1 1 280px;max-width:420px;position:relative;display:grid;grid-template-columns:minmax(0,1fr) 22px minmax(0,1fr);min-height:170px;padding:10px;border-radius:10px;box-shadow:0 14px 22px -14px rgba(20,12,40,.6)}
+.setup-preview .spread .sp-page{padding:14px 12px 12px;min-height:150px}
+.setup-preview .spread .sp-eyebrow{font-size:9px}
+.setup-preview .spread h3{font-size:14px;margin:0 0 8px}
+.setup-preview .spread ol li{font-size:12px;line-height:20px}
+.setup-preview .spread .sp-intro{font-size:12px;line-height:20px}
+.setup-preview .spread[data-paper="lined"] .sp-page{background-image:repeating-linear-gradient(to bottom,transparent 0 19px,var(--sp-rule) 19px 20px);background-position:0 6px}
+.setup-preview .spread[data-paper="grid"] .sp-page{background-image:repeating-linear-gradient(to bottom,transparent 0 15px,var(--sp-rule) 15px 16px),repeating-linear-gradient(to right,transparent 0 15px,var(--sp-rule) 15px 16px)}
+.setup-preview .spread[data-paper="dots"] .sp-page{background-image:radial-gradient(var(--sp-rule) 1.6px,transparent 2px);background-size:16px 16px}
+.setup-preview .spread[data-paper="plain"] .sp-page{background-image:none}
+.setup-preview .spread[data-binding="none"] .sp-gutter,.setup-preview .spread[data-binding="plain"] .sp-gutter{background:linear-gradient(90deg,rgba(0,0,0,.14),rgba(0,0,0,.02) 50%,rgba(0,0,0,.14))}
+@media (max-width:480px){.setup-preview .spread{grid-template-columns:minmax(0,1fr) 14px minmax(0,1fr);padding:8px}.setup-preview .spread .sp-page{padding:12px 9px 10px}}
+@media (max-width:760px){
+  .setup-preview .spread .sp-gutter{display:block}
+  .setup-preview .spread .sp-page.left{border-radius:6px 0 0 6px;box-shadow:inset -14px 0 16px -14px rgba(0,0,0,.35)}
+  .setup-preview .spread .sp-page.right{border-radius:0 6px 6px 0;margin-top:0;box-shadow:inset 14px 0 16px -14px rgba(0,0,0,.35)}
+}
+
+/* setup: smaller look cards on phones, three to a row */
+@media (max-width:640px){
+  .setup .look-grid{grid-template-columns:repeat(3,minmax(0,1fr));gap:8px;margin:10px 0}
+  .setup .look{padding:6px;gap:4px}
+  .setup .look-cover{max-height:70px}
+  .setup .look b{font-size:11.5px;text-align:center}
+  .setup .look-extra{grid-template-columns:repeat(3,minmax(0,1fr));gap:8px}
+  .setup .look-extra select{min-height:38px;padding:6px;font-size:13px}
+}
+@media (max-width:400px){.setup .look-grid{grid-template-columns:repeat(2,minmax(0,1fr))}.setup .look-extra{grid-template-columns:1fr 1fr}}
+
+/* setup: with many looks, the picker scrolls instead of making the page endless */
+.setup .look-grid{max-height:340px;overflow-y:auto;padding:4px;margin-inline:-4px;scrollbar-width:thin}
+
+/* messages: the name at the top of a chat opens that person's profile */
+.chat-head h2 a.chat-name{color:inherit;text-decoration:none;border-bottom:2px solid transparent;transition:border-color .15s,color .15s}
+.chat-head h2 a.chat-name:hover,.chat-head h2 a.chat-name:focus-visible{color:var(--accent);border-bottom-color:var(--accent);outline:0}
+
+/* messages on phones: tight bubbles, one-row header, the conversation gets most of the screen */
+@media (max-width:640px){
+  .page .chat{margin-top:8px;gap:10px}
+  .page .chat-find label{line-height:1.3;margin-bottom:4px}
+  .page .chat-find .chat-row .btn{height:42px}
+  .page .chat-row input{height:42px;padding-block:0}
+  .page .chat-people{padding-bottom:4px}
+  .page .chat-person{line-height:1.3;min-width:130px;padding:8px 12px}
+  .page .chat-pname,.page .chat-plast{line-height:1.35}
+  .page .chat-main{border-radius:16px;overflow:hidden}
+  .page .chat-head{display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:6px 10px;padding:10px 12px}
+  .page .chat-head h2{font-size:17px;line-height:1.3;margin:0;min-width:0;overflow-wrap:anywhere}
+  .page .chat-head .pmail{flex:1 0 100%;line-height:1.3;margin-top:-4px}
+  .page .chat-tools{display:flex;gap:6px;flex-wrap:nowrap}
+  .page .chat-tools .btn{height:34px;padding:0 10px;font-size:12.5px;white-space:nowrap}
+  .page .chat-log{padding:12px 10px;gap:6px;min-height:240px;max-height:calc(100dvh - 330px)}
+  .page .msg{max-width:86%;padding:7px 11px 6px;line-height:1.35}
+  .page .msg-body{line-height:1.4;font-size:15px}
+  .page .msg-at{line-height:1.2;margin-top:3px;font-size:10.5px}
+  .page .chat-send{padding:8px;gap:6px;align-items:center}
+  .page .chat-send textarea{line-height:1.3;padding:10px 12px;border-radius:14px}
+  .page .chat-send .btn{border-radius:14px}
+  .page .chat-empty{line-height:1.4}
+}
+
+/* logged-out top bar on phones (welcome, tour, explore): text buttons with their labels showing, not the icon-only row of a signed-in user */
+@media (max-width:640px){
+  .top-r.guest{grid-auto-flow:row;grid-auto-columns:unset;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}
+  .top-r.guest .btn{font-size:14px;font-weight:600;height:42px;padding:0 10px;white-space:nowrap;justify-content:center}
+  .top-r.guest .btn.primary{grid-column:1/-1}
+  .top-r.guest .btn[data-lang-btn],.top-r.guest .btn[data-theme-btn]{font-size:14px}
+  .top-r.guest .btn svg{width:18px;height:18px}
+}
+
+/* ---------- Music (Spotify) ---------- */
+.music{display:grid;gap:16px;max-width:820px}
+.music h2{font-size:18px;margin:0 0 6px}
+.music-embed{padding:8px}
+.music-embed iframe{display:block;width:100%;height:352px;border:0;border-radius:12px}
+.music-embed iframe.short{height:152px}
+.music-link{display:flex;gap:8px;margin-top:6px}
+.music-link input{flex:1;min-width:0;padding:9px 12px;border:1px solid var(--line);border-radius:10px;background:var(--paper);color:var(--ink);font:inherit}
+.music-presets{display:flex;flex-wrap:wrap;gap:8px;margin-top:12px}
+.music-note{margin:0;padding:10px 14px;border-radius:12px;border:1px solid var(--line);background:var(--paper-2);font-size:14px}
+.music-note.ok{background:var(--accent-soft);border-color:color-mix(in srgb,var(--accent) 35%,transparent)}
+.music-note.bad{border-color:var(--bad);background:var(--bad-soft)}
+.sp-h{font-size:15px;margin:16px 0 8px}
+.sp-list{display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:8px;margin-top:10px}
+.sp-list:empty{display:none}
+.sp-item{display:flex;align-items:center;gap:10px;padding:8px;border:1px solid var(--line);border-radius:12px;background:var(--paper);color:var(--ink);text-align:left;cursor:pointer;font:inherit;min-width:0}
+.sp-item:hover{border-color:var(--accent)}
+.sp-item img,.sp-item i{width:44px;height:44px;border-radius:8px;object-fit:cover;flex:none;display:grid;place-items:center;background:var(--accent-soft);font-style:normal}
+.sp-item span{min-width:0;display:grid}
+.sp-item b,.sp-item small{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.sp-item small{color:var(--muted);font-size:12px}
+.sp-player{display:flex;align-items:center;justify-content:space-between;gap:14px;flex-wrap:wrap}
+.sp-now{display:flex;align-items:center;gap:12px;min-width:0;flex:1}
+.sp-art{width:56px;height:56px;border-radius:10px;object-fit:cover}
+.sp-meta{display:grid;min-width:0}
+.sp-meta span{color:var(--muted);font-size:13px}
+.sp-ctrl{display:flex;align-items:center;gap:8px}
+.sp-ctrl input[type=range]{width:110px;accent-color:var(--accent)}
+body.music-win{margin:0;padding:12px;background:var(--bg);color:var(--ink);font-family:'Plus Jakarta Sans',system-ui,sans-serif}
+.music.mini{gap:10px}
+.music.mini .sp-list{grid-template-columns:1fr}
+@media (max-width:640px){.music-link{flex-wrap:wrap}.sp-ctrl input[type=range]{width:80px}}
+.music-tip{font-size:12.5px;color:var(--muted);margin:10px 0 0}
+.sp-saved{position:relative;min-width:0}
+.sp-saved .sp-item{width:100%;padding-right:34px}
+.sp-saved form{position:absolute;top:50%;right:6px;transform:translateY(-50%);margin:0}
+.sp-x{width:24px;height:24px;border-radius:50%;border:1px solid var(--line);background:var(--paper-2);color:var(--muted);cursor:pointer;line-height:1;font-size:15px}
+.sp-x:hover{color:var(--bad);border-color:var(--bad)}
+#spSaved{margin-bottom:12px}
+/* ---------- Study notebook (notes.php) ---------- */
+.nt{display:grid;grid-template-columns:minmax(0,270px) minmax(0,1fr);gap:22px;align-items:start}
+.nt-side{display:flex;flex-direction:column;gap:10px;min-width:0;position:sticky;top:12px}
+.nt-search,.nt-title,.nt-subj,.nt-paper-pick,.wb-paper{background:var(--paper);border:1px solid var(--line);border-radius:10px;padding:9px 11px;font:inherit;font-size:14px;color:var(--ink);min-width:0}
+.nt-subjects{display:flex;flex-wrap:wrap;gap:6px}
+.nt-chip{border:1px solid var(--line);background:var(--paper-2);border-radius:999px;padding:4px 10px;font-size:12px;font-weight:600;cursor:pointer;color:var(--ink)}
+.nt-chip.on{background:var(--accent);border-color:var(--accent);color:var(--on-accent)}
+.nt-list{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:4px;max-height:62vh;overflow-y:auto}
+.nt-item{width:100%;display:flex;gap:10px;align-items:flex-start;text-align:left;border:1px solid transparent;background:transparent;border-radius:12px;padding:8px;cursor:pointer;color:var(--ink);font:inherit}
+.nt-item:hover{border-color:var(--line);background:var(--paper-2)}
+.nt-item.on{background:var(--accent-soft);border-color:var(--accent-soft)}
+.nt-ic{flex:0 0 40px;height:40px;border-radius:9px;background:var(--paper-2);border:1px solid var(--line);display:grid;place-items:center;font-size:19px;overflow:hidden}
+.nt-ic.thumb{background:#fff}.nt-ic img{width:100%;height:100%;object-fit:cover}
+.nt-tx{display:flex;flex-direction:column;min-width:0;gap:1px}
+.nt-tx b{font-size:14px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.nt-tx small{display:flex;gap:6px;align-items:center;flex-wrap:wrap;color:var(--muted);font-size:12px}
+.nt-sub{background:var(--t-notes);color:var(--ink);border-radius:6px;padding:0 6px;font-weight:600}
+.nt-snip{font-size:12px;color:var(--muted);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.nt-use{font-size:12px;color:var(--muted);margin:0}
+.nt-main{min-width:0}
+.nt-welcome{padding:6px 0 10px}
+.nt-welcome h2{font-size:22px;margin-bottom:4px}
+.nt-welcome .muted,.nt-limit{color:var(--muted);font-size:14px}
+.nt-cards{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:12px;margin:18px 0 12px}
+.nt-card{display:flex;flex-direction:column;gap:6px;text-align:left;padding:16px;border-radius:16px;border:1px solid var(--line);background:var(--paper-2);cursor:pointer;color:var(--ink);font:inherit;font-size:13px;transition:transform .15s,border-color .15s}
+.nt-card:hover{transform:translateY(-2px);border-color:var(--accent)}
+.nt-card b{font-family:var(--display);font-size:17px}
+.nt-card span:not(.nt-card-i){color:var(--muted)}
+.nt-card-i{font-size:28px}
+.nt-head{display:flex;flex-direction:column;gap:10px;margin-bottom:14px}
+.nt-back{display:none;align-self:flex-start}
+.nt-title{font-family:var(--display);font-size:24px;font-weight:700;padding:8px 12px}
+.nt-row{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+.nt-subj{flex:0 1 220px}
+.nt-state{font-size:12px;color:var(--muted);margin-left:auto}
+.nt-state[data-s="Not saved"]{color:var(--bad);font-weight:700}
+.nt-del{color:var(--bad)}
+.nt-chapter{align-self:flex-start;font-size:13px;color:var(--accent);text-decoration:none;background:var(--accent-soft);border-radius:999px;padding:4px 12px}
+.nt-body{display:block;width:100%;min-height:420px;resize:vertical;border:1px solid var(--line);border-radius:12px;padding:6px 18px 18px 58px;font:inherit;font-size:16px;line-height:32px;color:var(--ink);background-color:var(--paper);background-attachment:local;outline-offset:0}
+.nt-body,.nt-board-prev,.wb-sheet{--ln:color-mix(in srgb,var(--accent) 16%,var(--line))}
+.nt-body[data-paper="lined"]{background-image:linear-gradient(90deg,transparent 44px,var(--margin) 44px,var(--margin) 46px,transparent 46px),repeating-linear-gradient(transparent 0 31px,var(--ln) 31px 32px);background-position:0 0,0 6px}
+.nt-body[data-paper="grid"]{background-image:linear-gradient(var(--ln) 1px,transparent 1px),linear-gradient(90deg,var(--ln) 1px,transparent 1px);background-size:32px 32px;background-position:0 5px}
+.nt-body[data-paper="dots"]{background-image:radial-gradient(circle,var(--ln) 1.6px,transparent 1.8px);background-size:32px 32px;background-position:0 21px}
+.nt-body[data-paper="lined"]{padding-top:6px}
+.nt-body:not([data-paper="lined"]){padding-left:18px}
+.nt-board-prev{position:relative;border:1px solid var(--line);border-radius:12px;aspect-ratio:16/10;background:#fff;cursor:pointer;overflow:hidden;display:grid;place-items:center}
+.nt-board-prev img{position:absolute;inset:0;width:100%;height:100%}
+.nt-draw{margin-top:10px}
+.nt-files{margin-top:24px;border-top:1px dashed var(--line);padding-top:16px;border-radius:12px;transition:background .15s}
+.nt-files.over{background:var(--accent-soft)}
+.nt-files-h{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:8px}
+.nt-drop{font-size:13px;line-height:1.5;color:var(--muted);border:2px dashed var(--line);border-radius:12px;padding:12px 14px;margin-bottom:12px}
+.nt-files.over .nt-drop{border-color:var(--accent);color:var(--accent)}
+.nt-pics{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:12px}
+.nt-pics:empty{display:none}
+.nt-pic{margin:0;border:1px solid var(--line);border-radius:12px;overflow:hidden;background:var(--paper-2);display:flex;flex-direction:column}
+.nt-pic a{display:block;aspect-ratio:4/3;background:#fff}
+.nt-pic img{width:100%;height:100%;object-fit:cover;display:block}
+.nt-pic figcaption{padding:6px 8px;font-size:12px;display:flex;flex-direction:column;gap:2px}
+.nt-pic figcaption>span{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-weight:600}
+.nt-pic-tools{display:flex;justify-content:space-between;gap:6px}
+.nt-pic-tools .linkbtn,.nt-doc .linkbtn{font-size:12px}
+.nt-x{color:var(--bad)!important}
+.nt-docs{list-style:none;margin:12px 0 0;padding:0;display:flex;flex-direction:column;gap:6px}
+.nt-doc{display:flex;flex-wrap:wrap;align-items:center;gap:6px 12px;border:1px solid var(--line);border-radius:12px;padding:8px 12px;background:var(--paper-2)}
+.nt-doc-name{display:flex;align-items:center;gap:8px;flex:1;min-width:0;color:var(--ink);text-decoration:none;font-weight:600;font-size:14px}
+.nt-doc-name span:not(.nt-doc-i){overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.nt-doc-name small{color:var(--muted);font-weight:500;white-space:nowrap}
+.nt-doc-i{font-size:20px}
+.nt-doc-r{display:flex;gap:12px}
+.nt-doc audio,.nt-doc video{width:100%;max-height:320px}
+.nt-up progress{flex:1;accent-color:var(--accent)}
+.nt-lb{position:fixed;inset:0;z-index:1001;background:rgba(15,12,22,.86);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:12px;padding:16px}
+.nt-lb img{max-width:100%;max-height:calc(100vh - 110px);object-fit:contain;border-radius:8px;background:#fff}
+.nt-lb-bar{display:flex;gap:10px;align-items:center;flex-wrap:wrap;justify-content:center;color:#fff;font-weight:600}
+@media (max-width:760px){
+  .nt{grid-template-columns:1fr}
+  .nt-side{position:static}
+  .nt-list{max-height:none}
+  .nt-back{display:inline-flex}
+  .nt-title{font-size:20px}
+}
+
+/* the whiteboard */
+body.wb-open{overflow:hidden}
+body.wb-open .toast{z-index:1002}
+.wb{position:fixed;inset:0;z-index:1000;background:var(--bg);display:flex;flex-direction:column}
+.wb-bar{display:flex;flex-wrap:wrap;align-items:center;gap:8px 12px;padding:8px 12px;background:var(--paper);border-bottom:1px solid var(--line);box-shadow:var(--shadow)}
+.wb-title{font-family:var(--display);font-size:16px;max-width:200px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.wb-group{display:flex;gap:3px;align-items:center;flex-wrap:wrap}
+.wb-tool{min-width:36px;height:36px;border:1px solid transparent;background:transparent;border-radius:9px;cursor:pointer;font-size:17px;color:var(--ink);display:grid;place-items:center;font-weight:700;padding:0 6px}
+.wb-tool:hover{background:var(--paper-2);border-color:var(--line)}
+.wb-tool.on{background:var(--accent-soft);border-color:var(--accent);color:var(--accent)}
+.wb-tool:disabled{opacity:.35;cursor:default}
+.wb-col{width:24px;height:24px;border-radius:50%;border:2px solid var(--line);background:var(--c);cursor:pointer;padding:0}
+.wb-col.on{outline:2px solid var(--accent);outline-offset:2px}
+.wb-pickc{width:30px;height:30px;padding:0;border:0;background:none;cursor:pointer}
+.wb-size{display:flex;align-items:center;gap:8px}
+.wb-size i{width:var(--s);height:var(--s);border-radius:50%;background:var(--ink);flex:0 0 auto}
+.wb-size input{width:90px;accent-color:var(--accent)}
+.wb-state{font-size:12px;color:var(--muted);margin-left:auto}
+.wb-stage{flex:1;overflow:auto;display:flex;align-items:center;justify-content:center;padding:14px}
+.wb-sheet{position:relative;width:min(100%,calc((100vh - 120px) * 1.6));aspect-ratio:16/10;background-color:#fff;border-radius:10px;box-shadow:var(--shadow);overflow:hidden;--ln:#dfe3ec}
+.wb-sheet canvas{position:absolute;inset:0;width:100%;height:100%;touch-action:none}
+.wb-sheet[data-tool="text"] .wb-live{cursor:text}
+.wb-sheet:not([data-tool="text"]) .wb-live{cursor:crosshair}
+.wb-sheet[data-paper="grid"],.nt-board-prev[data-paper="grid"]{background-image:linear-gradient(#dfe3ec 1px,transparent 1px),linear-gradient(90deg,#dfe3ec 1px,transparent 1px);background-size:2.5% 4%}
+.wb-sheet[data-paper="dots"],.nt-board-prev[data-paper="dots"]{background-image:radial-gradient(circle,#c9cfdc 1.4px,transparent 1.6px);background-size:2.5% 4%}
+.wb-sheet[data-paper="lined"],.nt-board-prev[data-paper="lined"]{background-image:repeating-linear-gradient(transparent 0 calc(4% - 1px),#dfe3ec calc(4% - 1px) 4%)}
+.wb-sheet[data-paper="black"],.nt-board-prev[data-paper="black"]{background:#1f2a24}
+.wb-text{position:absolute;min-width:120px;background:rgba(255,255,255,.85);border:1px dashed var(--accent);border-radius:4px;padding:0 2px;font-family:"Plus Jakarta Sans",system-ui,sans-serif;font-weight:600;line-height:1.25;resize:none;overflow:hidden;outline:none;z-index:3}
+.wb-place{position:absolute;outline:2px dashed var(--accent);cursor:move;z-index:3;touch-action:none}
+.wb-place img{width:100%;height:100%;display:block;pointer-events:none}
+.wb-handle{position:absolute;right:-9px;bottom:-9px;width:18px;height:18px;border-radius:50%;background:var(--accent);border:2px solid #fff;cursor:nwse-resize}
+.wb-place-bar{position:absolute;left:0;top:calc(100% + 8px);display:flex;gap:6px;white-space:nowrap}
+@media (max-width:760px){.wb-title{display:none}.wb-size input{width:70px}.wb-stage{padding:8px;align-items:flex-start}.wb-sheet{width:100%}.wb-bar{gap:4px 8px;padding:6px 8px}.wb-tool{min-width:32px;height:32px}}
+
+/* study material on a chapter (Study tab) */
+.mat{margin:6px 0 8px 28px;line-height:1.4;padding:8px 10px;border-radius:10px;background:color-mix(in srgb,var(--t-notes) 45%,transparent);display:flex;flex-direction:column;gap:8px}
+.mat-list{display:flex;flex-wrap:wrap;gap:6px}
+.mat-chip{display:inline-flex;align-items:center;gap:4px;max-width:100%;padding:3px 9px;border-radius:999px;background:var(--paper);border:1px solid var(--line);color:var(--ink);text-decoration:none;font-size:12px;font-weight:600}
+.mat-chip span{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:180px}
+.mat-chip:hover{border-color:var(--accent)}
+.mat-empty{font-size:12px;color:var(--muted);line-height:1.4}
+.mat-add{display:flex;flex-wrap:wrap;gap:6px}
+.mat-add .btn.sm{padding:5px 9px;font-size:12px;border-radius:8px;text-decoration:none;color:var(--ink)}
