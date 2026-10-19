@@ -192,3 +192,15 @@ The extra tables and columns are added automatically the first time the site run
 - Limiting login attempts per IP address.
 - Editing a subject's name or exam date after creating it.
 - Exporting expenses to CSV.
+
+## Run with Docker
+
+```bash
+docker compose up --build                                  # SQLite, one container
+DB_DRIVER=mysql docker compose --profile mysql up --build  # MySQL (web + db)
+```
+
+Then open http://localhost:8080. Settings come from environment variables
+(`DB_DRIVER`, `DB_HOST`, `DB_PORT`, `DB_NAME`, `DB_USER`, `DB_PASS`, `ADMIN_EMAILS`),
+set in `docker-compose.yml`. Without them, `config.php` uses the XAMPP defaults.
+Shell inside the container: `docker compose exec web bash`.
