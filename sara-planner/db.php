@@ -48,6 +48,40 @@ if (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off') {
 }
 session_start();
 
+/**
+ * SQLite only: a transaction that reads first and writes later fails at once with "database is locked" when someone else saved in
+ * between. Taking the write lock when the transaction starts makes people wait their turn instead.
+ */
+class SqliteWritePDO extends PDO
+{
+    private bool $inTx = false;
+
+    public function beginTransaction(): bool
+    {
+        $this->exec('BEGIN IMMEDIATE');
+        return $this->inTx = true;
+    }
+
+    public function commit(): bool
+    {
+        $this->exec('COMMIT');
+        $this->inTx = false;
+        return true;
+    }
+
+    public function rollBack(): bool
+    {
+        $this->exec('ROLLBACK');
+        $this->inTx = false;
+        return true;
+    }
+
+    public function inTransaction(): bool
+    {
+        return $this->inTx;
+    }
+}
+
 /** The one shared database connection. */
 function db(): PDO
 {
@@ -62,8 +96,10 @@ function db(): PDO
 
     if (DB_DRIVER === 'sqlite') {
         $isNew = !file_exists(SQLITE_PATH);
-        $pdo = new PDO('sqlite:' . SQLITE_PATH, null, null, $opts);
+        $pdo = new SqliteWritePDO('sqlite:' . SQLITE_PATH, null, null, $opts);
         $pdo->exec('PRAGMA foreign_keys = ON');
+        // Several people saving at once: wait for each other instead of failing with "database is locked"
+        $pdo->exec('PRAGMA busy_timeout = 10000');
         if ($isNew) {
             $pdo->exec(file_get_contents(__DIR__ . '/sql/schema-sqlite.sql'));
         }

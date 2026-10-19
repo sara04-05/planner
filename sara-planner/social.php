@@ -186,8 +186,9 @@ function name_html(array $p): string
  * One user's hour-by-hour plan for a day, the same way their planner shows it: that day's own entries,
  * else the weekly ones. Hours that run on (17:15–19:45) are joined into one entry.
  * Returns [['from' => minutes, 'to' => minutes, 'text' => ..., 'type' => ...], ...]
+ * $typed: also count an hour that has a type picked (Work, Uni…) but no text, because the planner shows it as taken. Used for free time.
  */
-function day_schedule(int $uid, string $date): array
+function day_schedule(int $uid, string $date, bool $typed = false): array
 {
     $wd = ((int)date('N', strtotime($date))) - 1;
     $day = $week = [];
@@ -197,7 +198,7 @@ function day_schedule(int $uid, string $date): array
     $prev = null;
     for ($h = 0; $h < 24; $h++) {
         $e = $day[$h] ?? $week[$h] ?? null;
-        if (!$e || trim((string)$e['text']) === '') { $prev = null; continue; }
+        if (!$e || (trim((string)$e['text']) === '' && !($typed && in_array($e['type'], ['uni', 'work', 'study', 'health', 'sleep'], true)))) { $prev = null; continue; }
         $from = $h * 60 + (int)$e['start_min'];
         $to   = $h * 60 + (int)$e['end_min'];
         $last = count($out) - 1;
@@ -224,7 +225,7 @@ const FREE_TO   = 23 * 60;
 function free_slots(int $uid, string $date, int $after = 0): array
 {
     $free = [[max(FREE_FROM, $after), FREE_TO]];
-    foreach (day_schedule($uid, $date) as $e) {
+    foreach (day_schedule($uid, $date, true) as $e) {
         $next = [];
         foreach ($free as [$a, $b]) {
             if ($e['to'] <= $a || $e['from'] >= $b) { $next[] = [$a, $b]; continue; }
