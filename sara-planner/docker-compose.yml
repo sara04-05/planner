@@ -1,0 +1,30 @@
+# Run with:  docker compose up --build   then open http://localhost:8080
+# Default is SQLite (one container). For MySQL, set DB_DRIVER=mysql
+# and start the db service:  DB_DRIVER=mysql docker compose --profile mysql up --build
+services:
+  web:
+    build: .
+    ports: ["8080:80"]
+    environment:
+      DB_DRIVER: ${DB_DRIVER:-sqlite}
+      DB_HOST: db
+      DB_NAME: sara_planner
+      DB_USER: root
+      DB_PASS: secret
+      ADMIN_EMAILS: ${ADMIN_EMAILS:-}
+    volumes:
+      - appdata:/var/www/html/data
+
+  db:
+    image: mysql:8
+    profiles: ["mysql"]
+    environment:
+      MYSQL_ROOT_PASSWORD: secret
+      MYSQL_DATABASE: sara_planner
+    volumes:
+      - dbdata:/var/lib/mysql
+      - ./sql/schema.sql:/docker-entrypoint-initdb.d/schema.sql:ro
+
+volumes:
+  appdata:
+  dbdata:

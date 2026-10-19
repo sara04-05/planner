@@ -6,21 +6,22 @@
 
 // "mysql" for XAMPP / real hosting, or "sqlite" to run without MySQL
 // (SQLite creates data/planner.sqlite automatically).
-const DB_DRIVER = 'mysql';
+// Each setting can also come from an environment variable (used by Docker); the defaults work with XAMPP.
+define('DB_DRIVER', getenv('DB_DRIVER') ?: 'mysql');
 
 // MySQL / MariaDB
-const DB_HOST = '127.0.0.1';
-const DB_PORT = 3306;
-const DB_NAME = 'sara_planner';
-const DB_USER = 'root';
-const DB_PASS = '';          // XAMPP's root user has no password by default
+define('DB_HOST', getenv('DB_HOST') ?: '127.0.0.1');
+define('DB_PORT', (int)(getenv('DB_PORT') ?: 3306));
+define('DB_NAME', getenv('DB_NAME') ?: 'sara_planner');
+define('DB_USER', getenv('DB_USER') ?: 'root');
+define('DB_PASS', getenv('DB_PASS') !== false ? getenv('DB_PASS') : '');   // XAMPP's root user has no password by default
 
 // SQLite
 const SQLITE_PATH = __DIR__ . '/data/planner.sqlite';
 
 // Emails of the accounts that may open admin.php (the list of all users).
 // Put the email you log in to the website with, e.g. ['you@example.com'].
-const ADMIN_EMAILS = [];
+define('ADMIN_EMAILS', array_filter(array_map('trim', explode(',', getenv('ADMIN_EMAILS') ?: ''))));
 
 // ---- Google Calendar (optional) ----
 // Lets people send their "Hour by hour" plan to their Google Calendar.

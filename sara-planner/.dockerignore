@@ -1,0 +1,5 @@
+.git
+data/*.sqlite
+data/schema-*.ok
+Dockerfile
+docker-compose.yml
