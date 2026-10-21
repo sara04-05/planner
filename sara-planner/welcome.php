@@ -17,7 +17,7 @@ if (current_user_id()) {
   <title>Splanner · Study, tasks & money in one notebook</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Pacifico&family=Bricolage+Grotesque:opsz,wght@12..96,500;12..96,600;12..96,700&family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="assets/style.css?v=<?= filemtime(__DIR__ . '/assets/style.css') ?>">
   <link rel="stylesheet" href="assets/looks.css?v=<?= filemtime(__DIR__ . '/assets/looks.css') ?>">
   <link rel="stylesheet" href="assets/covers.css?v=<?= filemtime(__DIR__ . '/assets/covers.css') ?>">
@@ -50,7 +50,7 @@ if (current_user_id()) {
     .demo .tab{font-size:13px;padding:12px 8px 12px 10px;width:38px}
     .demo .tab[aria-selected="true"]{width:46px}
     .demo.binder{grid-template-columns:minmax(0,1fr) 46px}
-    .demo h2.dh{display:inline;font-size:26px;font-weight:700;background:linear-gradient(transparent 58%,var(--hl) 58%,var(--hl) 90%,transparent 90%);padding:0 4px;margin-left:-4px}
+    .demo h2.dh{display:inline;font-size:26px;font-weight:700;padding:0;margin-left:0}
     .demo .vh{margin-bottom:18px}
     .demo .panel{padding:14px}
 
@@ -149,7 +149,7 @@ if (current_user_id()) {
 <div class="land">
 
   <header class="lnav">
-    <a class="logo" href="welcome.php">Splanner</a>
+    <a class="logo" href="welcome.php"><i class="logo-mark" aria-hidden="true">S</i>Splanner</a>
     <nav aria-label="Main">
       <a href="tour.php">Look inside</a>
       <a href="#features">Features</a>
@@ -310,7 +310,7 @@ if (current_user_id()) {
   </div>
 
   <footer class="lfoot">
-    <span class="logo sm">Splanner<span style="font-family:var(--body);font-size:13px;font-weight:500;letter-spacing:0;color:var(--muted);margin-left:6px">© 2026</span></span>
+    <span class="logo sm"><i class="logo-mark" aria-hidden="true">S</i>Splanner<span style="font-family:var(--body);font-size:13px;font-weight:500;letter-spacing:0;color:var(--muted);margin-left:6px">© 2026</span></span>
     <span><a href="explore.php">Explore</a> · <a href="#safety">Privacy</a></span>
   </footer>
 </div>

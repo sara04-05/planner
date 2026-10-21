@@ -12,7 +12,7 @@ img{max-width:100%}
   --rule:#DCDCDC; --margin:#BDBDBD; --edge:#E8E8E8; --edge2:#D2D2D2; --hl:rgba(20,20,20,.10); --tape:rgba(20,20,20,.08); --tape2:rgba(20,20,20,.06);
   --wire:#8A8A8A; --wire-hi:#E6E6E6; --wire-lo:#555555;
   --shadow:0 1px 2px rgba(0,0,0,.06),0 10px 30px rgba(0,0,0,.08);
-  --display:"Bricolage Grotesque",ui-sans-serif,system-ui,sans-serif;
+  --display:"Plus Jakarta Sans",ui-sans-serif,system-ui,sans-serif;
   --body:"Plus Jakarta Sans",ui-sans-serif,system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;
 }
 @media (prefers-color-scheme: dark){
@@ -2024,3 +2024,27 @@ body{min-height:100vh;background:
 .lk-n{padding:0 2px 2px}
 @media (max-width:640px){.lk-pop{position:fixed;left:16px;right:16px;top:72px;width:auto}}
 .lk-inline{margin-bottom:10px;padding:2px}
+
+/* ---- a calmer, more professional finish ---- */
+h1,h2,h3,.brand b{letter-spacing:-.022em;font-weight:700}
+h1{background:none;padding:0;margin-left:0;font-weight:800;letter-spacing:-.03em}
+.eyebrow{letter-spacing:.1em;font-size:11.5px}
+/* wordmark instead of handwriting */
+.logo{display:inline-flex;align-items:center;gap:9px;font-family:var(--display);font-weight:800;font-size:19px;letter-spacing:-.03em;line-height:1;color:var(--ink)}
+.brand .logo,.logo.sm{font-size:19px;font-weight:800;color:var(--ink)}
+.logo-mark{display:grid;place-items:center;width:28px;height:28px;border-radius:8px;font-style:normal;font-weight:800;font-size:16px;letter-spacing:0;color:var(--on-accent);
+  background:linear-gradient(180deg,color-mix(in srgb,var(--look-accent,var(--accent)) 80%,#fff),var(--look-accent,var(--accent)));box-shadow:inset 0 1px 0 rgba(255,255,255,.25),0 1px 2px rgba(0,0,0,.25)}
+/* squarer corners */
+.top{border-radius:14px}
+.top-r .btn{border-radius:10px}
+.date-pill{border-radius:10px}
+.hello{border-radius:10px}
+.page{border-radius:4px 14px 14px 4px}
+.btn,.tab{border-radius:10px}
+.tab{border-radius:0 10px 10px 0}
+.panel,.tile{border-radius:12px}
+.subj{border-radius:12px}
+/* paper: quieter lines, one thin margin rule, no tape or tilt */
+.sticky::before,.soon::before{display:none}
+.sticky{transform:none;border:1px solid var(--line);border-left:3px solid var(--accent);box-shadow:var(--depth-s)}
+.coil span::after{opacity:.75}

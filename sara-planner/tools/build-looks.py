@@ -73,7 +73,7 @@ LOOKS = [
 PROP = {'bg': '--bg', 'paper': '--paper', 'paper2': '--paper-2', 'ink': '--ink', 'muted': '--muted', 'line': '--line', 'accent': '--accent',
         'soft': '--accent-soft', 'on': '--on-accent', 't1': '--tab1', 't2': '--tab2', 't3': '--tab3'}
 DERIVED = ('--t-day:var(--tab1);--t-week:var(--tab2);--t-month:var(--tab3);--t-year:var(--tab2);--t-study:var(--tab1);--t-tasks:var(--tab3);--t-money:var(--tab2);--t-notes:var(--tab1);'
-           '--rule:color-mix(in srgb,var(--line) 62%,var(--paper));--margin:color-mix(in srgb,var(--line) 70%,var(--ink));'
+           '--rule:color-mix(in srgb,var(--line) 48%,var(--paper));--margin:color-mix(in srgb,var(--line) 70%,var(--ink));'
            '--edge:color-mix(in srgb,var(--paper) 55%,var(--bg));--edge2:color-mix(in srgb,var(--line) 70%,var(--bg));'
            '--hl:color-mix(in srgb,var(--accent) 16%,transparent);--tape:color-mix(in srgb,var(--accent) 14%,transparent);--tape2:color-mix(in srgb,var(--accent) 10%,transparent);')
 
