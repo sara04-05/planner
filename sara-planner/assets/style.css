@@ -1422,13 +1422,11 @@ a.nbtile{text-decoration:none}.nbtiles{margin-bottom:14px}.nbtile.on span{color:
 .subjects{display:block;column-width:290px;column-gap:16px}
 .subjects>.subj{break-inside:avoid;-webkit-column-break-inside:avoid;margin:0 0 16px;display:block}
 
-/* top bar: icons only (the date stays as text); the logo keeps the brand violet whatever accent colour the notebook uses */
+/* top bar: icons only (the date stays as text); the logo and the bar follow the chosen look */
 .top-r .btn .lbl{display:none}
 .top-r .btn{gap:0;padding:8px 11px}
 .top-r .btn[data-lang-btn] svg,.top-r a.btn[href="admin.php"] svg{width:18px;height:18px}
-.brand .logo,.logo{color:#6A4DC4}
-@media (prefers-color-scheme:dark){:root:not([data-theme="light"]) .brand .logo,:root:not([data-theme="light"]) .logo{color:#A98FF6}}
-:root[data-theme="dark"] .brand .logo,:root[data-theme="dark"] .logo{color:#A98FF6}
+.brand .logo,.logo{color:var(--accent)}
 
 /* tables (admin lists, year table): one row = one ruled line, and no separator lines of their own */
 .page .tbl{border-collapse:collapse}
@@ -1475,10 +1473,8 @@ body:not(.tour) .page p.hint2,body:not(.tour) .page .xcard>p.sub,body:not(.tour)
 .nbcover-in .avatar.letter{font-size:38px}
 .nbcover-in{display:flex;flex-direction:column;align-items:center}
 
-/* the top bar always uses the Splanner brand colours, whatever accent colour (even white) a notebook design picks */
-.top{--accent:#6A4DC4;--on-accent:#FFFFFF;--accent-soft:#ECE6FB}
-@media (prefers-color-scheme:dark){:root:not([data-theme="light"]) .top{--accent:#A98FF6;--on-accent:#17121F;--accent-soft:#302849}}
-:root[data-theme="dark"] .top{--accent:#A98FF6;--on-accent:#17121F;--accent-soft:#302849}
+/* the top bar follows the chosen look, whatever accent colour (even white) a notebook design picks */
+.top{--accent:var(--look-accent);--on-accent:var(--look-on);--accent-soft:var(--look-soft)}
 
 /* page tabs sit inside the notebook, on the edge of the page, not out on the table */
 @media (min-width:901px){
@@ -1649,7 +1645,7 @@ a.nbcover-link:focus-visible{outline:3px solid var(--accent);outline-offset:6px;
 .nbe.panel-open .nbe-side{position:static}
 
 /* corners, width and height from the sliders work on top of any ready-made shape; text size from the slider */
-[data-label="box"] .nbcover-in,[data-label="stamp"] .nbcover-in,[data-label="ticket"] .nbcover-in,[data-label="band"] .nbcover-in,:not([data-label]) .nbcover-in{border-radius:var(--lb-r,4px)}
+[data-label="box"] .nbcover-in,[data-label="stamp"] .nbcover-in,[data-label="ticket"] .nbcover-in,[data-label="band"] .nbcover-in,:where(:not([data-label])) .nbcover-in{border-radius:var(--lb-r,4px)}   /* :where keeps this weaker than the round, oval, arch and pill shapes above */
 [data-lbw] .nbcover-in{width:var(--lb-w,69%);left:calc(14% + (86% - var(--lb-w,69%)) / 2);right:auto}
 .nbcover-in{min-height:var(--lb-h,0%)}
 [data-label="custom"] .nbcover-in{border-radius:var(--lb-r,6%)}
@@ -2000,16 +1996,5 @@ body.wb-open .toast{z-index:1002}
 .lk-sw i.a{flex:.55;border:0}
 .lk-n{padding:0 2px 2px}
 @media (max-width:640px){.lk-pop{position:fixed;left:16px;right:16px;top:72px;width:auto}}
-.lk-inline{margin-bottom:10px;padding:2px}
-
-/* the top navigation keeps its original design (purple wordmark and button, violet-tinted dark bar) whatever look is chosen */
-.top,.lnav{--paper:#FFFFFF;--paper-2:#F6F3FA;--ink:#2A2338;--muted:#6F6781;--line:#E4DDEC;--accent:#6A4DC4;--accent-soft:#ECE6FB;--on-accent:#FFFFFF;--shadow:0 1px 2px rgba(42,35,56,.06),0 10px 30px rgba(42,35,56,.09);color:var(--ink)}
-@media (prefers-color-scheme:dark){:root:not([data-theme="light"]) .top,:root:not([data-theme="light"]) .lnav{--paper:#1E1A27;--paper-2:#27222F;--ink:#EDE9F5;--muted:#A49CB5;--line:#352E42;--accent:#A98FF6;--accent-soft:#302849;--on-accent:#17121F;--shadow:0 1px 2px rgba(0,0,0,.35),0 12px 32px rgba(0,0,0,.4)}}
-:root[data-theme="dark"] .top,:root[data-theme="dark"] .lnav{--paper:#1E1A27;--paper-2:#27222F;--ink:#EDE9F5;--muted:#A49CB5;--line:#352E42;--accent:#A98FF6;--accent-soft:#302849;--on-accent:#17121F;--shadow:0 1px 2px rgba(0,0,0,.35),0 12px 32px rgba(0,0,0,.4)}
-.top .logo,.lnav .logo{color:var(--accent)}
-/* the look picker opens inside the bar but shows the site look */
-.lk-pop{--paper:var(--look-paper);--paper-2:var(--look-paper2);--ink:var(--look-ink);--muted:var(--look-muted);--line:var(--look-line);--accent:var(--look-accent);--accent-soft:var(--look-soft);--on-accent:var(--look-on)}
-
-
 .lk-inline{margin-bottom:10px;padding:2px}
 .pub-note a,.tour-note a{color:var(--ink);font-weight:600;text-decoration:underline;text-underline-offset:2px}

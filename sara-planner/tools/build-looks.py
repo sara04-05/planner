@@ -78,6 +78,7 @@ PROP = {'bg': '--bg', 'paper': '--paper', 'paper2': '--paper-2', 'ink': '--ink',
 DERIVED = ('--t-day:var(--tab1);--t-week:var(--tab2);--t-month:var(--tab3);--t-year:var(--tab2);--t-study:var(--tab1);--t-tasks:var(--tab3);--t-money:var(--tab2);--t-notes:var(--tab1);'
            '--rule:color-mix(in srgb,var(--line) 48%,var(--paper));--margin:color-mix(in srgb,var(--line) 70%,var(--ink));'
            '--edge:color-mix(in srgb,var(--paper) 55%,var(--bg));--edge2:color-mix(in srgb,var(--line) 70%,var(--bg));'
+           '--wire:color-mix(in srgb,var(--muted) 75%,var(--paper));--wire-hi:color-mix(in srgb,var(--paper) 60%,#fff);--wire-lo:color-mix(in srgb,var(--ink) 55%,var(--paper));'
            '--hl:color-mix(in srgb,var(--accent) 16%,transparent);--tape:color-mix(in srgb,var(--accent) 14%,transparent);--tape2:color-mix(in srgb,var(--accent) 10%,transparent);')
 
 # the main look keeps colour in its side tabs: day week month year study tasks money notes
@@ -104,8 +105,8 @@ def tab_colours(slug, dark):
 
 def block(vals, dark, slug=''):
     out = ''.join(f'{PROP[k]}:{v};' for k, v in zip(K, vals)) + DERIVED
-    # the top bar keeps the site's look even when a notebook has its own colour (see .top in style.css)
-    out += ''.join(f'--look-{k}:{v};' for k, v in zip(K, vals) if k in ('paper', 'paper2', 'ink', 'muted', 'line', 'accent', 'soft', 'on'))
+    # the top bar uses the look's colours even when a notebook has its own accent (see .top in style.css)
+    out += ''.join(f'--look-{k}:{v};' for k, v in zip(K, vals) if k in ('accent', 'soft', 'on'))
     extra = EXTRA.get(slug, ('', ''))[1 if dark else 0]
     return out + tab_colours(slug, dark) + extra + ('color-scheme:dark;' if dark else '')
 
