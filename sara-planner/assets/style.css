@@ -1995,11 +1995,6 @@ body{min-height:100vh;background:
   background:linear-gradient(90deg,rgba(0,0,0,.07),transparent 80px),linear-gradient(180deg,color-mix(in srgb,#fff 38%,transparent),transparent 130px),linear-gradient(0deg,rgba(0,0,0,.035),transparent 90px)}
 :root[data-theme="dark"] .page::after{background:linear-gradient(90deg,rgba(0,0,0,.25),transparent 80px),linear-gradient(180deg,rgba(255,255,255,.04),transparent 130px)}
 @media (prefers-color-scheme:dark){:root:not([data-theme="light"]) .page::after{background:linear-gradient(90deg,rgba(0,0,0,.25),transparent 80px),linear-gradient(180deg,rgba(255,255,255,.04),transparent 130px)}}
-.btn{background:linear-gradient(180deg,color-mix(in srgb,var(--paper-2) 70%,var(--paper)),var(--paper-2));box-shadow:inset 0 1px 0 var(--hi),var(--depth-s)}
-.btn.ghost{background:transparent;box-shadow:none}
-.btn.primary{background:linear-gradient(180deg,color-mix(in srgb,var(--accent) 82%,#fff),var(--accent));
-  box-shadow:inset 0 1px 0 rgba(255,255,255,.28),0 1px 2px rgba(0,0,0,.2),0 6px 14px color-mix(in srgb,var(--accent) 26%,transparent)}
-.btn:active{transform:translateY(1px)}
 .tab{background-image:linear-gradient(90deg,rgba(0,0,0,.12),transparent 38%,rgba(255,255,255,.2))}
 .panel,.tile,.subj{box-shadow:inset 0 1px 0 var(--hi),var(--depth-s)}
 .panel{background:linear-gradient(180deg,color-mix(in srgb,var(--paper-2) 94%,#fff),color-mix(in srgb,var(--paper-2) 90%,var(--bg)))}
@@ -2030,7 +2025,6 @@ h1{font-weight:700;letter-spacing:-.025em;background:linear-gradient(transparent
 .logo.sm{font-size:20px}
 /* squarer corners (the top bar keeps its original rounded pills) */
 .page{border-radius:6px 16px 16px 6px}
-.btn,.tab{border-radius:10px}
 .tab{border-radius:0 10px 10px 0}
 .panel,.tile{border-radius:12px}
 .subj{border-radius:12px}
@@ -2060,5 +2054,7 @@ h1{font-weight:700;letter-spacing:-.025em;background:linear-gradient(transparent
 .top,.lnav{--shadow:0 1px 2px rgba(42,35,56,.04),0 4px 14px rgba(42,35,56,.05)}
 @media (prefers-color-scheme:dark){:root:not([data-theme="light"]) .top,:root:not([data-theme="light"]) .lnav{--shadow:0 1px 2px rgba(0,0,0,.2),0 4px 14px rgba(0,0,0,.22)}}
 :root[data-theme="dark"] .top,:root[data-theme="dark"] .lnav{--shadow:0 1px 2px rgba(0,0,0,.2),0 4px 14px rgba(0,0,0,.22)}
-.btn.primary{box-shadow:inset 0 1px 0 rgba(255,255,255,.22),0 1px 2px rgba(0,0,0,.12)}
 .page::after{background:linear-gradient(90deg,rgba(0,0,0,.035),transparent 70px),linear-gradient(180deg,color-mix(in srgb,#fff 30%,transparent),transparent 110px)}
+
+/* buttons are flat, as they were */
+.btn{border-radius:10px}
