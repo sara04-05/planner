@@ -69,7 +69,7 @@ let notes=[],unread=Number(badge&&badge.textContent)||0;
 function call(a){return fetch('api.php?action='+a,{method:'POST',credentials:'same-origin',headers:{'Content-Type':'application/json','X-CSRF-Token':CSRF},body:'{}'}).then(r=>r.json().then(b=>{if(!r.ok)throw new Error(b.error||'Something went wrong.');return b}))}
 function paintBadge(){if(badge){badge.textContent=unread;badge.hidden=!unread}}
 function paint(){
-  const rows=notes.map(n=>`<div class="note-row${n.read?'':' new'}"><span class="ic">${{like:'♥',friend:'👤',accepted:'🤝',msg:'💬'}[n.kind]||'🔔'}</span><div class="tx" translate="no">${esc(window.SPL_T?window.SPL_T(n.text):n.text)}<small>${esc(String(n.at).slice(0,16))}</small></div>${n.link?`<a class="btn sm" href="${esc(n.link)}">View</a>`:''}</div>`).join('');
+  const rows=notes.map(n=>`<div class="note-row${n.read?'':' new'}"><span class="ic">${ico({like:'heart',friend:'user',accepted:'users',msg:'chat'}[n.kind]||'bell')}</span><div class="tx" translate="no">${esc(window.SPL_T?window.SPL_T(n.text):n.text)}<small>${esc(String(n.at).slice(0,16))}</small></div>${n.link?`<a class="btn sm" href="${esc(n.link)}">View</a>`:''}</div>`).join('');
   pop.innerHTML=`<div class="bellpop-h"><b>Notifications</b>${notes.length?'<button class="linkbtn" data-clear>Clear all</button>':''}</div><div class="bellpop-b">${rows||'<p class="empty">Nothing new. Friend requests, messages and likes show up here.</p>'}</div>`;
 }
 function close(){pop.hidden=true;btn.setAttribute('aria-expanded','false')}
@@ -93,7 +93,7 @@ function showToast(fresh){
   hideToast();
   const n=fresh[0],t=window.SPL_T?window.SPL_T(n.text):n.text,more=fresh.length-1;
   toastEl=document.createElement('div');toastEl.className='notetoast';toastEl.setAttribute('role','status');
-  toastEl.innerHTML=`<button type="button" class="nt-go" translate="no"><span class="ic">${{like:'♥',friend:'👤',accepted:'🤝',msg:'💬'}[n.kind]||'🔔'}</span><span class="tx">${esc(t)}${more>0?` <small>+${more} more</small>`:''}</span></button><button type="button" class="nt-x" aria-label="Dismiss">✕</button>`;
+  toastEl.innerHTML=`<button type="button" class="nt-go" translate="no"><span class="ic">${ico({like:'heart',friend:'user',accepted:'users',msg:'chat'}[n.kind]||'bell')}</span><span class="tx">${esc(t)}${more>0?` <small>+${more} more</small>`:''}</span></button><button type="button" class="nt-x" aria-label="Dismiss">✕</button>`;
   document.body.appendChild(toastEl);
   toastEl.addEventListener('click',e=>{
     e.stopPropagation();

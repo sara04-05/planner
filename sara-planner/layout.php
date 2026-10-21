@@ -28,6 +28,7 @@ function auth_top(string $title, string $cardClass = '', bool $covers = false): 
   <?php endif; ?>
   <script>try{var t=localStorage.getItem('sara-theme');if(t)document.documentElement.setAttribute('data-theme',t)}catch(e){}</script>
 <script src="assets/lang.js?v=<?= filemtime(__DIR__ . '/assets/lang.js') ?>"></script>
+<script src="assets/icons.js?v=<?= filemtime(__DIR__ . '/assets/icons.js') ?>"></script>
 </head>
 <body>
 <main class="auth">
@@ -132,7 +133,7 @@ function person_card(array $r, array $nbs): string
 // ---------- the notebook shell: every page of the site is a page of the same notebook ----------
 
 /** The side tabs of the planner. $planner = true on index.php (buttons that switch tab), false elsewhere (links into the planner). */
-function planner_tabs_html(string $active = '', bool $planner = false): string
+function planner_tabs_html(string $active = '', bool $planner = false, bool $tour = false): string
 {
     $tabs = [['day', 'Day'], ['week', 'Week'], ['month', 'Month'], ['year', 'Year'], null, ['study', 'Study'], ['notes', 'Notes'], ['tasks', 'Tasks'], ['money', 'Expenses']];
     $o = '';
@@ -143,7 +144,7 @@ function planner_tabs_html(string $active = '', bool $planner = false): string
             ? '<a class="tab" role="tab" href="notes.php" data-tab="notes"' . ($active === 'notes' ? ' aria-selected="true"' : '') . '>' . $label . '</a>'
             : ($planner
             ? '<button class="tab" role="tab" data-act="tab" data-tab="' . $k . '">' . $label . '</button>'
-            : '<a class="tab" role="tab" href="index.php?tab=' . $k . '" data-tab="' . $k . '"' . ($active === $k ? ' aria-selected="true"' : '') . '>' . $label . '</a>');
+            : '<a class="tab" role="tab" href="' . ($tour ? 'tour.php' : 'index.php') . '?tab=' . $k . '" data-tab="' . $k . '"' . ($active === $k ? ' aria-selected="true"' : '') . '>' . $label . '</a>');
     }
     return $o;
 }
@@ -203,7 +204,8 @@ function app_top(string $title, array $o = []): void
     $uid = current_user_id();
     if ($uid && !is_verified($uid)) $uid = null;
     $d = $o['design'] ?? [];
-    $APP_SHELL = ['tabs' => $o['tabs'] ?? ($uid && empty($o['notabs']) ? planner_tabs_html($o['tab'] ?? '', false) : ''), 'inside' => ''];
+    $tour = !empty($o['tour']) && !$uid;   // a visitor looking around: sample data, view only
+    $APP_SHELL = ['tabs' => $o['tabs'] ?? (($uid || $tour) && empty($o['notabs']) ? planner_tabs_html($o['tab'] ?? '', false, $tour) : ''), 'inside' => ''];
     ?>
 <!DOCTYPE html>
 <html lang="en">
@@ -221,10 +223,13 @@ function app_top(string $title, array $o = []): void
   <link rel="icon" href="assets/logo.svg" type="image/svg+xml">
   <script>try{var t=localStorage.getItem('sara-theme');if(t)document.documentElement.setAttribute('data-theme',t)}catch(e){}</script>
 <script src="assets/lang.js?v=<?= filemtime(__DIR__ . '/assets/lang.js') ?>"></script>
+<script src="assets/icons.js?v=<?= filemtime(__DIR__ . '/assets/icons.js') ?>"></script>
 </head>
-<body>
+<body<?= $tour ? ' class="tour"' : '' ?>>
 <div class="app"<?= design_attrs($d, 'accent') . design_style($d) ?>>
 <?php app_nav($uid, $o['active'] ?? ''); ?>
+<?php if ($tour): ?>  <div class="pub-note tour-note" role="status"><b>You are looking around.</b> This is the real planner with sample data, view only. Nothing can be added or saved. <a href="register.php">Create a free account</a> or <a href="login.php">log in</a> to use it.</div>
+<?php endif; ?>
   <div class="binder<?= $APP_SHELL['tabs'] === '' ? ' notabs' : '' ?>"<?= ($d['binding'] ?? 'coil') !== 'coil' ? ' data-binding="' . h($d['binding']) . '"' : '' ?>>
     <div class="coil" aria-hidden="true"><?= str_repeat('<span></span>', 90) ?></div>
     <main class="page"<?= design_attrs($d, 'page') ?>>

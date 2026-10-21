@@ -203,9 +203,9 @@ ob_start(); ?>
       <div class="sp-meta"><strong id="spTitle" translate="no">Nothing playing yet</strong><span id="spArtist" translate="no"></span></div>
     </div>
     <div class="sp-ctrl">
-      <button class="btn" data-sp="prev" aria-label="Previous song">⏮</button>
-      <button class="btn primary" data-sp="toggle" id="spToggle" aria-label="Play or pause">▶</button>
-      <button class="btn" data-sp="next" aria-label="Next song">⏭</button>
+      <button class="btn" data-sp="prev" aria-label="Previous song"><?= ico('prev') ?></button>
+      <button class="btn primary" data-sp="toggle" id="spToggle" aria-label="Play or pause"><?= ico('play') ?></button>
+      <button class="btn" data-sp="next" aria-label="Next song"><?= ico('next') ?></button>
       <input type="range" id="spVol" min="0" max="100" value="60" aria-label="Volume">
     </div>
   </section>
@@ -219,7 +219,7 @@ ob_start(); ?>
   <section class="panel">
     <div class="sec-h"><h2>My playlists</h2><?php if (!$mini): ?><button class="btn sm" id="spPop" type="button">Pop out player ↗</button><?php endif; ?></div>
     <div class="sp-list" id="spSaved"><?php foreach ($saved as $r): ?>
-      <div class="sp-saved"><button class="sp-item" type="button" data-sp-link="<?= h($r['link']) ?>" translate="no"><?php if ($r['image']): ?><img alt="" src="<?= h($r['image']) ?>" loading="lazy"><?php else: ?><i aria-hidden="true">♪</i><?php endif; ?><span><b><?= h($r['title']) ?></b></span></button>
+      <div class="sp-saved"><button class="sp-item" type="button" data-sp-link="<?= h($r['link']) ?>" translate="no"><?php if ($r['image']): ?><img alt="" src="<?= h($r['image']) ?>" loading="lazy"><?php else: ?><i aria-hidden="true"><?= ico('music') ?></i><?php endif; ?><span><b><?= h($r['title']) ?></b></span></button>
         <form method="post" action="music.php"><input type="hidden" name="csrf" value="<?= h(csrf_token()) ?>"><input type="hidden" name="do" value="unsave"><input type="hidden" name="id" value="<?= (int)$r['id'] ?>"><button class="sp-x" aria-label="Remove">×</button></form></div>
     <?php endforeach; ?></div>
     <?php if (!$mini): ?>
@@ -295,6 +295,7 @@ if ($mini): ?>
   <link rel="icon" href="assets/logo.svg" type="image/svg+xml">
   <script>try{var t=localStorage.getItem('sara-theme');if(t)document.documentElement.setAttribute('data-theme',t)}catch(e){}</script>
   <script src="assets/lang.js?v=<?= filemtime(__DIR__ . '/assets/lang.js') ?>"></script>
+<script src="assets/icons.js?v=<?= filemtime(__DIR__ . '/assets/icons.js') ?>"></script>
 </head>
 <body class="music-win">
 <?= $body ?>

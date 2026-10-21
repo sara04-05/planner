@@ -32,7 +32,7 @@ $now = (int)date('G') * 60 + (int)date('i');
 
 $acts = $self ? '<a class="btn" href="index.php?tab=profile">← My profile</a>' : '<a class="btn" href="explore.php">← Explore</a>';
 if ($ns = public_slug($p['id'], $uid)) $acts .= ' <a class="btn" href="u.php?u=' . h($ns) . '">Notebooks</a>';
-if (!$self) $acts .= ' <a class="btn" href="hangout.php?with=' . $p['id'] . '">🗓️ Find time together</a> <a class="btn primary" href="messages.php?with=' . $p['id'] . '">Message</a>';
+if (!$self) $acts .= ' <a class="btn" href="hangout.php?with=' . $p['id'] . '">' . ico('calendar') . 'Find time together</a> <a class="btn primary" href="messages.php?with=' . $p['id'] . '">Message</a>';
 app_top($p['name'], ['active' => 'explore', 'covers' => true, 'eyebrow' => 'Friend\'s notebook', 'h1' => $p['name'], 'actions' => $acts]); ?>
     <div class="friend-day">
       <section>
@@ -44,7 +44,7 @@ app_top($p['name'], ['active' => 'explore', 'covers' => true, 'eyebrow' => 'Frie
         <h2 class="nb-date"><?= h(date('l, j F', strtotime($today))) ?></h2>
         <?php if ($self): ?><p class="hint2">This is exactly what your friends see. Only friends can see it, and you can switch it off in Profile → What others see.</p><?php endif; ?>
         <?php if (!$shared): ?>
-          <p class="nb-empty">🔒 <?= h($p['name']) ?> keeps their day private.</p>
+          <p class="nb-empty"><?= ico('lock') ?><?= h($p['name']) ?> keeps their day private.</p>
         <?php elseif (!$plan): ?>
           <p class="nb-empty">Nothing planned today.</p>
         <?php else: ?>

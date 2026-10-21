@@ -25,6 +25,7 @@ if (current_user_id()) {   // already have an account: go to your own planner
   <link rel="icon" href="assets/logo.svg" type="image/svg+xml">
   <script>try{var t=localStorage.getItem('sara-theme');if(t)document.documentElement.setAttribute('data-theme',t)}catch(e){}</script>
 <script src="assets/lang.js?v=<?= filemtime(__DIR__ . '/assets/lang.js') ?>"></script>
+<script src="assets/icons.js?v=<?= filemtime(__DIR__ . '/assets/icons.js') ?>"></script>
 </head>
 <body class="tour">
 <div class="app">

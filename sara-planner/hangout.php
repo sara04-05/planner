@@ -46,7 +46,7 @@ app_top('Hang out with ' . $friend['name'], ['active' => 'explore', 'eyebrow' =>
     </nav>
     <h2 class="nb-date"><?= h(date('l, j F', strtotime($date))) ?></h2>
     <?php if (!$theirs): ?>
-      <p class="nb-empty">🔒 <?= h($friend['name']) ?> doesn't share their day, so there is nothing to compare.</p>
+      <p class="nb-empty"><?= ico('lock') ?><?= h($friend['name']) ?> doesn't share their day, so there is nothing to compare.</p>
     <?php else: ?>
       <div class="ho-chart" aria-hidden="true">
         <div class="ho-row"><span>You</span><?= $bar($mine, 'me') ?></div>

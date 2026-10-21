@@ -141,6 +141,7 @@ if (current_user_id()) {
     }
   </style>
 <script src="assets/lang.js?v=<?= filemtime(__DIR__ . '/assets/lang.js') ?>"></script>
+<script src="assets/icons.js?v=<?= filemtime(__DIR__ . '/assets/icons.js') ?>"></script>
 </head>
 <body>
 <div class="land">
@@ -328,8 +329,8 @@ if (current_user_id()) {
       return head('Week 39','This week')+'<div class="wk-scroll" style="margin:0"><div class="weekgrid" style="grid-template-columns:repeat(7,minmax(110px,1fr))">'+d.map(function(n,i){return '<div class="wd'+(i===5?' is-today':'')+'" style="min-height:150px"><div class="wd-h"><b>'+(21+i)+'</b><span>'+n+'</span></div><ul>'+items[i].map(function(t){return '<li><span class="dot" style="background:var(--accent)"></span>'+t+'</li>'}).join('')+'</ul><div class="foot"><span>Spent</span><span class="amt">€'+[6,4.5,11,8,3,12.3,0][i]+'</span></div></div>'}).join('')+'</div></div>'},
     study:function(){var s=[['Databases','var(--c-school)',62,'Exam in 9 days','warn'],['Algorithms','var(--c-transport)',40,'Exam in 23 days','muted'],['OOP','var(--c-food)',85,'Lab due today','bad']];
       return head('3 subjects','Study')+'<div class="stack" style="gap:14px">'+s.map(function(x){return '<div class="subj" style="--sc:'+x[1]+';padding:14px 16px"><div class="subj-h" style="margin-bottom:8px"><h3>'+x[0]+'</h3><span class="pill '+x[4]+'">'+x[3]+'</span></div><div class="meter"><span style="width:'+x[2]+'%;background:'+x[1]+'"></span></div><div class="s" style="font-size:12px;color:var(--muted);margin-top:6px">'+x[2]+'% of topics done</div></div>'}).join('')+'</div>'},
-    notes:function(){var pages=[['📝','Databases, chapter 4','Normal forms: 1NF, 2NF, 3NF…'],['🎨','ER diagram sketch','Whiteboard'],['📄','Algorithms slides.pdf','Study file'],['📝','OOP lab checklist','Inheritance vs. composition']];
-      return head('Your study notebook','Notes')+'<div class="panel">'+pages.map(function(x){return '<div class="row"><span style="font-size:20px" aria-hidden="true">'+x[0]+'</span><div class="grow"><div class="t">'+x[1]+'</div><div class="s">'+x[2]+'</div></div></div>'}).join('')+'</div>'},
+    notes:function(){var pages=[['note','Databases, chapter 4','Normal forms: 1NF, 2NF, 3NF…'],['board','ER diagram sketch','Whiteboard'],['file','Algorithms slides.pdf','Study file'],['note','OOP lab checklist','Inheritance vs. composition']];
+      return head('Your study notebook','Notes')+'<div class="panel">'+pages.map(function(x){return '<div class="row"><span style="font-size:20px;color:var(--muted)" aria-hidden="true">'+ico(x[0])+'</span><div class="grow"><div class="t">'+x[1]+'</div><div class="s">'+x[2]+'</div></div></div>'}).join('')+'</div>'},
     tasks:function(){return head(tasks.filter(function(x){return !x.d}).length+' left','Tasks')+'<div class="panel">'+taskRows(tasks)+'</div>'},
     money:function(){var tot=cats.reduce(function(a,c){return a+c[2]},0),max=Math.max.apply(null,cats.map(function(c){return c[2]}));
       return head('This week','Expenses','<span class="pill good">€'+(80-tot).toFixed(2)+' left of €80</span>')+

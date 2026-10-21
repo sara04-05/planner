@@ -96,14 +96,14 @@ auth_top('Welcome', 'setup-card', true);
 
       <?php
       $slides = [
-          ['📅', 'Plan your day', 'Day shows every hour. Write what you do, pick a type to colour it, and tap ↻ to repeat it every week. Week, Month and Year zoom out.'],
-          ['📚', 'Study with a plan', 'In Study, add your subjects with an exam date and tick off chapters and topics as you learn them. Add study blocks to today.'],
-          ['💶', 'Know where your money goes', 'Add what you spend in Expenses. Set your income and savings goal in Year, and Splanner works out your daily allowance.'],
-          ['📖', 'Your notebook and friends', 'Your profile is a notebook with a blog, lists and pages. Explore lets you find people and add friends. You decide what each person can see.'],
+          ['calendar', 'Plan your day', 'Day shows every hour. Write what you do, pick a type to colour it, and tap ↻ to repeat it every week. Week, Month and Year zoom out.'],
+          ['cap', 'Study with a plan', 'In Study, add your subjects with an exam date and tick off chapters and topics as you learn them. Add study blocks to today.'],
+          ['wallet', 'Know where your money goes', 'Add what you spend in Expenses. Set your income and savings goal in Year, and Splanner works out your daily allowance.'],
+          ['notebook', 'Your notebook and friends', 'Your profile is a notebook with a blog, lists and pages. Explore lets you find people and add friends. You decide what each person can see.'],
       ];
       foreach ($slides as $i => $s): ?>
       <section class="step" data-step="<?= $i + 1 ?>" hidden>
-        <div class="slide-ic" aria-hidden="true"><?= $s[0] ?></div>
+        <div class="slide-ic" aria-hidden="true"><?= ico($s[0]) ?></div>
         <h1><?= h($s[1]) ?></h1>
         <p class="slide-tx"><?= h($s[2]) ?></p>
         <div class="setup-nav">
@@ -114,7 +114,7 @@ auth_top('Welcome', 'setup-card', true);
       <?php endforeach; ?>
 
       <section class="step" data-step="<?= count($slides) + 1 ?>" hidden>
-        <div class="slide-ic" aria-hidden="true">🎉</div>
+        <div class="slide-ic" aria-hidden="true"><?= ico('check') ?></div>
         <h1>You are all set</h1>
         <p class="slide-tx">Start by adding your uni and work hours in Day. Click the little ? any time you need help.</p>
         <form method="post" class="setup-nav"><input type="hidden" name="csrf" value="<?= h(csrf_token()) ?>"><span></span><button class="btn primary">Start planning</button></form>

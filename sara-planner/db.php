@@ -389,12 +389,12 @@ function msg_decrypt(string $stored): string
 {
     if (strncmp($stored, 'enc1:', 5) !== 0) return $stored;
     $bin = base64_decode(substr($stored, 5), true);
-    $lost = '🔒 This message can\'t be read (the key in data/message.key is missing or different).';
+    $lost = 'This message can\'t be read (the key in data/message.key is missing or different).';
     if ($bin === false || strlen($bin) < 28) return $lost;
     try {
         $plain = openssl_decrypt(substr($bin, 28), 'aes-256-gcm', msg_key(), OPENSSL_RAW_DATA, substr($bin, 0, 12), substr($bin, 12, 16));
     } catch (Throwable $e) {
-        return '🔒 Messages can\'t be read: make the data folder writable so data/message.key can be saved.';
+        return 'Messages can\'t be read: make the data folder writable so data/message.key can be saved.';
     }
     return $plain === false ? $lost : $plain;
 }
@@ -430,6 +430,12 @@ function check_csrf(?string $token): bool
 function current_user_id(): ?int
 {
     return isset($_SESSION['uid']) ? (int)$_SESSION['uid'] : null;
+}
+
+/** A line icon from assets/icons.svg, for pages written in PHP (assets/icons.js does the same in the browser). */
+function ico(string $name, string $class = ''): string
+{
+    return '<svg class="ico' . ($class !== '' ? ' ' . $class : '') . '" aria-hidden="true"><use href="assets/icons.svg#' . $name . '"/></svg>';
 }
 
 /** Send visitors who aren't logged in to the login page, and new accounts that haven't confirmed their email to verify.php. */
