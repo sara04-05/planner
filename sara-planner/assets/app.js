@@ -573,7 +573,7 @@ function subjectsSection(){
     return `<div class="subj" style="--sc:var(--c-${s.c})"><div class="subj-h"><div><h3>${esc(s.name)}</h3><div style="margin-top:6px">${exam}</div></div><button class="x" data-act="del-subj" data-id="${s.id}" data-confirm aria-label="Delete ${esc(s.name)}">×</button></div>
       <div class="meter"><span style="width:${pct.toFixed(1)}%;background:var(--sc)"></span></div>
       <p style="font-size:12px;color:var(--muted);font-weight:600;margin:5px 0 2px">${dn} of ${it.length} learned · ${s.chapters.length} chapter${s.chapters.length===1?'':'s'}</p>
-      ${chs}
+      <div class="chs">${chs}</div>
       <form class="mini" data-form="chapter" data-sid="${s.id}" autocomplete="off" style="margin-top:12px"><input id="ch-${s.id}" name="title" placeholder="+ Add a chapter" aria-label="Add a chapter to ${esc(s.name)}"><button class="btn">Add</button></form></div>`;
   }).join('');
   return `<section style="margin-top:36px"><div class="sec-h"><h2>Subjects and chapters</h2><span class="meta">${allDone} of ${all.length} things learned</span></div>
@@ -780,11 +780,28 @@ function render(focusId){
   drafts.forEach(([id,v])=>{const el=document.getElementById(id);if(el&&!el.value)el.value=v});
   drawing=false;
   paintHourRows();
+  layoutSubjects();
   document.querySelectorAll('textarea[data-src]').forEach(fitSrc);
   blockMsg=null;
   save();
   if(focusId){const el=document.getElementById(focusId);if(el){el.focus();if(el.dataset.edit)el.select()}}
 }
+/** Study tab: each subject stays whole in one box, and the boxes pack tightly (masonry) with no big empty gaps.
+ *  A subject with many chapters takes two columns and lays its chapters out side by side. */
+let subjRO=null;
+function layoutSubjects(){
+  const box=document.querySelector('.subjects');if(!box)return;
+  const cards=[...box.children],ROW=8,GAP=16;
+  const cols=getComputedStyle(box).gridTemplateColumns.split(' ').length;
+  cards.forEach(c=>{c.style.gridRowEnd='';c.classList.toggle('wide',cols>=2&&c.querySelectorAll('.ch').length>=8)});
+  cards.forEach(c=>{c.style.gridRowEnd='span '+Math.ceil((c.getBoundingClientRect().height+GAP)/ROW)});
+  if(window.ResizeObserver){   // a box that grows (a note opens, a chapter is added) re-packs the rest
+    if(subjRO)subjRO.disconnect();
+    subjRO=new ResizeObserver(()=>{clearTimeout(layoutSubjects.t);layoutSubjects.t=setTimeout(()=>{subjRO.disconnect();layoutSubjects()},60)});
+    cards.forEach(c=>subjRO.observe(c));
+  }
+}
+window.addEventListener('resize',()=>{clearTimeout(layoutSubjects.r);layoutSubjects.r=setTimeout(layoutSubjects,120)});
 /** Save (or, with keep=false, drop) the new name typed into an edit box. */
 function finishEdit(el,keep){
   const kind=el.dataset.edit,id=kind==='tp'?el.dataset.tid:el.dataset.cid;
