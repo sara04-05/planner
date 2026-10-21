@@ -92,7 +92,7 @@ BAND = 'linear-gradient(90deg,#E3A93B,#6FAE88,#E07F72,#5B86C6,#E9A06B,#5FA7D6,#4
 
 # colours that are not worked out from the others (paper rules, marker, tape, sticky notes)
 EXTRA = {
-    'classic': ('--rule:#EDE8F3;--margin:#F0C6D2;--edge:#F4F1F8;--edge2:#E4DEEC;--hl:rgba(251,221,130,.55);--tape:rgba(203,235,218,.85);--tape2:rgba(218,209,245,.85);--sticky:#FBEBB5;--sticky-ink:#4A3B10;--soon:#FBE3EA;--wire:#9A93A7;--wire-hi:#E4E0EA;--wire-lo:#5F596C;',
+    'classic': ('--rule:#ECE7F3;--margin:#F3BFCB;--edge:#F4F1F8;--edge2:#E4DEEC;--hl:rgba(251,221,130,.65);--tape:rgba(203,235,218,.85);--tape2:rgba(218,209,245,.85);--sticky:#FBEBB5;--sticky-ink:#4A3B10;--soon:#FBE3EA;--wire:#9A93A7;--wire-hi:#E4E0EA;--wire-lo:#5F596C;',
                 '--rule:#2A2434;--margin:#5B3140;--edge:#241F2E;--edge2:#2C2638;--hl:rgba(232,182,86,.3);--tape:rgba(98,201,142,.28);--tape2:rgba(169,143,246,.3);--sticky:#4A4020;--sticky-ink:#F6E6B0;--soon:#3A2230;--wire:#6F6880;--wire-hi:#B3ACC2;--wire-lo:#3A3446;'),
 }
 
