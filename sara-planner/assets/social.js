@@ -8,7 +8,7 @@ const $=id=>document.getElementById(id);
 const hdr=(eyebrow,title,right='')=>`<div class="vh"><div><p class="eyebrow">${eyebrow}</p><h1>${title}</h1></div><div class="nav">${right}</div></div>`;
 
 const ART={hearts:'Hearts',rainbow:'Rainbows',mountains:'Mountains',pinstripe:'Pinstripe',monstera:'Monstera',blossom:'Cherry blossom',library:'Dark academia',gingham:'Gingham',coquette:'Bows',stars:'Starry night',clouds:'Clouds',lavender:'Lavender',daisy:'Daisies',checker:'Checkerboard',strawberry:'Strawberries',terrazzo:'Terrazzo',waves:'Waves',dots:'Polka dots',sunsetgrain:'Sunset',matcha:'Matcha'};   // patterned covers: name by key, drawn by --cov-* in style.css
-const COVERS={dusk:['#6A4DC4','#E0609A'],peach:['#F9A826','#F36B7F'],ocean:['#1F77C9','#3FC1C9'],mint:['#4FA36B','#B6E3C9'],berry:['#8E2DE2','#C2185B'],sunny:['#FFD452','#FF9966'],night:['#1B1740','#4B3A8F'],cloud:['#BFD7F5','#E8DDF8']};
+const COVERS={sunset:['#FF5E62','#FF9966'],forest:['#134E5E','#71B280'],candy:['#FF9A9E','#FAD0C4'],gold:['#F7B733','#FC4A1A'],slate:['#485563','#29323C'],aurora:['#00C9A7','#845EC2'],coral:['#FF6F91','#FFC75F'],mist:['#C9D6FF','#E2E2E2'],ink:['#0F2027','#2C5364'],lagoon:['#2193B0','#6DD5ED'],dusk:['#6A4DC4','#E0609A'],peach:['#F9A826','#F36B7F'],ocean:['#1F77C9','#3FC1C9'],mint:['#4FA36B','#B6E3C9'],berry:['#8E2DE2','#C2185B'],sunny:['#FFD452','#FF9966'],night:['#1B1740','#4B3A8F'],cloud:['#BFD7F5','#E8DDF8']};
 const PAPER_COLORS={white:'#FFFFFF',cream:'#FFF8E8',blush:'#FFF0F3',mint:'#EEF9F2',sky:'#EEF5FD',lilac:'#F4EFFC'};
 const ACCENTS={violet:'#6A4DC4',rose:'#C93A72',ocean:'#1F77C9',forest:'#2B8A5B',sunset:'#D2661E',graphite:'#4A4F5C',white:'#FFFFFF'};
 const PAPERS=[['lined','Lined'],['grid','Grid'],['dots','Dots'],['plain','Plain']];
@@ -21,7 +21,10 @@ const SECS=[['interests','star','Interests','Lists of things you love, with pict
 const SECNAME=Object.fromEntries([['cover','Cover']].concat(SECS.map(s=>[s[0],s[2]]),[['day','Day']]));
 const PAGE_EMOJI=['📝','📖','🌸','✈️','🍳','💡','🎨','🏋️','🎵','🐾','🧘','💌'];
 const DAYLV=['Nobody, only me','Friends only','Anyone signed in','Everyone, even visitors'];
-const BASE={cover:'dusk',cover_img:0,cover_c1:'',cover_c2:'',paper:'lined',paper_color:'white',paper_hex:'',accent:'violet',accent_hex:'',font:'modern',binding:'coil',label:'box',label_hex:'',label_r:0,label_w:0,label_h:0,font_size:0};
+const PATTERNS=[['none','None'],['stripes','Stripes'],['dots','Dots'],['grid','Grid'],['waves','Waves'],['checker','Checks']];
+const LAYOUTS=[['top','Top'],['center','Middle'],['bottom','Bottom']];
+const PAT_CSS={stripes:'repeating-linear-gradient(45deg,rgba(255,255,255,.18) 0 10px,transparent 10px 20px)',dots:'radial-gradient(rgba(255,255,255,.4) 2px,transparent 2.6px) 0 0/18px 18px',grid:'linear-gradient(rgba(255,255,255,.22) 1px,transparent 1px) 0 0/22px 22px,linear-gradient(90deg,rgba(255,255,255,.22) 1px,transparent 1px) 0 0/22px 22px',waves:'repeating-radial-gradient(circle at 0 100%,transparent 0 14px,rgba(255,255,255,.22) 14px 16px)',checker:'conic-gradient(rgba(255,255,255,.18) 25%,transparent 0 50%,rgba(255,255,255,.18) 0 75%,transparent 0) 0 0/28px 28px'};
+const BASE={cover:'dusk',cover_img:0,cover_c1:'',cover_c2:'',paper:'lined',paper_color:'white',paper_hex:'',accent:'violet',accent_hex:'',font:'modern',binding:'coil',layout:'center',pattern:'none',angle:135,text_hex:'',avatar:1,label:'box',label_hex:'',label_r:0,label_w:0,label_h:0,font_size:0};
 // ready-made looks (the user can also save their own)
 const PRESETS=[
   ['Dreamy lilac',{cover:'dusk',paper:'dots',paper_color:'lilac',accent:'violet',font:'hand'}],
@@ -116,7 +119,10 @@ function wrapAttrs(d){   // goes on the notebook wrapper: accent colour + the co
   if(d.accent==='custom'&&d.accent_hex)v+=`--c-accent:${d.accent_hex};--c-on:${lum(d.accent_hex)>.55?'#111111':'#FFFFFF'};`;
   if(d.paper_color==='custom'&&d.paper_hex)v+=`--c-paper:${d.paper_hex};`;
   if(d.label&&d.label!=='box')a+=` data-label="${d.label}"`;
+  if(d.layout==='top'||d.layout==='bottom')a+=` data-layout="${d.layout}"`;
+  if(d.avatar===0||d.avatar===false)a+=' data-noavatar="1"';
   if(d.label_hex)v+=`--c-label:${d.label_hex};--c-label-ink:${lum(d.label_hex)>.5?'#2B2118':'#FFFFFF'};`;
+  if(/^#[0-9a-f]{6}$/i.test(d.text_hex||''))v+=`--c-label-ink:${d.text_hex};`;
   if(d.label!=='none'){if(+d.label_r>0)v+=`--lb-r:${+d.label_r}%;`;if(+d.label_w>0){v+=`--lb-w:${+d.label_w}%;`;a+=' data-lbw="1"'}if(+d.label_h>0)v+=`--lb-h:${+d.label_h}%;`}
   if(+d.font_size>0)v+=`--nb-fs:${+d.font_size}px;`;
   return a+(v?` style="${v}"`:'');
@@ -130,10 +136,13 @@ function pageAttrs(d){
   return a;
 }
 function coverCss(d){
-  if(d.cover_url)return `background:url('${esc(d.cover_url)}') center/cover`;
-  if(d.cover==='custom'&&d.cover_c1&&d.cover_c2)return `background:linear-gradient(135deg,${d.cover_c1},${d.cover_c2})`;
-  if(ART[d.cover])return `background:var(--cov-${d.cover})`;
-  const g=COVERS[d.cover]||COVERS.dusk;return `background:linear-gradient(135deg,${g[0]},${g[1]})`;
+  const ang=Math.max(0,Math.min(360,+d.angle||135));
+  let bg;
+  if(d.cover_url)bg=`url('${esc(d.cover_url)}') center/cover`;
+  else if(d.cover==='custom'&&d.cover_c1&&d.cover_c2)bg=`linear-gradient(${ang}deg,${d.cover_c1},${d.cover_c2})`;
+  else if(ART[d.cover])bg=`var(--cov-${d.cover})`;
+  else{const g=COVERS[d.cover]||COVERS.dusk;bg=`linear-gradient(${ang}deg,${g[0]},${g[1]})`}
+  return `background:${PAT_CSS[d.pattern]?PAT_CSS[d.pattern]+',':''}${bg}`;
 }
 const stkImg=id=>{const u=S.stickers_up.find(s=>s.id===id);return u?u.url:mediaUrl(id)};
 function stkLayer(d,pg){
@@ -287,6 +296,10 @@ function decoPanel(nb){
     <form class="xrow" data-xform="style" style="margin-top:8px" autocomplete="off"><input type="text" name="name" maxlength="60" placeholder="Name this look" aria-label="Style name" required style="flex:1;min-width:0"><button class="btn sm primary">Save as my style</button></form>
     <p class="opt-h">Cover</p><div class="swatches">${Object.keys(COVERS).map(c=>swatch('cover',c,`linear-gradient(135deg,${COVERS[c][0]},${COVERS[c][1]})`,'Cover '+c)).join('')}${Object.keys(ART).map(c=>swatch('cover',c,`var(--cov-${c})`,ART[c])).join('')}</div>
     <div class="colorrow"><span>Your own colours</span><input type="color" data-xcolor="cover_c1" value="${d.cover_c1||'#6a4dc4'}" aria-label="Cover colour 1"><input type="color" data-xcolor="cover_c2" value="${d.cover_c2||'#e0609a'}" aria-label="Cover colour 2"></div>
+    <div class="lbrange"><label>Colour angle<input type="range" min="0" max="360" step="5" data-xrange="angle" value="${d.angle||135}"></label></div>
+    <p class="opt-h">Pattern on the cover</p><div class="pilltabs">${PATTERNS.map(x=>`<button type="button" data-x="pattern" data-v="${x[0]}" aria-pressed="false">${x[1]}</button>`).join('')}</div>
+    <p class="opt-h">Name box place</p><div class="pilltabs">${LAYOUTS.map(x=>`<button type="button" data-x="layout" data-v="${x[0]}" aria-pressed="false">${x[1]}</button>`).join('')}<button type="button" data-x="avatar" aria-pressed="false">My letter or picture</button></div>
+    <div class="colorrow"><span>Box text colour</span><input type="color" data-xcolor="text_hex" value="${d.text_hex||'#4a3426'}" aria-label="Name box text colour"></div>
     <div class="pic-pick" style="margin-top:10px"><label class="btn sm"><input type="file" accept="image/*" data-xfile="cover" data-kind="cover">${ico('image')}Use my own cover picture</label><button type="button" class="btn sm ghost" id="coverRm" data-x="cover-rm" ${d.cover_url?'':'hidden'}>Remove my picture</button><span class="hint2" data-pic-msg></span></div>
     <p class="opt-h">Label on the cover</p><div class="pilltabs">${[['box','▭ Box'],['round','⬤ Circle'],['oval','⬭ Oval'],['arch','⌓ Arch'],['pill','Pill'],['ticket','Ticket'],['band','▬ Band'],['hexagon','⬡ Hexagon'],['diamond','◆ Diamond'],['tag','Tag'],['stamp','▣ Stamp'],['custom','✎ My own shape'],['none','✕ No box']].map(x=>`<button type="button" data-x="label" data-v="${x[0]}" aria-pressed="false">${x[1]}</button>`).join('')}<input type="color" class="colorpick" data-xcolor="label_hex" value="${d.label_hex||'#efe2c8'}" aria-label="Your own label colour"></div>
     <div class="swatches lbsw">${['#efe2c8','#ffffff','#111111','#f8c8dc','#ffd9b8','#fff2a8','#c9e8c3','#bfe3f5','#d8ccf3','#ef9a9a','#e0609a','#6a4dc4','#2f6f5e','#b0bec5'].map(c=>`<button type="button" class="swatch" style="background:${c}" data-x="label-color" data-v="${c}" aria-label="Label colour ${c}"></button>`).join('')}</div>
@@ -328,6 +341,9 @@ function syncControls(){
   const on=(sel,fn)=>document.querySelectorAll(sel).forEach(b=>b.setAttribute('aria-pressed',String(fn(b))));
   on('[data-x="cover"]',b=>!d.cover_url&&b.dataset.v===d.cover);
   on('[data-x="label"]',b=>b.dataset.v===(d.label||'box'));
+  on('[data-x="layout"]',b=>b.dataset.v===(d.layout||'center'));
+  on('[data-x="pattern"]',b=>b.dataset.v===(d.pattern||'none'));
+  on('[data-x="avatar"]',b=>d.avatar!==0);
   on('[data-x="paper"]',b=>b.dataset.v===d.paper);
   on('[data-x="pcolor"]',b=>b.dataset.v===d.paper_color);
   on('[data-x="accent"]',b=>b.dataset.v===d.accent);
@@ -545,7 +561,7 @@ async function autoSave(){
   }
 }
 const designOut=()=>{const d=clone(ui.dd);delete d.cover_url;return d};
-const DESIGN_ACTS=['cover','cover-rm','paper','pcolor','accent','font','binding','label','stk-add','stk-size','stk-rot','stk-del','preset','style-apply'];
+const DESIGN_ACTS=['cover','cover-rm','paper','pcolor','accent','font','binding','label','layout','pattern','avatar','stk-add','stk-size','stk-rot','stk-del','preset','style-apply'];
 function applyLook(look){   // a ready-made or saved look: replaces colours/paper/font/binding/cover, keeps your stickers
   const keep=ui.dd.stickers;
   ui.dd=Object.assign(clone(BASE),clone(look),{stickers:keep});
@@ -621,6 +637,9 @@ document.addEventListener('click',async e=>{
       case 'fs-reset':ui.dd.font_size=0;markDirty();paintPreview();redraw();return;
       case 'label-color':ui.dd.label_hex=b.dataset.v;if(ui.dd.label==='none')ui.dd.label='box';markDirty();paintPreview();return;
       case 'label':ui.dd.label=b.dataset.v;if(b.dataset.v==='none')ui.dd.label_hex='';break;
+      case 'layout':ui.dd.layout=b.dataset.v;break;
+      case 'pattern':ui.dd.pattern=b.dataset.v;break;
+      case 'avatar':ui.dd.avatar=ui.dd.avatar===0?1:0;break;
       case 'preset':applyLook(PRESETS[+b.dataset.i][1]);break;
       case 'style-apply':{const s=S.styles.find(x=>x.id===id);if(!s)return;applyLook(s.design);break}
       case 'stk-add':if(ui.dd.stickers.length>=30){toast('That is plenty of stickers!');return}ui.dd.stickers.push({k:b.dataset.k,p:ui.pg,x:20+Math.random()*60,y:25+Math.random()*50,s:1,r:0});ui.sel=ui.dd.stickers.length-1;break;

@@ -2011,3 +2011,8 @@ body.wb-open .toast{z-index:1002}
 /* letter avatars: the circle takes the accent and the letter its contrasting colour, so it stays readable with any accent (even white) */
 .avatar{background:var(--accent);color:var(--on-accent)}
 img.avatar{background:var(--accent-soft)}
+
+/* cover name box place, and hiding the letter or picture */
+[data-layout="top"] .nbcover-in{top:9%;transform:none}
+[data-layout="bottom"] .nbcover-in{top:auto;bottom:9%;transform:none}
+[data-noavatar] .nbcover-in .avatar{display:none}

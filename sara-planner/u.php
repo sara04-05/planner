@@ -179,7 +179,9 @@ echo profile_head($person, (string)$prof['slug'], [plural($dayOnly ? 0 : count($
   <?php if ($page === 'cover'): ?>
     <?php $firstPg = $sections[0] ?? (array_key_first($pagesById) ?? ($showDay ? 'day' : null));
       $lblShape = in_array($design['label'] ?? 'box', ['round', 'oval', 'arch', 'pill', 'ticket', 'band', 'hexagon', 'diamond', 'tag', 'stamp', 'custom', 'none'], true) ? ' data-label="' . h($design['label']) . '"' : '';
-      if ((int)($design['label_w'] ?? 0) > 0 && ($design['label'] ?? 'box') !== 'none') $lblShape .= ' data-lbw="1"'; ?>
+      if ((int)($design['label_w'] ?? 0) > 0 && ($design['label'] ?? 'box') !== 'none') $lblShape .= ' data-lbw="1"';
+      if (in_array($design['layout'] ?? 'center', ['top', 'bottom'], true)) $lblShape .= ' data-layout="' . h($design['layout']) . '"';
+      if (isset($design['avatar']) && !$design['avatar']) $lblShape .= ' data-noavatar="1"'; ?>
     <div class="nbv" id="nbv"<?= design_attrs($design, 'accent') . $lblShape . design_style($design) ?>>
     <div class="nbclosed" id="nbBinder"<?= ($design['binding'] ?? 'coil') !== 'coil' ? ' data-binding="' . h($design['binding']) . '"' : '' ?>>
     <div class="nbclosed-hit">
