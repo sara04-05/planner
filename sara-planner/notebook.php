@@ -11,7 +11,7 @@ const NOTIFY_KEYS  = ['like', 'comment'];
 const ART_COVERS   = ['blossom', 'library', 'gingham', 'coquette', 'stars', 'clouds', 'lavender', 'daisy', 'checker', 'strawberry', 'terrazzo', 'waves', 'dots', 'sunsetgrain', 'matcha', 'hearts', 'rainbow', 'mountains', 'pinstripe', 'monstera'];
 const BANNERS      = ['dusk', 'peach', 'ocean', 'mint', 'berry', 'sunny', 'night', 'cloud', 'blossom', 'library', 'gingham', 'coquette', 'stars', 'clouds', 'lavender', 'daisy', 'checker', 'strawberry', 'terrazzo', 'waves', 'dots', 'sunsetgrain', 'matcha', 'hearts', 'rainbow', 'mountains', 'pinstripe', 'monstera'];
 const COVER_GRADIENTS = [
-    'dusk' => ['#1C1C1C', '#6B6B6B'], 'peach' => ['#F9A826', '#F36B7F'], 'ocean' => ['#1F77C9', '#3FC1C9'], 'mint' => ['#4FA36B', '#B6E3C9'],
+    'dusk' => ['#3A3A3A', '#8A8A8A'], 'peach' => ['#F9A826', '#F36B7F'], 'ocean' => ['#1F77C9', '#3FC1C9'], 'mint' => ['#4FA36B', '#B6E3C9'],
     'berry' => ['#8E2DE2', '#C2185B'], 'sunny' => ['#FFD452', '#FF9966'], 'night' => ['#1B1740', '#4B3A8F'], 'cloud' => ['#BFD7F5', '#E8DDF8'],
 ];
 const PAPERS       = ['lined', 'grid', 'dots', 'plain'];

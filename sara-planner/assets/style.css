@@ -3,13 +3,13 @@ img{max-width:100%}
 [hidden]{display:none!important}
 
 :root{--lh:36px;
-  --bg:#ECECEC; --paper:#FFFFFF; --paper-2:#F5F5F5; --ink:#141414; --muted:#6B6B6B; --line:#DEDEDE;
-  --accent:#1C1C1C; --accent-soft:#EBEBEB; --on-accent:#FFFFFF;
-  --t-day:#EAEAEA; --t-week:#E1E1E1; --t-month:#D8D8D8; --t-year:#CFCFCF; --t-study:#E5E5E5; --t-tasks:#DCDCDC; --t-money:#D3D3D3; --t-notes:#C9C9C9;
+  --bg:#D6D6D6; --paper:#F0F0F0; --paper-2:#E6E6E6; --ink:#1A1A1A; --muted:#5E5E5E; --line:#C8C8C8;
+  --accent:#3A3A3A; --accent-soft:#DEDEDE; --on-accent:#FFFFFF;
+  --t-day:#E2E2E2; --t-week:#D9D9D9; --t-month:#D0D0D0; --t-year:#C7C7C7; --t-study:#DDDDDD; --t-tasks:#D4D4D4; --t-money:#CBCBCB; --t-notes:#C2C2C2;
   --good:#23804D; --good-soft:#DDF2E6; --warn:#A86C06; --warn-soft:#FBEFD2; --bad:#B3342E; --bad-soft:#F7DEDC;
   --c-food:#D9694F; --c-coffee:#8C6A4F; --c-transport:#3D8FD1; --c-groceries:#4FA36B; --c-school:#5E8A8A; --c-phone:#D9A21B; --c-fun:#C27A2E; --c-clothes:#179C95; --c-gifts:#8FA31E; --c-work:#5F6B7A; --c-other:#8A8A8A;
-  --sticky:#F0F0F0; --sticky-ink:#222222; --soon:#EFEFEF;
-  --rule:#EBEBEB; --margin:#CFCFCF; --edge:#F4F4F4; --edge2:#E2E2E2; --hl:rgba(20,20,20,.10); --tape:rgba(20,20,20,.08); --tape2:rgba(20,20,20,.06);
+  --sticky:#E4E4E4; --sticky-ink:#222222; --soon:#E8E8E8;
+  --rule:#DCDCDC; --margin:#BDBDBD; --edge:#E8E8E8; --edge2:#D2D2D2; --hl:rgba(20,20,20,.10); --tape:rgba(20,20,20,.08); --tape2:rgba(20,20,20,.06);
   --wire:#8A8A8A; --wire-hi:#E6E6E6; --wire-lo:#555555;
   --shadow:0 1px 2px rgba(0,0,0,.06),0 10px 30px rgba(0,0,0,.08);
   --display:"Bricolage Grotesque",ui-sans-serif,system-ui,sans-serif;
@@ -18,27 +18,27 @@ img{max-width:100%}
 @media (prefers-color-scheme: dark){
   :root:not([data-theme="light"]){
     color-scheme:dark;
-    --bg:#0B0B0B; --paper:#171717; --paper-2:#202020; --ink:#F2F2F2; --muted:#9A9A9A; --line:#2E2E2E;
-    --accent:#F2F2F2; --accent-soft:#2A2A2A; --on-accent:#111111;
-    --t-day:#2B2B2B; --t-week:#272727; --t-month:#303030; --t-year:#2D2D2D; --t-study:#292929; --t-tasks:#333333; --t-money:#2F2F2F; --t-notes:#262626;
+    --bg:#1E1E1E; --paper:#2A2A2A; --paper-2:#333333; --ink:#EEEEEE; --muted:#A6A6A6; --line:#444444;
+    --accent:#E6E6E6; --accent-soft:#3C3C3C; --on-accent:#1A1A1A;
+    --t-day:#3A3A3A; --t-week:#363636; --t-month:#3F3F3F; --t-year:#3C3C3C; --t-study:#383838; --t-tasks:#424242; --t-money:#3E3E3E; --t-notes:#353535;
     --good:#62C98E; --good-soft:#16301F; --warn:#E8B656; --warn-soft:#33290F; --bad:#F2807A; --bad-soft:#3A1D1B;
     --c-food:#EE8E74; --c-coffee:#C79468; --c-transport:#5DA9E8; --c-groceries:#66C084; --c-school:#6FB0B0; --c-phone:#EABB3E; --c-fun:#E39A4B; --c-clothes:#45C4BC; --c-gifts:#B5C93F; --c-work:#8E9AAA; --c-other:#A0A0A0;
-    --sticky:#262626; --sticky-ink:#E6E6E6; --soon:#222222;
-    --rule:#222222; --margin:#3A3A3A; --edge:#1D1D1D; --edge2:#262626; --hl:rgba(255,255,255,.14); --tape:rgba(255,255,255,.12); --tape2:rgba(255,255,255,.09);
-    --wire:#6A6A6A; --wire-hi:#B5B5B5; --wire-lo:#333333;
+    --sticky:#383838; --sticky-ink:#E6E6E6; --soon:#303030;
+    --rule:#363636; --margin:#505050; --edge:#262626; --edge2:#303030; --hl:rgba(255,255,255,.14); --tape:rgba(255,255,255,.12); --tape2:rgba(255,255,255,.09);
+    --wire:#7A7A7A; --wire-hi:#C0C0C0; --wire-lo:#444444;
     --shadow:0 1px 2px rgba(0,0,0,.4),0 12px 32px rgba(0,0,0,.5);
   }
 }
 :root[data-theme="dark"]{
   color-scheme:dark;
-  --bg:#0B0B0B; --paper:#171717; --paper-2:#202020; --ink:#F2F2F2; --muted:#9A9A9A; --line:#2E2E2E;
-  --accent:#F2F2F2; --accent-soft:#2A2A2A; --on-accent:#111111;
-  --t-day:#2B2B2B; --t-week:#272727; --t-month:#303030; --t-year:#2D2D2D; --t-study:#292929; --t-tasks:#333333; --t-money:#2F2F2F; --t-notes:#262626;
+  --bg:#1E1E1E; --paper:#2A2A2A; --paper-2:#333333; --ink:#EEEEEE; --muted:#A6A6A6; --line:#444444;
+  --accent:#E6E6E6; --accent-soft:#3C3C3C; --on-accent:#1A1A1A;
+  --t-day:#3A3A3A; --t-week:#363636; --t-month:#3F3F3F; --t-year:#3C3C3C; --t-study:#383838; --t-tasks:#424242; --t-money:#3E3E3E; --t-notes:#353535;
   --good:#62C98E; --good-soft:#16301F; --warn:#E8B656; --warn-soft:#33290F; --bad:#F2807A; --bad-soft:#3A1D1B;
   --c-food:#EE8E74; --c-coffee:#C79468; --c-transport:#5DA9E8; --c-groceries:#66C084; --c-school:#6FB0B0; --c-phone:#EABB3E; --c-fun:#E39A4B; --c-clothes:#45C4BC; --c-gifts:#B5C93F; --c-work:#8E9AAA; --c-other:#A0A0A0;
-  --sticky:#262626; --sticky-ink:#E6E6E6; --soon:#222222;
-  --rule:#222222; --margin:#3A3A3A; --edge:#1D1D1D; --edge2:#262626; --hl:rgba(255,255,255,.14); --tape:rgba(255,255,255,.12); --tape2:rgba(255,255,255,.09);
-  --wire:#6A6A6A; --wire-hi:#B5B5B5; --wire-lo:#333333;
+  --sticky:#383838; --sticky-ink:#E6E6E6; --soon:#303030;
+  --rule:#363636; --margin:#505050; --edge:#262626; --edge2:#303030; --hl:rgba(255,255,255,.14); --tape:rgba(255,255,255,.12); --tape2:rgba(255,255,255,.09);
+  --wire:#7A7A7A; --wire-hi:#C0C0C0; --wire-lo:#444444;
   --shadow:0 1px 2px rgba(0,0,0,.4),0 12px 32px rgba(0,0,0,.5);
 }
 *{box-sizing:border-box}
@@ -445,7 +445,7 @@ table.ex tr:last-child td{border-bottom:0}
 
 /* ================= Notebook sharing: design choices, blog, interests, public pages ================= */
 /* The look you pick in Profile: accent colour (whole page), paper style / colour / handwriting (the notebook page) */
-[data-accent="violet"]{--ac-l:#1C1C1C;--ac-d:#F2F2F2;--ac-on-l:#fff;--ac-on-d:#111111}
+[data-accent="violet"]{--ac-l:#3A3A3A;--ac-d:#E6E6E6;--ac-on-l:#fff;--ac-on-d:#1A1A1A}
 [data-accent="rose"]{--ac-l:#C93A72;--ac-d:#F27BAA;--ac-on-l:#fff;--ac-on-d:#2A0E1A}
 [data-accent="ocean"]{--ac-l:#1F77C9;--ac-d:#6DB4F2;--ac-on-l:#fff;--ac-on-d:#08182A}
 [data-accent="forest"]{--ac-l:#2B8A5B;--ac-d:#6FD0A0;--ac-on-l:#fff;--ac-on-d:#08201A}
@@ -479,9 +479,9 @@ table.ex tr:last-child td{border-bottom:0}
 [data-font]{font-family:var(--body)}
 
 /* covers + stickers (the banner at the top of a notebook) */
-.nb-banner{position:relative;height:190px;border-radius:18px;overflow:hidden;background:var(--cv,linear-gradient(135deg,#1C1C1C,#6B6B6B));background-size:cover;background-position:center;isolation:isolate}
+.nb-banner{position:relative;height:190px;border-radius:18px;overflow:hidden;background:var(--cv,linear-gradient(135deg,#3A3A3A,#8A8A8A));background-size:cover;background-position:center;isolation:isolate}
 .nb-banner::after{content:"";position:absolute;inset:0;background:linear-gradient(180deg,transparent 45%,rgba(0,0,0,.35));pointer-events:none;z-index:0}
-.nb-banner[data-cover="dusk"]{--cv:linear-gradient(135deg,#1C1C1C,#6B6B6B)}
+.nb-banner[data-cover="dusk"]{--cv:linear-gradient(135deg,#3A3A3A,#8A8A8A)}
 .nb-banner[data-cover="peach"]{--cv:linear-gradient(135deg,#F9A826,#F36B7F)}
 .nb-banner[data-cover="ocean"]{--cv:linear-gradient(135deg,#1F77C9,#3FC1C9)}
 .nb-banner[data-cover="mint"]{--cv:linear-gradient(135deg,#4FA36B,#B6E3C9)}
@@ -1476,9 +1476,9 @@ body:not(.tour) .page p.hint2,body:not(.tour) .page .xcard>p.sub,body:not(.tour)
 .nbcover-in{display:flex;flex-direction:column;align-items:center}
 
 /* the top bar always uses the Splanner brand colours, whatever accent colour (even white) a notebook design picks */
-.top{--accent:#1C1C1C;--on-accent:#FFFFFF;--accent-soft:#EBEBEB}
-@media (prefers-color-scheme:dark){:root:not([data-theme="light"]) .top{--accent:#F2F2F2;--on-accent:#111111;--accent-soft:#2A2A2A}}
-:root[data-theme="dark"] .top{--accent:#F2F2F2;--on-accent:#111111;--accent-soft:#2A2A2A}
+.top{--accent:#3A3A3A;--on-accent:#FFFFFF;--accent-soft:#DEDEDE}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]) .top{--accent:#E6E6E6;--on-accent:#1A1A1A;--accent-soft:#3C3C3C}}
+:root[data-theme="dark"] .top{--accent:#E6E6E6;--on-accent:#1A1A1A;--accent-soft:#3C3C3C}
 
 /* page tabs sit inside the notebook, on the edge of the page, not out on the table */
 @media (min-width:901px){
