@@ -188,6 +188,18 @@ function upgrade_schema(PDO $pdo): void
         }
     }
 
+    // The colour look a person picked for the whole site (see assets/looks.json). Only adds the column.
+    try {
+        $cols = DB_DRIVER === 'sqlite'
+            ? array_column($pdo->query('PRAGMA table_info(profiles)')->fetchAll(), 'name')
+            : array_column($pdo->query('SHOW COLUMNS FROM profiles')->fetchAll(), 'Field');
+        if (!in_array('look', $cols, true)) {
+            $pdo->exec("ALTER TABLE profiles ADD COLUMN look VARCHAR(24) NOT NULL DEFAULT ''");
+        }
+    } catch (PDOException $e) {
+        error_log('Could not add profiles.look: ' . $e->getMessage());
+    }
+
     // When each user last logged in (shown on admin.php). Same safety net as above.
     try {
         $cols = DB_DRIVER === 'sqlite'
@@ -430,6 +442,80 @@ function check_csrf(?string $token): bool
 function current_user_id(): ?int
 {
     return isset($_SESSION['uid']) ? (int)$_SESSION['uid'] : null;
+}
+
+/** The colour looks people can pick (assets/looks.json, built by tools/build-looks.py). */
+function looks_all(): array
+{
+    static $l = null;
+    return $l ??= (json_decode((string)@file_get_contents(__DIR__ . '/assets/looks.json'), true) ?: []);
+}
+
+function look_find(string $slug): ?array
+{
+    foreach (looks_all() as $l) if ($l['slug'] === $slug) return $l;
+    return null;
+}
+
+/** Two #rrggbb colours blended: $t = 0 is $a, 1 is $b. */
+function mix_hex(string $a, string $b, float $t): string
+{
+    $o = '#';
+    foreach ([1, 3, 5] as $i) $o .= sprintf('%02x', (int)round(hexdec(substr($a, $i, 2)) * (1 - $t) + hexdec(substr($b, $i, 2)) * $t));
+    return $o;
+}
+
+/**
+ * A notebook design in the colours of a look. Only the parts still on the default colours, or on the colours of some look, are changed,
+ * so a cover, paper or colour somebody picked by hand stays.
+ */
+function design_from_look(array $d, array $look): array
+{
+    $accents = $papers = [];
+    foreach (looks_all() as $l) {
+        $accents[] = strtolower($l['light']['accent']);
+        $papers[] = strtolower($l['light']['paper']);
+    }
+    $c = $look['light'];
+    $acc = strtolower($c['accent']);
+    if (($d['accent'] ?? 'violet') === 'violet' || (($d['accent'] ?? '') === 'custom' && in_array(strtolower((string)($d['accent_hex'] ?? '')), $accents, true))) {
+        $d['accent'] = 'custom';
+        $d['accent_hex'] = $acc;
+    }
+    if (($d['paper_color'] ?? 'white') === 'white' || (($d['paper_color'] ?? '') === 'custom' && in_array(strtolower((string)($d['paper_hex'] ?? '')), $papers, true))) {
+        $d['paper_color'] = 'custom';
+        $d['paper_hex'] = strtolower($c['paper']);
+    }
+    $c1 = strtolower((string)($d['cover_c1'] ?? ''));
+    if (($d['cover'] ?? 'dusk') === 'dusk' || (($d['cover'] ?? '') === 'custom' && in_array($c1, $accents, true) && ($d['cover_c2'] ?? '') === mix_hex($c1, '#ffffff', 0.5))) {
+        $d['cover'] = 'custom';
+        $d['cover_c1'] = $acc;
+        $d['cover_c2'] = mix_hex($acc, '#ffffff', 0.5);
+    }
+    return $d;
+}
+
+/** The look this person chose, or '' (then the site's own look shows). */
+function user_look(?int $uid): string
+{
+    static $cache = [];
+    if (!$uid) return '';
+    if (!isset($cache[$uid])) {
+        try {
+            $v = (string)(q('SELECT look FROM profiles WHERE user_id = ?', [$uid])->fetch()['look'] ?? '');
+        } catch (Throwable $e) {
+            $v = '';
+        }
+        $cache[$uid] = look_find($v) ? $v : '';
+    }
+    return $cache[$uid];
+}
+
+/** ' data-look="…"' for the <html> tag of a signed-in person's pages. Visitors get theirs from the browser (assets/looks.js). */
+function look_attr(): string
+{
+    $v = user_look(current_user_id());
+    return $v !== '' ? ' data-look="' . h($v) . '"' : '';
 }
 
 /** A line icon from assets/icons.svg, for pages written in PHP (assets/icons.js does the same in the browser). */

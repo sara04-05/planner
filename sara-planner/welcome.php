@@ -9,7 +9,7 @@ if (current_user_id()) {
 }
 ?>
 <!DOCTYPE html>
-<html lang="en">
+<html lang="en"<?= look_attr() ?>>
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -19,9 +19,10 @@ if (current_user_id()) {
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Pacifico&family=Bricolage+Grotesque:opsz,wght@12..96,500;12..96,600;12..96,700&family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="assets/style.css?v=<?= filemtime(__DIR__ . '/assets/style.css') ?>">
+  <link rel="stylesheet" href="assets/looks.css?v=<?= filemtime(__DIR__ . '/assets/looks.css') ?>">
   <link rel="stylesheet" href="assets/covers.css?v=<?= filemtime(__DIR__ . '/assets/covers.css') ?>">
   <link rel="icon" href="assets/logo.svg" type="image/svg+xml">
-  <script>try{var t=localStorage.getItem('sara-theme');if(t)document.documentElement.setAttribute('data-theme',t)}catch(e){}</script>
+  <script>try{var t=localStorage.getItem('sara-theme');if(t)document.documentElement.setAttribute('data-theme',t);var l=localStorage.getItem('sara-look');if(l&&/^[a-z-]+$/.test(l)&&!document.documentElement.hasAttribute('data-look'))document.documentElement.setAttribute('data-look',l)}catch(e){}</script>
   <style>
     /* ---- landing page only ---- */
     .land{max-width:1180px;margin:0 auto}
@@ -142,6 +143,7 @@ if (current_user_id()) {
   </style>
 <script src="assets/lang.js?v=<?= filemtime(__DIR__ . '/assets/lang.js') ?>"></script>
 <script src="assets/icons.js?v=<?= filemtime(__DIR__ . '/assets/icons.js') ?>"></script>
+<script src="assets/looks.js?v=<?= filemtime(__DIR__ . '/assets/looks.js') ?>" defer></script>
 </head>
 <body>
 <div class="land">
@@ -156,6 +158,7 @@ if (current_user_id()) {
       <a href="#safety">Is it safe?</a>
       <a href="#faq">FAQ</a>
       <button class="linkbtn langsw" data-lang-btn>Shqip</button>
+      <span class="lkwrap"><button type="button" class="btn ghost" data-look-btn aria-label="Colour theme" title="Colour theme" aria-haspopup="dialog"><?= ico('palette') ?></button></span>
       <button class="btn ghost" data-theme-btn aria-label="Switch theme"></button>
       <a class="btn ghost" href="login.php">Log in</a>
       <a class="btn primary" href="register.php">Create free account</a>

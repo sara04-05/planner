@@ -1476,9 +1476,7 @@ body:not(.tour) .page p.hint2,body:not(.tour) .page .xcard>p.sub,body:not(.tour)
 .nbcover-in{display:flex;flex-direction:column;align-items:center}
 
 /* the top bar always uses the Splanner brand colours, whatever accent colour (even white) a notebook design picks */
-.top{--accent:#3A3A3A;--on-accent:#FFFFFF;--accent-soft:#DEDEDE}
-@media (prefers-color-scheme:dark){:root:not([data-theme="light"]) .top{--accent:#E6E6E6;--on-accent:#1A1A1A;--accent-soft:#3C3C3C}}
-:root[data-theme="dark"] .top{--accent:#E6E6E6;--on-accent:#1A1A1A;--accent-soft:#3C3C3C}
+.top{--accent:var(--look-accent);--on-accent:var(--look-on);--accent-soft:var(--look-soft)}
 
 /* page tabs sit inside the notebook, on the edge of the page, not out on the table */
 @media (min-width:901px){
@@ -1985,3 +1983,44 @@ body.wb-open .toast{z-index:1002}
 .nt-doc-i .ico{width:20px;height:20px;color:var(--muted)}
 .tab[aria-selected="true"]{box-shadow:inset 3px 0 0 var(--ink),2px 2px 6px rgba(0,0,0,.08)}
 .pub-note a,.tour-note a{color:var(--ink);font-weight:600;text-decoration:underline;text-underline-offset:2px}
+
+/* ---- depth: soft gradients and layered shadows, worked out from each look's own colours ---- */
+:root{--hi:rgba(255,255,255,.7);--sh1:rgba(0,0,0,.06);--sh2:rgba(0,0,0,.09);--sh3:rgba(0,0,0,.07);
+  --depth-s:0 1px 1px var(--sh1),0 2px 6px var(--sh1);
+  --depth-m:0 1px 2px var(--sh2),0 8px 18px var(--sh2),0 22px 44px var(--sh3)}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--hi:rgba(255,255,255,.07);--sh1:rgba(0,0,0,.28);--sh2:rgba(0,0,0,.36);--sh3:rgba(0,0,0,.3)}}
+:root[data-theme="dark"]{--hi:rgba(255,255,255,.07);--sh1:rgba(0,0,0,.28);--sh2:rgba(0,0,0,.36);--sh3:rgba(0,0,0,.3)}
+body{min-height:100vh;background:
+  radial-gradient(1100px 560px at 10% -10%,color-mix(in srgb,var(--paper) 85%,transparent),transparent 62%),
+  radial-gradient(900px 520px at 100% 0%,color-mix(in srgb,var(--accent) 8%,transparent),transparent 60%),
+  linear-gradient(180deg,color-mix(in srgb,var(--bg) 94%,#fff),color-mix(in srgb,var(--bg) 86%,#000)) fixed;background-color:var(--bg)}
+.top{background:linear-gradient(180deg,color-mix(in srgb,var(--paper) 94%,#fff),color-mix(in srgb,var(--paper) 84%,var(--bg)));box-shadow:inset 0 1px 0 var(--hi),var(--depth-m)}
+.page{box-shadow:inset 0 1px 0 var(--hi),var(--depth-m)}
+.page::after{content:"";position:absolute;inset:0;border-radius:inherit;pointer-events:none;
+  background:linear-gradient(90deg,rgba(0,0,0,.07),transparent 80px),linear-gradient(180deg,color-mix(in srgb,#fff 38%,transparent),transparent 130px),linear-gradient(0deg,rgba(0,0,0,.035),transparent 90px)}
+:root[data-theme="dark"] .page::after{background:linear-gradient(90deg,rgba(0,0,0,.25),transparent 80px),linear-gradient(180deg,rgba(255,255,255,.04),transparent 130px)}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]) .page::after{background:linear-gradient(90deg,rgba(0,0,0,.25),transparent 80px),linear-gradient(180deg,rgba(255,255,255,.04),transparent 130px)}}
+.btn{background:linear-gradient(180deg,color-mix(in srgb,var(--paper-2) 70%,var(--paper)),var(--paper-2));box-shadow:inset 0 1px 0 var(--hi),var(--depth-s)}
+.btn.ghost{background:transparent;box-shadow:none}
+.btn.primary{background:linear-gradient(180deg,color-mix(in srgb,var(--accent) 82%,#fff),var(--accent));
+  box-shadow:inset 0 1px 0 rgba(255,255,255,.28),0 1px 2px rgba(0,0,0,.2),0 6px 14px color-mix(in srgb,var(--accent) 26%,transparent)}
+.btn:active{transform:translateY(1px)}
+.tab{background-image:linear-gradient(90deg,rgba(0,0,0,.12),transparent 38%,rgba(255,255,255,.2))}
+.panel,.tile,.subj{box-shadow:inset 0 1px 0 var(--hi),var(--depth-s)}
+.panel{background:linear-gradient(180deg,color-mix(in srgb,var(--paper-2) 94%,#fff),color-mix(in srgb,var(--paper-2) 90%,var(--bg)))}
+
+/* colour theme picker */
+.lkwrap{position:relative;display:inline-flex}
+.lk-pop{position:absolute;top:calc(100% + 10px);right:0;z-index:80;width:min(440px,calc(100vw - 32px));max-height:min(72vh,640px);overflow:auto;background:var(--paper);color:var(--ink);border:1px solid var(--line);border-radius:16px;padding:14px;box-shadow:inset 0 1px 0 var(--hi),var(--depth-m)}
+.lk-title{font-family:var(--display);font-weight:700;font-size:16px;margin:0 0 4px}
+.lk-h{font-size:11px;letter-spacing:.08em;text-transform:uppercase;font-weight:700;color:var(--muted);margin:12px 0 8px}
+.lk-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(88px,1fr));gap:8px}
+.lk-tile{display:flex;flex-direction:column;gap:6px;border:2px solid var(--line);background:var(--paper-2);color:var(--ink);border-radius:12px;padding:6px;font:inherit;font-size:12px;font-weight:600;cursor:pointer;text-align:left;line-height:1.2}
+.lk-tile:hover{border-color:var(--muted)}
+.lk-tile[aria-pressed="true"]{border-color:var(--accent);box-shadow:0 0 0 2px var(--accent-soft)}
+.lk-sw{display:flex;align-items:flex-end;gap:4px;height:44px;border-radius:8px;padding:5px;border:1px solid rgba(128,128,128,.25)}
+.lk-sw i{flex:1;height:100%;border-radius:4px;border:1px solid transparent}
+.lk-sw i.a{flex:.55;border:0}
+.lk-n{padding:0 2px 2px}
+@media (max-width:640px){.lk-pop{position:fixed;left:16px;right:16px;top:72px;width:auto}}
+.lk-inline{margin-bottom:10px;padding:2px}

@@ -12,7 +12,7 @@ function logo_html(?string $href = null): string
 function auth_top(string $title, string $cardClass = '', bool $covers = false): void
 { ?>
 <!DOCTYPE html>
-<html lang="en">
+<html lang="en"<?= look_attr() ?>>
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -21,14 +21,16 @@ function auth_top(string $title, string $cardClass = '', bool $covers = false): 
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Pacifico&family=Bricolage+Grotesque:opsz,wght@12..96,500;12..96,600;12..96,700&family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="assets/style.css?v=<?= filemtime(__DIR__ . '/assets/style.css') ?>">
+  <link rel="stylesheet" href="assets/looks.css?v=<?= filemtime(__DIR__ . '/assets/looks.css') ?>">
   <link rel="icon" href="assets/logo.svg" type="image/svg+xml">
   <?php if ($covers): ?>
   <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@500;600&family=Great+Vibes&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="assets/covers.css?v=<?= filemtime(__DIR__ . '/assets/covers.css') ?>">
   <?php endif; ?>
-  <script>try{var t=localStorage.getItem('sara-theme');if(t)document.documentElement.setAttribute('data-theme',t)}catch(e){}</script>
+  <script>try{var t=localStorage.getItem('sara-theme');if(t)document.documentElement.setAttribute('data-theme',t);var l=localStorage.getItem('sara-look');if(l&&/^[a-z-]+$/.test(l)&&!document.documentElement.hasAttribute('data-look'))document.documentElement.setAttribute('data-look',l)}catch(e){}</script>
 <script src="assets/lang.js?v=<?= filemtime(__DIR__ . '/assets/lang.js') ?>"></script>
 <script src="assets/icons.js?v=<?= filemtime(__DIR__ . '/assets/icons.js') ?>"></script>
+<script src="assets/looks.js?v=<?= filemtime(__DIR__ . '/assets/looks.js') ?>" defer></script>
 </head>
 <body>
 <main class="auth">
@@ -176,6 +178,7 @@ function app_nav(?int $uid, string $active = '', bool $planner = false): void
       </div>
       <button type="button" class="btn" id="reportBtn"<?= can_view_users($uid) ? ' data-admin="1" aria-label="Reports" title="Reports"' : ' aria-label="Report a problem" title="Report a problem"' ?> aria-haspopup="dialog"><?= $ic('<circle cx="12" cy="12" r="9"/><path d="M12 7.5v5.5M12 16.5v.01"/>') ?></button>
       <?php if (can_view_users($uid)): ?><a class="btn<?= $active === 'admin' ? ' on' : '' ?>" href="admin.php" aria-label="Users" title="Users"><?= $ic('<circle cx="9" cy="8" r="3.5"/><path d="M2.5 20c0-3.6 2.9-6 6.5-6s6.5 2.4 6.5 6M16 4.6a3.5 3.5 0 0 1 0 6.8M18 14.3c2.3.7 3.5 2.6 3.5 5.7"/>') ?><span class="lbl">Users</span></a><?php endif; ?>
+      <div class="lkwrap"><button type="button" class="btn" data-look-btn aria-label="Colour theme" title="Colour theme" aria-haspopup="dialog"><?= ico('palette') ?></button></div>
       <button class="btn" data-lang-btn aria-label="Language">Shqip</button>
       <button class="btn"<?= $planner ? ' id="themeBtn" data-act="theme"' : ' data-theme-btn' ?> aria-label="Switch theme"></button>
       <form method="post" action="logout.php" class="inline">
@@ -186,6 +189,7 @@ function app_nav(?int $uid, string $active = '', bool $planner = false): void
       <a class="btn<?= $active === 'explore' ? ' on' : '' ?>" href="explore.php">Explore</a>
       <a class="btn" href="login.php">Log in</a>
       <a class="btn primary" href="register.php">Create free account</a>
+      <div class="lkwrap"><button type="button" class="btn" data-look-btn aria-label="Colour theme" title="Colour theme" aria-haspopup="dialog"><?= ico('palette') ?></button></div>
       <button class="btn" data-lang-btn aria-label="Language">Shqip</button>
       <button class="btn"<?= $planner ? ' id="themeBtn" data-act="theme"' : ' data-theme-btn' ?> aria-label="Switch theme"></button>
     <?php endif; ?>
@@ -208,7 +212,7 @@ function app_top(string $title, array $o = []): void
     $APP_SHELL = ['tabs' => $o['tabs'] ?? (($uid || $tour) && empty($o['notabs']) ? planner_tabs_html($o['tab'] ?? '', false, $tour) : ''), 'inside' => ''];
     ?>
 <!DOCTYPE html>
-<html lang="en">
+<html lang="en"<?= look_attr() ?>>
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -220,10 +224,12 @@ function app_top(string $title, array $o = []): void
   <?php if (!empty($o['covers'])): ?><link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@500;600&family=Great+Vibes&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="assets/covers.css?v=<?= filemtime(__DIR__ . '/assets/covers.css') ?>"><?php endif; ?>
   <link rel="stylesheet" href="assets/style.css?v=<?= filemtime(__DIR__ . '/assets/style.css') ?>">
+  <link rel="stylesheet" href="assets/looks.css?v=<?= filemtime(__DIR__ . '/assets/looks.css') ?>">
   <link rel="icon" href="assets/logo.svg" type="image/svg+xml">
-  <script>try{var t=localStorage.getItem('sara-theme');if(t)document.documentElement.setAttribute('data-theme',t)}catch(e){}</script>
+  <script>try{var t=localStorage.getItem('sara-theme');if(t)document.documentElement.setAttribute('data-theme',t);var l=localStorage.getItem('sara-look');if(l&&/^[a-z-]+$/.test(l)&&!document.documentElement.hasAttribute('data-look'))document.documentElement.setAttribute('data-look',l)}catch(e){}</script>
 <script src="assets/lang.js?v=<?= filemtime(__DIR__ . '/assets/lang.js') ?>"></script>
 <script src="assets/icons.js?v=<?= filemtime(__DIR__ . '/assets/icons.js') ?>"></script>
+<script src="assets/looks.js?v=<?= filemtime(__DIR__ . '/assets/looks.js') ?>" defer></script>
 </head>
 <body<?= $tour ? ' class="tour"' : '' ?>>
 <div class="app"<?= design_attrs($d, 'accent') . design_style($d) ?>>

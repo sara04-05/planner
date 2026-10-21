@@ -285,17 +285,19 @@ ob_start(); ?>
 
 if ($mini): ?>
 <!DOCTYPE html>
-<html lang="en">
+<html lang="en"<?= look_attr() ?>>
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Music · Splanner</title>
   <link href="<?= FONT_LINK ?>" rel="stylesheet">
   <link rel="stylesheet" href="assets/style.css?v=<?= filemtime(__DIR__ . '/assets/style.css') ?>">
+  <link rel="stylesheet" href="assets/looks.css?v=<?= filemtime(__DIR__ . '/assets/looks.css') ?>">
   <link rel="icon" href="assets/logo.svg" type="image/svg+xml">
-  <script>try{var t=localStorage.getItem('sara-theme');if(t)document.documentElement.setAttribute('data-theme',t)}catch(e){}</script>
+  <script>try{var t=localStorage.getItem('sara-theme');if(t)document.documentElement.setAttribute('data-theme',t);var l=localStorage.getItem('sara-look');if(l&&/^[a-z-]+$/.test(l)&&!document.documentElement.hasAttribute('data-look'))document.documentElement.setAttribute('data-look',l)}catch(e){}</script>
   <script src="assets/lang.js?v=<?= filemtime(__DIR__ . '/assets/lang.js') ?>"></script>
 <script src="assets/icons.js?v=<?= filemtime(__DIR__ . '/assets/icons.js') ?>"></script>
+<script src="assets/looks.js?v=<?= filemtime(__DIR__ . '/assets/looks.js') ?>" defer></script>
 </head>
 <body class="music-win">
 <?= $body ?>
