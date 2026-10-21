@@ -45,7 +45,7 @@ if (current_user_id()) {
 
     /* live preview */
     .demo-wrap{position:relative}
-    .demo-badge{position:absolute;top:-14px;left:40px;z-index:3;background:var(--sticky);color:var(--sticky-ink);font-weight:700;font-size:12px;padding:5px 12px;border-radius:4px;transform:rotate(-2deg);box-shadow:0 4px 10px rgba(0,0,0,.1)}
+    .demo-badge{position:absolute;top:-14px;left:40px;z-index:6;background:var(--sticky);color:var(--sticky-ink);font-weight:700;font-size:12px;padding:5px 12px;border-radius:4px;transform:rotate(-2deg);box-shadow:0 4px 10px rgba(0,0,0,.1)}
     .demo .page{min-height:430px;padding:26px 24px 24px 60px}
     .demo .tab{font-size:13px;padding:12px 8px 12px 10px;width:38px}
     .demo .tab[aria-selected="true"]{width:46px}
