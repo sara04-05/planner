@@ -158,7 +158,7 @@ if (current_user_id()) {
       <a href="#safety">Is it safe?</a>
       <a href="#faq">FAQ</a>
       <button class="linkbtn langsw" data-lang-btn>Shqip</button>
-      <span class="lkwrap"><button type="button" class="btn ghost" data-look-btn aria-label="Colour theme" title="Colour theme" aria-haspopup="dialog"><?= ico('palette') ?></button></span>
+      <span class="lkwrap"><button type="button" class="btn ghost" data-look-btn aria-label="Colour theme" title="Colour theme" aria-haspopup="dialog"><?= ico('palette') ?><span class="lbl">Theme</span></button></span>
       <button class="btn ghost" data-theme-btn aria-label="Switch theme"></button>
       <a class="btn ghost" href="login.php">Log in</a>
       <a class="btn primary" href="register.php">Create free account</a>

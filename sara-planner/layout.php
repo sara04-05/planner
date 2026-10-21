@@ -178,7 +178,7 @@ function app_nav(?int $uid, string $active = '', bool $planner = false): void
       </div>
       <button type="button" class="btn" id="reportBtn"<?= can_view_users($uid) ? ' data-admin="1" aria-label="Reports" title="Reports"' : ' aria-label="Report a problem" title="Report a problem"' ?> aria-haspopup="dialog"><?= $ic('<circle cx="12" cy="12" r="9"/><path d="M12 7.5v5.5M12 16.5v.01"/>') ?></button>
       <?php if (can_view_users($uid)): ?><a class="btn<?= $active === 'admin' ? ' on' : '' ?>" href="admin.php" aria-label="Users" title="Users"><?= $ic('<circle cx="9" cy="8" r="3.5"/><path d="M2.5 20c0-3.6 2.9-6 6.5-6s6.5 2.4 6.5 6M16 4.6a3.5 3.5 0 0 1 0 6.8M18 14.3c2.3.7 3.5 2.6 3.5 5.7"/>') ?><span class="lbl">Users</span></a><?php endif; ?>
-      <div class="lkwrap"><button type="button" class="btn" data-look-btn aria-label="Colour theme" title="Colour theme" aria-haspopup="dialog"><?= ico('palette') ?></button></div>
+      <div class="lkwrap"><button type="button" class="btn" data-look-btn aria-label="Colour theme" title="Colour theme" aria-haspopup="dialog"><?= ico('palette') ?><span class="lbl">Theme</span></button></div>
       <button class="btn" data-lang-btn aria-label="Language">Shqip</button>
       <button class="btn"<?= $planner ? ' id="themeBtn" data-act="theme"' : ' data-theme-btn' ?> aria-label="Switch theme"></button>
       <form method="post" action="logout.php" class="inline">
@@ -189,7 +189,7 @@ function app_nav(?int $uid, string $active = '', bool $planner = false): void
       <a class="btn<?= $active === 'explore' ? ' on' : '' ?>" href="explore.php">Explore</a>
       <a class="btn" href="login.php">Log in</a>
       <a class="btn primary" href="register.php">Create free account</a>
-      <div class="lkwrap"><button type="button" class="btn" data-look-btn aria-label="Colour theme" title="Colour theme" aria-haspopup="dialog"><?= ico('palette') ?></button></div>
+      <div class="lkwrap"><button type="button" class="btn" data-look-btn aria-label="Colour theme" title="Colour theme" aria-haspopup="dialog"><?= ico('palette') ?><span class="lbl">Theme</span></button></div>
       <button class="btn" data-lang-btn aria-label="Language">Shqip</button>
       <button class="btn"<?= $planner ? ' id="themeBtn" data-act="theme"' : ' data-theme-btn' ?> aria-label="Switch theme"></button>
     <?php endif; ?>

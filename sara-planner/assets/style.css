@@ -1799,10 +1799,16 @@ a.nbcover-link:focus-visible{outline:3px solid var(--accent);outline-offset:6px;
 
 /* logged-out top bar on phones (welcome, tour, explore): text buttons with their labels showing, not the icon-only row of a signed-in user */
 @media (max-width:640px){
-  .top-r.guest{grid-auto-flow:row;grid-auto-columns:unset;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}
-  .top-r.guest .btn{font-size:14px;font-weight:600;height:42px;padding:0 10px;white-space:nowrap;justify-content:center}
+  /* Explore and Log in share a row, Create account has its own, and the three small buttons share the last one */
+  .top-r.guest{grid-auto-flow:row;grid-auto-columns:unset;grid-template-columns:repeat(6,minmax(0,1fr));gap:8px}
+  .top-r.guest .btn{font-size:14px;font-weight:600;height:42px;padding:0 10px;white-space:nowrap;justify-content:center;gap:6px}
+  .top-r.guest>a.btn{grid-column:span 3}
   .top-r.guest .btn.primary{grid-column:1/-1}
-  .top-r.guest .btn[data-lang-btn],.top-r.guest .btn[data-theme-btn]{font-size:14px}
+  .top-r.guest>.btn[data-lang-btn],.top-r.guest>.btn[data-theme-btn],.top-r.guest>#themeBtn,.top-r.guest>.lkwrap{grid-column:span 2}
+  .top-r.guest>.lkwrap{display:flex}
+  .top-r.guest>.lkwrap .btn{flex:1}
+  .top-r.guest .btn[data-lang-btn],.top-r.guest .btn[data-theme-btn],.top-r.guest #themeBtn{font-size:13px}
+  .top-r.guest .btn .lbl{display:inline}
   .top-r.guest .btn svg{width:18px;height:18px}
 }
 
