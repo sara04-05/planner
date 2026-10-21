@@ -1420,7 +1420,9 @@ a.nbtile{text-decoration:none}.nbtiles{margin-bottom:14px}.nbtile.on span{color:
 
 /* subjects: masonry columns, so each card starts right under the end of the one above it with no empty gaps */
 .subjects{display:block;column-width:290px;column-gap:16px}
-.subjects>.subj{break-inside:avoid;-webkit-column-break-inside:avoid;margin:0 0 16px;display:block}
+/* subjects pack into columns with no gaps: a long subject continues in the next column instead of leaving blank space under the shorter ones */
+.subjects>.subj{break-inside:auto;margin:0 0 16px;display:block;-webkit-box-decoration-break:clone;box-decoration-break:clone}
+.subjects>.subj .subj-h,.subjects>.subj .ch,.subjects>.subj .addrow{break-inside:avoid}
 
 /* top bar: icons only (the date stays as text); the logo and the bar follow the chosen look */
 .top-r .btn .lbl{display:none}
