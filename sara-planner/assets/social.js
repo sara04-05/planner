@@ -8,9 +8,9 @@ const $=id=>document.getElementById(id);
 const hdr=(eyebrow,title,right='')=>`<div class="vh"><div><p class="eyebrow">${eyebrow}</p><h1>${title}</h1></div><div class="nav">${right}</div></div>`;
 
 const ART={hearts:'Hearts',rainbow:'Rainbows',mountains:'Mountains',pinstripe:'Pinstripe',monstera:'Monstera',blossom:'Cherry blossom',library:'Dark academia',gingham:'Gingham',coquette:'Bows',stars:'Starry night',clouds:'Clouds',lavender:'Lavender',daisy:'Daisies',checker:'Checkerboard',strawberry:'Strawberries',terrazzo:'Terrazzo',waves:'Waves',dots:'Polka dots',sunsetgrain:'Sunset',matcha:'Matcha'};   // patterned covers: name by key, drawn by --cov-* in style.css
-const COVERS={dusk:['#6A4DC4','#E0609A'],peach:['#F9A826','#F36B7F'],ocean:['#1F77C9','#3FC1C9'],mint:['#4FA36B','#B6E3C9'],berry:['#8E2DE2','#C2185B'],sunny:['#FFD452','#FF9966'],night:['#1B1740','#4B3A8F'],cloud:['#BFD7F5','#E8DDF8']};
+const COVERS={dusk:['#1C1C1C','#6B6B6B'],peach:['#F9A826','#F36B7F'],ocean:['#1F77C9','#3FC1C9'],mint:['#4FA36B','#B6E3C9'],berry:['#8E2DE2','#C2185B'],sunny:['#FFD452','#FF9966'],night:['#1B1740','#4B3A8F'],cloud:['#BFD7F5','#E8DDF8']};
 const PAPER_COLORS={white:'#FFFFFF',cream:'#FFF8E8',blush:'#FFF0F3',mint:'#EEF9F2',sky:'#EEF5FD',lilac:'#F4EFFC'};
-const ACCENTS={violet:'#6A4DC4',rose:'#C93A72',ocean:'#1F77C9',forest:'#2B8A5B',sunset:'#D2661E',graphite:'#4A4F5C',white:'#FFFFFF'};
+const ACCENTS={violet:'#1C1C1C',rose:'#C93A72',ocean:'#1F77C9',forest:'#2B8A5B',sunset:'#D2661E',graphite:'#4A4F5C',white:'#FFFFFF'};
 const PAPERS=[['lined','Lined'],['grid','Grid'],['dots','Dots'],['plain','Plain']];
 const FONTS=[['modern','Modern',''],['hand','Handwritten','Caveat,cursive'],['serif','Classic','Lora,Georgia,serif'],['mono','Typewriter','ui-monospace,Menlo,monospace']];
 const BINDINGS=[['coil','Spiral'],['stitch','Stitched'],['none','Plain edge']];
@@ -24,7 +24,7 @@ const DAYLV=['Nobody, only me','Friends only','Anyone signed in','Everyone, even
 const BASE={cover:'dusk',cover_img:0,cover_c1:'',cover_c2:'',paper:'lined',paper_color:'white',paper_hex:'',accent:'violet',accent_hex:'',font:'modern',binding:'coil',label:'box',label_hex:'',label_r:0,label_w:0,label_h:0,font_size:0};
 // ready-made looks (the user can also save their own)
 const PRESETS=[
-  ['Dreamy lilac',{cover:'dusk',paper:'dots',paper_color:'lilac',accent:'violet',font:'hand'}],
+  ['Graphite',{cover:'dusk',paper:'dots',paper_color:'white',accent:'violet',font:'hand'}],
   ['Cozy cream',{cover:'peach',paper:'lined',paper_color:'cream',accent:'sunset',font:'serif',binding:'stitch'}],
   ['Midnight',{cover:'night',paper:'dots',paper_color:'custom',paper_hex:'#1f1b2e',accent:'custom',accent_hex:'#a98ff6'}],
   ['Cherry blossom',{cover:'berry',paper:'plain',paper_color:'blush',accent:'rose',font:'hand'}],
@@ -113,7 +113,7 @@ const lum=hex=>{const c=[1,3,5].map(i=>{const v=parseInt(hex.slice(i,i+2),16)/25
 function wrapAttrs(d){   // goes on the notebook wrapper: accent colour + the colours the user picked
   let a='',v='';
   if(d.accent&&d.accent!=='violet')a+=` data-accent="${d.accent}"`;
-  if(d.accent==='custom'&&d.accent_hex)v+=`--c-accent:${d.accent_hex};--c-on:${lum(d.accent_hex)>.55?'#17121F':'#FFFFFF'};`;
+  if(d.accent==='custom'&&d.accent_hex)v+=`--c-accent:${d.accent_hex};--c-on:${lum(d.accent_hex)>.55?'#111111':'#FFFFFF'};`;
   if(d.paper_color==='custom'&&d.paper_hex)v+=`--c-paper:${d.paper_hex};`;
   if(d.label&&d.label!=='box')a+=` data-label="${d.label}"`;
   if(d.label_hex)v+=`--c-label:${d.label_hex};--c-label-ink:${lum(d.label_hex)>.5?'#2B2118':'#FFFFFF'};`;
@@ -453,7 +453,7 @@ function coverFull(p){
 function notebookSpread(nb){
   const d=nb.design||{},fam=(FONTS.find(f=>f[0]===d.font)||[])[2]||'',paper=d.paper_color==='custom'&&d.paper_hex?d.paper_hex:(PAPER_COLORS[d.paper_color]||'#FFFFFF');
   const ink=lum(paper)<.4?'#EDE9F5':'#2A2338',rule=lum(paper)<.4?'rgba(255,255,255,.12)':'rgba(60,40,90,.14)';
-  let ac=d.accent==='custom'&&d.accent_hex?d.accent_hex:(ACCENTS[d.accent]||ACCENTS.violet);if(lum(ac)>.8&&lum(paper)>.5)ac='#9A93AB';
+  let ac=d.accent==='custom'&&d.accent_hex?d.accent_hex:(ACCENTS[d.accent]||ACCENTS.violet);if(lum(ac)>.8&&lum(paper)>.5)ac='#9A9A9A';
   const pages=nb.sections.map(k=>SECNAME[k]).concat((nb.pages||[]).map(p=>(p.emoji?p.emoji+' ':'')+p.title),['Day']);
   const name=(document.querySelector('.hello span:last-child')||{textContent:''}).textContent.replace(/^Hi,\s*/,'');
   const sticks=(d.stickers||[]).filter(x=>(x.p||'cover')==='cover').slice(0,4).map((x,i)=>`<span class="sp-stk" style="left:${12+i*22}%;top:${70+(i%2)*12}%">${x.k.startsWith('up:')?'':esc(x.k)}</span>`).join('');

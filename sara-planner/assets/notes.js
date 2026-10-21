@@ -302,7 +302,7 @@ async function drawOn(f){
 
 /* ---------- the whiteboard ---------- */
 const W=1600,H=1000;
-const COLORS=['#2A2338','#ffffff','#E5484D','#F76B15','#FFC53D','#46A758','#0090FF','#6A4DC4','#D6409F','#8D6E63'];
+const COLORS=['#141414','#ffffff','#E5484D','#F76B15','#FFC53D','#46A758','#0090FF','#555555','#9E9E9E','#8D6E63'];
 function openBoard(picture){
   const n=cur;if(!n)return;
   const ov=el('div','wb');ov.setAttribute('role','dialog');ov.setAttribute('aria-label',T('Whiteboard'));

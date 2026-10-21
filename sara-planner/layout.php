@@ -77,7 +77,7 @@ function design_attrs(array $d, string $part = 'all'): string
 function design_style(array $d): string
 {
     $v = '';
-    if (($d['accent'] ?? '') === 'custom' && !empty($d['accent_hex'])) $v .= '--c-accent:' . h($d['accent_hex']) . ';--c-on:' . (hex_lum($d['accent_hex']) > 0.55 ? '#17121F' : '#FFFFFF') . ';';
+    if (($d['accent'] ?? '') === 'custom' && !empty($d['accent_hex'])) $v .= '--c-accent:' . h($d['accent_hex']) . ';--c-on:' . (hex_lum($d['accent_hex']) > 0.55 ? '#111111' : '#FFFFFF') . ';';
     if (($d['paper_color'] ?? '') === 'custom' && !empty($d['paper_hex'])) $v .= '--c-paper:' . h($d['paper_hex']) . ';';
     if (!empty($d['label_hex'])) $v .= '--c-label:' . h($d['label_hex']) . ';--c-label-ink:' . (hex_lum($d['label_hex']) > 0.5 ? '#2B2118' : '#FFFFFF') . ';';
     if (($d['label'] ?? 'box') !== 'none') {   // corners, width and height of the label apply on top of any shape

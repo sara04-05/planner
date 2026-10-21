@@ -23,7 +23,7 @@ $name = (string)(q('SELECT name FROM users WHERE id = ?', [$uid])->fetch()['name
 
 // ready-made looks: [label, cover, paper, accent, binding]
 $LOOKS = [
-    ['Violet dusk', 'dusk', 'lined', 'violet', 'coil'], ['Rose garden', 'blossom', 'lined', 'rose', 'coil'],
+    ['Graphite', 'dusk', 'lined', 'violet', 'coil'], ['Rose garden', 'blossom', 'lined', 'rose', 'coil'],
     ['Ocean', 'ocean', 'grid', 'ocean', 'coil'], ['Mint', 'mint', 'lined', 'forest', 'stitch'],
     ['Peach', 'peach', 'dots', 'sunset', 'coil'], ['Dark academia', 'library', 'lined', 'graphite', 'stitch'],
     ['Starry night', 'stars', 'plain', 'violet', 'coil'], ['Matcha', 'matcha', 'grid', 'forest', 'coil'],
