@@ -188,6 +188,20 @@ function upgrade_schema(PDO $pdo): void
         }
     }
 
+    // Notebooks that got a look's accent or paper colour saved as their own go back to following the look
+    try {
+        foreach (['profiles' => 'user_id', 'notebooks' => 'id'] as $table => $key) {
+            foreach ($pdo->query("SELECT $key AS k, design FROM $table WHERE design IS NOT NULL")->fetchAll() as $r) {
+                $d = json_decode((string)$r['design'], true);
+                if (!is_array($d)) continue;
+                $n = design_unlook($d);
+                if ($n !== $d) $pdo->prepare("UPDATE $table SET design = ? WHERE $key = ?")->execute([json_encode($n), $r['k']]);
+            }
+        }
+    } catch (Throwable $e) {
+        error_log('Could not repair look colours in notebook designs: ' . $e->getMessage());
+    }
+
     // The colour look a person picked for the whole site (see assets/looks.json). Only adds the column.
     try {
         $cols = DB_DRIVER === 'sqlite'
@@ -465,27 +479,35 @@ function mix_hex(string $a, string $b, float $t): string
     return $o;
 }
 
-/**
- * A notebook design in the colours of a look. Only the parts still on the default colours, or on the colours of some look, are changed,
- * so a cover, paper or colour somebody picked by hand stays.
- */
-function design_from_look(array $d, array $look): array
+/** A design with colours that only came from a look (not picked by hand) put back to "follow the look", so the paper and accent use the look's own light and dark colours. */
+function design_unlook(array $d): array
 {
     $accents = $papers = [];
     foreach (looks_all() as $l) {
         $accents[] = strtolower($l['light']['accent']);
         $papers[] = strtolower($l['light']['paper']);
     }
-    $c = $look['light'];
-    $acc = strtolower($c['accent']);
-    if (($d['accent'] ?? 'violet') === 'violet' || (($d['accent'] ?? '') === 'custom' && in_array(strtolower((string)($d['accent_hex'] ?? '')), $accents, true))) {
-        $d['accent'] = 'custom';
-        $d['accent_hex'] = $acc;
+    if (($d['accent'] ?? '') === 'custom' && in_array(strtolower((string)($d['accent_hex'] ?? '')), $accents, true)) {
+        $d['accent'] = 'violet';
+        $d['accent_hex'] = '';
     }
-    if (($d['paper_color'] ?? 'white') === 'white' || (($d['paper_color'] ?? '') === 'custom' && in_array(strtolower((string)($d['paper_hex'] ?? '')), $papers, true))) {
-        $d['paper_color'] = 'custom';
-        $d['paper_hex'] = strtolower($c['paper']);
+    if (($d['paper_color'] ?? '') === 'custom' && in_array(strtolower((string)($d['paper_hex'] ?? '')), $papers, true)) {
+        $d['paper_color'] = 'white';
+        $d['paper_hex'] = '';
     }
+    return $d;
+}
+
+/**
+ * A notebook design for a look. The accent and paper follow the look on their own. Only the cover gets the look's colours, and only while it is
+ * still the default cover or one made from a look, so a cover somebody picked stays.
+ */
+function design_from_look(array $d, array $look): array
+{
+    $d = design_unlook($d);
+    $accents = [];
+    foreach (looks_all() as $l) $accents[] = strtolower($l['light']['accent']);
+    $acc = strtolower($look['light']['accent']);
     $c1 = strtolower((string)($d['cover_c1'] ?? ''));
     if (($d['cover'] ?? 'dusk') === 'dusk' || (($d['cover'] ?? '') === 'custom' && in_array($c1, $accents, true) && ($d['cover_c2'] ?? '') === mix_hex($c1, '#ffffff', 0.5))) {
         $d['cover'] = 'custom';

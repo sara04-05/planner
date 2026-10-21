@@ -1649,7 +1649,7 @@ a.nbcover-link:focus-visible{outline:3px solid var(--accent);outline-offset:6px;
 .nbe.panel-open .nbe-side{position:static}
 
 /* corners, width and height from the sliders work on top of any ready-made shape; text size from the slider */
-[data-label="box"] .nbcover-in,[data-label="stamp"] .nbcover-in,[data-label="ticket"] .nbcover-in,[data-label="band"] .nbcover-in,:not([data-label]) .nbcover-in{border-radius:var(--lb-r,4px)}
+[data-label="box"] .nbcover-in,[data-label="stamp"] .nbcover-in,[data-label="ticket"] .nbcover-in,[data-label="band"] .nbcover-in,:where(:not([data-label])) .nbcover-in{border-radius:var(--lb-r,4px)}   /* :where keeps this weaker than the round, oval, arch and pill shapes above */
 [data-lbw] .nbcover-in{width:var(--lb-w,69%);left:calc(14% + (86% - var(--lb-w,69%)) / 2);right:auto}
 .nbcover-in{min-height:var(--lb-h,0%)}
 [data-label="custom"] .nbcover-in{border-radius:var(--lb-r,6%)}
