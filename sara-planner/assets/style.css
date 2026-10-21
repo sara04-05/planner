@@ -2049,3 +2049,16 @@ h1{font-weight:700;letter-spacing:-.025em;background:linear-gradient(transparent
 .top .logo,.lnav .logo{color:var(--accent)}
 /* the look picker opens inside the bar but shows the site look */
 .lk-pop{--paper:var(--look-paper);--paper-2:var(--look-paper2);--ink:var(--look-ink);--muted:var(--look-muted);--line:var(--look-line);--accent:var(--look-accent);--accent-soft:var(--look-soft);--on-accent:var(--look-on)}
+
+/* ---- lighter shadows ---- */
+:root{--sh1:rgba(0,0,0,.035);--sh2:rgba(0,0,0,.05);--sh3:rgba(0,0,0,.03);
+  --depth-s:0 1px 1px var(--sh1),0 1px 4px var(--sh1);
+  --depth-m:0 1px 2px var(--sh2),0 4px 14px var(--sh2);
+  --shadow:0 1px 2px rgba(0,0,0,.04),0 4px 16px rgba(0,0,0,.05)}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--sh1:rgba(0,0,0,.16);--sh2:rgba(0,0,0,.2);--sh3:rgba(0,0,0,.14);--shadow:0 1px 2px rgba(0,0,0,.2),0 4px 16px rgba(0,0,0,.22)}}
+:root[data-theme="dark"]{--sh1:rgba(0,0,0,.16);--sh2:rgba(0,0,0,.2);--sh3:rgba(0,0,0,.14);--shadow:0 1px 2px rgba(0,0,0,.2),0 4px 16px rgba(0,0,0,.22)}
+.top,.lnav{--shadow:0 1px 2px rgba(42,35,56,.04),0 4px 14px rgba(42,35,56,.05)}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]) .top,:root:not([data-theme="light"]) .lnav{--shadow:0 1px 2px rgba(0,0,0,.2),0 4px 14px rgba(0,0,0,.22)}}
+:root[data-theme="dark"] .top,:root[data-theme="dark"] .lnav{--shadow:0 1px 2px rgba(0,0,0,.2),0 4px 14px rgba(0,0,0,.22)}
+.btn.primary{box-shadow:inset 0 1px 0 rgba(255,255,255,.22),0 1px 2px rgba(0,0,0,.12)}
+.page::after{background:linear-gradient(90deg,rgba(0,0,0,.035),transparent 70px),linear-gradient(180deg,color-mix(in srgb,#fff 30%,transparent),transparent 110px)}
