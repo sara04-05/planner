@@ -19,7 +19,7 @@ function auth_top(string $title, string $cardClass = '', bool $covers = false): 
   <title><?= h($title) ?> · Splanner</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Pacifico&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Pacifico&family=Bricolage+Grotesque:opsz,wght@12..96,500;12..96,600;12..96,700&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="assets/style.css?v=<?= filemtime(__DIR__ . '/assets/style.css') ?>">
   <link rel="stylesheet" href="assets/looks.css?v=<?= filemtime(__DIR__ . '/assets/looks.css') ?>">
   <link rel="icon" href="assets/logo.svg" type="image/svg+xml">
@@ -50,7 +50,7 @@ function auth_bottom(): void
 </html>
 <?php }
 
-const FONT_LINK = 'https://fonts.googleapis.com/css2?family=Pacifico&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=Caveat:wght@500;700&family=Lora:wght@400;600&display=swap';
+const FONT_LINK = 'https://fonts.googleapis.com/css2?family=Pacifico&family=Bricolage+Grotesque:opsz,wght@12..96,500;12..96,600;12..96,700&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=Caveat:wght@500;700&family=Lora:wght@400;600&display=swap';
 
 /** Is this #rrggbb colour light? (0 = black … 1 = white) */
 function hex_lum(string $hex): float

@@ -8,9 +8,9 @@ const $=id=>document.getElementById(id);
 const hdr=(eyebrow,title,right='')=>`<div class="vh"><div><p class="eyebrow">${eyebrow}</p><h1>${title}</h1></div><div class="nav">${right}</div></div>`;
 
 const ART={hearts:'Hearts',rainbow:'Rainbows',mountains:'Mountains',pinstripe:'Pinstripe',monstera:'Monstera',blossom:'Cherry blossom',library:'Dark academia',gingham:'Gingham',coquette:'Bows',stars:'Starry night',clouds:'Clouds',lavender:'Lavender',daisy:'Daisies',checker:'Checkerboard',strawberry:'Strawberries',terrazzo:'Terrazzo',waves:'Waves',dots:'Polka dots',sunsetgrain:'Sunset',matcha:'Matcha'};   // patterned covers: name by key, drawn by --cov-* in style.css
-const COVERS={dusk:['#3A3A3A','#8A8A8A'],peach:['#F9A826','#F36B7F'],ocean:['#1F77C9','#3FC1C9'],mint:['#4FA36B','#B6E3C9'],berry:['#8E2DE2','#C2185B'],sunny:['#FFD452','#FF9966'],night:['#1B1740','#4B3A8F'],cloud:['#BFD7F5','#E8DDF8']};
+const COVERS={dusk:['#6A4DC4','#E0609A'],peach:['#F9A826','#F36B7F'],ocean:['#1F77C9','#3FC1C9'],mint:['#4FA36B','#B6E3C9'],berry:['#8E2DE2','#C2185B'],sunny:['#FFD452','#FF9966'],night:['#1B1740','#4B3A8F'],cloud:['#BFD7F5','#E8DDF8']};
 const PAPER_COLORS={white:'#FFFFFF',cream:'#FFF8E8',blush:'#FFF0F3',mint:'#EEF9F2',sky:'#EEF5FD',lilac:'#F4EFFC'};
-const ACCENTS={violet:'#3A3A3A',rose:'#C93A72',ocean:'#1F77C9',forest:'#2B8A5B',sunset:'#D2661E',graphite:'#4A4F5C',white:'#FFFFFF'};
+const ACCENTS={violet:'#6A4DC4',rose:'#C93A72',ocean:'#1F77C9',forest:'#2B8A5B',sunset:'#D2661E',graphite:'#4A4F5C',white:'#FFFFFF'};
 const PAPERS=[['lined','Lined'],['grid','Grid'],['dots','Dots'],['plain','Plain']];
 const FONTS=[['modern','Modern',''],['hand','Handwritten','Caveat,cursive'],['serif','Classic','Lora,Georgia,serif'],['mono','Typewriter','ui-monospace,Menlo,monospace']];
 const BINDINGS=[['coil','Spiral'],['stitch','Stitched'],['none','Plain edge']];
@@ -24,7 +24,7 @@ const DAYLV=['Nobody, only me','Friends only','Anyone signed in','Everyone, even
 const BASE={cover:'dusk',cover_img:0,cover_c1:'',cover_c2:'',paper:'lined',paper_color:'white',paper_hex:'',accent:'violet',accent_hex:'',font:'modern',binding:'coil',label:'box',label_hex:'',label_r:0,label_w:0,label_h:0,font_size:0};
 // ready-made looks (the user can also save their own)
 const PRESETS=[
-  ['Graphite',{cover:'dusk',paper:'dots',paper_color:'white',accent:'violet',font:'hand'}],
+  ['Dreamy lilac',{cover:'dusk',paper:'dots',paper_color:'lilac',accent:'violet',font:'hand'}],
   ['Cozy cream',{cover:'peach',paper:'lined',paper_color:'cream',accent:'sunset',font:'serif',binding:'stitch'}],
   ['Midnight',{cover:'night',paper:'dots',paper_color:'custom',paper_hex:'#1f1b2e',accent:'custom',accent_hex:'#a98ff6'}],
   ['Cherry blossom',{cover:'berry',paper:'plain',paper_color:'blush',accent:'rose',font:'hand'}],

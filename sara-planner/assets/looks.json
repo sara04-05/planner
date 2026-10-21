@@ -1,5 +1,39 @@
 [
  {
+  "slug": "classic",
+  "name": "Classic",
+  "group": "main",
+  "mood": "The original Splanner look: lilac and violet.",
+  "light": {
+   "bg": "#E9E4F1",
+   "paper": "#FFFFFF",
+   "paper2": "#F6F3FA",
+   "ink": "#2A2338",
+   "muted": "#6F6781",
+   "line": "#E4DDEC",
+   "accent": "#6A4DC4",
+   "soft": "#ECE6FB",
+   "on": "#FFFFFF",
+   "t1": "#FBE7B0",
+   "t2": "#CBEBDA",
+   "t3": "#F7D3DD"
+  },
+  "dark": {
+   "bg": "#14111B",
+   "paper": "#1E1A27",
+   "paper2": "#27222F",
+   "ink": "#EDE9F5",
+   "muted": "#A49CB5",
+   "line": "#352E42",
+   "accent": "#A98FF6",
+   "soft": "#302849",
+   "on": "#17121F",
+   "t1": "#4D4222",
+   "t2": "#1F4032",
+   "t3": "#4A2A3B"
+  }
+ },
+ {
   "slug": "graphite",
   "name": "Graphite",
   "group": "main",

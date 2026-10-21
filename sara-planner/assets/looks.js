@@ -1,7 +1,7 @@
 /* Colour looks: the button in the top bar opens a picker; setup.php mounts the same picker. The choice is saved in the browser (localStorage)
    and, for a signed-in person, on their account through look.php. The colours themselves are in assets/looks.css (built from assets/looks.json). */
 (function(){
-  var root=document.documentElement,KEY='sara-look',DEFAULT='graphite',list=null,loading=null;
+  var root=document.documentElement,KEY='sara-look',DEFAULT='classic',list=null,loading=null;
   var csrf=function(){var m=document.querySelector('meta[name="csrf-token"]');return m?m.content:''};
   var current=function(){return root.getAttribute('data-look')||DEFAULT};
   function load(){
