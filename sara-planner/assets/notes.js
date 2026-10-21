@@ -3,7 +3,7 @@
    saved as a picture: pen, marker, eraser, lines, arrows, shapes, text and pictures you can draw over. */
 (function(){
 const box=document.getElementById('notes');if(!box)return;
-const CSRF=box.dataset.csrf, T=s=>(window.SPL_T?window.SPL_T(s):s);
+const CSRF=box.dataset.csrf, TOUR=!!box.dataset.tour, T=s=>(window.SPL_T?window.SPL_T(s):s);
 const $=id=>document.getElementById(id);
 const listEl=$('ntList'), main=$('ntMain'), search=$('ntSearch'), subjEl=$('ntSubjects'), useEl=$('ntUse');
 let S={notes:[],subjects:[],limits:{file_max:10485760,total_max:104857600,files_max:200,used:{count:0,bytes:0},types:[]}};
@@ -11,6 +11,8 @@ let cur=null, filter='', subject='', saveTimer=null, saving=null;
 
 function el(tag,cls,text){const e=document.createElement(tag);if(cls)e.className=cls;if(text!=null)e.textContent=text;return e}
 function btn(cls,text,fn,title){const b=el('button',cls,text);b.type='button';if(title){b.title=T(title);b.setAttribute('aria-label',T(title))}if(fn)b.onclick=fn;return b}
+/** Put a line icon (and a label) in a button or link. */
+function withIcon(node,name,label){node.insertAdjacentHTML('afterbegin',ico(name));if(label)node.append(label);return node}
 function mine(e){e.setAttribute('translate','no');return e}   // what people wrote themselves is never translated
 const toast=m=>{const t=$('toast');if(!t)return;t.textContent=T(m);t.hidden=false;clearTimeout(toast.t);toast.t=setTimeout(()=>{t.hidden=true},4500)};
 const mb=b=>b>=1048576?(b/1048576).toFixed(b>=10485760?0:1)+' MB':Math.max(1,Math.round(b/1024))+' KB';
@@ -20,7 +22,27 @@ function when(ts){const d=new Date(ts*1000),now=new Date();
 function armed(b){if(b.dataset.armed)return true;b.dataset.armed='1';const old=b.textContent;b.textContent=T('Sure? Click again');
   setTimeout(()=>{delete b.dataset.armed;b.textContent=old},3500);return false}
 
+/** Visitor tour (Look inside): a few sample pages, view only. Nothing is sent to noteapi.php. */
+function tourData(){
+  const now=Math.floor(Date.now()/1000),h=3600;
+  const notes=[
+    {id:1,kind:'note',title:'Normal forms',subject:'Databases',paper:'lined',updated:now-2*h,chapter:'Normal forms',board:'',files:[],
+      body:'1NF: every column holds a single value, no repeating groups.\n2NF: 1NF + every non-key column depends on the whole key.\n3NF: 2NF + no non-key column depends on another non-key column.\n\nExam tip: practise turning a messy table into 3NF step by step.'},
+    {id:2,kind:'note',title:'Merge sort vs quick sort',subject:'Algorithms',paper:'grid',updated:now-26*h,chapter:'',board:'',files:[],
+      body:'Merge sort: always O(n log n), needs extra memory, stable.\nQuick sort: O(n log n) on average, O(n²) worst case, sorts in place.\n\nTo revise: draw the recursion tree for [5, 2, 9, 1].'},
+    {id:3,kind:'note',title:'OOP lab report outline',subject:'OOP',paper:'dots',updated:now-50*h,chapter:'',board:'',files:[],
+      body:'1. Aim of the lab\n2. Class diagram\n3. Code and what each class does\n4. Test results\n5. What I would improve'}
+  ];
+  return {notes,subjects:['Algorithms','Databases','OOP'],limits:{file_max:10485760,total_max:104857600,files_max:200,used:{count:0,bytes:0},types:[]}};
+}
+const TOUR_DATA=TOUR?tourData():null;
+const TOUR_MSG='This is a preview with sample pages. Create a free account to write your own notes.';
 async function api(action,data={}){
+  if(TOUR){
+    if(action==='note.list')return {ok:true,notes:TOUR_DATA.notes.map(summary),subjects:TOUR_DATA.subjects,limits:TOUR_DATA.limits};
+    if(action==='note.get'){const n=TOUR_DATA.notes.find(x=>x.id===data.id);if(!n)throw new Error('That page was not found.');return {ok:true,note:{...n}}}
+    throw new Error(TOUR_MSG);
+  }
   const r=await fetch('noteapi.php?action='+encodeURIComponent(action),{method:'POST',credentials:'same-origin',
     headers:{'Content-Type':'application/json','X-CSRF-Token':CSRF},body:JSON.stringify(data)});
   let j={};try{j=await r.json()}catch(e){}
@@ -62,13 +84,13 @@ function drawList(){
   }
   for(const n of list){
     const li=el('li'),b=el('button','nt-item'+(cur&&cur.id===n.id?' on':''));b.type='button';b.onclick=()=>open(n.id);
-    const ic=el('span','nt-ic',n.kind==='board'?'🎨':'📝');
+    const ic=el('span','nt-ic');ic.innerHTML=ico(n.kind==='board'?'board':'note');
     if(n.thumb){ic.textContent='';const im=el('img');im.src=n.thumb;im.alt='';im.loading='lazy';ic.append(im);ic.classList.add('thumb')}
     const tx=el('span','nt-tx');
     tx.append(mine(el('b',null,n.title||T(n.kind==='board'?'Untitled whiteboard':'Untitled page'))));
     const meta=el('small');
     if(n.subject)meta.append(mine(el('span','nt-sub',n.subject)));
-    meta.append(el('span',null,when(n.updated)+(n.files?' · 📎 '+n.files:'')));
+    meta.append(el('span',null,when(n.updated)+(n.files?' · '+n.files+' '+T('files'):'')));
     tx.append(meta);
     if(n.snippet)tx.append(mine(el('span','nt-snip',n.snippet)));
     b.append(ic,tx);li.append(b);listEl.append(li);
@@ -92,11 +114,11 @@ function welcome(){
   const w=el('div','nt-welcome');
   w.append(el('h2',null,T('Your study notebook')),el('p','muted',T('Everything here is private. Only you can see it.')));
   const cards=el('div','nt-cards');
-  const card=(icon,title,text,fn)=>{const c=btn('nt-card',null,fn);c.append(el('span','nt-card-i',icon),el('b',null,T(title)),el('span',null,T(text)));return c};
+  const card=(icon,title,text,fn)=>{const c=btn('nt-card',null,fn);const ci=el('span','nt-card-i');ci.innerHTML=ico(icon);c.append(ci,el('b',null,T(title)),el('span',null,T(text)));return c};
   cards.append(
-    card('📝','Notes page','Write lecture notes and keep the files for that lesson with them.',()=>create('note')),
-    card('🎨','Whiteboard','Draw, write by hand, label diagrams and sketch over pictures.',()=>create('board')),
-    card('📎','Upload study files','PDFs, slides, Word, pictures and music. A page is made for them.',()=>quickUpload()));
+    card('note','Notes page','Write lecture notes and keep the files for that lesson with them.',()=>create('note')),
+    card('board','Whiteboard','Draw, write by hand, label diagrams and sketch over pictures.',()=>create('board')),
+    card('clip','Upload study files','PDFs, slides, Word, pictures and music. A page is made for them.',()=>quickUpload()));
   w.append(cards,el('p','nt-limit',T('Up to')+' '+mb(S.limits.file_max)+' '+T('a file')+' · '+mb(S.limits.total_max)+' '+T('in total')));
   main.append(w);
 }
@@ -144,11 +166,12 @@ window.addEventListener('beforeunload',e=>{if(cur&&cur.dirty){flush();e.preventD
 
 function head(n){
   const h=el('div','nt-head');
-  const back=btn('btn ghost nt-back','← '+T('All pages'),()=>{flush();history.replaceState(null,'','notes.php');welcome();window.scrollTo({top:0})});
+  const back=btn('btn ghost nt-back',null,()=>{flush();history.replaceState(null,'','notes.php');welcome();window.scrollTo({top:0})});
+  withIcon(back,'back',T('All pages'));
   const title=el('input','nt-title');title.id='ntTitle';title.placeholder=T(n.kind==='board'?'Whiteboard title':'Page title');title.value=n.title;title.maxLength=120;
-  title.oninput=()=>{n.title=title.value;n.dirty=true;queueSave()};
+  title.oninput=()=>{n.title=title.value;n.dirty=true;queueSave()};title.readOnly=TOUR;
   const sub=el('input','nt-subj');sub.placeholder=T('Subject');sub.value=n.subject;sub.maxLength=80;sub.setAttribute('list','ntSubjList');
-  sub.oninput=()=>{n.subject=sub.value;n.dirty=true;queueSave()};
+  sub.oninput=()=>{n.subject=sub.value;n.dirty=true;queueSave()};sub.readOnly=TOUR;
   const dl=el('datalist');dl.id='ntSubjList';
   [...new Set([...S.subjects,...S.notes.map(x=>x.subject).filter(Boolean)])].forEach(s=>{const o=el('option');o.value=s;dl.append(o)});
   const row=el('div','nt-row');
@@ -156,7 +179,7 @@ function head(n){
   if(n.kind==='note'){
     const paper=el('select','nt-paper-pick');paper.setAttribute('aria-label',T('Paper'));
     [['lined','Lined paper'],['grid','Squared paper'],['dots','Dotted paper'],['plain','Plain paper']].forEach(([v,l])=>{const o=el('option',null,T(l));o.value=v;o.selected=n.paper===v;paper.append(o)});
-    paper.onchange=()=>{n.paper=paper.value;n.dirty=true;$('ntBody').dataset.paper=n.paper;queueSave()};
+    paper.onchange=()=>{n.paper=paper.value;n.dirty=true;$('ntBody').dataset.paper=n.paper;queueSave()};paper.disabled=TOUR;
     row.append(paper);
   }
   const st=el('span','nt-state');st.id='ntState';st.textContent=T('All saved');
@@ -164,9 +187,9 @@ function head(n){
     try{clearTimeout(saveTimer);n.dirty=false;await api('note.delete',{id:n.id});S.notes=S.notes.filter(x=>x.id!==n.id);
       S.limits.used.count-=n.files.length;S.limits.used.bytes-=n.files.reduce((a,f)=>a+f.size,0);
       history.replaceState(null,'','notes.php');toast('Page deleted.');welcome()}catch(err){toast(err.message)}});
-  row.append(st,del);
+  if(!TOUR)row.append(st,del);
   h.append(back,title,row);
-  if(n.chapter){const a=el('a','nt-chapter');a.href='index.php?tab=study';a.append(el('span',null,'📚 '+T('Material for chapter')+' '),mine(el('b',null,n.chapter)));h.append(a)}
+  if(n.chapter){const a=el('a','nt-chapter');a.href=(TOUR?'tour':'index')+'.php?tab=study';const cl=el('span',null,T('Material for chapter')+' ');cl.insertAdjacentHTML('afterbegin',ico('book'));a.append(cl,mine(el('b',null,n.chapter)));h.append(a)}
   return h;
 }
 function drawNote(){
@@ -175,7 +198,7 @@ function drawNote(){
   if(n.kind==='note'){
     const body=el('textarea','nt-body');body.id='ntBody';body.dataset.paper=n.paper;body.value=n.body;
     body.placeholder=T('Start writing… Your notes save by themselves.');body.setAttribute('aria-label',T('Notes'));
-    body.oninput=()=>{n.body=body.value;n.dirty=true;queueSave();fit(body)};
+    body.oninput=()=>{n.body=body.value;n.dirty=true;queueSave();fit(body)};body.readOnly=TOUR;
     body.onkeydown=e=>{if(e.key==='Tab'&&!e.shiftKey){e.preventDefault();body.setRangeText('    ',body.selectionStart,body.selectionEnd,'end');body.oninput()}};
     main.append(body);requestAnimationFrame(()=>fit(body));
   }else{
@@ -183,10 +206,10 @@ function drawNote(){
     if(n.board){const im=el('img');im.src=n.board;im.alt=T('Your whiteboard');wrap.append(im)}
     else wrap.append(el('p','empty',T('This whiteboard is empty. Open it to start drawing.')));
     wrap.onclick=()=>openBoard();
-    const go=btn('btn primary nt-draw','✏️ '+T('Open the whiteboard'),()=>openBoard());
+    const go=btn('btn primary nt-draw',null,()=>openBoard());withIcon(go,'pencil',T('Open the whiteboard'));
     main.append(wrap,go);
   }
-  main.append(filesBox(n));
+  if(!TOUR)main.append(filesBox(n));
 }
 function fit(t){t.style.height='auto';t.style.height=Math.max(420,t.scrollHeight+40)+'px'}
 
@@ -195,7 +218,7 @@ function filesBox(n){
   const sec=el('section','nt-files');
   const h=el('div','nt-files-h');
   h.append(el('h2',null,T('Study files & pictures')));
-  const add=btn('btn','📎 '+T('Add files'),()=>pick.click());
+  const add=btn('btn',null,()=>pick.click());withIcon(add,'clip',T('Add files'));
   const pick=el('input');pick.type='file';pick.multiple=true;pick.hidden=true;pick.accept=acceptList();
   pick.onchange=()=>{addFiles([...pick.files]);pick.value=''};
   h.append(add,pick);sec.append(h);
@@ -219,13 +242,13 @@ function showFile(f,pics,docs){
     const im=el('img');im.src=f.url;im.alt=f.name;im.loading='lazy';a.append(im);a.onclick=e=>{e.preventDefault();lightbox(f)};
     const cap=el('figcaption');cap.append(mine(el('span',null,f.name)));
     const tools=el('span','nt-pic-tools');
-    tools.append(btn('linkbtn','✏️ '+T('Draw on it'),()=>drawOn(f)),fileDel(f));
+    const dr=btn('linkbtn',null,()=>drawOn(f));withIcon(dr,'pencil',T('Draw on it'));tools.append(dr,fileDel(f));
     cap.append(tools);fig.append(a,cap);pics.append(fig);return;
   }
   const li=el('li','nt-doc');li.dataset.id=f.id;
-  const icon={pdf:'📕',audio:'🎵',video:'🎬'}[f.kind]||({doc:'📘',docx:'📘',ppt:'📙',pptx:'📙',xls:'📗',xlsx:'📗',mid:'🎼',midi:'🎼'}[f.name.split('.').pop().toLowerCase()]||'📄');
+  const icon={audio:'music',video:'video',image:'image'}[f.kind]||'file';
   const a=el('a','nt-doc-name');a.href=f.url+(['pdf','audio','video'].includes(f.kind)?'':'&dl=1');a.target='_blank';a.rel='noopener';
-  a.append(el('span','nt-doc-i',icon),mine(el('span',null,f.name)),el('small',null,mb(f.size)));
+  const di=el('span','nt-doc-i');di.innerHTML=ico(icon);a.append(di,mine(el('span',null,f.name)),el('small',null,mb(f.size)));
   const r=el('div','nt-doc-r');
   const dl=el('a','linkbtn',T('Download'));dl.href=f.url+'&dl=1';
   r.append(dl,fileDel(f));
@@ -243,6 +266,7 @@ function fileDel(f){
 }
 async function addFiles(files){
   if(!cur)return;
+  if(TOUR){toast(TOUR_MSG);return}
   const n=cur,max=S.limits.file_max,ok=new Set(S.limits.types);
   for(const file of files){
     const ext=(file.name.split('.').pop()||'').toLowerCase();
@@ -264,7 +288,8 @@ function lightbox(f){
   const bar=el('div','nt-lb-bar');
   const close=()=>{lb.remove();document.removeEventListener('keydown',key)};
   const key=e=>{if(e.key==='Escape')close()};
-  bar.append(mine(el('span',null,f.name)),btn('btn','✏️ '+T('Draw on it'),()=>{close();drawOn(f)}),btn('btn',T('Close'),close));
+  const dr=btn('btn',null,()=>{close();drawOn(f)});withIcon(dr,'pencil',T('Draw on it'));
+  bar.append(mine(el('span',null,f.name)),dr,btn('btn',T('Close'),close));
   lb.onclick=e=>{if(e.target===lb)close()};
   lb.append(im,bar);document.body.append(lb);lb.focus();document.addEventListener('keydown',key);
 }
@@ -277,7 +302,7 @@ async function drawOn(f){
 
 /* ---------- the whiteboard ---------- */
 const W=1600,H=1000;
-const COLORS=['#2A2338','#ffffff','#E5484D','#F76B15','#FFC53D','#46A758','#0090FF','#6A4DC4','#D6409F','#8D6E63'];
+const COLORS=['#141414','#ffffff','#E5484D','#F76B15','#FFC53D','#46A758','#0090FF','#6A4DC4','#D6409F','#8D6E63'];
 function openBoard(picture){
   const n=cur;if(!n)return;
   const ov=el('div','wb');ov.setAttribute('role','dialog');ov.setAttribute('aria-label',T('Whiteboard'));
@@ -291,10 +316,10 @@ function openBoard(picture){
 
   // toolbar
   const tools=el('div','wb-group');
-  const TOOLS=[['pen','✏️','Pen'],['marker','🖍️','Highlighter'],['eraser','🧽','Eraser'],['line','／','Line'],['arrow','↗','Arrow'],['rect','▭','Box'],['ellipse','◯','Circle'],['text','T','Text'],['picture','🖼️','Picture']];
+  const TOOLS=[['pen','pencil','Pen'],['marker','highlighter','Highlighter'],['eraser','eraser','Eraser'],['line','line','Line'],['arrow','arrow','Arrow'],['rect','square','Box'],['ellipse','circle','Circle'],['text','text','Text'],['picture','image','Picture']];
   for(const [k,icon,label] of TOOLS){
-    const b=btn('wb-tool'+(k===tool?' on':''),icon,()=>{if(textBox)commitText();if(k==='picture'){picPick.click();return}tool=k;tools.querySelectorAll('.wb-tool').forEach(x=>x.classList.toggle('on',x===b));sheet.dataset.tool=k},label);
-    b.dataset.k=k;tools.append(b);
+    const b=btn('wb-tool'+(k===tool?' on':''),null,()=>{if(textBox)commitText();if(k==='picture'){picPick.click();return}tool=k;tools.querySelectorAll('.wb-tool').forEach(x=>x.classList.toggle('on',x===b));sheet.dataset.tool=k},label);
+    withIcon(b,icon);b.dataset.k=k;tools.append(b);
   }
   sheet.dataset.tool=tool;
   const picPick=el('input');picPick.type='file';picPick.accept='image/*';picPick.hidden=true;
@@ -311,10 +336,10 @@ function openBoard(picture){
   [['plain','Plain paper'],['grid','Squared paper'],['dots','Dotted paper'],['lined','Lined paper'],['black','Blackboard']].forEach(([v,l])=>{const o=el('option',null,T(l));o.value=v;o.selected=(n.paper||'plain')===v;papers.append(o)});
   papers.onchange=()=>{n.paper=papers.value;sheet.dataset.paper=n.paper;dirty=true;queue()};
   const acts=el('div','wb-group');
-  const bUndo=btn('wb-tool','↶',doUndo,'Undo'),bRedo=btn('wb-tool','↷',doRedo,'Redo');
+  const bUndo=btn('wb-tool',null,doUndo,'Undo'),bRedo=btn('wb-tool',null,doRedo,'Redo');withIcon(bUndo,'undo');withIcon(bRedo,'redo');
   acts.append(bUndo,bRedo,
-    btn('wb-tool','🗑️',e=>{if(!armed(e.currentTarget))return;snap();cx.clearRect(0,0,W,H);changed()},'Clear the board'),
-    btn('wb-tool','⬇️',download,'Save as picture'));
+    withIcon(btn('wb-tool',null,e=>{if(!armed(e.currentTarget))return;snap();cx.clearRect(0,0,W,H);changed()},'Clear the board'),'trash'),
+    withIcon(btn('wb-tool',null,download,'Save as picture'),'download'));
   const st=el('span','wb-state',T('All saved'));
   const done=btn('btn primary',T('Done'),close);
   const ttl=mine(el('b','wb-title',n.title||T('Untitled whiteboard')));
@@ -489,7 +514,7 @@ function openBoard(picture){
 search.oninput=()=>{filter=search.value.trim();drawList()};
 document.querySelectorAll('[data-nt]').forEach(b=>b.onclick=async()=>{await flush();create(b.dataset.nt==='new-board'?'board':'note')});
 document.addEventListener('paste',e=>{   // paste a screenshot straight into a page
-  if(!cur||document.querySelector('.wb'))return;
+  if(TOUR||!cur||document.querySelector('.wb'))return;
   const files=[...(e.clipboardData||{}).files||[]].filter(f=>f.type.startsWith('image/'));
   if(!files.length)return;e.preventDefault();
   addFiles(files.map((f,i)=>new File([f],f.name&&f.name!=='image.png'?f.name:'pasted-'+Date.now()+(i?'-'+i:'')+'.png',{type:f.type})));

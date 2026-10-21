@@ -51,7 +51,7 @@ if(saveForm)saveForm.addEventListener('submit',async e=>{
     const row=await r.json();
     if(!shelf.querySelector('[data-sp-link="'+CSS.escape(row.link)+'"]')){
       shelf.insertAdjacentHTML('beforeend',`<div class="sp-saved"><button class="sp-item" type="button" data-sp-link="${esc(row.link)}" translate="no">`
-        +(row.image?`<img alt="" src="${esc(row.image)}" loading="lazy">`:'<i aria-hidden="true">♪</i>')
+        +(row.image?`<img alt="" src="${esc(row.image)}" loading="lazy">`:'<i aria-hidden="true">'+ico('music')+'</i>')
         +`<span><b>${esc(row.title)}</b></span></button><form method="post" action="music.php"><input type="hidden" name="do" value="unsave"><input type="hidden" name="id" value="${+row.id}"><button class="sp-x" aria-label="Remove">×</button></form></div>`);
     }
     saveIn.value='';show(row.link,true);
@@ -92,7 +92,7 @@ function card(item,kind){
   const pic=img.length?img[img.length>1?img.length-2:0].url:'';
   const sub=kind==='track'?(item.artists||[]).map(a=>a.name).join(', '):(item.owner?.display_name||'');
   return `<button class="sp-item" type="button" data-uri="${esc(item.uri)}" data-url="${esc(item.external_urls?.spotify||'')}" translate="no">`
-    +(pic?`<img alt="" src="${esc(pic)}" loading="lazy">`:'<i aria-hidden="true">♪</i>')
+    +(pic?`<img alt="" src="${esc(pic)}" loading="lazy">`:'<i aria-hidden="true">'+ico('music')+'</i>')
     +`<span><b>${esc(item.name)}</b><small>${esc(sub)}</small></span></button>`;
 }
 async function play(uri,url){
@@ -143,7 +143,7 @@ function nowPlaying(st){
   const tr=st.track_window.current_track,art=$('spArt'),img=(tr.album.images||[])[0];
   $('spTitle').textContent=tr.name;$('spArtist').textContent=(tr.artists||[]).map(a=>a.name).join(', ');
   if(img){art.src=img.url;art.hidden=false}
-  tog.textContent=st.paused?'▶':'⏸';
+  tog.innerHTML=ico(st.paused?'play':'pause');
 }
 window.onSpotifyWebPlaybackSDKReady=()=>{
   player=new Spotify.Player({name:document.body.classList.contains('music-win')?'Splanner (small window)':'Splanner',getOAuthToken:cb=>getToken().then(cb,()=>{}),volume:.6});

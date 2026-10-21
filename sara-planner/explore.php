@@ -125,7 +125,7 @@ app_top('Explore', ['active' => 'explore', 'covers' => true, 'eyebrow' => 'Your 
     <?php foreach ($rows as $r): ?>
       <?php $isMe = (int)$r['id'] === $viewer; $st = $isMe ? '' : friendship($viewer, (int)$r['id']); $back = 'explore.php' . ($term !== '' ? '?q=' . rawurlencode($term) : ''); ?>
       <?php $href = (int)$r['is_public'] && (string)$r['slug'] !== '' ? 'u.php?u=' . rawurlencode((string)$r['slug']) : 'u.php?id=' . (int)$r['id']; ?>
-      <li translate="no"><a class="ulink" href="<?= h($href) ?>"><span class="ucover" aria-hidden="true"><?= first_book($r['nb_design'] ?? null) ?></span><span class="un"><?= h($r['name']) ?><?= vbadge((int)$r['verified_badge'] === 1) ?></span><?php if (!(int)$r['is_public']): ?><small title="Private account">🔒</small><?php endif; ?></a>
+      <li translate="no"><a class="ulink" href="<?= h($href) ?>"><span class="ucover" aria-hidden="true"><?= first_book($r['nb_design'] ?? null) ?></span><span class="un"><?= h($r['name']) ?><?= vbadge((int)$r['verified_badge'] === 1) ?></span><?php if (!(int)$r['is_public']): ?><small title="Private account"><?= ico('lock') ?></small><?php endif; ?></a>
         <?php if ($st === 'friends'): ?><span class="hint2">Friends ✓</span>
         <?php elseif ($st === 'sent'): ?><?= act('cancel', (int)$r['id'], 'Requested', 'btn sm ghost', $back) ?>
         <?php elseif ($st === 'received'): ?><?= act('accept', (int)$r['id'], 'Accept', 'btn sm primary', $back) ?>

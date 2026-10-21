@@ -17,7 +17,7 @@ const BINDINGS=[['coil','Spiral'],['stitch','Stitched'],['none','Plain edge']];
 const STICKERS=['⭐','💜','🌸','🎀','🦋','☁️','🌙','✨','🍓','🎧','📚','☕','🐱','🌈','🔥','🍒','🎬','🎵','👗','👠','🧸','🌷','🍀','💌','📌','✏️','🎨','🪩','💫','🍑','🌻','🧿'];
 const LIST_EMOJI=['🎬','🎤','👗','📚','🍕','🎮','🎧','✈️','🐾','💄','🎨','⭐'];
 const QUICK=[['🎬','Favourite movies','list'],['🎤','Favourite singers','list'],['👗','My clothes and style','grid'],['📚','Books I love','list'],['🍕','Favourite food','list'],['✈️','Places I want to visit','list']];
-const SECS=[['interests','⭐','Interests','Lists of things you love, with pictures.'],['blog','✍️','Blog','Posts you write.'],['timetable','🗓️','Timetable','Your repeating weekly hours (the ↻ ones).'],['subjects','📚','Studying','Subject names and how far you are, never your notes.']];
+const SECS=[['interests','star','Interests','Lists of things you love, with pictures.'],['blog','blog','Blog','Posts you write.'],['timetable','calendar','Timetable','Your repeating weekly hours (the ↻ ones).'],['subjects','cap','Studying','Subject names and how far you are, never your notes.']];
 const SECNAME=Object.fromEntries([['cover','Cover']].concat(SECS.map(s=>[s[0],s[2]]),[['day','Day']]));
 const PAGE_EMOJI=['📝','📖','🌸','✈️','🍳','💡','🎨','🏋️','🎵','🐾','🧘','💌'];
 const DAYLV=['Nobody, only me','Friends only','Anyone signed in','Everyone, even visitors'];
@@ -84,7 +84,7 @@ const sw=(label,sub,on,attr,dis=false)=>`<label class="sw"><span class="t"><b>${
 const miniSw=(label,on,attr)=>`<label class="mini-sw"><input type="checkbox" ${on?'checked':''} ${attr}><span class="tg"></span>${label}</label>`;
 function picInner(key){
   const p=ui.pics[key];
-  return `<label class="btn sm"><input type="file" accept="image/*" data-xfile="${key}" data-kind="photo">📎 ${p?'Change picture':'Attach a picture'}</label>`+
+  return `<label class="btn sm"><input type="file" accept="image/*" data-xfile="${key}" data-kind="photo">${ico('clip')}${p?'Change picture':'Attach a picture'}</label>`+
     (p?`<img class="thumb" src="${esc(p.url)}" alt=""><button type="button" class="btn sm ghost" data-x="pic-rm" data-key="${key}">Remove</button>`:'')+`<span class="hint2" data-pic-msg></span>`;
 }
 const picPick=key=>`<div class="pic-pick" data-pic="${key}">${picInner(key)}</div>`;
@@ -113,7 +113,7 @@ const lum=hex=>{const c=[1,3,5].map(i=>{const v=parseInt(hex.slice(i,i+2),16)/25
 function wrapAttrs(d){   // goes on the notebook wrapper: accent colour + the colours the user picked
   let a='',v='';
   if(d.accent&&d.accent!=='violet')a+=` data-accent="${d.accent}"`;
-  if(d.accent==='custom'&&d.accent_hex)v+=`--c-accent:${d.accent_hex};--c-on:${lum(d.accent_hex)>.55?'#17121F':'#FFFFFF'};`;
+  if(d.accent==='custom'&&d.accent_hex)v+=`--c-accent:${d.accent_hex};--c-on:${lum(d.accent_hex)>.55?'#111111':'#FFFFFF'};`;
   if(d.paper_color==='custom'&&d.paper_hex)v+=`--c-paper:${d.paper_hex};`;
   if(d.label&&d.label!=='box')a+=` data-label="${d.label}"`;
   if(d.label_hex)v+=`--c-label:${d.label_hex};--c-label-ink:${lum(d.label_hex)>.5?'#2B2118':'#FFFFFF'};`;
@@ -161,7 +161,7 @@ function blogPage(){
   const posts=S.posts.filter(p=>p.nb===ui.nb).map(p=>`<article class="post">
     ${p.image?`<img class="pimg" src="${esc(p.image)}" alt="">`:''}
     <div class="pb"><h3 translate="no">${esc(p.title)}</h3>
-      <div class="meta2"><span>${esc(p.date)}</span><span class="tag2 ${p.public?'':'priv'}">${p.public?'Public':'Only me'}</span><span>♥ ${p.likes}</span><span>💬 ${p.comments.length}</span></div>
+      <div class="meta2"><span>${esc(p.date)}</span><span class="tag2 ${p.public?'':'priv'}">${p.public?'Public':'Only me'}</span><span>♥ ${p.likes}</span><span>${ico('chat')}${p.comments.length}</span></div>
       <div class="txt" translate="no">${esc(p.body)}</div>
       <div class="acts"><button class="btn sm" data-x="post-edit" data-id="${p.id}">Edit</button>
         <button class="btn sm" data-x="post-vis" data-id="${p.id}">${p.public?'Make private':'Make public'}</button>
@@ -174,7 +174,7 @@ function blogPage(){
 }
 function listCard(l){
   const items=l.layout==='grid'
-    ?`<div class="igrid">${l.items.map(it=>`<div class="gi">${it.image?`<img src="${esc(it.image)}" alt="" loading="lazy">`:'<div class="noimg">🖼️</div>'}<span class="cap" translate="no">${esc(it.text)}</span><button class="x" data-x="item-del" data-id="${it.id}" aria-label="Delete ${esc(it.text)}">×</button></div>`).join('')}</div>`
+    ?`<div class="igrid">${l.items.map(it=>`<div class="gi">${it.image?`<img src="${esc(it.image)}" alt="" loading="lazy">`:'<div class="noimg">'+ico('image')+'</div>'}<span class="cap" translate="no">${esc(it.text)}</span><button class="x" data-x="item-del" data-id="${it.id}" aria-label="Delete ${esc(it.text)}">×</button></div>`).join('')}</div>`
     :`<ul>${l.items.map(it=>`<li>${it.image?`<img src="${esc(it.image)}" alt="" loading="lazy">`:''}<div class="tx" translate="no">${esc(it.text)}${it.note?`<small>${esc(it.note)}</small>`:''}</div><button class="x sm" data-x="item-del" data-id="${it.id}" aria-label="Delete ${esc(it.text)}">×</button></li>`).join('')}</ul>`;
   const k='item-'+l.id;
   return `<div class="ilist"><div class="ih"><span class="em">${esc(l.emoji)}</span><h3 translate="no">${esc(l.title)}</h3><button class="x" data-x="list-del" data-id="${l.id}" aria-label="Delete list ${esc(l.title)}">×</button></div>
@@ -271,7 +271,7 @@ function settingsPanel(nb){
       <label class="l" for="nb-title">Name</label><input type="text" id="nb-title" name="title" maxlength="80" value="${esc(nb.title)}" required>
       <label class="l" for="nb-intro">Intro on the cover</label><textarea id="nb-intro" name="intro" maxlength="300" style="min-height:70px" placeholder="What is this notebook about?">${esc(nb.intro)}</textarea>
       <p class="opt-h">Pages</p>
-      <div class="secpick">${SECS.map(s=>`<label><input type="checkbox" name="sections" value="${s[0]}" ${nb.sections.includes(s[0])?'checked':''}><span><b>${s[1]} ${s[2]}</b><small>${s[3]}</small></span></label>`).join('')}</div>
+      <div class="secpick">${SECS.map(s=>`<label><input type="checkbox" name="sections" value="${s[0]}" ${nb.sections.includes(s[0])?'checked':''}><span><b>${ico(s[1])}${s[2]}</b><small>${s[3]}</small></span></label>`).join('')}</div>
       <div class="xrow"><button class="btn primary">Save</button></div></form>
     <div style="margin-top:10px">${sw('Show this notebook on my profile','People who may open your profile can read it. Items you keep private stay hidden.',nb.public,`data-xsw="nb-public"`)}</div>
     ${S.profile.public?'':'<p class="hint2">Your profile itself is private right now. Turn on <b>Public profile</b> under <b>Privacy</b> on this page for others to see your shared notebooks.</p>'}
@@ -280,15 +280,15 @@ function settingsPanel(nb){
 const swatch=(act,v,bg,label)=>`<button type="button" class="swatch${act==='cover'?' sq':''}" style="background:${bg}" data-x="${act}" data-v="${v}" aria-label="${label}" aria-pressed="false"></button>`;
 function decoPanel(nb){
   const d=ui.dd;
-  const styles=S.styles.map(s=>`<div class="row"><button class="btn sm apply" data-x="style-apply" data-id="${s.id}">🎨 ${esc(s.name)}</button><button class="btn sm ghost" data-x="style-del" data-id="${s.id}" aria-label="Delete style ${esc(s.name)}">×</button></div>`).join('');
+  const styles=S.styles.map(s=>`<div class="row"><button class="btn sm apply" data-x="style-apply" data-id="${s.id}">${ico('palette')}${esc(s.name)}</button><button class="btn sm ghost" data-x="style-del" data-id="${s.id}" aria-label="Delete style ${esc(s.name)}">×</button></div>`).join('');
   return `<section class="xcard xdesign"><h3>Decorate this notebook</h3><p class="sub">Pick a look, make your own colours, and put stickers on its pages. You see it on the left straight away.</p>
     <p class="opt-h">Ready-made looks</p><div class="quick">${PRESETS.map((p,i)=>`<button class="chipbtn" data-x="preset" data-i="${i}">${p[0]}</button>`).join('')}</div>
     <p class="opt-h">My styles</p><div class="stylelist">${styles||'<span class="hint2">Styles you save show up here, ready to use on any notebook.</span>'}</div>
     <form class="xrow" data-xform="style" style="margin-top:8px" autocomplete="off"><input type="text" name="name" maxlength="60" placeholder="Name this look" aria-label="Style name" required style="flex:1;min-width:0"><button class="btn sm primary">Save as my style</button></form>
     <p class="opt-h">Cover</p><div class="swatches">${Object.keys(COVERS).map(c=>swatch('cover',c,`linear-gradient(135deg,${COVERS[c][0]},${COVERS[c][1]})`,'Cover '+c)).join('')}${Object.keys(ART).map(c=>swatch('cover',c,`var(--cov-${c})`,ART[c])).join('')}</div>
     <div class="colorrow"><span>Your own colours</span><input type="color" data-xcolor="cover_c1" value="${d.cover_c1||'#6a4dc4'}" aria-label="Cover colour 1"><input type="color" data-xcolor="cover_c2" value="${d.cover_c2||'#e0609a'}" aria-label="Cover colour 2"></div>
-    <div class="pic-pick" style="margin-top:10px"><label class="btn sm"><input type="file" accept="image/*" data-xfile="cover" data-kind="cover">🖼️ Use my own cover picture</label><button type="button" class="btn sm ghost" id="coverRm" data-x="cover-rm" ${d.cover_url?'':'hidden'}>Remove my picture</button><span class="hint2" data-pic-msg></span></div>
-    <p class="opt-h">Label on the cover</p><div class="pilltabs">${[['box','▭ Box'],['round','⬤ Circle'],['oval','⬭ Oval'],['arch','⌓ Arch'],['pill','💊 Pill'],['ticket','🎟️ Ticket'],['band','▬ Band'],['hexagon','⬡ Hexagon'],['diamond','◆ Diamond'],['tag','🏷️ Tag'],['stamp','▣ Stamp'],['custom','✎ My own shape'],['none','✕ No box']].map(x=>`<button type="button" data-x="label" data-v="${x[0]}" aria-pressed="false">${x[1]}</button>`).join('')}<input type="color" class="colorpick" data-xcolor="label_hex" value="${d.label_hex||'#efe2c8'}" aria-label="Your own label colour"></div>
+    <div class="pic-pick" style="margin-top:10px"><label class="btn sm"><input type="file" accept="image/*" data-xfile="cover" data-kind="cover">${ico('image')}Use my own cover picture</label><button type="button" class="btn sm ghost" id="coverRm" data-x="cover-rm" ${d.cover_url?'':'hidden'}>Remove my picture</button><span class="hint2" data-pic-msg></span></div>
+    <p class="opt-h">Label on the cover</p><div class="pilltabs">${[['box','▭ Box'],['round','⬤ Circle'],['oval','⬭ Oval'],['arch','⌓ Arch'],['pill','Pill'],['ticket','Ticket'],['band','▬ Band'],['hexagon','⬡ Hexagon'],['diamond','◆ Diamond'],['tag','Tag'],['stamp','▣ Stamp'],['custom','✎ My own shape'],['none','✕ No box']].map(x=>`<button type="button" data-x="label" data-v="${x[0]}" aria-pressed="false">${x[1]}</button>`).join('')}<input type="color" class="colorpick" data-xcolor="label_hex" value="${d.label_hex||'#efe2c8'}" aria-label="Your own label colour"></div>
     <div class="swatches lbsw">${['#efe2c8','#ffffff','#111111','#f8c8dc','#ffd9b8','#fff2a8','#c9e8c3','#bfe3f5','#d8ccf3','#ef9a9a','#e0609a','#6a4dc4','#2f6f5e','#b0bec5'].map(c=>`<button type="button" class="swatch" style="background:${c}" data-x="label-color" data-v="${c}" aria-label="Label colour ${c}"></button>`).join('')}</div>
     <div class="lbrange"><label>Corners<input type="range" min="0" max="50" step="1" data-xrange="label_r" value="${d.label_r||0}"></label><label>Width<input type="range" min="30" max="100" step="1" data-xrange="label_w" value="${d.label_w||69}"></label><label>Height<input type="range" min="15" max="80" step="1" data-xrange="label_h" value="${d.label_h||40}"></label></div>
     <p class="opt-h">Paper</p><div class="pilltabs">${PAPERS.map(x=>`<button type="button" data-x="paper" data-v="${x[0]}" aria-pressed="false">${x[1]}</button>`).join('')}</div>
@@ -299,7 +299,7 @@ function decoPanel(nb){
     <p class="opt-h">Binding</p><div class="pilltabs">${BINDINGS.map(b=>`<button type="button" data-x="binding" data-v="${b[0]}" aria-pressed="false">${b[1]}</button>`).join('')}</div>
     <p class="opt-h">Stickers on the page “<span id="stkPg">${esc(secName(ui.pg))}</span>”</p>
     <div class="stk-lib">${STICKERS.map(s=>`<button type="button" data-x="stk-add" data-k="${s}" aria-label="Add sticker ${s}">${s}</button>`).join('')}${S.stickers_up.map(u=>`<button type="button" data-x="stk-add" data-k="up:${u.id}" aria-label="Add my sticker"><img src="${esc(u.url)}" alt=""></button>`).join('')}</div>
-    <div class="pic-pick" style="margin-top:8px"><label class="btn sm"><input type="file" accept="image/*" data-xfile="sticker" data-kind="sticker">➕ Make a sticker from my picture</label><span class="hint2" data-pic-msg></span></div>
+    <div class="pic-pick" style="margin-top:8px"><label class="btn sm"><input type="file" accept="image/*" data-xfile="sticker" data-kind="sticker">${ico('plus')}Make a sticker from my picture</label><span class="hint2" data-pic-msg></span></div>
     <div class="stk-bar" id="stkCtl">${stkCtl()}</div>
     <p class="hint2" style="margin-top:6px">Stickers go on the page you have open. Use the tabs on the right of the notebook to move between pages, and drag a sticker to place it.</p>
     <div class="xrow" style="margin-top:16px"><button class="btn primary" id="saveDesign" data-x="design-save" ${ui.dirty?'':'disabled'}>Save design</button><span class="hint2" id="autoSaved" style="display:inline" aria-live="polite"></span><button class="btn ghost" data-x="design-reset">Undo changes</button><button class="btn sm" data-x="use-planner" title="Use this paper, colours and writing for your planner too">Use for my planner</button></div></section>`;
@@ -341,8 +341,8 @@ function syncControls(){
 /* ---------- PROFILE: like an Instagram profile (header, stats, tabs). Editing lives in profile.php; "What others see" shows everything public ---------- */
 const hm=m=>String(Math.floor(m/60)).padStart(2,'0')+':'+String(m%60).padStart(2,'0');
 const avatarHtml=(p,cls='xl')=>p.avatar?`<img class="avatar ${cls}" src="${esc(p.avatar)}" alt="">`:`<span class="avatar ${cls} letter" aria-hidden="true">${esc(((p.name||'S')[0]||'S').toUpperCase())}</span>`;
-const AUD=[['visitor','🌐','Visitor','Someone with no account'],['user','👤','Signed-in person','Someone with an account, not a friend'],['friend','🤝','Friend','Someone you accepted']];
-const PTABS=[['notebooks','📓','Notebooks'],['friends','👥','Friends'],['preview','👁️','What others see'],['settings','⚙️','Settings']];
+const AUD=[['visitor','globe','Visitor','Someone with no account'],['user','user','Signed-in person','Someone with an account, not a friend'],['friend','users','Friend','Someone you accepted']];
+const PTABS=[['notebooks','notebook','Notebooks'],['friends','users','Friends'],['preview','eye','What others see'],['settings','settings','Settings']];
 
 function profileHead(){
   const p=S.profile,likes=S.posts.reduce((n,x)=>n+x.likes,0);
@@ -358,12 +358,12 @@ function profileHead(){
     </div>
     
   </header>
-  <nav class="ptabs" role="tablist">${PTABS.map(t=>`<button role="tab" data-x="ptab" data-v="${t[0]}" aria-selected="${ui.ptab===t[0]}">${t[1]} ${t[2]}</button>`).join('')}</nav>`;
+  <nav class="ptabs" role="tablist">${PTABS.map(t=>`<button role="tab" data-x="ptab" data-v="${t[0]}" aria-selected="${ui.ptab===t[0]}">${ico(t[1])}${t[2]}</button>`).join('')}</nav>`;
 }
 function notebooksTab(){
   const nb=cur();
-  const tiles=`<div class="nbtiles">${S.notebooks.map(n=>`<button class="nbtile${nb&&n.id===nb.id?' on':''}" data-x="nb-pick" data-id="${n.id}"${n.design.accent&&n.design.accent!=='violet'?` data-accent="${n.design.accent}"`:''}><i style="${coverCss({...n.design,cover_url:n.cover_url})}"></i><span translate="no">${esc(n.title)}</span><small>${n.public?'🌍 Shown':'🔒 Private'}</small></button>`).join('')}<button class="nbtile add${ui.newNb?' on':''}" data-x="nb-new"><b>+</b><span>New notebook</span></button></div>`;
-  const secs=SECS.map((s,i)=>`<label><input type="checkbox" name="sections" value="${s[0]}" ${i<2?'checked':''}><span><b>${s[1]} ${s[2]}</b><small>${s[3]}</small></span></label>`).join('');
+  const tiles=`<div class="nbtiles">${S.notebooks.map(n=>`<button class="nbtile${nb&&n.id===nb.id?' on':''}" data-x="nb-pick" data-id="${n.id}"${n.design.accent&&n.design.accent!=='violet'?` data-accent="${n.design.accent}"`:''}><i style="${coverCss({...n.design,cover_url:n.cover_url})}"></i><span translate="no">${esc(n.title)}</span><small>${n.public?ico('globe')+'Shown':ico('lock')+'Private'}</small></button>`).join('')}<button class="nbtile add${ui.newNb?' on':''}" data-x="nb-new"><b>+</b><span>New notebook</span></button></div>`;
+  const secs=SECS.map((s,i)=>`<label><input type="checkbox" name="sections" value="${s[0]}" ${i<2?'checked':''}><span><b>${ico(s[1])}${s[2]}</b><small>${s[3]}</small></span></label>`).join('');
   const newForm=ui.newNb?`<form class="xcard xform" data-xform="nbnew" autocomplete="off" style="margin:12px 0"><h3>New notebook</h3><p class="sub">One for your interests, one for your plans, one for your blog… make as many as you like.</p>
       <label class="l" for="nn-title">Name</label><input type="text" id="nn-title" name="title" maxlength="80" placeholder="e.g. Things I love" required>
       <p class="opt-h">Pages</p><div class="secpick" id="secpick">${secs}</div>
@@ -373,7 +373,7 @@ function notebooksTab(){
   let editor='';
   if(nb&&(ui.nbShown||ui.nbOpen||ui.panel||ui.pageEdit)){
     const open=ui.panel?' panel-open':'';
-    editor=`<div class="nbe-bar"><button class="btn${ui.panel==='deco'?' on':''}" data-x="panel" data-v="deco">🎨 Decorate</button><a class="btn" href="u.php?u=${esc(S.profile.slug)}&amp;nb=${nb.id}" target="_blank" rel="noopener">👁️ Open as a visitor ↗</a><span class="hint2">${nb.public?'Shown on your profile':'Private: only you can see it'}</span></div>
+    editor=`<div class="nbe-bar"><button class="btn${ui.panel==='deco'?' on':''}" data-x="panel" data-v="deco">${ico('palette')}Decorate</button><a class="btn" href="u.php?u=${esc(S.profile.slug)}&amp;nb=${nb.id}" target="_blank" rel="noopener">${ico('eye')}Open as a visitor</a><span class="hint2">${nb.public?'Shown on your profile':'Private: only you can see it'}</span></div>
       <div class="nbe${open}"><div>${notebookHtml(nb)}</div>${ui.panel?`<div class="nbe-side">${ui.panel==='settings'?settingsPanel(nb):decoPanel(nb)}</div>`:''}</div>`;
   }else if(nb)editor='<p class="hint2" style="margin-top:12px">Press a notebook above to open it.</p>';
   else editor='<p class="empty">You have no notebooks yet. Press <b>+ New notebook</b> to make your first one.</p>';
@@ -382,15 +382,15 @@ function notebooksTab(){
 function friendsTab(){
   const f=S.friends||[];
   if(!f.length)return '<p class="empty">No friends yet. Find people in <a href="explore.php">Explore</a> and send a friend request.</p>';
-  return `<ul class="userlist">${f.map(x=>`<li><a class="ulink" href="friend.php?id=${x.id}">${avatarHtml(x,'')}<span class="un" translate="no">${esc(x.name)}</span></a><a class="btn sm" href="hangout.php?with=${x.id}" title="When are we both free?">🗓️ Find time</a></li>`).join('')}</ul>`;
+  return `<ul class="userlist">${f.map(x=>`<li><a class="ulink" href="friend.php?id=${x.id}">${avatarHtml(x,'')}<span class="un" translate="no">${esc(x.name)}</span></a><a class="btn sm" href="hangout.php?with=${x.id}" title="When are we both free?">${ico('calendar')}Find time</a></li>`).join('')}</ul>`;
 }
 /** Everything one kind of person can see, with a switch next to each thing so you decide what to show. */
 function previewTab(){
   const p=S.profile,aud=ui.aud;
   const canOpen=aud==='friend'||(p.public&&(aud==='user'||p.guest));
-  const row=(label,sub,on,sw,seen)=>`<div class="vrow${seen?'':' off'}"><span class="vdot" aria-hidden="true">${seen?'👁️':'🚫'}</span><span class="vt"><b>${label}</b><small>${sub}</small></span>${sw}</div>`;
+  const row=(label,sub,on,sw,seen)=>`<div class="vrow${seen?'':' off'}"><span class="vdot" aria-hidden="true">${ico(seen?'eye':'eye-off')}</span><span class="vt"><b>${label}</b><small>${sub}</small></span>${sw}</div>`;
   const tog=(on,attr,dis)=>`<label class="sw-mini"><input type="checkbox" ${on?'checked':''} ${dis?'disabled':''} ${attr}><span class="tg"></span></label>`;
-  const seg=`<div class="pilltabs aud">${AUD.map(a=>`<button type="button" data-x="aud" data-v="${a[0]}" aria-pressed="${aud===a[0]}">${a[1]} ${a[2]}</button>`).join('')}</div><p class="hint2">${AUD.find(a=>a[0]===aud)[3]}. Switch the toggles to decide what they get to see.</p>`;
+  const seg=`<div class="pilltabs aud">${AUD.map(a=>`<button type="button" data-x="aud" data-v="${a[0]}" aria-pressed="${aud===a[0]}">${ico(a[1])}${a[2]}</button>`).join('')}</div><p class="hint2">${AUD.find(a=>a[0]===aud)[3]}. Switch the toggles to decide what they get to see.</p>`;
   let out=`<section class="xcard"><h3>Who can open my profile</h3>${seg}
     ${row('My profile page',canOpen?'They can open it, see your name, bio'+(aud==='visitor'?'':' and picture')+'.':aud==='visitor'?(p.public?'Visitors without an account are blocked.':'Your profile is private.'):'Your profile is private, they only see your name, picture and bio.',p.public,tog(p.public,'data-xsw="public"'),canOpen)}
     ${row('Visitors without an account',p.guest&&p.public?'Anyone with the link can look.':'Only people who log in can look.',p.guest,tog(p.guest,'data-xsw="guest"',!p.public),aud==='visitor'?p.public&&p.guest:true)}
@@ -417,18 +417,18 @@ function dayList(head){
 function previewPages(n){
   const bits=[];
   const tog=(on,attr)=>`<label class="sw-mini"><input type="checkbox" ${on?'checked':''} ${attr}><span class="tg"></span></label>`;
-  const item=(ic,label,on,attr,sub='')=>`<div class="vitem${on?'':' off'}"><span>${ic}</span><span class="vt"><b translate="no">${label}</b>${sub?`<small>${sub}</small>`:''}</span>${attr?tog(on,attr):''}</div>`;
-  bits.push(item('📕','Cover and intro',true,''));
+  const item=(ic,label,on,attr,sub='')=>`<div class="vitem${on?'':' off'}"><span>${/^[a-z-]+$/.test(ic)?ico(ic):ic}</span><span class="vt"><b translate="no">${label}</b>${sub?`<small>${sub}</small>`:''}</span>${attr?tog(on,attr):''}</div>`;
+  bits.push(item('book','Cover and intro',true,''));
   if(n.sections.includes('blog')){
     const ps=S.posts.filter(x=>x.nb===n.id);
-    bits.push(`<p class="opt-h">✍️ Blog</p>`+(ps.length?ps.map(x=>item(x.public?'📝':'🔒',esc(x.title),x.public,`data-xsw="post-public" data-id="${x.id}"`,x.public?`♥ ${x.likes} · shown`:'hidden')).join(''):'<p class="hint2">No posts.</p>'));
+    bits.push(`<p class="opt-h">${ico('blog')}Blog</p>`+(ps.length?ps.map(x=>item(x.public?'note':'lock',esc(x.title),x.public,`data-xsw="post-public" data-id="${x.id}"`,x.public?`♥ ${x.likes} · shown`:'hidden')).join(''):'<p class="hint2">No posts.</p>'));
   }
   if(n.sections.includes('interests')){
     const ls=S.lists.filter(x=>x.nb===n.id);
-    bits.push(`<p class="opt-h">⭐ Interests</p>`+(ls.length?ls.map(x=>item(esc(x.emoji)||'⭐',esc(x.title),x.public,`data-xsw="list-public" data-id="${x.id}"`,`${x.items.length} item${x.items.length===1?'':'s'} · ${x.public?'shown':'hidden'}`)).join(''):'<p class="hint2">No lists.</p>'));
+    bits.push(`<p class="opt-h">${ico('star')}Interests</p>`+(ls.length?ls.map(x=>item(esc(x.emoji)||'star',esc(x.title),x.public,`data-xsw="list-public" data-id="${x.id}"`,`${x.items.length} item${x.items.length===1?'':'s'} · ${x.public?'shown':'hidden'}`)).join(''):'<p class="hint2">No lists.</p>'));
   }
-  if(n.sections.includes('timetable'))bits.push(`<p class="opt-h">🗓️ Timetable</p>`+item('🗓️','Your repeating weekly hours',true,'','Remove the page in notebook Settings to hide it'));
-  if(n.sections.includes('subjects'))bits.push(`<p class="opt-h">📚 Studying</p>`+item('📚','Subject names and progress (never notes)',true,'','Remove the page in notebook Settings to hide it'));
+  if(n.sections.includes('timetable'))bits.push(`<p class="opt-h">${ico('calendar')}Timetable</p>`+item('calendar','Your repeating weekly hours',true,'','Remove the page in notebook Settings to hide it'));
+  if(n.sections.includes('subjects'))bits.push(`<p class="opt-h">${ico('cap')}Studying</p>`+item('cap','Subject names and progress (never notes)',true,'','Remove the page in notebook Settings to hide it'));
   return `<div class="vpages">${bits.join('')}</div>`;
 }
 /* ---------- SETTINGS: everything about your account and your notebooks, on one page ---------- */
@@ -453,7 +453,7 @@ function coverFull(p){
 function notebookSpread(nb){
   const d=nb.design||{},fam=(FONTS.find(f=>f[0]===d.font)||[])[2]||'',paper=d.paper_color==='custom'&&d.paper_hex?d.paper_hex:(PAPER_COLORS[d.paper_color]||'#FFFFFF');
   const ink=lum(paper)<.4?'#EDE9F5':'#2A2338',rule=lum(paper)<.4?'rgba(255,255,255,.12)':'rgba(60,40,90,.14)';
-  let ac=d.accent==='custom'&&d.accent_hex?d.accent_hex:(ACCENTS[d.accent]||ACCENTS.violet);if(lum(ac)>.8&&lum(paper)>.5)ac='#9A93AB';
+  let ac=d.accent==='custom'&&d.accent_hex?d.accent_hex:(ACCENTS[d.accent]||ACCENTS.violet);if(lum(ac)>.8&&lum(paper)>.5)ac='#9A9A9A';
   const pages=nb.sections.map(k=>SECNAME[k]).concat((nb.pages||[]).map(p=>(p.emoji?p.emoji+' ':'')+p.title),['Day']);
   const name=(document.querySelector('.hello span:last-child')||{textContent:''}).textContent.replace(/^Hi,\s*/,'');
   const sticks=(d.stickers||[]).filter(x=>(x.p||'cover')==='cover').slice(0,4).map((x,i)=>`<span class="sp-stk" style="left:${12+i*22}%;top:${70+(i%2)*12}%">${x.k.startsWith('up:')?'':esc(x.k)}</span>`).join('');
@@ -487,11 +487,11 @@ function settingsTab(){
   const nav=[['st-account','Account'],['st-privacy','Privacy'],['st-notebooks','Notebooks and Explore card'],['st-danger','Delete account']].map(x=>`<a class="chipbtn" href="#${x[0]}">${x[1]}</a>`).join('');
   const covers=(p.covers||[]).map(c=>coverMini(c,p.cover===c[0])).join('')+
     `<label class="cover-opt own${p.cover==='custom'?' on':''}" title="Your own picture"><input type="file" accept="image/*" data-xfile="ecover" data-kind="cover"><span class="nbc mini own-pic" aria-hidden="true" style="${p.cover_url?`background-image:url('${esc(p.cover_url)}');background-size:cover`:''}">${p.cover_url?'':'＋'}</span><span>Your own picture</span></label>`;
-  const nbTiles=S.notebooks.length?`<div class="nbtiles">${S.notebooks.map(n=>`<button class="nbtile${nb&&n.id===nb.id?' on':''}" data-x="nb-pick-st" data-id="${n.id}"><i style="${coverCss({...n.design,cover_url:n.cover_url})}"></i><span translate="no">${esc(n.title)}</span><small>${n.public?'🌍 Shown':'🔒 Private'}</small></button>`).join('')}</div>`:'<p class="empty">You have no notebooks yet. Make one in the Notebooks tab.</p>';
+  const nbTiles=S.notebooks.length?`<div class="nbtiles">${S.notebooks.map(n=>`<button class="nbtile${nb&&n.id===nb.id?' on':''}" data-x="nb-pick-st" data-id="${n.id}"><i style="${coverCss({...n.design,cover_url:n.cover_url})}"></i><span translate="no">${esc(n.title)}</span><small>${n.public?ico('globe')+'Shown':ico('lock')+'Private'}</small></button>`).join('')}</div>`:'<p class="empty">You have no notebooks yet. Make one in the Notebooks tab.</p>';
   const pages=nb?`<p class="opt-h">Pages you added yourself</p>`+(nb.pages.length?`<ul class="userlist">${nb.pages.map(g=>`<li><span class="un" translate="no">${esc((g.emoji?g.emoji+' ':'')+g.title)}</span><button class="btn sm" data-x="st-page-edit" data-id="${g.id}">Edit</button><button class="btn sm danger" data-x="st-page-del" data-id="${g.id}">Delete</button></li>`).join('')}</ul>`:'<p class="hint2">None yet.</p>')+`<div class="xrow"><button class="btn sm" data-x="st-page-new">+ Add a page</button></div>`:'';
   return `<nav class="st-nav" aria-label="Settings sections">${nav}</nav>
   <section class="xcard st-sec" id="st-account"><h3>Account</h3><p class="sub">Your picture, name, page name and bio.</p>
-    <div class="pic-pick st-avatar">${avatarHtml(p,'xl')}<div><label class="btn sm"><input type="file" accept="image/*" data-xfile="avatar" data-kind="avatar">📷 Change picture</label>${p.avatar?'<button type="button" class="btn sm ghost" data-x="avatar-rm">Remove</button>':''}<span class="hint2" data-pic-msg></span></div></div>
+    <div class="pic-pick st-avatar">${avatarHtml(p,'xl')}<div><label class="btn sm"><input type="file" accept="image/*" data-xfile="avatar" data-kind="avatar">${ico('camera')}Change picture</label>${p.avatar?'<button type="button" class="btn sm ghost" data-x="avatar-rm">Remove</button>':''}<span class="hint2" data-pic-msg></span></div></div>
     <form class="xform" data-xform="acct" autocomplete="off">
       <label class="l" for="ac-name">Name</label><input type="text" id="ac-name" name="name" maxlength="80" value="${esc(p.name)}" required>
       <label class="l" for="ac-slug">Page name (your link)</label><input type="text" id="ac-slug" name="slug" maxlength="30" pattern="[A-Za-z0-9_]{3,30}" value="${esc(p.slug)}" required>
@@ -505,7 +505,7 @@ function settingsTab(){
     ${sw('Alert when someone likes my post','Shows in the bell at the top of the page.',!!(p.notify&&p.notify.like),'data-xsw="notify" data-k="like"')}
     ${sw('Alert when someone comments on my post','Shows in the bell at the top of the page.',!(p.notify&&(p.notify.comment===0||p.notify.comment===false)),'data-xsw="notify" data-k="comment"')}</section>
   <section class="xcard st-sec" id="st-notebooks"><h3>Notebooks and Explore card</h3><p class="sub">Pick a notebook to change its look, name, pages and who sees it. Your first notebook is also your card on Explore, so its cover is what people see there.</p>${nbTiles}
-    ${nb?`<div class="st-nb">${quickLook(nb)}${settingsPanel(nb)}${pages}<div class="xrow" style="margin-top:12px"><button class="btn" data-x="st-deco">🎨 Look, colours and stickers</button><span class="hint2">Make your own cover colours, use your own picture, and make stickers from your pictures.</span></div></div>`:''}</section>
+    ${nb?`<div class="st-nb">${quickLook(nb)}${settingsPanel(nb)}${pages}<div class="xrow" style="margin-top:12px"><button class="btn" data-x="st-deco">${ico('palette')}Look, colours and stickers</button><span class="hint2">Make your own cover colours, use your own picture, and make stickers from your pictures.</span></div></div>`:''}</section>
   <section class="xcard st-sec" id="st-danger"><h3>Delete account</h3><p class="sub">Logs you out and removes your account and everything in it for good.</p><a class="btn" href="change-password.php">Change my password</a> <a class="btn danger" href="delete-account.php">Delete my account</a></section>`;
 }
 function profileHtml(){
@@ -616,7 +616,7 @@ document.addEventListener('click',async e=>{
         const inp=$('ownPageName'),t=(inp.value||'').trim().slice(0,40);if(!t){inp.focus();return}
         const l=document.createElement('label');l.className='ownchip';
         const c=document.createElement('input');c.type='checkbox';c.name='own';c.value=t;c.checked=true;
-        const sp=document.createElement('span'),bb=document.createElement('b');bb.textContent='✨ '+t;sp.appendChild(bb);l.append(c,sp);
+        const sp=document.createElement('span'),bb=document.createElement('b');bb.textContent=t;sp.appendChild(bb);l.append(c,sp);
         $('secpick').appendChild(l);inp.value='';inp.focus();return}
       case 'fs-reset':ui.dd.font_size=0;markDirty();paintPreview();redraw();return;
       case 'label-color':ui.dd.label_hex=b.dataset.v;if(ui.dd.label==='none')ui.dd.label='box';markDirty();paintPreview();return;
