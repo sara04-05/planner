@@ -2029,16 +2029,11 @@ body{min-height:100vh;background:
 h1,h2,h3,.brand b{letter-spacing:-.022em;font-weight:700}
 h1{background:none;padding:0;margin-left:0;font-weight:800;letter-spacing:-.03em}
 .eyebrow{letter-spacing:.1em;font-size:11.5px}
-/* wordmark instead of handwriting */
-.logo{display:inline-flex;align-items:center;gap:9px;font-family:var(--display);font-weight:800;font-size:19px;letter-spacing:-.03em;line-height:1;color:var(--ink)}
-.brand .logo,.logo.sm{font-size:19px;font-weight:800;color:var(--ink)}
-.logo-mark{display:grid;place-items:center;width:28px;height:28px;border-radius:8px;font-style:normal;font-weight:800;font-size:16px;letter-spacing:0;color:var(--on-accent);
-  background:linear-gradient(180deg,color-mix(in srgb,var(--look-accent,var(--accent)) 80%,#fff),var(--look-accent,var(--accent)));box-shadow:inset 0 1px 0 rgba(255,255,255,.25),0 1px 2px rgba(0,0,0,.25)}
-/* squarer corners */
-.top{border-radius:14px}
-.top-r .btn{border-radius:10px}
-.date-pill{border-radius:10px}
-.hello{border-radius:10px}
+/* the logo stays the handwritten wordmark */
+.logo{font-family:"Pacifico",cursive;font-weight:400;font-size:28px;letter-spacing:0;line-height:1.3;color:var(--ink)}
+.brand .logo{font-size:28px;font-weight:400;color:var(--ink)}
+.logo.sm{font-size:20px}
+/* squarer corners (the top bar keeps its original rounded pills) */
 .page{border-radius:4px 14px 14px 4px}
 .btn,.tab{border-radius:10px}
 .tab{border-radius:0 10px 10px 0}
@@ -2048,3 +2043,6 @@ h1{background:none;padding:0;margin-left:0;font-weight:800;letter-spacing:-.03em
 .sticky::before,.soon::before{display:none}
 .sticky{transform:none;border:1px solid var(--line);border-left:3px solid var(--accent);box-shadow:var(--depth-s)}
 .coil span::after{opacity:.75}
+/* a thin band of colour along the top of every notebook page */
+:root{--band:linear-gradient(90deg,var(--accent),color-mix(in srgb,var(--accent) 30%,transparent))}
+.page::before{content:"";position:absolute;left:0;right:0;top:0;height:4px;border-radius:4px 14px 0 0;pointer-events:none;z-index:3;background:var(--band)}

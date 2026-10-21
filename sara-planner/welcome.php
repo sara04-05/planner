@@ -17,7 +17,7 @@ if (current_user_id()) {
   <title>Splanner · Study, tasks & money in one notebook</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Pacifico&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="assets/style.css?v=<?= filemtime(__DIR__ . '/assets/style.css') ?>">
   <link rel="stylesheet" href="assets/looks.css?v=<?= filemtime(__DIR__ . '/assets/looks.css') ?>">
   <link rel="stylesheet" href="assets/covers.css?v=<?= filemtime(__DIR__ . '/assets/covers.css') ?>">
@@ -149,7 +149,7 @@ if (current_user_id()) {
 <div class="land">
 
   <header class="lnav">
-    <a class="logo" href="welcome.php"><i class="logo-mark" aria-hidden="true">S</i>Splanner</a>
+    <a class="logo" href="welcome.php">Splanner</a>
     <nav aria-label="Main">
       <a href="tour.php">Look inside</a>
       <a href="#features">Features</a>
@@ -310,7 +310,7 @@ if (current_user_id()) {
   </div>
 
   <footer class="lfoot">
-    <span class="logo sm"><i class="logo-mark" aria-hidden="true">S</i>Splanner<span style="font-family:var(--body);font-size:13px;font-weight:500;letter-spacing:0;color:var(--muted);margin-left:6px">© 2026</span></span>
+    <span class="logo sm">Splanner<span style="font-family:var(--body);font-size:13px;font-weight:500;letter-spacing:0;color:var(--muted);margin-left:6px">© 2026</span></span>
     <span><a href="explore.php">Explore</a> · <a href="#safety">Privacy</a></span>
   </footer>
 </div>

@@ -1,12 +1,12 @@
 <?php
 // Shared header/footer for the login and sign-up pages.
 
-/** The Splanner logo (square mark and wordmark). Pass a link to make it clickable. */
+/** The Splanner logo (script wordmark). Pass a link to make it clickable. */
 function logo_html(?string $href = null): string
 {
     return $href
-        ? '<a class="logo" href="' . h($href) . '"><i class="logo-mark" aria-hidden="true">S</i>Splanner</a>'
-        : '<span class="logo"><i class="logo-mark" aria-hidden="true">S</i>Splanner</span>';
+        ? '<a class="logo" href="' . h($href) . '">Splanner</a>'
+        : '<span class="logo">Splanner</span>';
 }
 
 function auth_top(string $title, string $cardClass = '', bool $covers = false): void
@@ -19,7 +19,7 @@ function auth_top(string $title, string $cardClass = '', bool $covers = false): 
   <title><?= h($title) ?> · Splanner</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Pacifico&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="assets/style.css?v=<?= filemtime(__DIR__ . '/assets/style.css') ?>">
   <link rel="stylesheet" href="assets/looks.css?v=<?= filemtime(__DIR__ . '/assets/looks.css') ?>">
   <link rel="icon" href="assets/logo.svg" type="image/svg+xml">
@@ -50,7 +50,7 @@ function auth_bottom(): void
 </html>
 <?php }
 
-const FONT_LINK = 'https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=Caveat:wght@500;700&family=Lora:wght@400;600&display=swap';
+const FONT_LINK = 'https://fonts.googleapis.com/css2?family=Pacifico&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=Caveat:wght@500;700&family=Lora:wght@400;600&display=swap';
 
 /** Is this #rrggbb colour light? (0 = black … 1 = white) */
 function hex_lum(string $hex): float
