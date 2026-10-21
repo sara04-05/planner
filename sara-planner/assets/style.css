@@ -2006,3 +2006,7 @@ body.wb-open .toast{z-index:1002}
 @media (max-width:640px){.lk-pop{position:fixed;left:16px;right:16px;top:72px;width:auto}}
 .lk-inline{margin-bottom:10px;padding:2px}
 .pub-note a,.tour-note a{color:var(--ink);font-weight:600;text-decoration:underline;text-underline-offset:2px}
+
+/* letter avatars: the circle takes the accent and the letter its contrasting colour, so it stays readable with any accent (even white) */
+.avatar{background:var(--accent);color:var(--on-accent)}
+img.avatar{background:var(--accent-soft)}
