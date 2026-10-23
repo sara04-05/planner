@@ -1421,8 +1421,6 @@ a.nbtile{text-decoration:none}.nbtiles{margin-bottom:14px}.nbtile.on span{color:
 /* subjects: whole boxes packed tightly (masonry). assets/app.js sets how many 8px rows each box covers, so boxes slot in under the one above with no gaps */
 .subjects{display:grid;grid-template-columns:repeat(auto-fill,minmax(270px,1fr));grid-auto-rows:8px;column-gap:16px;row-gap:0;grid-auto-flow:dense;align-items:start}
 .subjects>.subj{margin:0;display:block;break-inside:avoid}
-.subjects>.subj.wide{grid-column:span 2}
-.subjects>.subj.wide .chs{column-count:2;column-gap:28px}
 .subjects>.subj .ch{break-inside:avoid}
 
 /* top bar: icons only (the date stays as text); the logo and the bar follow the chosen look */

@@ -787,13 +787,12 @@ function render(focusId){
   if(focusId){const el=document.getElementById(focusId);if(el){el.focus();if(el.dataset.edit)el.select()}}
 }
 /** Study tab: each subject stays whole in one box, and the boxes pack tightly (masonry) with no big empty gaps.
- *  A subject with many chapters takes two columns and lays its chapters out side by side. */
+ *  Every subject lists its chapters in one straight column, however many it has. */
 let subjRO=null;
 function layoutSubjects(){
   const box=document.querySelector('.subjects');if(!box)return;
   const cards=[...box.children],ROW=8,GAP=16;
-  const cols=getComputedStyle(box).gridTemplateColumns.split(' ').length;
-  cards.forEach(c=>{c.style.gridRowEnd='';c.classList.toggle('wide',cols>=2&&c.querySelectorAll('.ch').length>=8)});
+  cards.forEach(c=>{c.style.gridRowEnd=''});
   cards.forEach(c=>{c.style.gridRowEnd='span '+Math.ceil((c.getBoundingClientRect().height+GAP)/ROW)});
   if(window.ResizeObserver){   // a box that grows (a note opens, a chapter is added) re-packs the rest
     if(subjRO)subjRO.disconnect();
