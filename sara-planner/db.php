@@ -39,6 +39,9 @@ if (!is_file(__DIR__ . '/config.php')) {
 date_default_timezone_set('Europe/Belgrade');
 require __DIR__ . '/config.php';
 
+// The colours a new subject (a Study subject, which is also a notebook in the Notes tab) is given in turn
+const SUBJ_COLORS = ['school', 'fun', 'transport', 'food', 'groceries', 'coffee', 'phone', 'other'];
+
 // Safer session cookies
 ini_set('session.use_strict_mode', '1');
 ini_set('session.cookie_httponly', '1');
@@ -349,6 +352,11 @@ function upgrade_schema(PDO $pdo): void
             if (preg_match("/CREATE TABLE IF NOT EXISTS $t \\(.*?\\n\\)[^;]*;/s", $sql, $m)) $pdo->exec($m[0]);
         }
         if (DB_DRIVER === 'sqlite') $pdo->exec('CREATE INDEX IF NOT EXISTS idx_notes_user ON notes(user_id,updated_at)');
+        // Each Study subject is a notebook: a page that is not in a chapter is filed under its subject
+        $noteCols = DB_DRIVER === 'sqlite'
+            ? array_column($pdo->query('PRAGMA table_info(notes)')->fetchAll(), 'name')
+            : array_column($pdo->query('SHOW COLUMNS FROM notes')->fetchAll(), 'Field');
+        if (!in_array('subject_id', $noteCols, true)) $pdo->exec('ALTER TABLE notes ADD COLUMN subject_id INT NULL');
     } catch (PDOException $e) {
         error_log('Could not add the study notebook tables: ' . $e->getMessage());
     }

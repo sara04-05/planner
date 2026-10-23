@@ -532,12 +532,12 @@ const sItems=s=>s.chapters.flatMap(c=>c.topics.length?c.topics:[c]);
 const matOpen=new Set(); // chapters whose study material box is open while still empty
 const hasMat=c=>!!(c.mat&&(c.mat.pages.length||c.mat.files.length));
 /** A chapter's study material: its pages in the study notebook (notes.php), the files on them, and buttons to add more. */
-function matPanel(c){
+function matPanel(c,sid){
   const m=c.mat||{pages:[],files:[]},ic={audio:'music',image:'image'};
   const pages=m.pages.map(p=>`<a class="mat-chip" href="notes.php?page=${p.id}">${ico(p.kind==='board'?'board':'note')}<span translate="no">${esc(p.title||(p.kind==='board'?'Whiteboard':'Notes'))}</span></a>`).join('');
   const files=m.files.map(f=>`<a class="mat-chip" href="notefile.php?id=${f.id}${['pdf','image','audio'].includes(f.kind)?'':'&amp;dl=1'}" target="_blank" rel="noopener">${ico(ic[f.kind]||'file')}<span translate="no">${esc(f.name)}</span></a>`).join('');
   return `<div class="mat" id="mat-${c.id}">${pages||files?`<div class="mat-list">${pages}${files}</div>`:'<p class="mat-empty">Add the slides, PDFs, pictures or your own notes for this chapter.</p>'}
-    <div class="mat-add"><label class="btn sm">${ico('clip')}Upload files<input type="file" multiple hidden data-matup="${c.id}"></label><a class="btn sm" href="notes.php?chapter=${c.id}&amp;new=note">${ico('note')}Write notes</a><a class="btn sm" href="notes.php?chapter=${c.id}&amp;new=board">${ico('board')}Whiteboard</a></div></div>`;
+    <div class="mat-add"><label class="btn sm">${ico('clip')}Upload files<input type="file" multiple hidden data-matup="${c.id}"></label><a class="btn sm" href="notes.php?chapter=${c.id}&amp;new=note">${ico('note')}Write notes</a><a class="btn sm" href="notes.php?chapter=${c.id}&amp;new=board">${ico('board')}Whiteboard</a><a class="btn sm" href="notes.php?nb=${sid}&amp;ch=${c.id}">${ico('notebook')}Open in notebook</a></div></div>`;
 }
 /** Upload files from the Study tab: they go on the chapter's notes page (made the first time). */
 async function matUpload(cid,files){
@@ -567,10 +567,10 @@ function subjectsSection(){
     const chs=s.chapters.map(c=>{const d=chDone(c),tn=c.topics.filter(t=>t.done).length,a=`data-sid="${s.id}" data-cid="${c.id}"`;
       return `<div class="ch ${d?'done':''}"><div class="ch-h"><input type="checkbox" data-chk="ch" ${a} ${d?'checked':''} aria-label="Learned: ${esc(c.title)}">${nameOrEdit('ch',c.id,c.title,a,150)}${c.topics.length?`<span class="cnt">${tn}/${c.topics.length}</span>`:''}<button class="srcbtn ${c.src?'on':''}" data-act="src" ${a} title="Where to find this chapter (book, author, literature)" aria-label="Where to find ${esc(c.title)}" aria-expanded="${srcOpen.has(c.id)||!!c.src}">${ico('book')}</button><button class="srcbtn ${hasMat(c)?'on':''}" data-act="mat" ${a} title="Study material: files, notes and whiteboards" aria-label="Study material for ${esc(c.title)}" aria-expanded="${matOpen.has(c.id)||hasMat(c)}">${ico('clip')}</button><button class="x sm" data-act="del-ch" ${a} data-confirm aria-label="Delete ${esc(c.title)}">×</button></div>
       ${c.src||srcOpen.has(c.id)?`<textarea class="src" id="src-${c.id}" data-src ${a} rows="2" placeholder="Where to find it, e.g.&#10;Book: Java e pesëmbëdhjetë, by …&#10;Literatura: Manuali i BASIC për 8051" aria-label="Where to find ${esc(c.title)}">${esc(c.src||'')}</textarea>`:''}
-      ${hasMat(c)||matOpen.has(c.id)?matPanel(c):''}
+      ${hasMat(c)||matOpen.has(c.id)?matPanel(c,s.id):''}
       ${c.topics.length?`<ul class="topics">${c.topics.map(t=>`<li class="${t.done?'dn':''}"><input type="checkbox" data-chk="topic" ${a} data-tid="${t.id}" ${t.done?'checked':''} aria-label="Learned: ${esc(t.t)}">${nameOrEdit('tp',t.id,t.t,a,200)}<button class="x sm" data-act="del-topic" ${a} data-tid="${t.id}" aria-label="Delete ${esc(t.t)}">×</button></li>`).join('')}</ul>`:''}
       <form class="mini" data-form="topic" ${a} autocomplete="off" style="margin-left:28px"><input id="tp-${c.id}" name="t" placeholder="+ Add something to learn" aria-label="Add something to learn in ${esc(c.title)}"></form></div>`}).join('');
-    return `<div class="subj" style="--sc:var(--c-${s.c})"><div class="subj-h"><div><h3>${esc(s.name)}</h3><div style="margin-top:6px">${exam}</div></div><button class="x" data-act="del-subj" data-id="${s.id}" data-confirm aria-label="Delete ${esc(s.name)}">×</button></div>
+    return `<div class="subj" style="--sc:var(--c-${s.c})"><div class="subj-h"><div><h3>${esc(s.name)}</h3><div style="margin-top:6px">${exam}</div><a class="linkbtn" style="display:inline-block;margin-top:6px" href="notes.php?nb=${s.id}" title="Your notes and files for this subject, chapter by chapter">${ico('notebook')}Open notebook</a></div><button class="x" data-act="del-subj" data-id="${s.id}" data-confirm aria-label="Delete ${esc(s.name)}">×</button></div>
       <div class="meter"><span style="width:${pct.toFixed(1)}%;background:var(--sc)"></span></div>
       <p style="font-size:12px;color:var(--muted);font-weight:600;margin:5px 0 2px">${dn} of ${it.length} learned · ${s.chapters.length} chapter${s.chapters.length===1?'':'s'}</p>
       <div class="chs">${chs}</div>
