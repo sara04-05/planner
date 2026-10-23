@@ -4,6 +4,8 @@
 // People, friends, profile pictures, notebook covers and messages live in social.php / explore.php / messages.php.
 declare(strict_types=1);
 
+require_once __DIR__ . '/news.php';
+
 const SHARE_KEYS   = ['blog', 'interests', 'timetable', 'subjects'];   // kept for the old share column (used once, when moving to notebooks)
 const SECTIONS     = ['interests', 'blog', 'timetable', 'subjects'];       // the pages a notebook can have, besides its cover
 const NOTIFY_KEYS  = ['like', 'comment'];
@@ -363,6 +365,7 @@ function public_slug(int $uid, ?int $viewer = null): string
 
 function unread_count(int $uid): int
 {
+    deliver_site_news($uid);
     try {
         return (int)q('SELECT COUNT(*) c FROM notifications WHERE user_id = ? AND is_read = 0', [$uid])->fetch()['c'];
     } catch (PDOException $e) {

@@ -370,6 +370,7 @@ Object.assign(T,{'📖 Open the notebook':'📖 Hap fletoren','Pages':'Faqet','A
 'You are the owner: you can edit accounts, give the verified tick and set roles.':'Ti je pronari: mund të redaktosh llogari, të japësh shenjën e verifikimit dhe të caktosh role.',
 'You are an admin: you can edit accounts, give the verified tick and set roles.':'Ti je admin: mund të redaktosh llogari, të japësh shenjën e verifikimit dhe të caktosh role.',
 'You are a sub admin: you can look at the users but not change anything.':'Ti je nën-admin: mund t\'i shohësh përdoruesit por nuk mund të ndryshosh asgjë.',
+'New: every Study subject now has its own notebook in Notes, with a place for each chapter.':'E re: çdo lëndë e Studimit ka tani fletoren e vet te Shënimet, me një vend për çdo kapitull.',
 'Nothing new. Friend requests, messages and likes show up here.':'Asgjë e re. Kërkesat e miqësisë, mesazhet dhe pëlqimet shfaqen këtu.',
 'Look inside':'Shiko brenda','Look inside the planner':'Shiko brenda planerit','Look inside · Splanner':'Shiko brenda · Splanner',
 'Open the real planner with sample data and click through every page: Day, Week, Month, Year, Study, Tasks and Expenses. It is view only, so nothing is saved until you have an account.':'Hap planerin e vërtetë me të dhëna shembull dhe kalo nëpër çdo faqe: Dita, Java, Muaji, Viti, Studimi, Detyrat dhe Shpenzimet. Është vetëm për shikim, ndaj asgjë nuk ruhet derisa të kesh llogari.',
