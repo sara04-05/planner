@@ -1899,6 +1899,8 @@ body.music-win{margin:0;padding:12px;background:var(--bg);color:var(--ink);font-
 .nt-body[data-paper="dots"]{background-image:radial-gradient(circle,var(--ln) 1.6px,transparent 1.8px);background-size:32px 32px;background-position:0 21px}
 .nt-body[data-paper="lined"]{padding-top:6px}
 .nt-body:not([data-paper="lined"]){padding-left:18px}
+/* the general ".page textarea" line-height (1.25) is more specific than .nt-body and squeezed the text so it no longer matched the 32px ruling */
+.page textarea.nt-body{line-height:32px;font-size:16px}
 .nt-board-prev{position:relative;border:1px solid var(--line);border-radius:12px;aspect-ratio:16/10;background:#fff;cursor:pointer;overflow:hidden;display:grid;place-items:center}
 .nt-board-prev img{position:absolute;inset:0;width:100%;height:100%}
 .nt-draw{margin-top:10px}
