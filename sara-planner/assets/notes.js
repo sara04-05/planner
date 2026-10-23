@@ -9,6 +9,15 @@ const listEl=$('ntList'), main=$('ntMain'), search=$('ntSearch'), subjEl=$('ntSu
 let S={notes:[],subjects:[],limits:{file_max:10485760,total_max:104857600,files_max:200,used:{count:0,bytes:0},types:[]}};
 let cur=null, filter='', subject='', saveTimer=null, saving=null;
 
+// ruled paper: keep the 32px line height and the 1px rules a whole number of screen pixels at any browser zoom
+function snapRules(){
+  const d=window.devicePixelRatio||1, st=document.documentElement.style;
+  st.setProperty('--nt-lh',Math.round(32*d)/d+'px');
+  st.setProperty('--nt-rule',Math.max(1,Math.round(d))/d+'px');
+  const b=document.getElementById('ntBody');if(b)fit(b);
+}
+snapRules();window.addEventListener('resize',snapRules);
+
 function el(tag,cls,text){const e=document.createElement(tag);if(cls)e.className=cls;if(text!=null)e.textContent=text;return e}
 function btn(cls,text,fn,title){const b=el('button',cls,text);b.type='button';if(title){b.title=T(title);b.setAttribute('aria-label',T(title))}if(fn)b.onclick=fn;return b}
 /** Put a line icon (and a label) in a button or link. */
