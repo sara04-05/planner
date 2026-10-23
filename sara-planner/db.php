@@ -260,7 +260,7 @@ function upgrade_schema(PDO $pdo): void
             : array_column($pdo->query("SHOW COLUMNS FROM $t")->fetchAll(), 'Field');
         $have = $colsOf('profiles');
         foreach (['slug' => 'VARCHAR(40) NULL', 'is_public' => 'TINYINT(1) NOT NULL DEFAULT 0', 'guest_view' => 'TINYINT(1) NOT NULL DEFAULT 0',
-                  'share' => 'TEXT NULL', 'design' => 'TEXT NULL', 'notify' => 'TEXT NULL', 'nb_ready' => 'TINYINT(1) NOT NULL DEFAULT 0'] as $c => $def) {
+                  'share' => 'TEXT NULL', 'design' => 'TEXT NULL', 'notify' => 'TEXT NULL', 'nb_ready' => 'TINYINT(1) NOT NULL DEFAULT 0', 'news_seen' => 'INT NOT NULL DEFAULT 0'] as $c => $def) {
             if (!in_array($c, $have, true)) $pdo->exec("ALTER TABLE profiles ADD COLUMN $c $def");
         }
         if (DB_DRIVER === 'sqlite') {

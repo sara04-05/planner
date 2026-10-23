@@ -193,6 +193,7 @@ CREATE TABLE IF NOT EXISTS profiles (
   design     TEXT NULL,
   notify     TEXT NULL,
   nb_ready   TINYINT(1) NOT NULL DEFAULT 0,
+  news_seen  INT NOT NULL DEFAULT 0,
   look       VARCHAR(24) NOT NULL DEFAULT '',
   FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
 );

@@ -26,6 +26,7 @@ sara-planner/
 ├── music.php          Music page: Spotify player, Connect Spotify, the pop-out window
 ├── spotify.php        Talks to Spotify for music.php
 ├── notebook.php       Notebooks: pages, designs, styles, blog, interest lists, likes, alerts, pictures (used by api.php)
+├── news.php           What's new: each line in SITE_NEWS lands once in every user's bell
 ├── notes.php          Notes: a notebook for every Study subject, with each chapter's pages, whiteboards and files (drawn by assets/notes.js)
 ├── noteapi.php        Saves the notes (pages, notebooks, chapters, uploads); notefile.php sends a study file back, notes-lib.php has the shared helpers
 ├── u.php              A profile (u.php?u=pagename): its notebooks, opened in the same notebook layout
@@ -215,3 +216,7 @@ The **Notes** tab is your private study notebook. Every subject in the **Study**
 - Add a subject or a chapter in either tab and it is in the other one too. The Study tab has *Open notebook* on each subject and *Open in notebook* on each chapter's study material.
 - A page can be moved to another notebook or chapter with the two pickers above its title. A page in no notebook, or whose subject was deleted in the Study tab, is kept under **Other**: nothing is deleted when a subject is.
 - Pages are filed by `subject_id` and `chapter_id` on the `notes` table (`subject_id` is added to existing databases by itself). Pages made before notebooks existed are matched to a subject by its name.
+
+## Telling everyone about something new
+
+Anything you add to the website can show up in the bell (the notifications button) of **every user**. Open `news.php`, add one line at the bottom of `SITE_NEWS` with the next number, today's date, the message and the page it opens, and upload the file. Each person gets it once, the next time they load any page; it also slides in at the top of the window. People who sign up later do not get older news. Add the Albanian text for the message to `assets/lang.js` so it is translated too.
