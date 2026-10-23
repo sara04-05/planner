@@ -1892,7 +1892,8 @@ body.music-win{margin:0;padding:12px;background:var(--bg);color:var(--ink);font-
 .nt-chapter{align-self:flex-start;font-size:13px;color:var(--accent);text-decoration:none;background:var(--accent-soft);border-radius:999px;padding:4px 12px}
 .nt-body{display:block;width:100%;min-height:420px;resize:vertical;border:1px solid var(--line);border-radius:12px;padding:6px 18px 18px 58px;font:inherit;font-size:16px;line-height:32px;color:var(--ink);background-color:var(--paper);background-attachment:local;outline-offset:0}
 .nt-body,.nt-board-prev,.wb-sheet{--ln:color-mix(in srgb,var(--accent) 16%,var(--line))}
-.nt-body[data-paper="lined"]{background-image:linear-gradient(90deg,transparent 44px,var(--margin) 44px,var(--margin) 46px,transparent 46px),repeating-linear-gradient(transparent 0 31px,var(--ln) 31px 32px);background-position:0 0,0 6px}
+/* the rules are a 32px tile (not repeating-linear-gradient, which is rasterised per pixel and drops/doubles lines at fractional zoom like 125%), so every line is drawn identically and sits exactly 32px from the next */
+.nt-body[data-paper="lined"]{background-image:linear-gradient(90deg,transparent 44px,var(--margin) 44px,var(--margin) 46px,transparent 46px),linear-gradient(to bottom,transparent 31px,var(--ln) 31px);background-size:100% 100%,100% 32px;background-repeat:no-repeat,repeat-y;background-position:0 0,0 6px}
 .nt-body[data-paper="grid"]{background-image:linear-gradient(var(--ln) 1px,transparent 1px),linear-gradient(90deg,var(--ln) 1px,transparent 1px);background-size:32px 32px;background-position:0 5px}
 .nt-body[data-paper="dots"]{background-image:radial-gradient(circle,var(--ln) 1.6px,transparent 1.8px);background-size:32px 32px;background-position:0 21px}
 .nt-body[data-paper="lined"]{padding-top:6px}
