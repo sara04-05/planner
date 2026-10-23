@@ -2,6 +2,8 @@
 // Saving for the study notebook (notes.php, assets/notes.js). POST noteapi.php?action=...
 // JSON for most actions; "file.add" (a study file) and "board.save" (a whiteboard drawing) are sent as form uploads.
 // Every query is limited to the logged-in person's own notes.
+// A notebook is a subject from the Study tab; its chapters are the Study chapters. A page sits in a chapter, or loose in its
+// notebook, or (when it has neither) in "Other".
 declare(strict_types=1);
 require __DIR__ . '/db.php';
 require __DIR__ . '/notes-lib.php';
@@ -50,24 +52,67 @@ function my_note(int $uid, $id): array
     return $n;
 }
 
-/** One of my chapters (Study tab) with its subject's name, or null. */
+/** One of my chapters (Study tab) with its subject's id and name, or null. */
 function my_chapter(int $uid, $id): ?array
 {
     if (!is_numeric($id) || (int)$id < 1) return null;
-    return q('SELECT c.id, c.title, s.name subject FROM chapters c JOIN subjects s ON s.id = c.subject_id WHERE c.id = ? AND s.user_id = ?', [(int)$id, $uid])->fetch() ?: null;
+    return q('SELECT c.id, c.title, s.id subject_id, s.name subject FROM chapters c JOIN subjects s ON s.id = c.subject_id WHERE c.id = ? AND s.user_id = ?', [(int)$id, $uid])->fetch() ?: null;
 }
 
-/** Add a page; $ch = the chapter it is material for (its title and subject fill in what's missing). */
-function add_note(int $uid, string $kind, string $title, string $subject, ?array $ch, ?string $paper = null): array
+/** One of my subjects (a notebook), or null. */
+function my_subject(int $uid, $id): ?array
+{
+    if (!is_numeric($id) || (int)$id < 1) return null;
+    return q('SELECT id, name, color FROM subjects WHERE id = ? AND user_id = ?', [(int)$id, $uid])->fetch() ?: null;
+}
+
+/** Where a page goes: [its chapter, its notebook]. A chapter brings its own notebook; with neither the page is in "Other". */
+function note_place(int $uid, array $in): array
+{
+    $ch = my_chapter($uid, $in['chapter_id'] ?? null);
+    if ($ch) return [$ch, ['id' => $ch['subject_id'], 'name' => $ch['subject']]];
+    return [null, my_subject($uid, $in['subject_id'] ?? null)];
+}
+
+/** My notebooks (subjects) and their chapters, as the page needs them: [books by id, chapters by id]. */
+function note_books(int $uid): array
+{
+    $books = [];
+    foreach (q('SELECT id, name, color FROM subjects WHERE user_id = ? ORDER BY id', [$uid])->fetchAll() as $s) {
+        $books[(int)$s['id']] = ['id' => (int)$s['id'], 'name' => $s['name'], 'c' => preg_match('/^[a-z]+$/', (string)$s['color']) ? $s['color'] : 'school', 'chapters' => []];
+    }
+    $chapters = [];
+    foreach (q('SELECT c.id, c.subject_id, c.title FROM chapters c JOIN subjects s ON s.id = c.subject_id WHERE s.user_id = ? ORDER BY c.id', [$uid])->fetchAll() as $c) {
+        $chapters[(int)$c['id']] = ['id' => (int)$c['id'], 'subject_id' => (int)$c['subject_id'], 'title' => $c['title']];
+        if (isset($books[(int)$c['subject_id']])) $books[(int)$c['subject_id']]['chapters'][] = ['id' => (int)$c['id'], 'title' => $c['title']];
+    }
+    return [$books, $chapters];
+}
+
+/**
+ * The notebook and chapter a page is in now: [notebook id, chapter id], 0 for none. The chapter decides first, then the notebook it
+ * was filed under; pages from before notebooks existed are matched by their subject's name. A deleted subject or chapter leaves the
+ * page in "Other", so nothing is ever lost.
+ */
+function note_home(array $n, array $books, array $chapters): array
+{
+    $cid = (int)($n['chapter_id'] ?? 0);
+    if ($cid && isset($chapters[$cid])) return [$chapters[$cid]['subject_id'], $cid];
+    $sid = (int)($n['subject_id'] ?? 0);
+    if ($sid && isset($books[$sid])) return [$sid, 0];
+    $name = mb_strtolower(trim((string)($n['subject'] ?? '')));
+    if ($name !== '') foreach ($books as $b) if (mb_strtolower($b['name']) === $name) return [$b['id'], 0];
+    return [0, 0];
+}
+
+/** Add a page in a chapter and/or notebook (the chapter's title and the notebook's name fill in what's missing). */
+function add_note(int $uid, string $kind, string $title, ?array $ch, ?array $book, ?string $paper = null): array
 {
     if ((int)q('SELECT COUNT(*) c FROM notes WHERE user_id = ?', [$uid])->fetch()['c'] >= NOTE_MAX_PAGES) nfail(400, 'You have ' . NOTE_MAX_PAGES . ' pages already. Delete some old ones first.');
-    if ($ch) {
-        if ($title === '') $title = mb_substr($ch['title'], 0, 120);
-        if ($subject === '') $subject = mb_substr($ch['subject'], 0, 80);
-    }
+    if ($ch && $title === '') $title = mb_substr($ch['title'], 0, 120);
     $paper = in_array($paper, NOTE_PAPERS, true) ? $paper : ($kind === 'board' ? 'plain' : 'lined');
-    q('INSERT INTO notes (user_id, kind, title, subject, chapter_id, body, paper, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)',
-        [$uid, $kind, $title, $subject, $ch ? (int)$ch['id'] : null, '', $paper, time(), time()]);
+    q('INSERT INTO notes (user_id, kind, title, subject, subject_id, chapter_id, body, paper, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)',
+        [$uid, $kind, $title, $book ? mb_substr($book['name'], 0, 80) : '', $book ? (int)$book['id'] : null, $ch ? (int)$ch['id'] : null, '', $paper, time(), time()]);
     return my_note($uid, db()->lastInsertId());
 }
 
@@ -77,26 +122,22 @@ function clean_text($v, int $max): string
     return mb_substr($v, 0, $max);
 }
 
-function note_summary(array $n, array $counts): array
+function note_summary(array $n, array $books, array $chapters): array
 {
     $body = trim(preg_replace('/\s+/u', ' ', (string)($n['body'] ?? '')) ?? '');
-    return ['id' => (int)$n['id'], 'kind' => $n['kind'], 'title' => $n['title'], 'subject' => $n['subject'],
-        'snippet' => mb_substr($body, 0, 90), 'files' => $counts[(int)$n['id']] ?? 0, 'updated' => (int)$n['updated_at'],
+    [$sid, $cid] = note_home($n, $books, $chapters);
+    return ['id' => (int)$n['id'], 'kind' => $n['kind'], 'title' => $n['title'], 'sid' => $sid, 'cid' => $cid,
+        'snippet' => mb_substr($body, 0, 90), 'updated' => (int)$n['updated_at'],
         'thumb' => $n['kind'] === 'board' && $n['board'] ? 'notefile.php?board=' . (int)$n['id'] . '&v=' . (int)$n['updated_at'] : ''];
-}
-
-/** "Chapter title" of the chapter a page belongs to, or '' (also when the chapter was deleted since). */
-function chapter_label(int $uid, $id): string
-{
-    $ch = $id ? my_chapter($uid, $id) : null;
-    return $ch ? $ch['title'] : '';
 }
 
 function note_full(int $uid, array $n): array
 {
     $files = q('SELECT * FROM note_files WHERE note_id = ? AND user_id = ? ORDER BY id', [(int)$n['id'], $uid])->fetchAll();
-    return ['id' => (int)$n['id'], 'kind' => $n['kind'], 'title' => $n['title'], 'subject' => $n['subject'], 'body' => (string)($n['body'] ?? ''),
-        'paper' => $n['paper'], 'updated' => (int)$n['updated_at'], 'chapter' => chapter_label($uid, $n['chapter_id'] ?? null),
+    [$books, $chapters] = note_books($uid);
+    [$sid, $cid] = note_home($n, $books, $chapters);
+    return ['id' => (int)$n['id'], 'kind' => $n['kind'], 'title' => $n['title'], 'sid' => $sid, 'cid' => $cid, 'body' => (string)($n['body'] ?? ''),
+        'paper' => $n['paper'], 'updated' => (int)$n['updated_at'],
         'board' => $n['board'] ? 'notefile.php?board=' . (int)$n['id'] . '&v=' . (int)$n['updated_at'] : '',
         'files' => array_map('note_file_out', $files)];
 }
@@ -114,20 +155,37 @@ function limits(int $uid): array
 
 switch ($action) {
     case 'note.list':
-        $counts = [];
-        foreach (q('SELECT note_id, COUNT(*) c FROM note_files WHERE user_id = ? GROUP BY note_id', [$uid])->fetchAll() as $r) $counts[(int)$r['note_id']] = (int)$r['c'];
-        $notes = array_map(fn($n) => note_summary($n, $counts),
-            q('SELECT id, kind, title, subject, body, board, updated_at FROM notes WHERE user_id = ? ORDER BY updated_at DESC, id DESC', [$uid])->fetchAll());
-        // Subjects from the Study tab, so a page can be filed under one of them
-        $subjects = array_column(q('SELECT name FROM subjects WHERE user_id = ? ORDER BY name', [$uid])->fetchAll(), 'name');
-        nok(['notes' => $notes, 'subjects' => $subjects, 'limits' => limits($uid)]);
+        [$books, $chapters] = note_books($uid);
+        $files = array_map('note_file_out', q('SELECT * FROM note_files WHERE user_id = ? ORDER BY id', [$uid])->fetchAll());
+        $notes = array_map(fn($n) => note_summary($n, $books, $chapters),
+            q('SELECT id, kind, title, subject, subject_id, chapter_id, body, board, updated_at FROM notes WHERE user_id = ? ORDER BY updated_at DESC, id DESC', [$uid])->fetchAll());
+        nok(['notes' => $notes, 'books' => array_values($books), 'files' => $files, 'limits' => limits($uid)]);
 
     case 'note.get':
         nok(['note' => note_full($uid, my_note($uid, $in['id'] ?? null))]);
 
+    case 'book.add':
+        // A new notebook is a new subject: it shows up in the Study tab too
+        $name = clean_text($in['name'] ?? '', 80);
+        if ($name === '') nfail(400, 'Give the notebook a name.');
+        $count = (int)q('SELECT COUNT(*) c FROM subjects WHERE user_id = ?', [$uid])->fetch()['c'];
+        q('INSERT INTO subjects (user_id, name, color) VALUES (?, ?, ?)', [$uid, $name, SUBJ_COLORS[$count % count(SUBJ_COLORS)]]);
+        $id = (int)db()->lastInsertId();
+        nok(['book' => ['id' => $id, 'name' => $name, 'c' => SUBJ_COLORS[$count % count(SUBJ_COLORS)], 'chapters' => []]]);
+
+    case 'chapter.add':
+        // A new chapter in a notebook is a new chapter of that subject in the Study tab
+        $book = my_subject($uid, $in['subject_id'] ?? null);
+        if (!$book) nfail(404, 'That notebook was not found. It may have been deleted.');
+        $title = clean_text($in['title'] ?? '', 150);
+        if ($title === '') nfail(400, 'Give the chapter a name.');
+        q('INSERT INTO chapters (subject_id, title) VALUES (?, ?)', [(int)$book['id'], $title]);
+        nok(['chapter' => ['id' => (int)db()->lastInsertId(), 'title' => $title]]);
+
     case 'note.add':
         $kind = in_array($in['kind'] ?? '', NOTE_KINDS, true) ? $in['kind'] : 'note';
-        $n = add_note($uid, $kind, clean_text($in['title'] ?? '', 120), clean_text($in['subject'] ?? '', 80), my_chapter($uid, $in['chapter_id'] ?? null), $in['paper'] ?? null);
+        [$ch, $book] = note_place($uid, $in);
+        $n = add_note($uid, $kind, clean_text($in['title'] ?? '', 120), $ch, $book, $in['paper'] ?? null);
         nok(['note' => note_full($uid, $n)]);
 
     case 'note.save':
@@ -136,8 +194,18 @@ switch ($action) {
         if (mb_strlen($body) > 200000) nfail(400, 'This page is very long. Start a new page for the rest.');
         $paper = in_array($in['paper'] ?? '', NOTE_PAPERS, true) ? $in['paper'] : $n['paper'];
         $title = array_key_exists('title', $in) ? clean_text($in['title'], 120) : $n['title'];
-        $subject = array_key_exists('subject', $in) ? clean_text($in['subject'], 80) : $n['subject'];
-        q('UPDATE notes SET title = ?, subject = ?, body = ?, paper = ?, updated_at = ? WHERE id = ?', [$title, $subject, $body, $paper, time(), (int)$n['id']]);
+        $subject = $n['subject'];
+        $subjectId = $n['subject_id'];
+        $chapterId = $n['chapter_id'];
+        if (array_key_exists('chapter_id', $in) || array_key_exists('subject_id', $in)) {
+            // Moved to another notebook or chapter
+            [$ch, $book] = note_place($uid, $in);
+            $subject = $book ? mb_substr($book['name'], 0, 80) : '';
+            $subjectId = $book ? (int)$book['id'] : null;
+            $chapterId = $ch ? (int)$ch['id'] : null;
+        }
+        q('UPDATE notes SET title = ?, subject = ?, subject_id = ?, chapter_id = ?, body = ?, paper = ?, updated_at = ? WHERE id = ?',
+            [$title, $subject, $subjectId, $chapterId, $body, $paper, time(), (int)$n['id']]);
         nok(['updated' => time()]);
 
     case 'note.delete':
@@ -150,11 +218,17 @@ switch ($action) {
 
     case 'file.add':
         if (!empty($in['chapter_id'])) {
-            // Uploaded from a chapter in the Study tab: it goes on that chapter's notes page (made the first time)
+            // Uploaded to a chapter (from the Study tab or its notebook): it goes on that chapter's notes page (made the first time)
             $ch = my_chapter($uid, $in['chapter_id']);
             if (!$ch) nfail(404, 'That chapter was not found. It may have been deleted.');
             $n = q("SELECT * FROM notes WHERE user_id = ? AND chapter_id = ? AND kind = 'note' ORDER BY id LIMIT 1", [$uid, (int)$ch['id']])->fetch()
-                ?: add_note($uid, 'note', '', '', $ch);
+                ?: add_note($uid, 'note', '', $ch, ['id' => $ch['subject_id'], 'name' => $ch['subject']]);
+        } elseif (!empty($in['subject_id'])) {
+            // Uploaded to a notebook, outside any chapter: it goes on the notebook's general files page
+            $book = my_subject($uid, $in['subject_id']);
+            if (!$book) nfail(404, 'That notebook was not found. It may have been deleted.');
+            $n = q("SELECT * FROM notes WHERE user_id = ? AND subject_id = ? AND chapter_id IS NULL AND kind = 'note' ORDER BY id LIMIT 1", [$uid, (int)$book['id']])->fetch()
+                ?: add_note($uid, 'note', 'Study files', null, $book);
         } else {
             $n = my_note($uid, $in['note_id'] ?? null);
         }

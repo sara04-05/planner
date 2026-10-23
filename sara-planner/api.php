@@ -72,7 +72,6 @@ function weekday_of(string $date): int
 const CATEGORIES  = ['Food', 'Coffee', 'Transport', 'Groceries', 'School', 'Phone', 'Fun', 'Clothes', 'Gifts', 'Work', 'Other'];
 const PRIORITIES  = ['high', 'med', 'low'];
 const HOUR_TYPES  = ['uni', 'work', 'study', 'personal', 'health', 'sleep'];
-const SUBJ_COLORS = ['school', 'fun', 'transport', 'food', 'groceries', 'coffee', 'phone', 'other'];
 
 // ---------- checks every request goes through ----------
 if ($_SERVER['REQUEST_METHOD'] !== 'POST') fail(405, 'Use POST.');

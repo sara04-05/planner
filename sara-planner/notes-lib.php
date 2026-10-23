@@ -92,6 +92,6 @@ function note_file_kind(string $mime): string
 
 function note_file_out(array $f): array
 {
-    return ['id' => (int)$f['id'], 'name' => $f['name'], 'size' => (int)$f['size'], 'mime' => $f['mime'],
+    return ['id' => (int)$f['id'], 'note' => (int)$f['note_id'], 'name' => $f['name'], 'size' => (int)$f['size'], 'mime' => $f['mime'],
         'kind' => note_file_kind($f['mime']), 'url' => 'notefile.php?id=' . (int)$f['id']];
 }

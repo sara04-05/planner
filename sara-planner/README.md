@@ -26,6 +26,8 @@ sara-planner/
 ├── music.php          Music page: Spotify player, Connect Spotify, the pop-out window
 ├── spotify.php        Talks to Spotify for music.php
 ├── notebook.php       Notebooks: pages, designs, styles, blog, interest lists, likes, alerts, pictures (used by api.php)
+├── notes.php          Notes: a notebook for every Study subject, with each chapter's pages, whiteboards and files (drawn by assets/notes.js)
+├── noteapi.php        Saves the notes (pages, notebooks, chapters, uploads); notefile.php sends a study file back, notes-lib.php has the shared helpers
 ├── u.php              A profile (u.php?u=pagename): its notebooks, opened in the same notebook layout
 ├── explore.php        Everyone on the site, friend requests and your friends (see ../MESSAGES.md)
 ├── upload.php         Picture upload (blog photos, interest pictures, banners, stickers)
@@ -204,3 +206,12 @@ Then open http://localhost:8080. Settings come from environment variables
 (`DB_DRIVER`, `DB_HOST`, `DB_PORT`, `DB_NAME`, `DB_USER`, `DB_PASS`, `ADMIN_EMAILS`),
 set in `docker-compose.yml`. Without them, `config.php` uses the XAMPP defaults.
 Shell inside the container: `docker compose exec web bash`.
+
+## Notes: a notebook for every subject
+
+The **Notes** tab is your private study notebook. Every subject in the **Study** tab is a notebook here, and every chapter of that subject is a section inside it, so it works the same from both sides:
+
+- Open a notebook, then a chapter: you see that chapter's **pages** (notes and whiteboards) and **files** (PDFs, slides, Word, pictures, music). Add pages and files right there; files you add to a chapter are kept with it.
+- Add a subject or a chapter in either tab and it is in the other one too. The Study tab has *Open notebook* on each subject and *Open in notebook* on each chapter's study material.
+- A page can be moved to another notebook or chapter with the two pickers above its title. A page in no notebook, or whose subject was deleted in the Study tab, is kept under **Other**: nothing is deleted when a subject is.
+- Pages are filed by `subject_id` and `chapter_id` on the `notes` table (`subject_id` is added to existing databases by itself). Pages made before notebooks existed are matched to a subject by its name.

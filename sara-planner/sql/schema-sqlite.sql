@@ -350,7 +350,7 @@ CREATE TABLE IF NOT EXISTS music_saved (
 );
 
 -- Study notebook (notes.php): pages of notes and whiteboards, with study files. Only their owner sees them.
--- chapter_id: the chapter (Study tab) the page is material for, if any.
+-- subject_id / chapter_id: the notebook (a subject from the Study tab) and chapter the page belongs to, if any.
 -- The files themselves (and whiteboard drawings) are kept on disk in data/notes/<user id>/.
 CREATE TABLE IF NOT EXISTS notes (
   id         INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -358,6 +358,7 @@ CREATE TABLE IF NOT EXISTS notes (
   kind       VARCHAR(10) NOT NULL DEFAULT 'note',
   title      VARCHAR(120) NOT NULL DEFAULT '',
   subject    VARCHAR(80) NOT NULL DEFAULT '',
+  subject_id INTEGER NULL,
   chapter_id INTEGER NULL,
   body       TEXT NULL,
   paper      VARCHAR(10) NOT NULL DEFAULT 'lined',
