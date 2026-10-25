@@ -16,6 +16,7 @@ require __DIR__ . '/spotify.php';
 
 $uid = require_login();
 $mini = isset($_GET['mini']);
+$isAdmin = is_admin($uid);   // connecting a Spotify account is only for the site admin (Spotify's test mode allows just a few people)
 
 function back(string $result): never
 {
@@ -78,7 +79,7 @@ const SAVED_NAMES = ['playlist' => 'My playlist', 'album' => 'Album', 'track' =>
 if (isset($_GET['token'])) {
     header('Content-Type: application/json');
     header('Cache-Control: no-store');
-    $acc = spotify_configured() ? spotify_account($uid) : null;
+    $acc = spotify_configured() && $isAdmin ? spotify_account($uid) : null;
     if (!$acc) { http_response_code(404); echo json_encode(['error' => 'Spotify is not connected.']); exit; }
     try {
         $token = spotify_token($uid, $acc);
@@ -144,6 +145,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     back('error');
 }
 
+// ---- connecting is for the admin only: everyone else just gets the page ----
+if (!$isAdmin && (isset($_GET['connect']) || isset($_GET['code']) || isset($_GET['state']))) {
+    header('Location: music.php');
+    exit;
+}
+
 // ---- step 1: off to Spotify ----
 if (isset($_GET['connect'])) {
     if (!spotify_configured()) back('not-set-up');
@@ -191,7 +198,7 @@ if (isset($_GET['code']) || (isset($_GET['error']) && isset($_GET['state']))) {
 
 // ---- the page ----
 $configured = spotify_configured();
-$acc = $configured ? spotify_account($uid) : null;
+$acc = $configured && $isAdmin ? spotify_account($uid) : null;
 $link = user_link($uid);
 $parsed = spotify_parse_link($link) ?? ['playlist', MUSIC_PRESETS[0][1]];
 $notes = [
@@ -291,6 +298,7 @@ ob_start(); ?>
     <div class="sp-list" id="spPlaylists"><p class="muted">Loading your playlists…</p></div>
   </section>
   <?php elseif ($mini): ?>
+  <?php elseif (!$isAdmin): ?>
   <?php elseif ($configured): ?>
   <section class="panel">
     <h2>Connect your Spotify</h2>
@@ -298,9 +306,9 @@ ob_start(); ?>
     <p><a class="btn primary" href="music.php?connect=1">Connect Spotify</a></p>
     <p class="music-tip">Playing inside Splanner needs Spotify Premium. While Splanner's Spotify app is in test mode, only people the site owner added in the Spotify dashboard can connect.</p>
   </section>
-  <?php elseif (can_view_users($uid)): ?>
+  <?php else: ?>
   <section class="panel">
-    <h2>Let people connect their Spotify</h2>
+    <h2>Connect your Spotify</h2>
     <p class="music-tip">Only you see this. Put SPOTIFY_CLIENT_ID and SPOTIFY_CLIENT_SECRET in config.php (steps in README.md), and add this Redirect URI in the Spotify dashboard: <code translate="no"><?= h(spotify_redirect_uri()) ?></code></p>
   </section>
   <?php endif; ?>

@@ -128,15 +128,15 @@ The **Music** button in the top bar opens a page with Spotify's player. Anyone c
 whole songs for people logged in to Spotify in that browser, 30-second previews for everyone else.
 **Pop out player** opens a small window that keeps playing while you use the planner.
 
-People can also **Connect Spotify** to see their own playlists, search, and play in the page with
-Spotify Premium. You don't make a code for each user: the whole site uses one Client ID, and every
-person logs in to Spotify once. To turn it on (once, as the site owner):
+The site admin can also **Connect Spotify** to see their own playlists, search, and play in the page with
+Spotify Premium. The button is only shown to admins (everyone else uses the link player above), because
+Spotify only lets a few people use an app in development mode. To turn it on (once, as the site owner):
 
 1. Go to https://developer.spotify.com/dashboard and **Create app**. Tick **Web API** and **Web Playback SDK**.
 2. Under **Redirect URIs** add the address of `music.php` on your site, for example `https://your-site.com/music.php`.
    Spotify only accepts `https://` addresses (or `http://127.0.0.1/...` on your own computer).
 3. Copy the **Client ID** and **Client secret** into `SPOTIFY_CLIENT_ID` and `SPOTIFY_CLIENT_SECRET` in `config.php`.
-4. Under **User Management** add the name and Spotify email of each person who may connect.
+4. Under **User Management** add the name and Spotify email of the admin who will connect (and anyone else you want to let in; sub admins and users never see the button).
 
 Spotify's limits (since February 2026): an app in development mode can have **5 users**, and the
 account that owns the app needs **Spotify Premium**. Going past 5 needs Spotify's *Extended Quota*,
