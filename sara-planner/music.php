@@ -214,8 +214,9 @@ ob_start(); ?>
 <div class="music<?= $mini ? ' mini' : '' ?>" id="music" data-csrf="<?= h(csrf_token()) ?>" data-connected="<?= $acc ? '1' : '' ?>">
   <?php if ($note): ?><p class="music-note <?= $note[0] ?>"><?= h($note[1]) ?></p><?php endif; ?>
 
+  <section class="panel music-top" id="musicTop">
   <?php if ($acc): ?>
-  <section class="panel sp-player" id="spPlayer" hidden>
+  <div class="sp-player" id="spPlayer" hidden>
     <div class="sp-now">
       <img class="sp-art" id="spArt" alt="" hidden>
       <div class="sp-meta"><strong id="spTitle" translate="no">Nothing playing yet</strong><span id="spArtist" translate="no"></span></div>
@@ -226,12 +227,12 @@ ob_start(); ?>
       <button class="btn" data-sp="next" aria-label="Next song"><?= ico('next') ?></button>
       <input type="range" id="spVol" min="0" max="100" value="60" aria-label="Volume">
     </div>
-  </section>
+  </div>
   <?php endif; ?>
-
-  <section class="panel music-embed">
+  <div class="music-embed">
     <iframe id="spEmbed" title="Spotify player" src="https://open.spotify.com/embed/<?= h($parsed[0]) ?>/<?= h($parsed[1]) ?>?utm_source=generator" loading="lazy"
       allow="autoplay; clipboard-write; encrypted-media; fullscreen; picture-in-picture"></iframe>
+  </div>
   </section>
 
   <section class="panel">
