@@ -225,11 +225,9 @@ function drawShelf(){
 /** Pages and whiteboards that are in no notebook: they stay in the Notes tab and are not in the Study tab. */
 function looseBox(){
   const sec=el('section','nt-loose'),loose=pagesIn(0);
-  const bar=el('div','nt-ov-bar');bar.append(el('h3','nt-ov-t',T('Loose pages')));
-  const mk=(kind,icon,label)=>{const x=btn('btn sm',null,()=>create(kind));return withIcon(x,icon,T(label))};
-  const btns=el('span','nt-ov-btns');btns.append(mk('note','note','New page'),mk('board','board','New whiteboard'));bar.append(btns);
-  sec.append(bar,el('p','muted',T('Not in a notebook, and not in your Study tab. Move one into a notebook any time.')));
+  sec.append(el('h3','nt-ov-t',T('Loose pages')),el('p','muted',T('Not in a notebook, and not in your Study tab. Move one into a notebook any time.')));
   if(loose.length){const ul=el('ul','nt-plist');loose.forEach(n=>ul.append(pageLi(n)));sec.append(ul)}
+  else sec.append(el('p','nt-hint nt-empty',T('Start one with New page or New whiteboard at the top.')))
   return sec;
 }
 
@@ -268,14 +266,11 @@ function drawChapter(){
   const h=el('div','nt-ov-h');
   const title=c?c.title:T(b?'General notes':'Loose pages');
   const t=el('h2',null,title);if(c)mine(t);
-  h.append(t,el('p','muted',stats(bk,chap)));w.append(h);
   const pages=pagesIn(bk,chap);
-  const ph=el('div','nt-ov-bar');ph.append(el('h3','nt-ov-t',T('Pages')));
-  const mk=(kind,icon,label)=>{const x=btn('btn sm',null,()=>create(kind));return withIcon(x,icon,T(label))};
-  const bar=el('span','nt-ov-btns');bar.append(mk('note','note','New page'),mk('board','board','New whiteboard'));ph.append(bar);
-  w.append(ph);
+  h.append(t,el('p','muted',pages.length||fileCount(pages)?stats(bk,chap):T('Nothing here yet')));w.append(h);
+  w.append(el('h3','nt-ov-t',T('Pages')));
   if(pages.length){const ul=el('ul','nt-plist');pages.forEach(n=>ul.append(pageLi(n)));w.append(ul)}
-  else w.append(el('p','nt-hint',T('No pages here yet. Write the notes for this chapter on a page, or draw on a whiteboard.')));
+  else w.append(el('p','nt-hint nt-empty',T('No pages here yet. Write the notes for this chapter on a page, or draw on a whiteboard.')+' '+T('Use the buttons at the top.')));
   if(b)w.append(filesBox(S.files.filter(f=>pages.some(n=>n.id===f.note)),chap>0?{chapter_id:chap}:{subject_id:bk}));
   main.append(w);
 }

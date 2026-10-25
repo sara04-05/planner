@@ -2108,8 +2108,14 @@ body.music-win{margin:0;padding:12px;background:var(--bg);color:var(--ink);font-
 .nt-loose{margin-top:34px;padding-top:24px;border-top:1px dashed var(--line)}
 .nt-loose .muted{color:var(--muted);font-size:13px;margin:0 0 14px}
 .nt-loose .nt-plist{margin-top:4px}
-.nt-side .nt-grp{margin-bottom:6px}
-.nt-grp-h{padding:7px 8px}
+.nt-empty{border:1.5px dashed var(--line);border-radius:14px;padding:22px 18px;text-align:center;margin:0 0 8px}
+.nt-side{gap:14px}
+.nt-search{padding:10px 12px}
+.nt-bk{gap:6px;padding-bottom:12px;margin-bottom:8px}
+.nt-grp{margin-bottom:2px}
+.nt-grp-h{border-radius:10px;font-weight:600;line-height:1.35}
+.nt-grp-h.on{font-weight:700}
+.nt-grp-h small{background:var(--paper-2);border-radius:999px;padding:0 7px;font-size:11px}
 @media (max-width:760px){
   .nt{grid-template-columns:1fr}
   .nt-side{position:static}
