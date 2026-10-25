@@ -1836,7 +1836,7 @@ a.nbcover-link:focus-visible{outline:3px solid var(--accent);outline-offset:6px;
 .sp-presets .sp-item small{white-space:normal;overflow:visible}
 .sp-player{display:flex;align-items:center;justify-content:space-between;gap:14px;flex-wrap:wrap;padding:6px 8px 14px}
 .sp-player[hidden]{display:none}
-.sp-player[data-src=embed] [data-sp=prev],.sp-player[data-src=embed] [data-sp=next]{display:none}
+.sp-player[data-src=embed] [data-sp=prev],.sp-player[data-src=embed] [data-sp=next],.sp-player[data-src=embed] #spVol{display:none}
 .sp-now{display:flex;align-items:center;gap:12px;min-width:0;flex:1}
 .sp-art{width:56px;height:56px;border-radius:10px;object-fit:cover}
 .sp-meta{display:grid;min-width:0}
