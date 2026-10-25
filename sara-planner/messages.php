@@ -1,7 +1,7 @@
 <?php
 // Messages between Splanner users. Free hosting can't keep a live connection open, so the page asks api.php
-// for new messages every 20 seconds (assets/messages.js). InfinityFree blocks fast-refreshing live chat and
-// any address with "chat" in it, so nothing here is called chat.
+// for new messages every few seconds (assets/messages.js, POLL_MS: a tiny request, raise it if the host starts
+// refusing it). InfinityFree also blocks any address with "chat" in it, so nothing here is called chat.
 declare(strict_types=1);
 require __DIR__ . '/db.php';
 require __DIR__ . '/social.php';

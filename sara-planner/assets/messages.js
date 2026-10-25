@@ -1,10 +1,12 @@
-/* Messages page (messages.php). Free hosting can't push messages to the browser, so the page asks the server
-   for new ones every 20 seconds while it's open, and stops while the tab is in the background. */
+/* Messages page (messages.php). Free hosting can't push messages to the browser, so the open chat asks the server
+   for new ones every few seconds while the tab is visible (a small request that only asks for what is newer than the
+   last message), and stops while the tab is in the background. */
 (function(){
 const box=document.getElementById('chat');if(!box)return;
 const CSRF=box.dataset.csrf, T=s=>(window.SPL_T?window.SPL_T(s):s);
 const people=document.getElementById('chatPeople'), main=document.getElementById('chatMain');
-let current=null, lastId=0, timer=null, listTimer=null, busy=false;
+let current=null, lastId=0, timer=null, listTimer=null, busy=false, ticks=0;
+const POLL_MS=3000;
 
 async function api(action,data={}){
   const r=await fetch('api.php?action='+encodeURIComponent(action),{method:'POST',credentials:'same-origin',
@@ -40,12 +42,15 @@ async function loadList(){
   for(const p of list){
     const li=el('li'),b=el('button','chat-person'+(current&&current.id===p.id?' on':''));
     b.type='button';b.onclick=()=>open(p.id);
+    const av=el('i','avatar chat-av',(p.name||'?').trim().charAt(0).toUpperCase());av.setAttribute('translate','no');
+    const tx=el('span','chat-ptx');
     const top=el('span','chat-pname',p.name);
     if(p.verified)top.append(tick());
     if(p.unread)top.append(el('span','badge',String(p.unread)));
-    b.append(top);
-    if(p.tag)b.append(el('span','chat-plast',p.tag));
-    if(p.last)b.append(el('span','chat-plast',(p.mine?T('You:')+' ':'')+T(p.last)));
+    tx.append(top);
+    if(p.tag)tx.append(el('span','chat-plast',p.tag));
+    if(p.last)tx.append(el('span','chat-plast',(p.mine?T('You:')+' ':'')+T(p.last)));
+    b.append(av,tx);
     li.append(b);people.append(li);
   }
 }
@@ -59,6 +64,22 @@ function bubble(m){
   at.append(more);d.append(at);
   more.onclick=e=>{e.stopPropagation();toggleMenu(d,m)};
   return d;
+}
+/** "Today", "Yesterday" or the date: the line between messages of different days. */
+function dayLabel(ts){
+  const d=new Date(ts*1000),now=new Date(),y=new Date(now.getFullYear(),now.getMonth(),now.getDate()-1);
+  if(d.toDateString()===now.toDateString())return T('Today');
+  if(d.toDateString()===y.toDateString())return T('Yesterday');
+  return d.toLocaleDateString([],{weekday:'short',day:'numeric',month:'short',year:d.getFullYear()===now.getFullYear()?undefined:'numeric'});
+}
+/** Add one message to the log, with a day line before it when the day changes, and joined to the one above when the same person sent both close together. */
+function appendMsg(log,m){
+  const prev=[...log.children].reverse().find(x=>x.classList.contains('msg'));
+  const day=new Date(m.at*1000).toDateString();
+  if(!prev||prev.dataset.day!==day){const sep=el('div','msg-day');sep.append(el('span',null,dayLabel(m.at)));log.append(sep)}
+  const d=bubble(m);d.dataset.day=day;d.dataset.at=m.at;
+  if(prev&&prev.dataset.day===day&&prev.classList.contains('mine')===!!m.mine&&m.at-(+prev.dataset.at)<300&&log.lastElementChild===prev)d.classList.add('cont');
+  log.append(d);
 }
 function closeMenus(){document.querySelectorAll('.msg-menu').forEach(x=>x.remove())}
 function toggleMenu(d,m){
@@ -106,7 +127,7 @@ async function open(id){
   tools.append(ren,del);head.append(tools);
   const log=el('div','chat-log');log.id='chatLog';log.setAttribute('aria-live','polite');log.translate=false;
   if(!r.messages.length)log.append(el('p','chat-empty chat-first','Say hi! Your messages are only seen by the two of you.'));
-  r.messages.forEach(m=>log.append(bubble(m)));
+  r.messages.forEach(m=>appendMsg(log,m));
   lastId=r.messages.length?r.messages[r.messages.length-1].id:0;sig=signature(r.messages);
   const form=el('form','chat-send'),ta=el('textarea');
   ta.placeholder='Write a message…';ta.rows=2;ta.maxLength=2000;ta.setAttribute('aria-label','Message');
@@ -125,13 +146,13 @@ async function open(id){
   main.replaceChildren(head,log,form);
   log.scrollTop=log.scrollHeight;ta.focus();
   setUnread(r.unread);loadList();
-  timer=setInterval(poll,20000);
+  ticks=0;timer=setInterval(poll,POLL_MS);
 }
 function add(msgs){
   const log=document.getElementById('chatLog');if(!log||!msgs.length)return;
   const atEnd=log.scrollHeight-log.scrollTop-log.clientHeight<60;
   const first=log.querySelector('.chat-first');if(first)first.remove();
-  for(const m of msgs){if(log.querySelector('[data-id="'+m.id+'"]'))continue;log.append(bubble(m));lastId=Math.max(lastId,m.id)}
+  for(const m of msgs){if(log.querySelector('[data-id="'+m.id+'"]'))continue;appendMsg(log,m);lastId=Math.max(lastId,m.id)}
   if(atEnd||msgs.some(m=>m.mine))log.scrollTop=log.scrollHeight;
 }
 let sig='';
@@ -144,13 +165,21 @@ async function refresh(){
   const atEnd=log.scrollHeight-log.scrollTop-log.clientHeight<60;
   log.replaceChildren();
   if(!r.messages.length)log.append(el('p','chat-empty chat-first',T('Say hi! Your messages are only seen by the two of you.')));
-  r.messages.forEach(x=>log.append(bubble(x)));
+  r.messages.forEach(x=>appendMsg(log,x));
   lastId=r.messages.length?r.messages[r.messages.length-1].id:0;
   if(atEnd)log.scrollTop=log.scrollHeight;setUnread(r.unread);
 }
+/** Every few seconds: ask only for messages newer than the last one on screen (a tiny request). A full reload of the chat, which also
+    shows edits and deletions, happens when something new came in and every half minute. */
 async function poll(){
   if(!current||document.hidden||busy)return;
-  try{const before=sig;await refresh();if(sig!==before)loadList()}catch(e){}
+  const who=current.id;ticks++;
+  try{
+    let fresh=ticks%10===0;
+    if(!fresh){const r=await api('msg.messages',{with:who,after:lastId});if(!current||current.id!==who)return;fresh=r.messages.length>0}
+    if(!fresh)return;
+    const before=sig;await refresh();if(sig!==before)loadList();
+  }catch(e){}
 }
 
 /* ---------- start a chat by email ---------- */
@@ -162,6 +191,6 @@ document.getElementById('chatFind').onsubmit=async e=>{
 
 loadList();
 if(+box.dataset.with)open(+box.dataset.with);
-listTimer=setInterval(()=>{if(!document.hidden)loadList()},60000);
+listTimer=setInterval(()=>{if(!document.hidden)loadList()},15000);
 document.addEventListener('visibilitychange',()=>{if(!document.hidden){poll();loadList()}});
 })();

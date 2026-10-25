@@ -14,13 +14,13 @@ Your name is your username. If someone else has the same name, people see your e
 
 **A friend's notebook.** Your friends appear on the People page as a shelf of notebooks, each in the cover they picked. Open one to see their profile and **their hour-by-hour plan for today**. Nothing else from their planner is shown: no tasks, money, study or other days. Only friends can open it, and you can remove a friend at any time.
 
-**Messages.** Click **Messages** (or **Message** on a friend's notebook), or type someone's email to write to them. Press Enter to send. New messages appear within about 20 seconds. Only the two of you can see them.
+**Messages.** Click **Messages** (or **Message** on a friend's notebook), or type someone's email to write to them. Press Enter to send. New messages appear within a few seconds. Only the two of you can see them.
 
 ## How it was made
 
 Splanner is PHP + MySQL on free InfinityFree hosting. InfinityFree has two rules that shaped this:
 - It blocks any address with the word **"chat"** in it (that caused the 403 error). So the page is `messages.php` and the actions are called `msg.*`.
-- It doesn't allow live chat that refreshes all the time. So the messages page only checks for new messages **every 20 seconds**, and not at all while the tab is in the background.
+- It doesn't allow live chat that refreshes all the time. So the open chat only asks for anything newer than its last message **every 3 seconds** (a tiny request), and not at all while the tab is in the background.
 
 | File | What it does |
 |---|---|
