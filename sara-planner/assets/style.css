@@ -1879,7 +1879,23 @@ a.nbcover-link:focus-visible{outline:3px solid var(--accent);outline-offset:6px;
 body.music-win{margin:0;padding:12px;background:var(--bg);color:var(--ink);font-family:'Plus Jakarta Sans',system-ui,sans-serif}
 .music.mini{gap:10px}
 .music.mini .sp-list{grid-template-columns:1fr}
-@media (max-width:640px){.music-link{flex-wrap:wrap}}
+@media (max-width:640px){
+  .music-link{flex-wrap:wrap}
+  .sp-player{flex-direction:column;align-items:stretch;gap:12px}
+  .sp-ctrl{grid-template-columns:auto auto auto minmax(0,1fr);gap:10px}
+  .sp-ctrl #spVol{grid-column:4}
+  .sp-tracks{height:min(460px,72vh)}
+  .sp-tk-top{gap:14px;padding:14px 14px 10px}
+  .sp-tk-top .cov{width:76px;height:76px}
+  .sp-tk-top h3{font-size:22px}
+  .sp-tk-top .inf>span{font-size:12.5px}
+  .sp-tk{padding:10px 8px}
+}
+@media (pointer:coarse){
+  #spPop{display:none}   /* no floating windows on phones and tablets */
+  .sp-ctrl .btn{min-width:44px;min-height:44px}
+  .sp-tk{min-height:48px}
+}
 .music-tip{font-size:12.5px;color:var(--muted);margin:10px 0 0}
 .sp-saved{position:relative;min-width:0}
 .sp-saved .sp-item{width:100%;padding-right:34px}

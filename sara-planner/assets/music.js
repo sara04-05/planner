@@ -580,6 +580,10 @@ document.addEventListener('click',e=>{   // while the player floats, this tab ha
   if(u.origin!==location.origin||u.href.split('#')[0]===location.href.split('#')[0])return;
   a.target='_blank';a.rel='noopener';setTimeout(()=>{a.removeAttribute('target');a.removeAttribute('rel')},0);
 },true);
-setTimeout(()=>{if(!device&&!listCtx){showList(false);popHome()}},7000);   // the player never came up: don't leave the page waiting, show Spotify's card
-const s=document.createElement('script');s.src='https://sdk.scdn.co/spotify-player.js';s.async=true;document.head.appendChild(s);
+const phone=matchMedia('(pointer:coarse)').matches&&!matchMedia('(any-pointer:fine)').matches;   // phones and tablets: Spotify's in-page player doesn't run in their browsers
+if(phone){premium=false;showList(false);popHome()}   // so go straight to Spotify's own card
+else{
+  setTimeout(()=>{if(!device&&!listCtx){showList(false);popHome()}},7000);   // the player never came up: don't leave the page waiting, show Spotify's card
+  const s=document.createElement('script');s.src='https://sdk.scdn.co/spotify-player.js';s.async=true;document.head.appendChild(s);
+}
 })();
