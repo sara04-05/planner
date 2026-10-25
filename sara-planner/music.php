@@ -235,6 +235,7 @@ ob_start(); ?>
   <div class="music-embed">
     <iframe id="spEmbed" title="Spotify player" data-title="<?= h($initialTitle) ?>" src="https://open.spotify.com/embed/<?= h($parsed[0]) ?>/<?= h($parsed[1]) ?>?utm_source=generator" loading="lazy"
       allow="autoplay; clipboard-write; encrypted-media; fullscreen; picture-in-picture"></iframe>
+    <?php if ($acc): ?><div class="sp-tracks" id="spTracks" hidden></div><?php endif; ?>
   </div>
   </section>
 

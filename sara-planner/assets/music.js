@@ -8,7 +8,7 @@ const $=id=>document.getElementById(id);
 const t=s=>window.SPL_T?window.SPL_T(s):s;
 const csrf=root.dataset.csrf, connected=root.dataset.connected==='1';
 const embed=$('spEmbed'),playerBox=$('musicTop');
-let curName=embed.dataset.title||'',embedPlaying=false,embedUri='',mirrored='',playHook=null;   // what Spotify's own card is showing / playing
+let curName=embed.dataset.title||'',embedPlaying=false,embedUri='',mirrored='',playHook=null,popHook=null;   // what Spotify's own card is showing / playing
 const toTop=()=>(playerBox||embed).scrollIntoView({behavior:'smooth',block:'start'});   // the player is the first thing on the page: bring it into view when something starts
 
 /* ---------- Spotify's player for a link ---------- */
@@ -18,13 +18,15 @@ function parse(link){
   if(!m)m=/^https?:\/\/open\.spotify\.com\/(?:intl-[a-z-]+\/)?(?:embed\/)?(playlist|album|track|artist|episode|show)\/([A-Za-z0-9]{10,40})/.exec(link);
   return m?{type:m[1],id:m[2]}:null;
 }
+const tracksBox=$('spTracks');let listCtx='';   // the playlist being played is listed here (instead of Spotify's card) when its songs can be read
+function showList(on){if(tracksBox){tracksBox.hidden=!on;embed.style.display=on?'none':''}}
 function saveLink(p){   // the link that opens next time you open Music
   const f=new FormData();f.append('csrf',csrf);f.append('do','link');f.append('link','https://open.spotify.com/'+p.type+'/'+p.id);
   fetch('music.php',{method:'POST',body:f,headers:{'X-Requested-With':'fetch'}}).catch(()=>{});
 }
 function show(link,save,name){
   const p=parse(link);if(!p)return false;
-  curName=name||'';embedPlaying=false;embedUri='';mirrored='';
+  curName=name||'';embedPlaying=false;embedUri='';mirrored='';listCtx='';showList(false);
   const ti=$('spTitle'),bx=$('spPlayer');
   if(bx)bx.dataset.src='';
   if(name&&ti){ti.textContent=name;$('spArtist').textContent='';$('spArt').hidden=true}   // the controls say what you picked until Spotify reports the song
@@ -75,7 +77,8 @@ if(shelf)shelf.addEventListener('submit',e=>{
 
 // A small window keeps the music going while you move around the planner (every page change reloads the page)
 const pop=$('spPop');
-if(pop)pop.addEventListener('click',()=>{
+if(pop)pop.addEventListener('click',async()=>{
+  if(popHook&&await popHook())return;   // the floating player, where the browser allows it
   const w=window.open('music.php?mini=1','splanner-music','width=420,height='+(connected?660:520));
   if(w){embed.src='about:blank';pop.textContent=t('Playing in the small window ↗');}
 });
@@ -104,6 +107,22 @@ function card(item,kind){
     +(pic?`<img alt="" src="${esc(pic)}" loading="lazy">`:'<i aria-hidden="true">'+ico('music')+'</i>')
     +`<span><b>${esc(item.name)}</b><small>${esc(sub)}</small></span></button>`;
 }
+async function startPlayback(body){   // ask Spotify to play on this page's player; say so when it can't
+  const send=()=>api('/me/player/play?device_id='+encodeURIComponent(device),{method:'PUT',body:JSON.stringify(body),headers:{'Content-Type':'application/json'}});
+  let r=await send();
+  if(r.status===404){   // Spotify doesn't know the player yet: make it the active one, then try again
+    try{await api('/me/player',{method:'PUT',body:JSON.stringify({device_ids:[device],play:false}),headers:{'Content-Type':'application/json'}})}catch(e){}
+    await new Promise(ok=>setTimeout(ok,700));
+    r=await send();
+  }
+  const ok=r.ok||r.status===204;
+  if(!ok){
+    if(r.status===403)noPremium();
+    else setBar(curName||t('Nothing playing yet'),t("Couldn't start playing. Try again in a moment."),null);
+    if(typeof log==='function')log('play: '+r.status);
+  }
+  return ok;
+}
 function stopCard(){   // only one thing plays at a time
   if(embedPlaying&&embed.contentWindow)embed.contentWindow.postMessage({command:'toggle'},'https://open.spotify.com');
   embedPlaying=false;box.dataset.src='';
@@ -117,15 +136,11 @@ async function play(uri,url,name){
     if(p)saveLink(p);
     if(name){curName=name;setBar(name,'',null)}   // until the player reports the song
     const body=/^spotify:(track|episode):/.test(uri)?{uris:[uri]}:{context_uri:uri};
-    try{
-      const r=await api('/me/player/play?device_id='+encodeURIComponent(device),{method:'PUT',body:JSON.stringify(body),headers:{'Content-Type':'application/json'}});
-      if(r.ok||r.status===204){toTop();return}
-      if(r.status===403)noPremium();
-    }catch(e){}
+    try{if(await startPlayback(body)){toTop();return}}catch(e){}
   }
   show(link,true,name);toTop();   // couldn't play it here: Spotify's own card shows it
 }
-function noPremium(){premium=false;const n=$('spPremium');if(n)n.hidden=false;const p=$('spPlayer');if(p)p.hidden=true}
+function noPremium(){premium=false;listCtx='';showList(false);const n=$('spPremium');if(n)n.hidden=false;const p=$('spPlayer');if(p)p.hidden=true}
 playHook=(link,name)=>{
   if(!device||premium===false)return false;
   const p=parse(link);if(!p)return false;
@@ -161,7 +176,56 @@ if(sForm)sForm.addEventListener('submit',async e=>{
 
 /* ---------- playing right here (Spotify Premium) ---------- */
 const box=$('spPlayer'),tog=$('spToggle');
-let sdkPlaying=false;
+let sdkPlaying=false,sdkStarted=false;   // sdkStarted: the controls' player has played something since the page opened
+const fmt=ms=>{const s=Math.round((ms||0)/1000);return Math.floor(s/60)+':'+String(s%60).padStart(2,'0')};
+function markSong(uri,paused){   // mark the playing song in the list and keep it in view
+  if(!tracksBox)return;
+  const list=tracksBox.querySelector('.sp-tk-list');if(!list)return;
+  let on=null;
+  list.querySelectorAll('.sp-tk').forEach(r=>{const is=r.dataset.tk===uri;r.classList.toggle('on',is);r.classList.toggle('paused',is&&!!paused);if(is)on=r});
+  if(on)list.scrollTop=Math.max(0,on.offsetTop-list.offsetTop-list.clientHeight/2+on.offsetHeight/2);
+}
+async function ctxMeta(c){   // name, cover picture and owner of the playlist or album
+  try{
+    const r=await api(c.type==='playlist'?'/playlists/'+c.id+'?fields=name,images,owner(display_name)':'/albums/'+c.id);
+    if(!r.ok)return {};
+    const j=await r.json();
+    return {name:j.name||'',image:((j.images||[])[0]||{}).url||'',sub:c.type==='playlist'?(j.owner&&j.owner.display_name)||'':(j.artists||[]).map(a=>a.name).join(', ')};
+  }catch(e){return {}}
+}
+async function viewContext(ctx,uri){   // the playlist or album that is playing: its whole list, with the playing song marked
+  if(ctx===listCtx){markSong(uri,!sdkPlaying);return}
+  listCtx=ctx;
+  const m=/^spotify:(playlist|album):([A-Za-z0-9]+)$/.exec(ctx);
+  const c={type:m[1],id:m[2]};
+  const [songs,meta]=await Promise.all([ctxSongs(c),ctxMeta(c)]);
+  if(listCtx!==ctx)return;   // something else was picked meanwhile
+  if(!songs.length){   // Spotify won't let us read this one (its own playlists, for example): its card shows the playlist instead
+    showList(false);mirrored='';
+    if(!embed.src.includes('/embed/'+m[1]+'/'+m[2])){embed.src='https://open.spotify.com/embed/'+m[1]+'/'+m[2]+'?utm_source=generator';embed.classList.remove('short')}
+    return;
+  }
+  if(meta.name)curName=meta.name;
+  const total=Math.round(songs.reduce((n,x)=>n+(x.duration_ms||0),0)/60000);
+  const cover=meta.image||((songs[0].album&&songs[0].album.images||[])[0]||{}).url||'';
+  tracksBox.innerHTML='<div class="sp-tk-top">'+(cover?'<img class="cov" alt="" src="'+esc(cover)+'">':'')
+    +'<div class="inf"><small>'+esc(t(m[1]==='album'?'Album':'Playlist'))+'</small><h3 translate="no">'+esc(curName)+'</h3>'
+    +'<span><span translate="no">'+esc(meta.sub||'')+(meta.sub?' · ':'')+'</span>'+songs.length+' '+esc(t('songs'))+' · '+(total>=60?Math.floor(total/60)+' '+esc(t('hr'))+' ':'')+(total%60)+' '+esc(t('min'))+'</span></div></div>'
+    +'<div class="sp-tk-list">'+songs.map((x,i)=>'<button type="button" class="sp-tk" data-tk="'+esc(x.uri)+'" translate="no"><span class="n"><i class="num">'+(i+1)+'</i><i class="ic-play">'+ico('play')+'</i><i class="ic-pause">'+ico('pause')+'</i></span><span class="m"><b>'+esc(x.name)+'</b><small>'+esc((x.artists||[]).map(a=>a.name).join(', '))+'</small></span><span class="d">'+fmt(x.duration_ms)+'</span></button>').join('')+'</div>';
+  showList(true);markSong(uri,!sdkPlaying);
+  if(!sdkStarted)setBar(curName||t('Nothing playing yet'),t('Press play to start'),null);   // nothing has played yet: the controls name the list that the play button will start
+}
+async function playList(offsetUri){   // play the listed playlist, from a song or from the start
+  if(!listCtx||!device)return;
+  if(player&&player.activateElement)player.activateElement();
+  const body={context_uri:listCtx};if(offsetUri)body.offset={uri:offsetUri};
+  try{await startPlayback(body)}catch(x){}
+}
+if(tracksBox)tracksBox.addEventListener('click',e=>{
+  const b=e.target.closest('[data-tk]');if(!b)return;
+  if(b.classList.contains('on')&&sdkStarted&&player){if(player.activateElement)player.activateElement();player.togglePlay();return}   // the song that is on: pause or resume it
+  playList(b.dataset.tk);
+});   // a song in the list: play the list from there
 function mirror(tr){   // Spotify's card shows the song the controls are playing, so the two always agree
   const m=/^spotify:track:([A-Za-z0-9]+)$/.exec(tr.uri||'');
   if(!m||m[1]===mirrored)return;
@@ -171,17 +235,23 @@ function mirror(tr){   // Spotify's card shows the song the controls are playing
 }
 function nowPlaying(st){
   if(!st||!st.track_window||!st.track_window.current_track)return;
-  sdkPlaying=!st.paused;
+  sdkPlaying=!st.paused;sdkStarted=true;
   if(embedPlaying)return;
   box.dataset.src='';const tr=st.track_window.current_track,art=$('spArt'),img=(tr.album.images||[])[0];
   $('spTitle').textContent=tr.name;$('spArtist').textContent=(tr.artists||[]).map(a=>a.name).join(', ');
   if(img){art.src=img.url;art.hidden=false}
   tog.innerHTML=ico(st.paused?'play':'pause');
-  mirror(tr);
+  const ctx=st.context&&st.context.uri||'';
+  if(/^spotify:(playlist|album):[A-Za-z0-9]+$/.test(ctx))viewContext(ctx,tr.uri);
+  else{listCtx='';showList(false);mirror(tr)}
 }
 window.onSpotifyWebPlaybackSDKReady=()=>{
   player=new Spotify.Player({name:document.body.classList.contains('music-win')?'Splanner (small window)':'Splanner',getOAuthToken:cb=>getToken().then(cb,()=>{}),volume:.6});
-  player.addListener('ready',({device_id})=>{device=device_id;if(premium!==false&&box)box.hidden=false});
+  player.addListener('ready',({device_id})=>{
+    device=device_id;if(premium!==false&&box)box.hidden=false;
+    const c=parse(embed.src);   // the playlist the page opened with: list its songs right away, so playing always goes through the controls
+    if(c&&(c.type==='playlist'||c.type==='album')&&!listCtx&&!embedPlaying&&premium!==false)viewContext('spotify:'+c.type+':'+c.id,'');
+  });
   player.addListener('not_ready',()=>{device=null});
   player.addListener('account_error',noPremium);              // not a Premium account
   player.addListener('initialization_error',()=>{premium=false}); // this browser can't play protected music; the embed still works
@@ -215,32 +285,37 @@ const dbg=/[?&]debug\b/.test(location.search),dbgBox=dbg?document.createElement(
 if(dbg){dbgBox.style.cssText='font-size:11px;white-space:pre-wrap;word-break:break-all;margin:8px 0 0;max-height:160px;overflow:auto;color:var(--muted)';box.after(dbgBox)}
 const log=m=>{if(dbg){dbgBox.textContent=(dbgBox.textContent+'\n'+m).split('\n').slice(-10).join('\n')}};
 const ctxCache={};
-async function ctxSongs(){
-  const c=parse(embed.src);if(!c||(c.type!=='playlist'&&c.type!=='album'))return [];
+async function ctxSongs(c){   // the songs of a playlist or album, when Spotify lets this account read them
+  if(!c||(c.type!=='playlist'&&c.type!=='album'))return [];
   const key=c.type+c.id;if(key in ctxCache)return ctxCache[key];
-  let out=[];
+  let out=[],failed=false;
   try{
     if(c.type==='album'){
       const r=await api('/albums/'+c.id);if(r.ok){const j=await r.json();out=(j.tracks.items||[]).map(x=>({...x,album:{images:j.images}}))}
     }else{
-      for(let off=0;off<500;off+=100){
-        const r=await api('/playlists/'+c.id+'/tracks?limit=100&offset='+off+'&fields=items(track(name,uri,duration_ms,artists(name),album(images))),next');
-        if(!r.ok){log('playlist tracks: '+r.status);break}
-        const j=await r.json();out=out.concat((j.items||[]).map(i=>i.track).filter(Boolean));
+      let base='/playlists/'+c.id+'/tracks';
+      for(let off=0;off<1000;off+=100){
+        let r=await api(base+'?limit=100&offset='+off);
+        if(!r.ok&&off===0&&base.endsWith('/tracks')){base='/playlists/'+c.id+'/items';r=await api(base+'?limit=100&offset='+off)}   // Spotify has been renaming this call
+        if(!r.ok){log('playlist songs: '+r.status);break}
+        const j=await r.json();out=out.concat((j.items||[]).map(i=>i&&(i.track||i.item)).filter(Boolean));
         if(!j.next)break;
       }
     }
-  }catch(e){}
-  return ctxCache[key]=out;
+  }catch(e){failed=true}
+  out=out.filter(x=>x.uri&&x.uri.startsWith('spotify:track:'));
+  if(!failed)ctxCache[key]=out;
+  return out;
 }
 const pickByLen=(songs,len)=>{   // the song whose length is closest to the card's, unless two are about as close
-  const c=songs.map(x=>({x,d:Math.abs((x.duration_ms||0)-len)})).filter(o=>o.d<=1000).sort((a,b)=>a.d-b.d);
+  if(len>0&&len<5000)len*=1000;   // in case the card counts in seconds
+  const c=songs.map(x=>({x,d:Math.abs((x.duration_ms||0)-len)})).filter(o=>o.d<=1500).sort((a,b)=>a.d-b.d);
   return c.length&&(c.length===1||c[1].d-c[0].d>250)?c[0].x:null;
 };
 async function handOver(len,pos){   // the card started by hand on a playlist we can read: carry on in the controls, on the same song
   if(!device||premium===false||len<=31000)return false;
   const c=parse(embed.src);if(!c)return false;
-  const song=pickByLen(await ctxSongs(),len);
+  const song=pickByLen(await ctxSongs(c),len);
   if(!song||!embedPlaying)return false;
   stopCard();
   try{
@@ -267,7 +342,7 @@ async function embedNow(len,tries){
     if(j&&j.item&&j.is_playing){embedUri=j.item.uri||'now';showItem(j.item);done=true}
   }catch(e){log('currently-playing failed')}
   if(!done&&len){
-    const song=pickByLen(await ctxSongs(),len);
+    const song=pickByLen(await ctxSongs(parse(embed.src)),len);
     log('song of that length: '+(song?song.name:'none'));
     if(embedPlaying&&song){embedUri=song.uri||'len';showItem(song);done=true}
   }
@@ -300,18 +375,127 @@ window.addEventListener('message',e=>{
   }
   if(box.dataset.src==='embed')tog.innerHTML=ico(embedPlaying?'pause':'play');
 });
+function control(which){   // previous / play-pause / next, from the controls above or from the floating player
+  if(box.dataset.src==='embed'){   // the card is the one playing: the button pauses or resumes it
+    if(which==='toggle'&&embed.contentWindow)embed.contentWindow.postMessage({command:'toggle'},'https://open.spotify.com');
+    return;
+  }
+  if(!sdkStarted&&listCtx&&device){playList('');return}   // nothing has played yet: the buttons start the listed playlist
+  if(!player)return;
+  if(player.activateElement)player.activateElement();
+  ({prev:()=>player.previousTrack(),next:()=>player.nextTrack(),toggle:()=>player.togglePlay()})[which]();
+}
 if(box){
-  box.addEventListener('click',e=>{
-    const b=e.target.closest('[data-sp]');if(!b)return;
-    if(box.dataset.src==='embed'){   // the card is the one playing: the button pauses or resumes it
-      if(b.dataset.sp==='toggle'&&embed.contentWindow)embed.contentWindow.postMessage({command:'toggle'},'https://open.spotify.com');
-      return;
-    }
-    if(!player)return;
-    if(player.activateElement)player.activateElement();
-    ({prev:()=>player.previousTrack(),next:()=>player.nextTrack(),toggle:()=>player.togglePlay()})[b.dataset.sp]();
-  });
+  box.addEventListener('click',e=>{const b=e.target.closest('[data-sp]');if(b)control(b.dataset.sp)});
   $('spVol').addEventListener('input',e=>{if(player)player.setVolume(e.target.value/100)});
 }
+/* ---------- the floating player (Chrome and Edge): stays on top of other windows while this tab stays open ---------- */
+let pip=null;
+const PIP_CSS=`*{box-sizing:border-box}html,body{margin:0;height:100%}
+body{font-family:'Plus Jakarta Sans',system-ui,sans-serif;color:#3a2230;background:linear-gradient(180deg,#fdeff5,#f8dce8);display:grid;place-items:center}
+.mp{display:grid;gap:14px;justify-items:center;width:100%;padding:16px 20px 16px}
+.tbl{width:min(100%,calc(100vh - 205px));aspect-ratio:1}
+.plinth{position:relative;width:100%;height:100%;border-radius:5%;background:linear-gradient(145deg,#f8cbdd,#eaa8c2);box-shadow:0 14px 28px rgba(150,60,100,.28),inset 0 0 0 2px rgba(255,255,255,.4)}
+.plinth::before,.plinth::after{content:"";position:absolute;top:4.5%;width:3%;height:3%;border-radius:50%;background:#f3b9d0;box-shadow:inset 0 1px 2px rgba(120,40,80,.4),0 1px 0 rgba(255,255,255,.6)}
+.plinth::before{left:5%}.plinth::after{left:62%}
+.rec{position:absolute;left:9.33%;top:14.67%;width:74.67%;height:74.67%;border-radius:50%;background:repeating-radial-gradient(circle,rgba(255,255,255,.13) 0 1px,transparent 1px 5px),conic-gradient(#e592b4,#f6c0d4 25%,#e592b4 50%,#f6c0d4 75%,#e592b4);box-shadow:0 0 0 3px rgba(255,255,255,.28),0 8px 16px rgba(150,60,100,.35);animation:spin 3.6s linear infinite;animation-play-state:paused}
+.playing .rec{animation-play-state:running}
+@keyframes spin{to{transform:rotate(360deg)}}
+.rec img{position:absolute;left:31%;top:31%;width:38%;height:38%;border-radius:50%;object-fit:cover;background:#cfd9de;box-shadow:0 0 0 3px #f7d6e3,0 0 0 4px rgba(150,60,100,.25)}
+.rec i{position:absolute;left:48.6%;top:48.6%;width:2.8%;height:2.8%;border-radius:50%;background:#e4e8ec;box-shadow:0 0 2px rgba(0,0,0,.5)}
+.armsvg{position:absolute;inset:0;width:100%;height:100%;overflow:visible;pointer-events:none}
+#arm{transform-origin:252px 50px;transition:transform .9s ease}
+.main{display:grid;gap:8px;min-width:0;width:100%}
+.t b{display:block;font-size:17px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.t span{display:block;font-size:12.5px;color:rgba(58,34,48,.65);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;min-height:16px}
+.bar{display:grid;grid-template-columns:auto minmax(0,1fr) auto;gap:8px;align-items:center;font-size:11px;color:rgba(58,34,48,.65);font-variant-numeric:tabular-nums}
+.trk{position:relative;height:14px;cursor:pointer}
+.trk::before{content:"";position:absolute;left:0;right:0;top:6px;height:2px;border-radius:2px;background:rgba(58,34,48,.22)}
+.fill{position:absolute;left:0;top:6px;height:2px;border-radius:2px;background:#3a2230;width:0}
+.dot{position:absolute;top:3px;left:0;width:8px;height:8px;margin-left:-4px;border-radius:50%;background:#3a2230}
+.ctl{display:flex;align-items:center;justify-content:space-between}
+button{border:0;background:none;color:#3a2230;width:30px;height:30px;display:grid;place-items:center;border-radius:50%;cursor:pointer;padding:0}
+button svg{width:20px;height:20px;fill:currentColor}
+button.on{color:#d6336c}
+button.big{width:44px;height:44px;background:#3a2230;color:#fdeff5}
+button.big:hover{transform:scale(1.06)}
+button.big svg{width:24px;height:24px}`;
+const ARM_REST=-23;   // degrees: lifted off the record
+const PIP_ARM='<svg class="armsvg" viewBox="0 0 300 300"><g id="arm" style="transform:rotate(-23deg)"><g transform="translate(252 50) rotate(18)">'
+  +'<rect x="-10" y="-40" width="20" height="28" rx="5" fill="#1d1d1f"/>'
+  +'<line x1="0" y1="0" x2="0" y2="176" stroke="#26262a" stroke-width="5" stroke-linecap="round"/><line x1="-1" y1="6" x2="-1" y2="170" stroke="#fff" stroke-opacity=".55" stroke-width="1"/>'
+  +'<circle r="19" fill="#d79ab3"/><circle r="15" fill="#1d1d1f"/><circle r="5" fill="#3a3a40"/>'
+  +'<rect x="-9" y="168" width="18" height="26" rx="3" fill="#1d1d1f"/><rect x="-5" y="192" width="10" height="7" rx="1" fill="#e4e8ec"/></g></g></svg>';
+const PIP_ICONS={
+  shuffle:'<path d="M10.59 9.17 5.41 4 4 5.41l5.17 5.17 1.42-1.41zM14.5 4l2.04 2.04L4 18.59 5.41 20 17.96 7.46 20 9.5V4h-5.5zm.33 9.41-1.41 1.41 3.13 3.13L14.5 20H20v-5.5l-2.04 2.04-3.13-3.13z"/>',
+  prev:'<path d="M6 6h2v12H6zM9.5 12 18 6v12z"/>',
+  next:'<path d="M16 6h2v12h-2zM6 18V6l8.5 6z"/>',
+  play:'<path d="M8 5v14l11-7z"/>',
+  pause:'<path d="M6 5h4v14H6zM14 5h4v14h-4z"/>',
+  repeat:'<path d="M7 7h10v3l4-4-4-4v3H5v6h2V7zm10 10H7v-3l-4 4 4 4v-3h12v-6h-2v4z"/>',
+};
+const pipSvg=n=>'<svg viewBox="0 0 24 24" aria-hidden="true">'+PIP_ICONS[n]+'</svg>';
+const popBtn=$('spPop');
+function pipClosed(){
+  pip=null;document.body.classList.remove('sp-popped');
+  const n=$('spPopNote');if(n)n.remove();
+  if(popBtn)popBtn.textContent=t('Pop out player ↗');
+}
+async function openPip(){
+  if(pip){pip.close();return true}
+  if(!('documentPictureInPicture' in window)||!player||!device||premium===false)return false;   // other browsers: the small window instead
+  let w;
+  try{w=await documentPictureInPicture.requestWindow({width:340,height:500})}catch(e){return false}
+  pip=w;
+  const d=w.document;
+  d.title='Splanner';
+  d.head.insertAdjacentHTML('beforeend','<style>'+PIP_CSS+'</style>');
+  d.body.innerHTML='<div class="mp" id="mp"><div class="tbl"><div class="plinth"><div class="rec"><img id="cv" alt="" hidden><i></i></div>'+PIP_ARM+'</div></div><div class="main">'
+    +'<div class="t"><b id="tt" translate="no"></b><span id="ta" translate="no"></span></div>'
+    +'<div class="bar"><span id="tp">0:00</span><div class="trk" id="trk"><i class="fill" id="fl"></i><i class="dot" id="dt"></i></div><span id="tr">-0:00</span></div>'
+    +'<div class="ctl"><button id="bs" aria-label="Shuffle">'+pipSvg('shuffle')+'</button><button id="bp" aria-label="Previous song">'+pipSvg('prev')+'</button>'
+    +'<button class="big" id="bt" aria-label="Play or pause">'+pipSvg('play')+'</button><button id="bn" aria-label="Next song">'+pipSvg('next')+'</button><button id="br" aria-label="Repeat">'+pipSvg('repeat')+'</button></div></div></div>';
+  const g=id=>d.getElementById(id);
+  let st=null,cover='';
+  g('bp').onclick=()=>control('prev');g('bn').onclick=()=>control('next');g('bt').onclick=()=>control('toggle');
+  g('bs').onclick=()=>{if(st)api('/me/player/shuffle?state='+(!st.shuffle)+'&device_id='+encodeURIComponent(device),{method:'PUT'}).catch(()=>{})};
+  g('br').onclick=()=>{if(st)api('/me/player/repeat?state='+['context','track','off'][st.repeat_mode===0?0:st.repeat_mode===1?1:2]+'&device_id='+encodeURIComponent(device),{method:'PUT'}).catch(()=>{})};
+  g('trk').onclick=e=>{if(!st||!st.duration)return;const r=g('trk').getBoundingClientRect();player.seek(Math.round(st.duration*Math.min(1,Math.max(0,(e.clientX-r.left)/r.width))))};
+  const tick=async()=>{
+    if(!pip)return;
+    try{st=await player.getCurrentState()}catch(e){st=null}
+    const tr=st&&st.track_window&&st.track_window.current_track;
+    if(tr){
+      g('tt').textContent=tr.name;g('ta').textContent=(tr.artists||[]).map(a=>a.name).join(', ');
+      const im=(tr.album.images||[])[0];g('cv').hidden=!im;
+      if(im&&im.url!==cover){cover=im.url;g('cv').src=cover}   // the song's picture is the label of the record
+      const dur=st.duration||1,pos=Math.min(st.position||0,dur),p=pos/dur*100;
+      d.body.classList.toggle('playing',!st.paused);
+      g('arm').style.transform='rotate('+(st.paused?ARM_REST:p*.2)+'deg)';   // the arm rests off the record, and moves in as the song goes on
+      g('fl').style.width=p+'%';g('dt').style.left=p+'%';g('tp').textContent=fmt(pos);g('tr').textContent='-'+fmt(dur-pos);
+      g('bt').innerHTML=pipSvg(st.paused?'play':'pause');
+            g('bs').classList.toggle('on',!!st.shuffle);g('br').classList.toggle('on',st.repeat_mode>0);
+    }else{   // nothing playing yet: say what the buttons will start
+      g('tt').textContent=$('spTitle').textContent;g('ta').textContent=$('spArtist').textContent;
+      g('bt').innerHTML=pipSvg('play');d.body.classList.remove('playing');g('arm').style.transform='rotate('+ARM_REST+'deg)';
+    }
+  };
+  const timer=setInterval(tick,500);tick();
+  w.addEventListener('pagehide',()=>{clearInterval(timer);pipClosed()});
+  document.body.classList.add('sp-popped');
+  if(popBtn)popBtn.textContent=t('Bring it back ↙');
+  const note=document.createElement('p');note.className='music-note ok';note.id='spPopNote';
+  note.textContent=t('The player is floating on your screen. Keep this tab open; other pages you open from here open in a new tab, so the music keeps playing.');
+  root.prepend(note);
+  return true;
+}
+popHook=openPip;
+document.addEventListener('click',e=>{   // while the player floats, this tab has to stay: other pages open in a new tab
+  if(!pip||e.defaultPrevented||e.metaKey||e.ctrlKey||e.shiftKey)return;
+  const a=e.target.closest&&e.target.closest('a[href]');if(!a||a.target||a.hasAttribute('download'))return;
+  let u;try{u=new URL(a.href,location.href)}catch(x){return}
+  if(u.origin!==location.origin||u.href.split('#')[0]===location.href.split('#')[0])return;
+  a.target='_blank';a.rel='noopener';setTimeout(()=>{a.removeAttribute('target');a.removeAttribute('rel')},0);
+},true);
 const s=document.createElement('script');s.src='https://sdk.scdn.co/spotify-player.js';s.async=true;document.head.appendChild(s);
 })();
