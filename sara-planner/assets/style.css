@@ -154,7 +154,7 @@ input[type=checkbox]{accent-color:var(--accent);width:18px;height:18px;cursor:po
 
 /* charts */
 .chart{margin-top:6px}
-.plot{position:relative;height:150px;display:grid;gap:8px;align-items:end;border-bottom:1px solid var(--line);padding-top:18px}
+.plot{position:relative;height:150px;display:grid;gap:8px;align-items:end;border-bottom:1px solid var(--line);--pt:18px;padding-top:var(--pt)}
 .plot .b{position:relative;border-radius:6px 6px 2px 2px;min-height:2px;background:var(--accent)}
 .plot .b.over{background:var(--bad)} .plot .b.fut{background:var(--line)} .plot .b.now{background:repeating-linear-gradient(135deg,var(--accent) 0 6px,color-mix(in srgb,var(--accent) 70%,transparent) 6px 12px)}
 .plot .b span{position:absolute;bottom:100%;left:50%;transform:translateX(-50%);font-size:11px;font-weight:700;color:var(--muted);padding-bottom:3px;white-space:nowrap;font-variant-numeric:tabular-nums}
@@ -1442,7 +1442,7 @@ a.nbtile{text-decoration:none}.nbtiles{margin-bottom:14px}.nbtile.on span{color:
 
 /* chart: the limit label ("daily €17") sits under its dashed line and the chart starts below the heading row, so it never covers the status pill */
 .chart{margin-top:var(--lh)}
-.plot{height:160px;padding-top:26px}
+.plot{height:160px;--pt:26px}
 .plot .lim em{bottom:auto;top:3px}
 
 

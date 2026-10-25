@@ -153,7 +153,7 @@ function barChart(items,limit,{vals=true,limitLabel='limit'}={}){
   const cols=`grid-template-columns:repeat(${items.length},minmax(0,1fr))`;
   return `<div class="chart"><div class="plot${vals?' show-vals':''}" style="${cols}">
     ${items.map(i=>`<div class="b ${i.cls||''}" style="height:${Math.max(1.5,i.v/max*100).toFixed(1)}%" title="${i.label}: ${eur(i.v)}">${i.v?`<span>${eur0(i.v)}</span>`:''}</div>`).join('')}
-    ${limit?`<div class="lim" style="bottom:${(limit/max*100).toFixed(1)}%"><em>${limitLabel} ${eur0(limit)}</em></div>`:''}
+    ${limit?`<div class="lim" style="bottom:calc((100% - var(--pt,0px))*${(limit/max).toFixed(3)})"><em>${limitLabel} ${eur0(limit)}</em></div>`:''}
   </div><div class="xl" style="${cols}">${items.map(i=>`<span class="${i.today?'today':''}">${items.length>7?String(i.label).slice(0,3):i.label}</span>`).join('')}</div></div>`;
 }
 const statusPill=(spent,allow)=>{if(allow<=0&&spent<=0)return '';if(spent>allow)return `<span class="pill bad">${eur(spent-allow)} over</span>`;const r=spent/allow;return r>.85?`<span class="pill warn">${eur(allow-spent)} left</span>`:`<span class="pill good">${eur(allow-spent)} left</span>`};
