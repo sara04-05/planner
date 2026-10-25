@@ -182,14 +182,45 @@ async function embedSong(uri){   // the song the card is on, when the card says 
     const j=await r.json();if(embedUri===uri&&embedPlaying)showItem(j);
   }catch(e){}
 }
-async function embedNow(again){   // the card doesn't always say which song: ask the account what it is playing
+/* The card doesn't say which song it is on, so find out another way: ask the account what it is playing, and failing that
+   match the song's length (the card does report that) against the songs of the playlist or album it has loaded. */
+const dbg=/[?&]debug\b/.test(location.search),dbgBox=dbg?document.createElement('pre'):null;
+if(dbg){dbgBox.style.cssText='font-size:11px;white-space:pre-wrap;word-break:break-all;margin:8px 0 0;max-height:160px;overflow:auto;color:var(--muted)';box.after(dbgBox)}
+const log=m=>{if(dbg){dbgBox.textContent=(dbgBox.textContent+'\n'+m).split('\n').slice(-10).join('\n')}};
+const ctxCache={};
+async function ctxSongs(){
+  const c=parse(embed.src);if(!c||(c.type!=='playlist'&&c.type!=='album'))return [];
+  const key=c.type+c.id;if(key in ctxCache)return ctxCache[key];
+  let out=[];
+  try{
+    if(c.type==='album'){
+      const r=await api('/albums/'+c.id);if(r.ok){const j=await r.json();out=(j.tracks.items||[]).map(x=>({...x,album:{images:j.images}}))}
+    }else{
+      for(let off=0;off<500;off+=100){
+        const r=await api('/playlists/'+c.id+'/tracks?limit=100&offset='+off+'&fields=items(track(name,uri,duration_ms,artists(name),album(images))),next');
+        if(!r.ok){log('playlist tracks: '+r.status);break}
+        const j=await r.json();out=out.concat((j.items||[]).map(i=>i.track).filter(Boolean));
+        if(!j.next)break;
+      }
+    }
+  }catch(e){}
+  return ctxCache[key]=out;
+}
+async function embedNow(len,tries){
+  let done=false;
   try{
     const r=await api('/me/player/currently-playing?additional_types=episode');
+    log('currently-playing: '+r.status);
     const j=r.status===200?await r.json():null;
     if(!embedPlaying)return;
-    if(j&&j.item&&j.is_playing){embedUri=j.item.uri||'now';showItem(j.item)}
-    else if(again)setTimeout(()=>embedNow(false),1500);   // Spotify can take a moment to notice a new song
-  }catch(e){}
+    if(j&&j.item&&j.is_playing){embedUri=j.item.uri||'now';showItem(j.item);done=true}
+  }catch(e){log('currently-playing failed')}
+  if(!done&&len){
+    const songs=(await ctxSongs()).filter(x=>Math.abs((x.duration_ms||0)-len)<=2000);
+    log('songs of that length: '+songs.length);
+    if(embedPlaying&&songs.length){embedUri=songs[0].uri||'len';showItem(songs[0]);done=true}
+  }
+  if(!done&&tries>0&&embedPlaying)setTimeout(()=>embedNow(len,tries-1),2000);   // Spotify can take a moment to notice a new song
 }
 const findUri=o=>{   // whatever the card calls it, a song's spotify:track:… address is somewhere in its message
   if(typeof o==='string')return /^spotify:(track|episode):[A-Za-z0-9]+$/.test(o)?o:'';
@@ -201,6 +232,7 @@ window.addEventListener('message',e=>{
   if(!box||e.origin!=='https://open.spotify.com'||e.source!==embed.contentWindow)return;
   const d=e.data;if(!d||typeof d!=='object'||(d.type!=='playback_update'&&d.type!=='playback_started'))return;
   const p=d.payload||d.data||{};
+  if(dbg&&d.type==='playback_started'||dbg&&!embedPlaying)log(JSON.stringify(d));
   const was=embedPlaying;
   embedPlaying=d.type==='playback_started'||!p.isPaused;
   if(embedPlaying){
@@ -208,7 +240,7 @@ window.addEventListener('message',e=>{
     if(!embedUri&&!was)setBar(curName||t('Playing in Spotify'),'Spotify',null);
     const u=findUri(d),len=+p.duration||0;
     if(u)embedSong(u);
-    else if(!was||(len&&len!==embedLen)){embedLen=len||embedLen;embedNow(true)}   // started, or the song's length changed = a new song
+    else if(!was||(len&&len!==embedLen)){embedLen=len||embedLen;embedNow(len,3)}   // started, or the song's length changed = a new song
     if(u)embedLen=len||embedLen;
   }
   if(box.dataset.src==='embed')tog.innerHTML=ico(embedPlaying?'pause':'play');
