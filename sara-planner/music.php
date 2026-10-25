@@ -282,27 +282,11 @@ ob_start(); ?>
   </section>
   <?php endif; ?>
 
-  <?php if ($acc): ?>
-  <section class="panel">
-    <div class="sec-h"><h2>Your Spotify</h2>
-      <form method="post" action="music.php" class="inline"><input type="hidden" name="csrf" value="<?= h(csrf_token()) ?>"><input type="hidden" name="do" value="disconnect">
-        <span class="meta">Connected as <b translate="no"><?= h($acc['spotify_name']) ?></b></span> <button class="btn sm ghost">Disconnect</button></form>
-    </div>
-    <p class="music-note" id="spPremium" hidden>Playing on this page needs Spotify Premium. Your playlists open in the player above instead.</p>
-    <form class="music-link" id="spSearch">
-      <input type="search" id="spQuery" placeholder="Search songs and playlists" aria-label="Search Spotify">
-      <button class="btn">Search</button>
-    </form>
-    <div class="sp-list" id="spResults"></div>
-    <h3 class="sp-h">Your playlists</h3>
-    <div class="sp-list" id="spPlaylists"><p class="muted">Loading your playlists…</p></div>
-  </section>
-  <?php elseif ($mini): ?>
-  <?php elseif (!$isAdmin): ?>
-  <?php elseif ($configured): ?>
+  <?php if ($acc || $mini || !$isAdmin || !$configured): ?>
+  <?php else: ?>
   <section class="panel">
     <h2>Connect your Spotify</h2>
-    <p>See your own playlists here and play them while you plan.</p>
+    <p>Play the playlists you add here, with the full player, while you plan.</p>
     <p><a class="btn primary" href="music.php?connect=1">Connect Spotify</a></p>
     <p class="music-tip">Playing inside Splanner needs Spotify Premium. While Splanner's Spotify app is in test mode, only people the site owner added in the Spotify dashboard can connect.</p>
   </section>
