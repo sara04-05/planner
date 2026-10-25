@@ -8,7 +8,7 @@ const $=id=>document.getElementById(id);
 const t=s=>window.SPL_T?window.SPL_T(s):s;
 const csrf=root.dataset.csrf, connected=root.dataset.connected==='1';
 const embed=$('spEmbed'),playerBox=$('musicTop');
-let curName=embed.dataset.title||'',embedPlaying=false,embedUri='',mirrored='',playHook=null;   // what Spotify's own card is showing / playing
+let curName=embed.dataset.title||'',embedPlaying=false,embedUri='',mirrored='',playHook=null,popHook=null;   // what Spotify's own card is showing / playing
 const toTop=()=>(playerBox||embed).scrollIntoView({behavior:'smooth',block:'start'});   // the player is the first thing on the page: bring it into view when something starts
 
 /* ---------- Spotify's player for a link ---------- */
@@ -77,7 +77,8 @@ if(shelf)shelf.addEventListener('submit',e=>{
 
 // A small window keeps the music going while you move around the planner (every page change reloads the page)
 const pop=$('spPop');
-if(pop)pop.addEventListener('click',()=>{
+if(pop)pop.addEventListener('click',async()=>{
+  if(popHook&&await popHook())return;   // the floating player, where the browser allows it
   const w=window.open('music.php?mini=1','splanner-music','width=420,height='+(connected?660:520));
   if(w){embed.src='about:blank';pop.textContent=t('Playing in the small window ↗');}
 });
@@ -192,17 +193,6 @@ async function ctxMeta(c){   // name, cover picture and owner of the playlist or
     return {name:j.name||'',image:((j.images||[])[0]||{}).url||'',sub:c.type==='playlist'?(j.owner&&j.owner.display_name)||'':(j.artists||[]).map(a=>a.name).join(', ')};
   }catch(e){return {}}
 }
-function tint(url){   // colour the card with the cover's colours, like Spotify's own card
-  const im=new Image();im.crossOrigin='anonymous';
-  im.onload=()=>{try{
-    const c=document.createElement('canvas');c.width=c.height=8;const x=c.getContext('2d');x.drawImage(im,0,0,8,8);
-    const d=x.getImageData(0,0,8,8).data;let r=0,g=0,b=0,n=0;
-    for(let i=0;i<d.length;i+=4){r+=d[i];g+=d[i+1];b+=d[i+2];n++}
-    tracksBox.style.setProperty('--tk-c','rgb('+(r/n*.55|0)+','+(g/n*.55|0)+','+(b/n*.55|0)+')');
-    tracksBox.classList.add('tinted');
-  }catch(e){}};
-  im.src=url;
-}
 async function viewContext(ctx,uri){   // the playlist or album that is playing: its whole list, with the playing song marked
   if(ctx===listCtx){markSong(uri,!sdkPlaying);return}
   listCtx=ctx;
@@ -218,12 +208,10 @@ async function viewContext(ctx,uri){   // the playlist or album that is playing:
   if(meta.name)curName=meta.name;
   const total=Math.round(songs.reduce((n,x)=>n+(x.duration_ms||0),0)/60000);
   const cover=meta.image||((songs[0].album&&songs[0].album.images||[])[0]||{}).url||'';
-  tracksBox.classList.remove('tinted');tracksBox.style.removeProperty('--tk-c');
   tracksBox.innerHTML='<div class="sp-tk-top">'+(cover?'<img class="cov" alt="" src="'+esc(cover)+'">':'')
     +'<div class="inf"><small>'+esc(t(m[1]==='album'?'Album':'Playlist'))+'</small><h3 translate="no">'+esc(curName)+'</h3>'
     +'<span><span translate="no">'+esc(meta.sub||'')+(meta.sub?' · ':'')+'</span>'+songs.length+' '+esc(t('songs'))+' · '+(total>=60?Math.floor(total/60)+' '+esc(t('hr'))+' ':'')+(total%60)+' '+esc(t('min'))+'</span></div></div>'
     +'<div class="sp-tk-list">'+songs.map((x,i)=>'<button type="button" class="sp-tk" data-tk="'+esc(x.uri)+'" translate="no"><span class="n"><i class="num">'+(i+1)+'</i><i class="ic-play">'+ico('play')+'</i><i class="ic-pause">'+ico('pause')+'</i></span><span class="m"><b>'+esc(x.name)+'</b><small>'+esc((x.artists||[]).map(a=>a.name).join(', '))+'</small></span><span class="d">'+fmt(x.duration_ms)+'</span></button>').join('')+'</div>';
-  if(cover)tint(cover);
   showList(true);markSong(uri,!sdkPlaying);
   if(!sdkStarted)setBar(curName||t('Nothing playing yet'),t('Press play to start'),null);   // nothing has played yet: the controls name the list that the play button will start
 }
@@ -387,19 +375,112 @@ window.addEventListener('message',e=>{
   }
   if(box.dataset.src==='embed')tog.innerHTML=ico(embedPlaying?'pause':'play');
 });
+function control(which){   // previous / play-pause / next, from the controls above or from the floating player
+  if(box.dataset.src==='embed'){   // the card is the one playing: the button pauses or resumes it
+    if(which==='toggle'&&embed.contentWindow)embed.contentWindow.postMessage({command:'toggle'},'https://open.spotify.com');
+    return;
+  }
+  if(!sdkStarted&&listCtx&&device){playList('');return}   // nothing has played yet: the buttons start the listed playlist
+  if(!player)return;
+  if(player.activateElement)player.activateElement();
+  ({prev:()=>player.previousTrack(),next:()=>player.nextTrack(),toggle:()=>player.togglePlay()})[which]();
+}
 if(box){
-  box.addEventListener('click',e=>{
-    const b=e.target.closest('[data-sp]');if(!b)return;
-    if(box.dataset.src==='embed'){   // the card is the one playing: the button pauses or resumes it
-      if(b.dataset.sp==='toggle'&&embed.contentWindow)embed.contentWindow.postMessage({command:'toggle'},'https://open.spotify.com');
-      return;
-    }
-    if(!sdkStarted&&listCtx&&device){playList('');return}   // nothing has played yet: the buttons start the listed playlist
-    if(!player)return;
-    if(player.activateElement)player.activateElement();
-    ({prev:()=>player.previousTrack(),next:()=>player.nextTrack(),toggle:()=>player.togglePlay()})[b.dataset.sp]();
-  });
+  box.addEventListener('click',e=>{const b=e.target.closest('[data-sp]');if(b)control(b.dataset.sp)});
   $('spVol').addEventListener('input',e=>{if(player)player.setVolume(e.target.value/100)});
 }
+/* ---------- the floating player (Chrome and Edge): stays on top of other windows while this tab stays open ---------- */
+let pip=null;
+const PIP_CSS=`*{box-sizing:border-box}html,body{margin:0;height:100%}
+body{font-family:'Plus Jakarta Sans',system-ui,sans-serif;background:#f1f0ec;color:#141414;display:grid;place-items:center}
+.mp{display:grid;grid-template-columns:auto minmax(0,1fr);gap:16px;align-items:center;width:100%;padding:14px 18px}
+.cov{position:relative;width:100px;height:100px;border-radius:50%;background:#1b1b1b;box-shadow:0 6px 16px rgba(0,0,0,.25);overflow:hidden;animation:spin 7s linear infinite;animation-play-state:paused}
+.playing .cov{animation-play-state:running}
+.cov img{width:100%;height:100%;object-fit:cover;display:block}
+.cov::after{content:"";position:absolute;left:50%;top:50%;width:16px;height:16px;margin:-8px 0 0 -8px;border-radius:50%;background:#f1f0ec;box-shadow:0 0 0 3px rgba(0,0,0,.35)}
+@keyframes spin{to{transform:rotate(360deg)}}
+.main{display:grid;gap:8px;min-width:0}
+.t b{display:block;font-size:15px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.t span{display:block;font-size:12.5px;color:#6b6b68;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;min-height:16px}
+.bar{display:grid;grid-template-columns:auto minmax(0,1fr) auto;gap:8px;align-items:center;font-size:11px;color:#6b6b68;font-variant-numeric:tabular-nums}
+.trk{position:relative;height:14px;cursor:pointer}
+.trk::before{content:"";position:absolute;left:0;right:0;top:6px;height:2px;border-radius:2px;background:#c9c8c3}
+.fill{position:absolute;left:0;top:6px;height:2px;border-radius:2px;background:#141414;width:0}
+.dot{position:absolute;top:3px;left:0;width:8px;height:8px;margin-left:-4px;border-radius:50%;background:#141414}
+.ctl{display:flex;align-items:center;justify-content:space-between}
+button{border:0;background:none;color:#141414;width:30px;height:30px;display:grid;place-items:center;border-radius:50%;cursor:pointer;padding:0}
+button svg{width:20px;height:20px;fill:currentColor}
+button.on{color:#7c5cff}
+button.big{width:44px;height:44px;background:#141414;color:#f1f0ec}
+button.big svg{width:24px;height:24px}`;
+const PIP_ICONS={
+  shuffle:'<path d="M10.59 9.17 5.41 4 4 5.41l5.17 5.17 1.42-1.41zM14.5 4l2.04 2.04L4 18.59 5.41 20 17.96 7.46 20 9.5V4h-5.5zm.33 9.41-1.41 1.41 3.13 3.13L14.5 20H20v-5.5l-2.04 2.04-3.13-3.13z"/>',
+  prev:'<path d="M6 6h2v12H6zM9.5 12 18 6v12z"/>',
+  next:'<path d="M16 6h2v12h-2zM6 18V6l8.5 6z"/>',
+  play:'<path d="M8 5v14l11-7z"/>',
+  pause:'<path d="M6 5h4v14H6zM14 5h4v14h-4z"/>',
+  repeat:'<path d="M7 7h10v3l4-4-4-4v3H5v6h2V7zm10 10H7v-3l-4 4 4 4v-3h12v-6h-2v4z"/>',
+};
+const pipSvg=n=>'<svg viewBox="0 0 24 24" aria-hidden="true">'+PIP_ICONS[n]+'</svg>';
+const popBtn=$('spPop');
+function pipClosed(){
+  pip=null;document.body.classList.remove('sp-popped');
+  const n=$('spPopNote');if(n)n.remove();
+  if(popBtn)popBtn.textContent=t('Pop out player ↗');
+}
+async function openPip(){
+  if(pip){pip.close();return true}
+  if(!('documentPictureInPicture' in window)||!player||!device||premium===false)return false;   // other browsers: the small window instead
+  let w;
+  try{w=await documentPictureInPicture.requestWindow({width:380,height:176})}catch(e){return false}
+  pip=w;
+  const d=w.document;
+  d.title='Splanner';
+  d.head.insertAdjacentHTML('beforeend','<style>'+PIP_CSS+'</style>');
+  d.body.innerHTML='<div class="mp" id="mp"><div class="cov"><img id="cv" alt="" hidden></div><div class="main">'
+    +'<div class="t"><b id="tt" translate="no"></b><span id="ta" translate="no"></span></div>'
+    +'<div class="bar"><span id="tp">0:00</span><div class="trk" id="trk"><i class="fill" id="fl"></i><i class="dot" id="dt"></i></div><span id="tr">-0:00</span></div>'
+    +'<div class="ctl"><button id="bs" aria-label="Shuffle">'+pipSvg('shuffle')+'</button><button id="bp" aria-label="Previous song">'+pipSvg('prev')+'</button>'
+    +'<button class="big" id="bt" aria-label="Play or pause">'+pipSvg('play')+'</button><button id="bn" aria-label="Next song">'+pipSvg('next')+'</button><button id="br" aria-label="Repeat">'+pipSvg('repeat')+'</button></div></div></div>';
+  const g=id=>d.getElementById(id);
+  let st=null;
+  g('bp').onclick=()=>control('prev');g('bn').onclick=()=>control('next');g('bt').onclick=()=>control('toggle');
+  g('bs').onclick=()=>{if(st)api('/me/player/shuffle?state='+(!st.shuffle)+'&device_id='+encodeURIComponent(device),{method:'PUT'}).catch(()=>{})};
+  g('br').onclick=()=>{if(st)api('/me/player/repeat?state='+['context','track','off'][st.repeat_mode===0?0:st.repeat_mode===1?1:2]+'&device_id='+encodeURIComponent(device),{method:'PUT'}).catch(()=>{})};
+  g('trk').onclick=e=>{if(!st||!st.duration)return;const r=g('trk').getBoundingClientRect();player.seek(Math.round(st.duration*Math.min(1,Math.max(0,(e.clientX-r.left)/r.width))))};
+  const tick=async()=>{
+    if(!pip)return;
+    try{st=await player.getCurrentState()}catch(e){st=null}
+    const tr=st&&st.track_window&&st.track_window.current_track;
+    if(tr){
+      g('tt').textContent=tr.name;g('ta').textContent=(tr.artists||[]).map(a=>a.name).join(', ');
+      const im=(tr.album.images||[])[0];if(im&&g('cv').src!==im.url){g('cv').src=im.url}g('cv').hidden=!im;
+      const dur=st.duration||1,pos=Math.min(st.position||0,dur),p=pos/dur*100;
+      g('fl').style.width=p+'%';g('dt').style.left=p+'%';g('tp').textContent=fmt(pos);g('tr').textContent='-'+fmt(dur-pos);
+      g('bt').innerHTML=pipSvg(st.paused?'play':'pause');
+      g('mp').classList.toggle('playing',!st.paused);
+      g('bs').classList.toggle('on',!!st.shuffle);g('br').classList.toggle('on',st.repeat_mode>0);
+    }else{   // nothing playing yet: say what the buttons will start
+      g('tt').textContent=$('spTitle').textContent;g('ta').textContent=$('spArtist').textContent;
+      g('bt').innerHTML=pipSvg('play');g('mp').classList.remove('playing');
+    }
+  };
+  const timer=setInterval(tick,500);tick();
+  w.addEventListener('pagehide',()=>{clearInterval(timer);pipClosed()});
+  document.body.classList.add('sp-popped');
+  if(popBtn)popBtn.textContent=t('Bring it back ↙');
+  const note=document.createElement('p');note.className='music-note ok';note.id='spPopNote';
+  note.textContent=t('The player is floating on your screen. Keep this tab open; other pages you open from here open in a new tab, so the music keeps playing.');
+  root.prepend(note);
+  return true;
+}
+popHook=openPip;
+document.addEventListener('click',e=>{   // while the player floats, this tab has to stay: other pages open in a new tab
+  if(!pip||e.defaultPrevented||e.metaKey||e.ctrlKey||e.shiftKey)return;
+  const a=e.target.closest&&e.target.closest('a[href]');if(!a||a.target||a.hasAttribute('download'))return;
+  let u;try{u=new URL(a.href,location.href)}catch(x){return}
+  if(u.origin!==location.origin||u.href.split('#')[0]===location.href.split('#')[0])return;
+  a.target='_blank';a.rel='noopener';setTimeout(()=>{a.removeAttribute('target');a.removeAttribute('rel')},0);
+},true);
 const s=document.createElement('script');s.src='https://sdk.scdn.co/spotify-player.js';s.async=true;document.head.appendChild(s);
 })();
