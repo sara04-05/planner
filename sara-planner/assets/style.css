@@ -2203,3 +2203,38 @@ img.avatar{background:var(--accent-soft)}
 [data-layout="top"] .nbcover-in{top:9%;transform:none}
 [data-layout="bottom"] .nbcover-in{top:auto;bottom:9%;transform:none}
 [data-noavatar] .nbcover-in .avatar{display:none}
+
+/* messages: clearly different bubbles for you and for them, day lines, people with a picture letter */
+.chat-person{flex-direction:row;align-items:center;gap:10px}
+.chat-ptx{display:flex;flex-direction:column;gap:2px;min-width:0;flex:1}
+.chat-av{flex:0 0 34px;width:34px;height:34px;font-size:15px}
+.chat-pname{justify-content:flex-start}
+.chat-pname .badge{margin-left:auto}
+.chat-log{background:color-mix(in srgb,var(--ink) 4%,var(--paper));gap:3px;padding:16px 14px}
+.msg{max-width:80%;margin-top:7px;border:0;background:color-mix(in srgb,var(--ink) 12%,var(--paper));color:var(--ink);padding:8px 12px 6px;border-radius:18px 18px 18px 5px;box-shadow:0 1px 1px rgba(0,0,0,.08)}
+.msg.mine{background:var(--accent);color:var(--on-accent);border-radius:18px 18px 5px 18px}
+.msg.cont{margin-top:0}
+.msg.cont:not(.mine){border-top-left-radius:5px}
+.msg.cont.mine{border-top-right-radius:5px}
+.msg-body{font-size:15px;line-height:1.4}
+.msg-at{font-size:10.5px;opacity:.65;margin-top:3px}
+.msg:not(.mine) .msg-at{text-align:left}
+.msg-day{align-self:center;margin:14px 0 6px}
+.msg-day span{display:block;font-size:11px;font-weight:700;letter-spacing:.04em;color:var(--muted);background:var(--paper);border:1px solid var(--line);border-radius:999px;padding:3px 12px}
+.chat-first{text-align:center}
+.chat-send{background:var(--paper)}
+.chat-send textarea{border-radius:18px}
+@media (max-width:640px){
+  .page .chat-people{gap:8px;padding:2px 2px 8px}
+  .page .chat-person{min-width:150px;max-width:220px;background:var(--paper);border:1px solid var(--line);border-radius:14px;padding:8px 12px 8px 8px}
+  .page .chat-person.on{border-color:var(--accent);background:var(--accent-soft)}
+  .page .chat-av{flex-basis:32px;width:32px;height:32px;font-size:14px}
+  .page .chat-main{border:1px solid var(--line);background:var(--paper)}
+  .page .chat-log{background:color-mix(in srgb,var(--ink) 5%,var(--paper));padding:10px 10px 14px}
+  .page .msg{max-width:84%;padding:8px 12px 6px;margin-top:7px}
+  .page .msg.cont{margin-top:0}
+  .page .msg-more{opacity:.55;padding:0 6px}
+  .page .chat-send{padding:8px 8px calc(8px + env(safe-area-inset-bottom,0px));border-top:1px solid var(--line)}
+  .page .chat-send textarea{background:color-mix(in srgb,var(--ink) 5%,var(--paper));border-radius:22px;padding:11px 14px}
+  .page .chat-send .btn{border-radius:22px;padding:0 18px}
+}

@@ -46,7 +46,7 @@ const T={
 // header, tabs, general
 'Splanner':'Splanner','Dark':'Errët','Light':'Ndritshëm','Switch theme':'Ndrysho pamjen','Log out':'Dil','Users':'Përdoruesit',
 'Day':'Dita','Week':'Java','Month':'Muaji','Year':'Viti','Study':'Studim','Tasks':'Detyrat','Expenses':'Shpenzimet','Planner sections':'Pjesët e planerit',
-'Today':'Sot','Previous':'Para','Next':'Pas','Add':'Shto','Cancel':'Anulo','OK':'OK','Delete?':'Ta fshij?','Try again':'Provo përsëri','See all':'Shiko të gjitha','Show all':'Shfaq të gjitha',
+'Today':'Sot','Yesterday':'Dje','Previous':'Para','Next':'Pas','Add':'Shto','Cancel':'Anulo','OK':'OK','Delete?':'Ta fshij?','Try again':'Provo përsëri','See all':'Shiko të gjitha','Show all':'Shfaq të gjitha',
 'Loading your planner…':'Po hapet planeri…','Set up money':'Vendos paratë','Done':'Kryer',
 'Start by adding your uni and work hours in Hour by hour below, and click ↻ to repeat them every week. Then set your income and savings goal in the Year tab.':'Fillo duke shtuar orët e fakultetit dhe të punës te Orë pas ore më poshtë, dhe kliko ↻ që të përsëriten çdo javë. Pastaj vendos të ardhurat dhe synimin për kursime te skeda Viti.',
 // day page
