@@ -69,7 +69,7 @@ $share = profile_share($prof);
 $notify = json_col($prof['notify'] ?? null, ['like' => 1]);
 $switch = fn(string $name, string $title, string $sub, bool $on) => '<label class="sw"><span class="t"><b>' . h($title) . '</b><span>' . h($sub) . '</span></span><input type="checkbox" name="' . $name . '" value="1"' . ($on ? ' checked' : '') . '><span class="tg"></span></label>';
 app_top('Edit profile & settings', ['tab' => 'profile', 'covers' => true, 'eyebrow' => 'Your notebook', 'h1' => 'Edit profile & settings', 'actions' => '<a class="btn" href="index.php?tab=profile">← Back to my profile</a>']); ?>
-    <p class="auth-sub">Everything about your profile is here. Notebook pages and looks are edited in your profile under <b>Notebooks</b>; see exactly what others can see under <b>What others see</b>.</p>
+    <p class="auth-sub">Your notebooks are under <b>Notebooks</b>. Your account and what others can see are under <b>Settings</b>.</p>
     <?php if ($error): ?><div class="formmsg err" role="alert"><?= h($error) ?></div><?php endif; ?>
     <?php if ($saved && !$error): ?><div class="formmsg ok" role="status">Saved.</div><?php endif; ?>
     <form method="post" enctype="multipart/form-data" class="auth-form profile-form">
