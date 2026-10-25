@@ -7,7 +7,9 @@ const root=document.getElementById('music');if(!root)return;
 const $=id=>document.getElementById(id);
 const t=s=>window.SPL_T?window.SPL_T(s):s;
 const csrf=root.dataset.csrf, connected=root.dataset.connected==='1';
-const embed=$('spEmbed');
+const embed=$('spEmbed'),playerBox=$('musicTop');
+let curName=embed.dataset.title||'',embedPlaying=false,embedUri='';   // what Spotify's own card is showing / playing
+const toTop=()=>(playerBox||embed).scrollIntoView({behavior:'smooth',block:'start'});   // the player is the first thing on the page: bring it into view when something starts
 
 /* ---------- Spotify's player for a link ---------- */
 function parse(link){
@@ -16,8 +18,12 @@ function parse(link){
   if(!m)m=/^https?:\/\/open\.spotify\.com\/(?:intl-[a-z-]+\/)?(?:embed\/)?(playlist|album|track|artist|episode|show)\/([A-Za-z0-9]{10,40})/.exec(link);
   return m?{type:m[1],id:m[2]}:null;
 }
-function show(link,save){
+function show(link,save,name){
   const p=parse(link);if(!p)return false;
+  curName=name||'';embedPlaying=false;embedUri='';
+  const ti=$('spTitle'),bx=$('spPlayer');
+  if(bx)bx.dataset.src='';
+  if(name&&ti){ti.textContent=name;$('spArtist').textContent='';$('spArt').hidden=true}   // the controls say what you picked until Spotify reports the song
   embed.src='https://open.spotify.com/embed/'+p.type+'/'+p.id+'?utm_source=generator';
   embed.classList.toggle('short',p.type==='track'||p.type==='episode');
   if(save){
@@ -34,7 +40,7 @@ if(form)form.addEventListener('submit',e=>{
   e.preventDefault();show(input.value,true);
 });
 if(input)input.addEventListener('input',()=>input.setCustomValidity(''));
-root.addEventListener('click',e=>{const b=e.target.closest('[data-sp-link]');if(!b)return;show(b.dataset.spLink,true);embed.scrollIntoView({behavior:'smooth',block:'nearest'})});
+root.addEventListener('click',e=>{const b=e.target.closest('[data-sp-link]');if(!b)return;show(b.dataset.spLink,true,(b.querySelector('b')||b).textContent.trim());toTop()});
 
 /* ---------- My playlists: links people saved once, shown as buttons ---------- */
 const shelf=$('spSaved'),saveForm=$('spSaveForm'),saveIn=$('spSaveLink');
@@ -95,22 +101,22 @@ function card(item,kind){
     +(pic?`<img alt="" src="${esc(pic)}" loading="lazy">`:'<i aria-hidden="true">'+ico('music')+'</i>')
     +`<span><b>${esc(item.name)}</b><small>${esc(sub)}</small></span></button>`;
 }
-async function play(uri,url){
+async function play(uri,url,name){
   if(player&&player.activateElement)player.activateElement();   // lets the browser start sound after this click
   const link=url||('https://open.spotify.com/'+uri.split(':').slice(1).join('/'));
-  show(link,true);   // the big player always shows what you picked, so it never keeps showing an older playlist
+  show(link,true,name);   // the big player always shows what you picked, so it never keeps showing an older playlist
   if(device&&premium!==false){
     const body=uri.startsWith('spotify:track:')?{uris:[uri]}:{context_uri:uri};
     try{
       const r=await api('/me/player/play?device_id='+encodeURIComponent(device),{method:'PUT',body:JSON.stringify(body),headers:{'Content-Type':'application/json'}});
-      if(r.ok||r.status===204)return;
+      if(r.ok||r.status===204){toTop();return}
       if(r.status===403)noPremium();
     }catch(e){}
   }
-  embed.scrollIntoView({behavior:'smooth',block:'nearest'});
+  toTop();
 }
 function noPremium(){premium=false;const n=$('spPremium');if(n)n.hidden=false;const p=$('spPlayer');if(p)p.hidden=true}
-root.addEventListener('click',e=>{const b=e.target.closest('.sp-item[data-uri]');if(b)play(b.dataset.uri,b.dataset.url)});
+root.addEventListener('click',e=>{const b=e.target.closest('.sp-item[data-uri]');if(b)play(b.dataset.uri,b.dataset.url,(b.querySelector('b')||b).textContent.trim())});
 
 const lists=$('spPlaylists');
 async function loadPlaylists(){
@@ -140,8 +146,8 @@ if(sForm)sForm.addEventListener('submit',async e=>{
 /* ---------- playing right here (Spotify Premium) ---------- */
 const box=$('spPlayer'),tog=$('spToggle');
 function nowPlaying(st){
-  if(!st||!st.track_window||!st.track_window.current_track)return;
-  const tr=st.track_window.current_track,art=$('spArt'),img=(tr.album.images||[])[0];
+  if(!st||!st.track_window||!st.track_window.current_track||embedPlaying)return;
+  box.dataset.src='';const tr=st.track_window.current_track,art=$('spArt'),img=(tr.album.images||[])[0];
   $('spTitle').textContent=tr.name;$('spArtist').textContent=(tr.artists||[]).map(a=>a.name).join(', ');
   if(img){art.src=img.url;art.hidden=false}
   tog.innerHTML=ico(st.paused?'play':'pause');
@@ -156,9 +162,43 @@ window.onSpotifyWebPlaybackSDKReady=()=>{
   player.addListener('player_state_changed',nowPlaying);
   player.connect();
 };
+/* ---------- playing in Spotify's own card ---------- */
+// Spotify's card tells this page when it starts, pauses or moves to another song, so the controls never say "Nothing playing yet" while it plays.
+const setBar=(title,artist,img)=>{
+  $('spTitle').textContent=title;$('spArtist').textContent=artist||'';
+  const art=$('spArt');if(img){art.src=img;art.hidden=false}else art.hidden=true;
+};
+async function embedSong(uri){   // the name of the song the card is on (only asked when the song changes)
+  const m=/^spotify:(track|episode):([A-Za-z0-9]+)$/.exec(uri||'');
+  if(!m||uri===embedUri)return;
+  embedUri=uri;
+  try{
+    const r=await api('/'+m[1]+'s/'+m[2]);if(!r.ok)throw 0;
+    const j=await r.json();if(embedUri!==uri||!embedPlaying)return;
+    const img=((m[1]==='track'?j.album?.images:j.images)||[])[0];
+    setBar(j.name,m[1]==='track'?(j.artists||[]).map(a=>a.name).join(', '):(j.show&&j.show.name)||'',img&&img.url);
+  }catch(e){}
+}
+window.addEventListener('message',e=>{
+  if(!box||e.origin!=='https://open.spotify.com'||e.source!==embed.contentWindow)return;
+  const d=e.data;if(!d||typeof d!=='object'||(d.type!=='playback_update'&&d.type!=='playback_started'))return;
+  const p=d.payload||d.data||{};
+  embedPlaying=d.type==='playback_started'||!p.isPaused;
+  if(embedPlaying){
+    box.dataset.src='embed';
+    if(!embedUri)setBar(curName||t('Playing in Spotify'),'Spotify',null);
+    if(p.playingURI)embedSong(p.playingURI);
+  }
+  if(box.dataset.src==='embed')tog.innerHTML=ico(embedPlaying?'pause':'play');
+});
 if(box){
   box.addEventListener('click',e=>{
-    const b=e.target.closest('[data-sp]');if(!b||!player)return;
+    const b=e.target.closest('[data-sp]');if(!b)return;
+    if(box.dataset.src==='embed'){   // the card is the one playing: the button pauses or resumes it
+      if(b.dataset.sp==='toggle'&&embed.contentWindow)embed.contentWindow.postMessage({command:'toggle'},'https://open.spotify.com');
+      return;
+    }
+    if(!player)return;
     if(player.activateElement)player.activateElement();
     ({prev:()=>player.previousTrack(),next:()=>player.nextTrack(),toggle:()=>player.togglePlay()})[b.dataset.sp]();
   });

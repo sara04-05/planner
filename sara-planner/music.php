@@ -54,6 +54,24 @@ function spotify_info(string $link): array
     }
 }
 
+/** Cover pictures for the suggested playlists. Spotify is asked once and the answer is kept in a small file for a month (an hour if Spotify couldn't be reached), so the page doesn't wait on Spotify each time. */
+function preset_covers(): array
+{
+    $file = sys_get_temp_dir() . '/splanner-preset-covers.json';
+    $have = json_decode((string)@file_get_contents($file), true);
+    $have = is_array($have) ? $have : [];
+    $changed = false;
+    foreach (MUSIC_PRESETS as [, $id]) {
+        $e = $have[$id] ?? null;
+        $age = time() - (int)($e['at'] ?? 0);
+        if ($e && $age < (($e['image'] ?? '') !== '' ? 30 * 86400 : 3600)) continue;
+        $have[$id] = ['image' => spotify_info('https://open.spotify.com/playlist/' . $id)['image'], 'at' => time()];
+        $changed = true;
+    }
+    if ($changed) @file_put_contents($file, json_encode($have), LOCK_EX);
+    return array_map(fn($e) => (string)($e['image'] ?? ''), $have);
+}
+
 const SAVED_NAMES = ['playlist' => 'My playlist', 'album' => 'Album', 'track' => 'Song', 'artist' => 'Artist', 'episode' => 'Podcast episode', 'show' => 'Podcast'];
 
 // ---- the browser player asks for a token (it lasts an hour, so this is asked rarely) ----
@@ -191,13 +209,17 @@ $notes = [
 ];
 $note = $notes[(string)($_GET['sp'] ?? '')] ?? null;
 $saved = saved_list($uid);
+$initialTitle = '';   // what the big player shows when the page opens, so the controls can name it
+foreach ($saved as $r) if ($r['link'] === 'https://open.spotify.com/' . $parsed[0] . '/' . $parsed[1]) $initialTitle = $r['title'];
+foreach (MUSIC_PRESETS as [$n, $pid]) if ($parsed[0] === 'playlist' && $parsed[1] === $pid) $initialTitle = $n;
 
 ob_start(); ?>
 <div class="music<?= $mini ? ' mini' : '' ?>" id="music" data-csrf="<?= h(csrf_token()) ?>" data-connected="<?= $acc ? '1' : '' ?>">
   <?php if ($note): ?><p class="music-note <?= $note[0] ?>"><?= h($note[1]) ?></p><?php endif; ?>
 
+  <section class="panel music-top" id="musicTop">
   <?php if ($acc): ?>
-  <section class="panel sp-player" id="spPlayer" hidden>
+  <div class="sp-player" id="spPlayer" hidden>
     <div class="sp-now">
       <img class="sp-art" id="spArt" alt="" hidden>
       <div class="sp-meta"><strong id="spTitle" translate="no">Nothing playing yet</strong><span id="spArtist" translate="no"></span></div>
@@ -208,15 +230,14 @@ ob_start(); ?>
       <button class="btn" data-sp="next" aria-label="Next song"><?= ico('next') ?></button>
       <input type="range" id="spVol" min="0" max="100" value="60" aria-label="Volume">
     </div>
-  </section>
+  </div>
   <?php endif; ?>
-
-  <section class="panel music-embed">
-    <iframe id="spEmbed" title="Spotify player" src="https://open.spotify.com/embed/<?= h($parsed[0]) ?>/<?= h($parsed[1]) ?>?utm_source=generator" loading="lazy"
+  <div class="music-embed">
+    <iframe id="spEmbed" title="Spotify player" data-title="<?= h($initialTitle) ?>" src="https://open.spotify.com/embed/<?= h($parsed[0]) ?>/<?= h($parsed[1]) ?>?utm_source=generator" loading="lazy"
       allow="autoplay; clipboard-write; encrypted-media; fullscreen; picture-in-picture"></iframe>
+  </div>
   </section>
 
-  <div class="music-pair">
   <section class="panel">
     <div class="sec-h"><h2>My playlists</h2><?php if (!$mini): ?><button class="btn sm" id="spPop" type="button">Pop out player ↗</button><?php endif; ?></div>
     <div class="sp-list" id="spSaved"><?php foreach ($saved as $r): ?>
@@ -230,7 +251,13 @@ ob_start(); ?>
       <input type="url" name="link" id="spSaveLink" placeholder="Paste the link to one of your Spotify playlists" required aria-label="Link to your playlist">
       <button class="btn primary">Add</button>
     </form>
-    <p class="music-tip">In Spotify, open your playlist, tap ⋯ → Share → Copy link to playlist, and paste it here. You only do this once per playlist; after that it's a button here. If a playlist doesn't play, make it public in Spotify (⋯ → Make public).</p>
+    <p class="music-tip">In Spotify, open your playlist, tap ⋯ → Share → Copy link to playlist, and paste it here. If a playlist doesn't play, make it public in Spotify (⋯ → Make public).</p>
+    <h3 class="sp-h">Suggested playlists</h3>
+    <div class="sp-list sp-presets">
+      <?php $covers = preset_covers(); foreach (MUSIC_PRESETS as [$name, $id, $about]): ?>
+      <button class="sp-item" type="button" data-sp-link="https://open.spotify.com/playlist/<?= h($id) ?>"><?php if (!empty($covers[$id])): ?><img alt="" src="<?= h($covers[$id]) ?>" loading="lazy"><?php else: ?><i aria-hidden="true"><?= ico('music') ?></i><?php endif; ?><span><b translate="no"><?= h($name) ?></b><small><?= h($about) ?></small></span></button>
+      <?php endforeach; ?>
+    </div>
     <?php endif; ?>
   </section>
 
@@ -243,15 +270,8 @@ ob_start(); ?>
       <input type="url" name="link" id="spLink" placeholder="https://open.spotify.com/playlist/…" value="<?= h($link) ?>" required aria-label="Spotify link">
       <button class="btn primary">Play</button>
     </form>
-    <p class="music-tip">In Spotify, open a playlist, album, song or podcast and use Share → Copy link. Without a Spotify login you hear 30-second previews; logged in to Spotify in this browser, whole songs play.</p>
-    <div class="music-presets">
-      <?php foreach (MUSIC_PRESETS as [$name, $id]): ?>
-      <button class="btn sm" type="button" data-sp-link="https://open.spotify.com/playlist/<?= h($id) ?>" translate="no"><?= h($name) ?></button>
-      <?php endforeach; ?>
-    </div>
   </section>
   <?php endif; ?>
-  </div>
 
   <?php if ($acc): ?>
   <section class="panel">
