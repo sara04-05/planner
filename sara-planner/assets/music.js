@@ -122,14 +122,6 @@ async function api(path,opt={},retry=true){
   if(r.status===401&&retry){token=null;return api(path,opt,false)}
   return r;
 }
-function card(item,kind){
-  const img=(kind==='track'?item.album?.images:item.images)||[];
-  const pic=img.length?img[img.length>1?img.length-2:0].url:'';
-  const sub=kind==='track'?(item.artists||[]).map(a=>a.name).join(', '):(item.owner?.display_name||'');
-  return `<button class="sp-item" type="button" data-uri="${esc(item.uri)}" data-url="${esc(item.external_urls?.spotify||'')}" translate="no">`
-    +(pic?`<img alt="" src="${esc(pic)}" loading="lazy">`:'<i aria-hidden="true">'+ico('music')+'</i>')
-    +`<span><b>${esc(item.name)}</b><small>${esc(sub)}</small></span></button>`;
-}
 async function startPlayback(body){   // ask Spotify to play on this page's player; say so when it can't
   const send=()=>api('/me/player/play?device_id='+encodeURIComponent(device),{method:'PUT',body:JSON.stringify(body),headers:{'Content-Type':'application/json'}});
   let r=await send();
@@ -165,7 +157,7 @@ async function play(uri,url,name){
   show(link,true,name);toTop();   // couldn't play it here: Spotify's own card shows it
 }
 function popHome(){const h=$('spPopHome'),b=$('spPop');if(h&&b&&!h.contains(b))h.appendChild(b)}   // the pop-out button lives under the volume slider; without that player it goes back to My playlists
-function noPremium(){premium=false;listCtx='';showList(false);popHome();const n=$('spPremium');if(n)n.hidden=false;const p=$('spPlayer');if(p)p.hidden=true}
+function noPremium(){premium=false;listCtx='';showList(false);popHome();const p=$('spPlayer');if(p)p.hidden=true}
 playHook=(link,name)=>{
   const p=parse(link);if(!p)return false;
   if(remote()){remotePlay('spotify:'+p.type+':'+p.id,'https://open.spotify.com/'+p.type+'/'+p.id,name);return true}
@@ -173,32 +165,6 @@ playHook=(link,name)=>{
   play('spotify:'+p.type+':'+p.id,'https://open.spotify.com/'+p.type+'/'+p.id,name);
   return true;
 };
-root.addEventListener('click',e=>{const b=e.target.closest('.sp-item[data-uri]');if(b)play(b.dataset.uri,b.dataset.url,(b.querySelector('b')||b).textContent.trim())});
-
-const lists=$('spPlaylists');
-async function loadPlaylists(){
-  if(!lists)return;
-  try{
-    const r=await api('/me/playlists?limit=50');
-    if(!r.ok)throw 0;
-    const items=((await r.json()).items||[]).filter(Boolean);
-    lists.innerHTML=items.length?items.map(p=>card(p,'playlist')).join(''):`<p class="muted">${esc(t('No playlists in your Spotify yet.'))}</p>`;
-  }catch(e){lists.innerHTML=`<p class="muted">${esc(t("Couldn't load your playlists. Try again in a minute."))}</p>`}
-}
-loadPlaylists();
-
-const sForm=$('spSearch'),sOut=$('spResults');
-if(sForm)sForm.addEventListener('submit',async e=>{
-  e.preventDefault();const q=$('spQuery').value.trim();if(!q){sOut.innerHTML='';return}
-  sOut.innerHTML=`<p class="muted">${esc(t('Searching…'))}</p>`;
-  try{
-    const r=await api('/search?type=track,playlist&limit=10&q='+encodeURIComponent(q));
-    if(!r.ok)throw 0;
-    const j=await r.json();
-    const html=(j.tracks?.items||[]).filter(Boolean).map(x=>card(x,'track')).join('')+(j.playlists?.items||[]).filter(Boolean).map(x=>card(x,'playlist')).join('');
-    sOut.innerHTML=html||`<p class="muted">${esc(t('Nothing found.'))}</p>`;
-  }catch(e){sOut.innerHTML=`<p class="muted">${esc(t("Couldn't search Spotify. Try again in a minute."))}</p>`}
-});
 
 /* ---------- playing right here (Spotify Premium) ---------- */
 const box=$('spPlayer'),tog=$('spToggle');
