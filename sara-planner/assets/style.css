@@ -229,6 +229,19 @@ input[type=checkbox]{accent-color:var(--accent);width:18px;height:18px;cursor:po
 .stbl td{padding:12px 10px;border-top:1px solid var(--line);font-size:14px}
 .stbl td.d{font-weight:700;font-size:12px;color:var(--muted)}
 .stbl tr.is-today td{background:color-mix(in srgb,var(--t-day) 55%,transparent)}
+/* Phone: all five columns fit the card (it clips, it does not scroll), the subject takes what is left */
+@media (max-width:640px){
+  .stbl table{min-width:0;table-layout:fixed}
+  .stbl th{font-size:10px;letter-spacing:.02em;padding:10px 4px}
+  .stbl td{padding:10px 4px}
+  .stbl :is(th,td):first-child{width:44px;padding-left:10px}
+  .stbl :is(th,td):nth-child(3){width:54px}
+  .stbl :is(th,td):nth-child(4){width:58px;text-align:center}
+  .stbl :is(th,td):nth-child(5){width:64px;padding-right:8px}
+  .stbl td>.cellin,.stbl td>.cellin.num{width:100%;max-width:none;padding:5px 4px;text-overflow:ellipsis}
+  .stbl .pdots{gap:3px}
+  .stbl .pdots i{width:10px;height:10px}
+}
 .pdots{display:inline-flex;gap:4px;border:0;background:none;padding:2px;cursor:pointer}
 .pdots i{width:11px;height:11px;border-radius:50%;border:2px solid var(--pc);display:block}
 .pdots i.on{background:var(--pc)}
@@ -738,6 +751,12 @@ a.btn:hover{text-decoration:none}
   .hello{max-width:56%}
   .hello .avatar{display:none}
   .hello{padding-left:12px}
+  .top .top-r .btn{padding:0}
+  .top .top-r{gap:4px}
+  .stbl :is(th,td):first-child{width:38px;padding-left:8px}
+  .stbl :is(th,td):nth-child(3){width:46px}
+  .stbl :is(th,td):nth-child(4){width:52px}
+  .stbl :is(th,td):nth-child(5){width:58px;padding-right:6px}
 }
 .nb-hero .nbx-page:not([data-paper]){background-image:none}
 /* chat between users (chat.php) */
