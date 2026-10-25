@@ -455,6 +455,24 @@ table.ex tr:last-child td{border-bottom:0}
   .ytbl td.st .pill{white-space:nowrap}
   .ytbl td input[type=checkbox]{width:18px;height:18px;accent-color:var(--accent)}
 }
+/* Year table on small phones: one card per month instead of seven columns to scroll through */
+@media (max-width:560px){
+  .page .tbl.ytbl{min-width:0;display:block}
+  .page .tbl.ytbl :is(thead){display:none}
+  .page .tbl.ytbl :is(tbody,tfoot){display:block}
+  .page .tbl.ytbl tr{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:6px 10px;height:auto;padding:10px 12px;margin-bottom:8px;border:1px solid var(--line);border-radius:12px;background:var(--paper)}
+  .page .tbl.ytbl tr.now{border-color:var(--accent);background:var(--accent-soft)}
+  .page .tbl.ytbl tr.off{opacity:.7}
+  .page .tbl.ytbl td{display:block;height:auto;padding:0;line-height:1.3;text-align:left;min-width:0;white-space:normal}
+  .page .tbl.ytbl td[data-l]::before{content:attr(data-l);display:block;font-size:10px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:var(--muted);margin-bottom:2px}
+  .page .tbl.ytbl td.mn,.page .tbl.ytbl td.st{grid-column:1/-1}
+  .page .tbl.ytbl td.mn{position:static;background:none;font-weight:700;font-size:15px}
+  .page .tbl.ytbl td.st:empty{display:none}
+  .page .tbl.ytbl td:nth-child(3){white-space:nowrap}
+  .page .tbl.ytbl .cellin,.page .tbl.ytbl .r .cellin{width:calc(100% - 1.3em)!important;max-width:none;text-align:left}
+  .page .tbl.ytbl tfoot tr{border-top:2px solid var(--ink);background:none}
+  .page .tbl.ytbl tfoot td{border-top:0}
+}
 
 /* ================= Notebook sharing: design choices, blog, interests, public pages ================= */
 /* The look you pick in Profile: accent colour (whole page), paper style / colour / handwriting (the notebook page) */
@@ -1098,6 +1116,7 @@ a.nbtile{text-decoration:none}.nbtiles{margin-bottom:14px}.nbtile.on span{color:
 .ho-list li span{color:var(--muted);font-size:13px;flex:1}
 @media (max-width:640px){.ho-row{grid-template-columns:70px minmax(0,1fr)}.ho-axis{margin-left:80px}}
 .daysel{font:inherit;font-size:13px;padding:7px 8px;border-radius:10px;border:1px solid var(--line);background:var(--paper);color:var(--ink);max-width:190px}
+@media (max-width:560px){.vrow{flex-wrap:wrap}.vrow .vt{flex:1 1 0;min-width:0}.vrow .daysel{flex:1 1 100%;max-width:none;margin-left:34px}}
 
 /* more notebook covers: patterns drawn as SVG, one variable each; used by cover_css() in layout.php and coverCss() in social.js */
 :root{
