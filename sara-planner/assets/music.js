@@ -168,26 +168,48 @@ const setBar=(title,artist,img)=>{
   $('spTitle').textContent=title;$('spArtist').textContent=artist||'';
   const art=$('spArt');if(img){art.src=img;art.hidden=false}else art.hidden=true;
 };
-async function embedSong(uri){   // the name of the song the card is on (only asked when the song changes)
+function showItem(j){
+  if(!j||!j.name)return;
+  const img=((j.album?j.album.images:j.images)||[])[0];
+  setBar(j.name,j.artists?j.artists.map(a=>a.name).join(', '):(j.show&&j.show.name)||'',img&&img.url);
+}
+async function embedSong(uri){   // the song the card is on, when the card says which one it is
   const m=/^spotify:(track|episode):([A-Za-z0-9]+)$/.exec(uri||'');
   if(!m||uri===embedUri)return;
   embedUri=uri;
   try{
     const r=await api('/'+m[1]+'s/'+m[2]);if(!r.ok)throw 0;
-    const j=await r.json();if(embedUri!==uri||!embedPlaying)return;
-    const img=((m[1]==='track'?j.album?.images:j.images)||[])[0];
-    setBar(j.name,m[1]==='track'?(j.artists||[]).map(a=>a.name).join(', '):(j.show&&j.show.name)||'',img&&img.url);
+    const j=await r.json();if(embedUri===uri&&embedPlaying)showItem(j);
   }catch(e){}
 }
+async function embedNow(again){   // the card doesn't always say which song: ask the account what it is playing
+  try{
+    const r=await api('/me/player/currently-playing?additional_types=episode');
+    const j=r.status===200?await r.json():null;
+    if(!embedPlaying)return;
+    if(j&&j.item&&j.is_playing){embedUri=j.item.uri||'now';showItem(j.item)}
+    else if(again)setTimeout(()=>embedNow(false),1500);   // Spotify can take a moment to notice a new song
+  }catch(e){}
+}
+const findUri=o=>{   // whatever the card calls it, a song's spotify:track:… address is somewhere in its message
+  if(typeof o==='string')return /^spotify:(track|episode):[A-Za-z0-9]+$/.test(o)?o:'';
+  if(o&&typeof o==='object')for(const k in o){const u=findUri(o[k]);if(u)return u}
+  return '';
+};
+let embedLen=0;
 window.addEventListener('message',e=>{
   if(!box||e.origin!=='https://open.spotify.com'||e.source!==embed.contentWindow)return;
   const d=e.data;if(!d||typeof d!=='object'||(d.type!=='playback_update'&&d.type!=='playback_started'))return;
   const p=d.payload||d.data||{};
+  const was=embedPlaying;
   embedPlaying=d.type==='playback_started'||!p.isPaused;
   if(embedPlaying){
     box.dataset.src='embed';
-    if(!embedUri)setBar(curName||t('Playing in Spotify'),'Spotify',null);
-    if(p.playingURI)embedSong(p.playingURI);
+    if(!embedUri&&!was)setBar(curName||t('Playing in Spotify'),'Spotify',null);
+    const u=findUri(d),len=+p.duration||0;
+    if(u)embedSong(u);
+    else if(!was||(len&&len!==embedLen)){embedLen=len||embedLen;embedNow(true)}   // started, or the song's length changed = a new song
+    if(u)embedLen=len||embedLen;
   }
   if(box.dataset.src==='embed')tog.innerHTML=ico(embedPlaying?'pause':'play');
 });
