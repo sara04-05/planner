@@ -8,6 +8,7 @@ const $=id=>document.getElementById(id);
 const t=s=>window.SPL_T?window.SPL_T(s):s;
 const csrf=root.dataset.csrf, connected=root.dataset.connected==='1';
 const embed=$('spEmbed'),playerBox=$('musicTop');
+let curName=embed.dataset.title||'',embedPlaying=false,embedUri='';   // what Spotify's own card is showing / playing
 const toTop=()=>(playerBox||embed).scrollIntoView({behavior:'smooth',block:'start'});   // the player is the first thing on the page: bring it into view when something starts
 
 /* ---------- Spotify's player for a link ---------- */
@@ -19,7 +20,10 @@ function parse(link){
 }
 function show(link,save,name){
   const p=parse(link);if(!p)return false;
-  const ti=$('spTitle');if(name&&ti&&!ti.dataset.live){ti.textContent=name;$('spArtist').textContent=''}   // the controls say what you picked until Spotify reports the song
+  curName=name||'';embedPlaying=false;embedUri='';
+  const ti=$('spTitle'),bx=$('spPlayer');
+  if(bx)bx.dataset.src='';
+  if(name&&ti){ti.textContent=name;$('spArtist').textContent='';$('spArt').hidden=true}   // the controls say what you picked until Spotify reports the song
   embed.src='https://open.spotify.com/embed/'+p.type+'/'+p.id+'?utm_source=generator';
   embed.classList.toggle('short',p.type==='track'||p.type==='episode');
   if(save){
@@ -141,10 +145,9 @@ if(sForm)sForm.addEventListener('submit',async e=>{
 
 /* ---------- playing right here (Spotify Premium) ---------- */
 const box=$('spPlayer'),tog=$('spToggle');
-const markLive=()=>{$('spTitle').dataset.live='1'};
 function nowPlaying(st){
-  if(!st||!st.track_window||!st.track_window.current_track)return;
-  markLive();const tr=st.track_window.current_track,art=$('spArt'),img=(tr.album.images||[])[0];
+  if(!st||!st.track_window||!st.track_window.current_track||embedPlaying)return;
+  box.dataset.src='';const tr=st.track_window.current_track,art=$('spArt'),img=(tr.album.images||[])[0];
   $('spTitle').textContent=tr.name;$('spArtist').textContent=(tr.artists||[]).map(a=>a.name).join(', ');
   if(img){art.src=img.url;art.hidden=false}
   tog.innerHTML=ico(st.paused?'play':'pause');
@@ -159,9 +162,43 @@ window.onSpotifyWebPlaybackSDKReady=()=>{
   player.addListener('player_state_changed',nowPlaying);
   player.connect();
 };
+/* ---------- playing in Spotify's own card ---------- */
+// Spotify's card tells this page when it starts, pauses or moves to another song, so the controls never say "Nothing playing yet" while it plays.
+const setBar=(title,artist,img)=>{
+  $('spTitle').textContent=title;$('spArtist').textContent=artist||'';
+  const art=$('spArt');if(img){art.src=img;art.hidden=false}else art.hidden=true;
+};
+async function embedSong(uri){   // the name of the song the card is on (only asked when the song changes)
+  const m=/^spotify:(track|episode):([A-Za-z0-9]+)$/.exec(uri||'');
+  if(!m||uri===embedUri)return;
+  embedUri=uri;
+  try{
+    const r=await api('/'+m[1]+'s/'+m[2]);if(!r.ok)throw 0;
+    const j=await r.json();if(embedUri!==uri||!embedPlaying)return;
+    const img=((m[1]==='track'?j.album?.images:j.images)||[])[0];
+    setBar(j.name,m[1]==='track'?(j.artists||[]).map(a=>a.name).join(', '):(j.show&&j.show.name)||'',img&&img.url);
+  }catch(e){}
+}
+window.addEventListener('message',e=>{
+  if(!box||e.origin!=='https://open.spotify.com'||e.source!==embed.contentWindow)return;
+  const d=e.data;if(!d||typeof d!=='object'||(d.type!=='playback_update'&&d.type!=='playback_started'))return;
+  const p=d.payload||d.data||{};
+  embedPlaying=d.type==='playback_started'||!p.isPaused;
+  if(embedPlaying){
+    box.dataset.src='embed';
+    if(!embedUri)setBar(curName||t('Playing in Spotify'),'Spotify',null);
+    if(p.playingURI)embedSong(p.playingURI);
+  }
+  if(box.dataset.src==='embed')tog.innerHTML=ico(embedPlaying?'pause':'play');
+});
 if(box){
   box.addEventListener('click',e=>{
-    const b=e.target.closest('[data-sp]');if(!b||!player)return;
+    const b=e.target.closest('[data-sp]');if(!b)return;
+    if(box.dataset.src==='embed'){   // the card is the one playing: the button pauses or resumes it
+      if(b.dataset.sp==='toggle'&&embed.contentWindow)embed.contentWindow.postMessage({command:'toggle'},'https://open.spotify.com');
+      return;
+    }
+    if(!player)return;
     if(player.activateElement)player.activateElement();
     ({prev:()=>player.previousTrack(),next:()=>player.nextTrack(),toggle:()=>player.togglePlay()})[b.dataset.sp]();
   });

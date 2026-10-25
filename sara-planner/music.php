@@ -209,6 +209,9 @@ $notes = [
 ];
 $note = $notes[(string)($_GET['sp'] ?? '')] ?? null;
 $saved = saved_list($uid);
+$initialTitle = '';   // what the big player shows when the page opens, so the controls can name it
+foreach ($saved as $r) if ($r['link'] === 'https://open.spotify.com/' . $parsed[0] . '/' . $parsed[1]) $initialTitle = $r['title'];
+foreach (MUSIC_PRESETS as [$n, $pid]) if ($parsed[0] === 'playlist' && $parsed[1] === $pid) $initialTitle = $n;
 
 ob_start(); ?>
 <div class="music<?= $mini ? ' mini' : '' ?>" id="music" data-csrf="<?= h(csrf_token()) ?>" data-connected="<?= $acc ? '1' : '' ?>">
@@ -230,7 +233,7 @@ ob_start(); ?>
   </div>
   <?php endif; ?>
   <div class="music-embed">
-    <iframe id="spEmbed" title="Spotify player" src="https://open.spotify.com/embed/<?= h($parsed[0]) ?>/<?= h($parsed[1]) ?>?utm_source=generator" loading="lazy"
+    <iframe id="spEmbed" title="Spotify player" data-title="<?= h($initialTitle) ?>" src="https://open.spotify.com/embed/<?= h($parsed[0]) ?>/<?= h($parsed[1]) ?>?utm_source=generator" loading="lazy"
       allow="autoplay; clipboard-write; encrypted-media; fullscreen; picture-in-picture"></iframe>
   </div>
   </section>
@@ -249,6 +252,12 @@ ob_start(); ?>
       <button class="btn primary">Add</button>
     </form>
     <p class="music-tip">In Spotify, open your playlist, tap ⋯ → Share → Copy link to playlist, and paste it here. If a playlist doesn't play, make it public in Spotify (⋯ → Make public).</p>
+    <h3 class="sp-h">Suggested playlists</h3>
+    <div class="sp-list sp-presets">
+      <?php $covers = preset_covers(); foreach (MUSIC_PRESETS as [$name, $id, $about]): ?>
+      <button class="sp-item" type="button" data-sp-link="https://open.spotify.com/playlist/<?= h($id) ?>"><?php if (!empty($covers[$id])): ?><img alt="" src="<?= h($covers[$id]) ?>" loading="lazy"><?php else: ?><i aria-hidden="true"><?= ico('music') ?></i><?php endif; ?><span><b translate="no"><?= h($name) ?></b><small><?= h($about) ?></small></span></button>
+      <?php endforeach; ?>
+    </div>
     <?php endif; ?>
   </section>
 
@@ -261,12 +270,6 @@ ob_start(); ?>
       <input type="url" name="link" id="spLink" placeholder="https://open.spotify.com/playlist/…" value="<?= h($link) ?>" required aria-label="Spotify link">
       <button class="btn primary">Play</button>
     </form>
-    <h3 class="sp-h">Suggested playlists</h3>
-    <div class="sp-list sp-presets">
-      <?php $covers = preset_covers(); foreach (MUSIC_PRESETS as [$name, $id, $about]): ?>
-      <button class="sp-item" type="button" data-sp-link="https://open.spotify.com/playlist/<?= h($id) ?>"><?php if (!empty($covers[$id])): ?><img alt="" src="<?= h($covers[$id]) ?>" loading="lazy"><?php else: ?><i aria-hidden="true"><?= ico('music') ?></i><?php endif; ?><span><b translate="no"><?= h($name) ?></b><small><?= h($about) ?></small></span></button>
-      <?php endforeach; ?>
-    </div>
   </section>
   <?php endif; ?>
 
