@@ -122,8 +122,6 @@ function plan(y){
 }
 function allowanceFor(y,m){return Math.max(0,incomeFor(y,m)-targets(y)[m].t)}
 const inThisMonth=d=>d.getFullYear()===TODAY.getFullYear()&&d.getMonth()===TODAY.getMonth();
-/** Left of this month's allowance (negative when you are over). */
-const monthLeft=()=>{const y=TODAY.getFullYear(),m=TODAY.getMonth();return allowanceFor(y,m)-sum(expIn(new Date(y,m,1),new Date(y,m,dim(y,m))))};
 /** Past days and other months: the month's allowance split evenly. Today and the rest of this month: whatever
     is left of the allowance after the days already spent, split over the days still to come. */
 function dailyAllow(d){
@@ -630,16 +628,17 @@ V.week=()=>{
     return `<div class="wd ${di===TI?'is-today':''}" data-act="goto" data-date="${di}"><button class="wd-h" data-act="goto" data-date="${di}"><span>${WD[wdi(d)]}</span><b>${d.getDate()}</b></button><ul>${items.slice(0,4).join('')||'<li style="color:var(--muted)">Free</li>'}${items.length>4?`<li style="color:var(--muted)">+${items.length-4} more</li>`:''}</ul><div class="foot"><span>Spent</span><span class="amt">${eur(sp)}</span></div></div>`;
   }).join('');
   const daily=allow/7;
+  // the week you are in: the pill and the note show the whole month's allowance, since that is what you really have left
+  const here=ws<=TODAY&&TODAY<=we,my=TODAY.getFullYear(),mm=TODAY.getMonth(),mAllow=allowanceFor(my,mm),mSpent=sum(expIn(new Date(my,mm,1),new Date(my,mm,dim(my,mm))));
   const bars=days.map(d=>{const v=sum(state.exps.filter(e=>e.date===iso(d)));return {label:WD[wdi(d)],v,today:iso(d)===TI,cls:d>TODAY?'fut':v>dailyAllow(d)?'over':''}});
   return hdr(`Week ${isoWeek(ws)} · ${ws.getFullYear()}`,`${ws.getDate()} ${M3[ws.getMonth()]} – ${we.getDate()} ${M3[we.getMonth()]}`,navBtns())+
   `<div class="wk-scroll"><div class="weekgrid">${cards}</div></div>
-  <div class="cols"><section class="panel"><div class="sec-h"><h2>Spending this week</h2>${statusPill(spent,allow)}</div>
+  <div class="cols"><section class="panel"><div class="sec-h"><h2>Spending this week</h2>${here?statusPill(mSpent,mAllow):statusPill(spent,allow)}</div>
     ${barChart(bars,daily,{limitLabel:'daily'})}
     <div class="legend"><span><i style="background:var(--accent)"></i>Within allowance</span><span><i style="background:var(--bad)"></i>Over daily allowance</span></div>
     <div style="margin-top:18px">${catBars(list)}</div>
     <div class="total-line"><span>Week total</span><span class="amt">${eur(spent)}</span></div>
-    <p class="s" style="font-size:12px;color:var(--muted);margin-top:4px">Weekly allowance ${eur(allow)}</p>
-    ${ws<=TODAY&&TODAY<=we?`<p class="s" style="font-size:12px;color:var(--muted);margin-top:2px">${monthLeft()<0?'Over this month by':'Left this month'} ${eur(Math.abs(monthLeft()))}</p>`:''}
+    ${here?`<p class="s" style="font-size:12px;color:var(--muted);margin-top:4px">Month allowance ${eur(mAllow)}</p><p class="s" style="font-size:12px;color:var(--muted);margin-top:2px">${mAllow<mSpent?'Over this month by':'Left this month'} ${eur(Math.abs(mAllow-mSpent))}</p>`:`<p class="s" style="font-size:12px;color:var(--muted);margin-top:4px">Weekly allowance ${eur(allow)}</p>`}
   </section>
   <section><div class="sec-h"><h2>Add an expense</h2></div>${expForm(def)}${expRows(list,{limit:8})}</section></div>`;
 };

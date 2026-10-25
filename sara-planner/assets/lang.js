@@ -255,6 +255,7 @@ const P=[
  [/^(\d+) open · (\d+) due today · (\d+) overdue$/,(m,a,b,c)=>`${a} të hapura · ${b} me afat sot · ${c} me vonesë`],
  [/^(\w{3}): (€.+)$/,(m,a,b)=>`${DATEW[a]||a}: ${b}`],
  [/^Weekly allowance (€.+)$/,(m,a)=>`Buxheti javor ${a}`],
+ [/^Month allowance (€.+)$/,(m,a)=>`Buxheti mujor ${a}`],
  [/^Left this month (€.+)$/,(m,a)=>`Të mbetura këtë muaj ${a}`],
  [/^Over this month by (€.+)$/,(m,a)=>`Mbi buxhetin e muajit me ${a}`],
  [/^= over daily allowance \((.+)\)$/,(m,a)=>`= mbi buxhetin ditor (${a})`],
