@@ -229,6 +229,7 @@ ob_start(); ?>
       <button class="btn primary" data-sp="toggle" id="spToggle" aria-label="Play or pause"><?= ico('play') ?></button>
       <button class="btn" data-sp="next" aria-label="Next song"><?= ico('next') ?></button>
       <input type="range" id="spVol" min="0" max="100" value="60" aria-label="Volume">
+      <?php if (!$mini): ?><button class="btn sm" id="spPop" type="button">Pop out player ↗</button><?php endif; ?>
     </div>
   </div>
   <?php endif; ?>
@@ -240,7 +241,7 @@ ob_start(); ?>
   </section>
 
   <section class="panel">
-    <div class="sec-h"><h2>My playlists</h2><?php if (!$mini): ?><button class="btn sm" id="spPop" type="button">Pop out player ↗</button><?php endif; ?></div>
+    <div class="sec-h"><h2>My playlists</h2><?php if (!$mini): ?><span id="spPopHome"><?php if (!$acc): ?><button class="btn sm" id="spPop" type="button">Pop out player ↗</button><?php endif; ?></span><?php endif; ?></div>
     <div class="sp-list" id="spSaved"><?php foreach ($saved as $r): ?>
       <div class="sp-saved"><button class="sp-item" type="button" data-sp-link="<?= h($r['link']) ?>" translate="no"><?php if ($r['image']): ?><img alt="" src="<?= h($r['image']) ?>" loading="lazy"><?php else: ?><i aria-hidden="true"><?= ico('music') ?></i><?php endif; ?><span><b><?= h($r['title']) ?></b></span></button>
         <form method="post" action="music.php"><input type="hidden" name="csrf" value="<?= h(csrf_token()) ?>"><input type="hidden" name="do" value="unsave"><input type="hidden" name="id" value="<?= (int)$r['id'] ?>"><button class="sp-x" aria-label="Remove">×</button></form></div>
