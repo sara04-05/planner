@@ -15,7 +15,7 @@ $uid = $tour ? 0 : require_login();
 $open = isset($_GET['page']) && ctype_digit((string)$_GET['page']) ? (int)$_GET['page'] : 0;   // (?nb= and ?ch= open a notebook and chapter: read by notes.js)
 
 app_top('Notes', ['tour' => $tour, 'tab' => 'notes', 'eyebrow' => 'Your study notebook', 'h1' => 'Notes',
-    'actions' => '<button class="btn" type="button" data-nt="new-board" hidden>' . ico('board') . 'New whiteboard</button><button class="btn primary" type="button" data-nt="new-note" hidden>' . ico('note') . 'New page</button>']); ?>
+    'actions' => '<button class="btn" type="button" data-nt="new-board">' . ico('board') . 'New whiteboard</button><button class="btn primary" type="button" data-nt="new-note">' . ico('note') . 'New page</button>']); ?>
     <div class="nt" id="notes" data-csrf="<?= h(csrf_token()) ?>" data-open="<?= $open ?>"<?= $tour ? ' data-tour="1"' : '' ?>>
       <aside class="nt-side">
         <input class="nt-search" id="ntSearch" type="search" placeholder="Search your notes" autocomplete="off">

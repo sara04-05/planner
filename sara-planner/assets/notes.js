@@ -85,7 +85,7 @@ function summary(n){return {id:n.id,kind:n.kind,title:n.title,sid:n.sid,cid:n.ci
 function upsert(n){const s=summary(n),i=S.notes.findIndex(x=>x.id===n.id);if(i<0)S.notes.unshift(s);else S.notes[i]=s;S.notes.sort((a,b)=>b.updated-a.updated||b.id-a.id)}
 const bookOf=id=>S.books.find(b=>b.id===id)||null;
 const chapOf=(b,id)=>b?b.chapters.find(c=>c.id===id)||null:null;
-const bookName=id=>{const b=bookOf(id);return b?b.name:T('Other')};
+const bookName=id=>{const b=bookOf(id);return b?b.name:T('Loose pages')};
 const filesOf=id=>S.files.filter(f=>f.note===id);
 /** The pages of a notebook's chapter (cid -1: the ones in no chapter; undefined: the whole notebook). */
 const pagesIn=(sid,cid)=>S.notes.filter(n=>n.sid===sid&&(cid===undefined||n.cid===(cid>0?cid:0)));
@@ -116,7 +116,6 @@ function render(){
   if(!cur&&bk>0&&!bookOf(bk)){bk=null;chap=0}                     // the subject was deleted in the Study tab
   if(!cur&&bk>0&&chap>0&&!chapOf(bookOf(bk),chap))chap=0;          // so was the chapter
   box.dataset.view=cur?'page':bk===null?'shelf':'book';
-  document.querySelectorAll('[data-nt]').forEach(b=>b.hidden=bk===null);   // new pages go into the open notebook
   drawSide();
   if(cur)drawNote();else if(bk===null)drawShelf();else if(chap===0)drawBook();else drawChapter();
 }
@@ -143,7 +142,7 @@ function drawSide(){
   if(bk===null){
     const list=S.notes.filter(match).slice(0,q?60:10);
     if(list.length)listEl.append(el('li','nt-sec',T(q?'Search results':'Recent pages')));
-    else listEl.append(el('li','empty',T(S.notes.length?'No pages match.':'No pages yet. Open a notebook to start one.')));
+    else listEl.append(el('li','empty',T(S.notes.length?'No pages match.':'No pages yet. Start a new page or open a notebook.')));
     list.forEach(n=>listEl.append(pageLi(n,true)));
   }else{
     const b=bookOf(bk);
@@ -151,7 +150,7 @@ function drawSide(){
     const back=btn('nt-bk-back',null,()=>go(null));withIcon(back,'back',T('All notebooks'));
     const name=btn('nt-bk-name',null,()=>go(bk,bk?0:-1));
     if(b)name.style.setProperty('--sc','var(--c-'+b.c+')');
-    name.append(mine(el('b',null,b?b.name:T('Other'))));
+    name.append(mine(el('b',null,b?b.name:T('Loose pages'))));
     top.append(back,name);listEl.append(top);
     const groups=b?b.chapters.map(c=>({id:c.id,title:c.title})):[];
     groups.push({id:-1,title:T('General notes')});
@@ -187,7 +186,7 @@ function chapterForm(b){
 /** "Notebooks › Databases › Normal forms": every step but the last (when plainLast) takes you back there. */
 function trail(plainLast){
   const parts=[[T('Notebooks'),()=>go(null),false]];
-  if(bk!==null){const b=bookOf(bk);parts.push([b?b.name:T('Other'),()=>go(bk,bk?0:-1),!!b])}
+  if(bk!==null){const b=bookOf(bk);parts.push([b?b.name:T('Loose pages'),()=>go(bk,bk?0:-1),!!b])}
   if(bk>0&&chap!==0){const c=chapOf(bookOf(bk),chap);parts.push(c?[c.title,()=>go(bk,chap),true]:[T('General notes'),()=>go(bk,-1),false])}
   const nav=el('nav','nt-crumb');nav.setAttribute('aria-label',T('Where you are'));
   parts.forEach(([label,fn,user],i)=>{
@@ -205,16 +204,14 @@ function drawShelf(){
   const w=el('div','nt-welcome');
   w.append(el('h2',null,T('Your notebooks')),el('p','muted',T('There is a notebook for every subject in your Study tab. Open one to take notes and keep files chapter by chapter. Everything here is private. Only you can see it.')));
   const shelf=el('div','nt-shelf');
-  const card=(b,sid)=>{
-    const c=btn('nt-book'+(b?'':' other'),null,()=>go(sid,sid?0:-1));
-    if(b)c.style.setProperty('--sc','var(--c-'+b.c+')');
+  const card=b=>{
+    const c=btn('nt-book',null,()=>go(b.id,0));
+    c.style.setProperty('--sc','var(--c-'+b.c+')');
     const ci=el('span','nt-book-i');ci.innerHTML=ico('notebook');
-    c.append(ci,mine(el('b',null,b?b.name:T('Other'))),el('small',null,b?stats(sid):count(pagesIn(0).length,'page','pages')));
-    if(!b)c.append(el('span','nt-book-d',T('Pages that are not in a notebook yet.')));
+    c.append(ci,mine(el('b',null,b.name)),el('small',null,stats(b.id)));
     return c;
   };
-  S.books.forEach(b=>shelf.append(card(b,b.id)));
-  if(pagesIn(0).length)shelf.append(card(null,0));
+  S.books.forEach(b=>shelf.append(card(b)));
   const nf=el('form','nt-book nt-new'),ni=el('input');ni.placeholder=T('New notebook, e.g. Linear Algebra');ni.maxLength=80;ni.autocomplete='off';ni.setAttribute('aria-label',T('Notebook name'));
   const nb=el('button','btn primary sm',T('Create notebook'));nb.type='submit';
   nf.append(el('b',null,T('New notebook')),ni,nb);
@@ -222,7 +219,18 @@ function drawShelf(){
     try{const r=await api('book.add',{name});S.books.push(r.book);toast('Notebook added. It is in your Study tab too.');go(r.book.id,0)}catch(err){toast(err.message)}};
   shelf.append(nf);
   w.append(shelf,el('p','nt-limit',T('Up to')+' '+mb(S.limits.file_max)+' '+T('a file')+' · '+mb(S.limits.total_max)+' '+T('in total')));
+  w.append(looseBox());
   main.append(w);
+}
+/** Pages and whiteboards that are in no notebook: they stay in the Notes tab and are not in the Study tab. */
+function looseBox(){
+  const sec=el('section','nt-loose'),loose=pagesIn(0);
+  const bar=el('div','nt-ov-bar');bar.append(el('h3','nt-ov-t',T('Loose pages')));
+  const mk=(kind,icon,label)=>{const x=btn('btn sm',null,()=>create(kind));return withIcon(x,icon,T(label))};
+  const btns=el('span','nt-ov-btns');btns.append(mk('note','note','New page'),mk('board','board','New whiteboard'));bar.append(btns);
+  sec.append(bar,el('p','muted',T('Not in a notebook, and not in your Study tab. Move one into a notebook any time.')));
+  if(loose.length){const ul=el('ul','nt-plist');loose.forEach(n=>ul.append(pageLi(n)));sec.append(ul)}
+  return sec;
 }
 
 /* ---------- one notebook: its chapters ---------- */
@@ -238,7 +246,8 @@ function drawBook(){
   const chCard=(id,title,user)=>{
     const c=btn('nt-chcard',null,()=>go(bk,id));
     const t=el('b',null,title);if(user)mine(t);
-    c.append(t,el('small',null,stats(bk,id)));return c;
+    const pg=pagesIn(bk,id),fc=fileCount(pg);
+    c.append(t,el('small',pg.length||fc?'':'empty',pg.length||fc?stats(bk,id):T('Empty')));return c;
   };
   b.chapters.forEach(c=>chs.append(chCard(c.id,c.title,true)));
   if(pagesIn(bk,-1).length)chs.append(chCard(-1,T('General notes'),false));
@@ -257,7 +266,7 @@ function drawChapter(){
   w.append(trail(true));
   if(b)w.style.setProperty('--sc','var(--c-'+b.c+')');
   const h=el('div','nt-ov-h');
-  const title=c?c.title:T(b?'General notes':'Other pages');
+  const title=c?c.title:T(b?'General notes':'Loose pages');
   const t=el('h2',null,title);if(c)mine(t);
   h.append(t,el('p','muted',stats(bk,chap)));w.append(h);
   const pages=pagesIn(bk,chap);
@@ -331,7 +340,7 @@ function head(n){
   const place=el('span','nt-where');mine(place);
   const bsel=el('select','nt-paper-pick');bsel.setAttribute('aria-label',T('Notebook'));
   const csel=el('select','nt-paper-pick');csel.setAttribute('aria-label',T('Chapter'));
-  [...S.books.map(b=>[b.id,b.name]),[0,T('Other')]].forEach(([v,l])=>{const o=el('option',null,l);o.value=v;o.selected=n.sid===v;bsel.append(o)});
+  [...S.books.map(b=>[b.id,b.name]),[0,T('No notebook (loose page)')]].forEach(([v,l])=>{const o=el('option',null,l);o.value=v;o.selected=n.sid===v;bsel.append(o)});
   const fillChapters=()=>{
     csel.replaceChildren();const b=bookOf(n.sid);
     const none=el('option',null,T('No chapter'));none.value=0;csel.append(none);
@@ -402,7 +411,7 @@ function filesBox(files,dest,label){
   pick.onchange=()=>{addFiles([...pick.files],dest);pick.value=''};
   h.append(add,pick);sec.append(h);
   const drop=el('div','nt-drop');drop.id='ntDrop';
-  drop.append(el('span',null,T('Drop files here, or use “Add files”.')+' '+T('PDF, Word, PowerPoint, Excel, pictures, music and short videos, up to')+' '+mb(S.limits.file_max)+' '+T('each.')));
+  drop.append(el('b',null,T('Drop files here, or use “Add files”.')),el('small',null,T('PDF, Word, PowerPoint, Excel, pictures, music and short videos, up to')+' '+mb(S.limits.file_max)+' '+T('each.')));
   ['dragenter','dragover'].forEach(t=>sec.addEventListener(t,e=>{e.preventDefault();sec.classList.add('over')}));
   ['dragleave','drop'].forEach(t=>sec.addEventListener(t,e=>{if(t==='dragleave'&&sec.contains(e.relatedTarget))return;e.preventDefault();sec.classList.remove('over')}));
   sec.addEventListener('drop',e=>{if(e.dataTransfer&&e.dataTransfer.files.length)addFiles([...e.dataTransfer.files],dest)});

@@ -2075,6 +2075,41 @@ body.music-win{margin:0;padding:12px;background:var(--bg);color:var(--ink);font-
 .nt-lb{position:fixed;inset:0;z-index:1001;background:rgba(15,12,22,.86);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:12px;padding:16px}
 .nt-lb img{max-width:100%;max-height:calc(100vh - 110px);object-fit:contain;border-radius:8px;background:#fff}
 .nt-lb-bar{display:flex;gap:10px;align-items:center;flex-wrap:wrap;justify-content:center;color:#fff;font-weight:600}
+/* roomier layout: a notebook's chapters fill the page (the sidebar only repeated them), calmer cards and sections */
+.nt[data-view="book"]{grid-template-columns:minmax(0,1fr)}
+.nt[data-view="book"] .nt-side{display:none}
+.nt{gap:32px}
+.nt-overview{gap:0}
+.nt-overview .nt-crumb{margin-bottom:14px}
+.nt-ov-h{margin:0 0 26px;padding-left:16px}
+.nt-ov-h h2{font-size:30px;line-height:1.15}
+.nt-ov-h .muted{margin-top:6px}
+.nt-ov-t{font-size:13px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:var(--muted);margin:0 0 12px}
+.nt-ov-bar{margin-bottom:12px}.nt-ov-bar .nt-ov-t{margin:0}
+.nt-chcards{grid-template-columns:repeat(auto-fill,minmax(230px,1fr));gap:14px;margin-bottom:22px}
+.nt-chcard{gap:8px;padding:16px 18px;min-height:88px;border-radius:14px;transition:transform .15s,border-color .15s}
+.nt-chcard:hover{transform:translateY(-2px)}
+.nt-chcard b{font-size:15px;line-height:1.35;display:-webkit-box;-webkit-line-clamp:3;-webkit-box-orient:vertical;overflow:hidden}
+.nt-chcard small{margin-top:auto;font-size:12px}
+.nt-chcard small.empty{opacity:.55}
+.nt-overview>.nt-addch{margin:4px 0 8px}
+.nt-overview>.nt-addch input{padding:10px 12px;font-size:14px}
+.nt-overview>.nt-addch .btn{padding:8px 16px}
+.nt-hint{margin:0 0 18px}
+.nt-plist{gap:10px;margin-bottom:8px}
+.nt-plist .nt-item{padding:12px;border-radius:14px}
+.nt-overview .nt-files{margin-top:34px;padding-top:22px}
+.nt-files-h h2{font-size:18px}
+.nt-drop{display:flex;flex-direction:column;gap:3px;align-items:center;text-align:center;padding:20px 16px;border-width:1.5px}
+.nt-drop b{font-size:14px;color:var(--ink)}
+.nt-drop small{font-size:12px}
+.nt-shelf{gap:16px;margin:22px 0 10px}
+.nt-welcome .nt-limit{margin-top:14px}
+.nt-loose{margin-top:34px;padding-top:24px;border-top:1px dashed var(--line)}
+.nt-loose .muted{color:var(--muted);font-size:13px;margin:0 0 14px}
+.nt-loose .nt-plist{margin-top:4px}
+.nt-side .nt-grp{margin-bottom:6px}
+.nt-grp-h{padding:7px 8px}
 @media (max-width:760px){
   .nt{grid-template-columns:1fr}
   .nt-side{position:static}
