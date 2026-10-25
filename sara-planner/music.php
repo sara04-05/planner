@@ -306,11 +306,6 @@ ob_start(); ?>
     <p><a class="btn primary" href="music.php?connect=1">Connect Spotify</a></p>
     <p class="music-tip">Playing inside Splanner needs Spotify Premium. While Splanner's Spotify app is in test mode, only people the site owner added in the Spotify dashboard can connect.</p>
   </section>
-  <?php else: ?>
-  <section class="panel">
-    <h2>Connect your Spotify</h2>
-    <p class="music-tip">Only you see this. Put SPOTIFY_CLIENT_ID and SPOTIFY_CLIENT_SECRET in config.php (steps in README.md), and add this Redirect URI in the Spotify dashboard: <code translate="no"><?= h(spotify_redirect_uri()) ?></code></p>
-  </section>
   <?php endif; ?>
 </div>
 <?php $body = ob_get_clean();

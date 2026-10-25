@@ -299,7 +299,7 @@ if (current_user_id()) {
     <details><summary>Can other people see my planner?</summary><p>No. Your planner, tasks, money and notes are only visible when you're logged in to your own account. Friends you accept can see your plan for today, and only that.</p></details>
     <details><summary>What is Explore?</summary><p>A list of people who chose to show their notebook. You are only in it if you switch "Show me in Explore" on, and you can switch it off again at any time.</p></details>
     <details><summary>Who can read my messages?</summary><p>Only you and the person you wrote to. Messages are stored encrypted, and you can edit or delete yours.</p></details>
-    <details><summary>Do I need Spotify to use the Music page?</summary><p>No. Paste any Spotify link and it plays in Spotify's own player. Connecting a Spotify account is only available to the site admin.</p></details>
+    <details><summary>Do I need Spotify to use the Music page?</summary><p>No. Paste any Spotify link and it plays in Spotify's own player.</p></details>
     <details><summary>Can I use it in Albanian?</summary><p>Yes. Press the Shqip button at the top of any page to switch the whole site, and English to switch back.</p></details>
   </section>
 
