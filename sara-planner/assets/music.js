@@ -87,6 +87,20 @@ if(!connected)return;
 
 /* ---------- the person's own Spotify ---------- */
 let token=null,tokenUntil=0,device=null,premium=null,player=null;
+const phone=matchMedia('(pointer:coarse)').matches&&!matchMedia('(any-pointer:fine)').matches;   // phones and tablets
+const remote=()=>phone&&(!device||premium===false);   // there: Spotify's in-page player usually can't run, so the Spotify app on the phone is controlled instead
+function say(msg){let n=$('spSay');if(!n){n=document.createElement('p');n.className='music-note ok';n.id='spSay';root.prepend(n)}n.textContent=msg;clearTimeout(say.t);say.t=setTimeout(()=>n.remove(),6000)}
+async function remotePlay(uri,link,name){   // play on the Spotify app that is open on the phone; open the app when none is
+  const p=parse(link);if(p)saveLink(p);
+  const body=/^spotify:(track|episode):/.test(uri)?{uris:[uri]}:{context_uri:uri};
+  try{
+    const r=await api('/me/player/play',{method:'PUT',body:JSON.stringify(body),headers:{'Content-Type':'application/json'}});
+    if(r.ok||r.status===204){say(t('Playing on your Spotify app.'));show(link,false,name);toTop();return}
+  }catch(e){}
+  say(t('Opening Spotify…'));
+  setTimeout(()=>{if(!document.hidden){show(link,true,name);toTop()}},1800);   // the app didn't open: show Spotify's card instead
+  location.href=uri;
+}
 async function getToken(force){
   if(!force&&token&&Date.now()<tokenUntil)return token;
   const r=await fetch('music.php?token=1',{credentials:'same-origin'});
@@ -130,6 +144,7 @@ function stopCard(){   // only one thing plays at a time
 async function play(uri,url,name){
   if(player&&player.activateElement)player.activateElement();   // lets the browser start sound after this click
   const link=url||('https://open.spotify.com/'+uri.split(':').slice(1).join('/'));
+  if(remote()){remotePlay(uri,link,name);return}
   const p=parse(link);
   if(device&&premium!==false){
     stopCard();
@@ -143,8 +158,9 @@ async function play(uri,url,name){
 function popHome(){const h=$('spPopHome'),b=$('spPop');if(h&&b&&!h.contains(b))h.appendChild(b)}   // the pop-out button lives under the volume slider; without that player it goes back to My playlists
 function noPremium(){premium=false;listCtx='';showList(false);popHome();const n=$('spPremium');if(n)n.hidden=false;const p=$('spPlayer');if(p)p.hidden=true}
 playHook=(link,name)=>{
-  if(!device||premium===false)return false;
   const p=parse(link);if(!p)return false;
+  if(remote()){remotePlay('spotify:'+p.type+':'+p.id,'https://open.spotify.com/'+p.type+'/'+p.id,name);return true}
+  if(!device||premium===false)return false;
   play('spotify:'+p.type+':'+p.id,'https://open.spotify.com/'+p.type+'/'+p.id,name);
   return true;
 };
@@ -580,10 +596,7 @@ document.addEventListener('click',e=>{   // while the player floats, this tab ha
   if(u.origin!==location.origin||u.href.split('#')[0]===location.href.split('#')[0])return;
   a.target='_blank';a.rel='noopener';setTimeout(()=>{a.removeAttribute('target');a.removeAttribute('rel')},0);
 },true);
-const phone=matchMedia('(pointer:coarse)').matches&&!matchMedia('(any-pointer:fine)').matches;   // phones and tablets: Spotify's in-page player doesn't run in their browsers
-if(phone){premium=false;showList(false);popHome()}   // so go straight to Spotify's own card
-else{
-  setTimeout(()=>{if(!device&&!listCtx){showList(false);popHome()}},7000);   // the player never came up: don't leave the page waiting, show Spotify's card
-  const s=document.createElement('script');s.src='https://sdk.scdn.co/spotify-player.js';s.async=true;document.head.appendChild(s);
-}
+if(phone){showList(false);popHome()}   // phones: Spotify's card at once; the in-page player is still tried in the background (it only works in some browsers)
+else setTimeout(()=>{if(!device&&!listCtx){showList(false);popHome()}},7000);   // the player never came up: don't leave the page waiting, show Spotify's card
+const s=document.createElement('script');s.src='https://sdk.scdn.co/spotify-player.js';s.async=true;document.head.appendChild(s);
 })();

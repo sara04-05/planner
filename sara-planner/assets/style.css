@@ -1426,6 +1426,7 @@ a.nbtile{text-decoration:none}.nbtiles{margin-bottom:14px}.nbtile.on span{color:
 /* top bar: icons only (the date stays as text); the logo and the bar follow the chosen look */
 .top-r .btn .lbl{display:none}
 .top-r .btn{gap:0;padding:8px 11px}
+@media (max-width:640px){.top-r .btn{padding:0}.top-r .btn svg{flex:none}.top-r .lkwrap{display:flex;min-width:0}.top-r .lkwrap .btn{flex:1}}   /* the phone header: nine icon buttons share one row, so no side padding or the icons get squeezed */
 .top-r .btn[data-lang-btn] svg,.top-r a.btn[href="admin.php"] svg{width:18px;height:18px}
 .brand .logo,.logo{color:var(--accent)}
 
