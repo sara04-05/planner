@@ -251,10 +251,11 @@ window.onSpotifyWebPlaybackSDKReady=()=>{
     device=device_id;if(premium!==false&&box)box.hidden=false;
     const c=parse(embed.src);   // the playlist the page opened with: list its songs right away, so playing always goes through the controls
     if(c&&(c.type==='playlist'||c.type==='album')&&!listCtx&&!embedPlaying&&premium!==false)viewContext('spotify:'+c.type+':'+c.id,'');
+    else if(!listCtx)showList(false);   // nothing to list (a single song, an artist…): Spotify's card instead
   });
   player.addListener('not_ready',()=>{device=null});
   player.addListener('account_error',noPremium);              // not a Premium account
-  player.addListener('initialization_error',()=>{premium=false}); // this browser can't play protected music; the embed still works
+  player.addListener('initialization_error',()=>{premium=false;showList(false)}); // this browser can't play protected music; the embed still works
   player.addListener('authentication_error',()=>{token=null});
   player.addListener('player_state_changed',nowPlaying);
   player.connect();
@@ -391,41 +392,103 @@ if(box){
 }
 /* ---------- the floating player (Chrome and Edge): stays on top of other windows while this tab stays open ---------- */
 let pip=null;
-const PIP_CSS=`*{box-sizing:border-box}html,body{margin:0;height:100%}
-body{font-family:'Plus Jakarta Sans',system-ui,sans-serif;color:#3a2230;background:linear-gradient(180deg,#fdeff5,#f8dce8);display:grid;place-items:center}
-.mp{display:grid;gap:14px;justify-items:center;width:100%;padding:16px 20px 16px}
-.tbl{width:min(100%,calc(100vh - 205px));aspect-ratio:1}
-.plinth{position:relative;width:100%;height:100%;border-radius:5%;background:linear-gradient(145deg,#f8cbdd,#eaa8c2);box-shadow:0 14px 28px rgba(150,60,100,.28),inset 0 0 0 2px rgba(255,255,255,.4)}
-.plinth::before,.plinth::after{content:"";position:absolute;top:4.5%;width:3%;height:3%;border-radius:50%;background:#f3b9d0;box-shadow:inset 0 1px 2px rgba(120,40,80,.4),0 1px 0 rgba(255,255,255,.6)}
+const PIP_CSS=`*{box-sizing:border-box}
+html{font-size:clamp(8px,2.7vmin,14px)}
+html,body{margin:0;height:100%}
+body{--bg1:#fdeff5;--bg2:#f8dce8;--ink:#3a2230;--p1:#f8cbdd;--p2:#eaa8c2;--r1:#e592b4;--r2:#f6c0d4;--ac:#d6336c;--btnink:#fdeff5;--ring:#f7d6e3;--scr:#f3b9d0;--arm:#1d1d1f;--gv:rgba(255,255,255,.13);
+--mut:color-mix(in srgb,var(--ink) 62%,transparent);--ln:color-mix(in srgb,var(--ink) 22%,transparent);
+font-family:'Plus Jakarta Sans',system-ui,sans-serif;color:var(--ink);background:linear-gradient(180deg,var(--bg1),var(--bg2));display:grid;place-items:center;overflow:hidden}
+.mp{display:grid;gap:1.1rem;justify-items:center;width:100%;padding:1.2rem 1.5rem}
+.tbl{width:min(100%,calc(100vh - 14rem));min-width:4rem;aspect-ratio:1}
+.plinth{position:relative;width:100%;height:100%;border-radius:5%;background:linear-gradient(145deg,var(--p1),var(--p2));box-shadow:0 .9rem 1.8rem rgba(0,0,0,.22),inset 0 0 0 2px rgba(255,255,255,.28)}
+.plinth::before,.plinth::after{content:"";position:absolute;top:4.5%;width:3%;height:3%;border-radius:50%;background:var(--scr);box-shadow:inset 0 1px 2px rgba(0,0,0,.35),0 1px 0 rgba(255,255,255,.35)}
 .plinth::before{left:5%}.plinth::after{left:62%}
-.rec{position:absolute;left:9.33%;top:14.67%;width:74.67%;height:74.67%;border-radius:50%;background:repeating-radial-gradient(circle,rgba(255,255,255,.13) 0 1px,transparent 1px 5px),conic-gradient(#e592b4,#f6c0d4 25%,#e592b4 50%,#f6c0d4 75%,#e592b4);box-shadow:0 0 0 3px rgba(255,255,255,.28),0 8px 16px rgba(150,60,100,.35);animation:spin 3.6s linear infinite;animation-play-state:paused}
+.rec{position:absolute;left:9.33%;top:14.67%;width:74.67%;height:74.67%;border-radius:50%;background:repeating-radial-gradient(circle,var(--gv) 0 1px,transparent 1px 5px),conic-gradient(var(--r1),var(--r2) 25%,var(--r1) 50%,var(--r2) 75%,var(--r1));box-shadow:0 0 0 3px rgba(255,255,255,.22),0 .5rem 1rem rgba(0,0,0,.3);animation:spin 3.6s linear infinite;animation-play-state:paused}
 .playing .rec{animation-play-state:running}
 @keyframes spin{to{transform:rotate(360deg)}}
-.rec img{position:absolute;left:31%;top:31%;width:38%;height:38%;border-radius:50%;object-fit:cover;background:#cfd9de;box-shadow:0 0 0 3px #f7d6e3,0 0 0 4px rgba(150,60,100,.25)}
+.rec img{position:absolute;left:31%;top:31%;width:38%;height:38%;border-radius:50%;object-fit:cover;background:#cfd9de;box-shadow:0 0 0 3px var(--ring),0 0 0 4px rgba(0,0,0,.2)}
 .rec i{position:absolute;left:48.6%;top:48.6%;width:2.8%;height:2.8%;border-radius:50%;background:#e4e8ec;box-shadow:0 0 2px rgba(0,0,0,.5)}
 .armsvg{position:absolute;inset:0;width:100%;height:100%;overflow:visible;pointer-events:none}
 #arm{transform-origin:252px 50px;transition:transform .9s ease}
-.main{display:grid;gap:8px;min-width:0;width:100%}
-.t b{display:block;font-size:17px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-.t span{display:block;font-size:12.5px;color:rgba(58,34,48,.65);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;min-height:16px}
-.bar{display:grid;grid-template-columns:auto minmax(0,1fr) auto;gap:8px;align-items:center;font-size:11px;color:rgba(58,34,48,.65);font-variant-numeric:tabular-nums}
-.trk{position:relative;height:14px;cursor:pointer}
-.trk::before{content:"";position:absolute;left:0;right:0;top:6px;height:2px;border-radius:2px;background:rgba(58,34,48,.22)}
-.fill{position:absolute;left:0;top:6px;height:2px;border-radius:2px;background:#3a2230;width:0}
-.dot{position:absolute;top:3px;left:0;width:8px;height:8px;margin-left:-4px;border-radius:50%;background:#3a2230}
+body[data-look="1"] .plinth{border-radius:15%}
+body[data-look="1"] .rec{background:repeating-radial-gradient(circle,rgba(255,255,255,.2) 0 2px,transparent 2px 10px),conic-gradient(var(--r1),var(--r2) 25%,var(--r1) 50%,var(--r2) 75%,var(--r1))}
+body[data-look="2"] .rec{background:repeating-radial-gradient(circle,rgba(255,255,255,.08) 0 1px,transparent 1px 4px),conic-gradient(from 20deg,#0e0e10,#2b2b31 25%,#0e0e10 50%,#2b2b31 75%,#0e0e10)}
+body[data-look="2"] .rec img{box-shadow:0 0 0 4px var(--r2),0 0 0 5px rgba(0,0,0,.4)}
+body[data-look="2"] .plinth{border-radius:3%;box-shadow:0 .9rem 1.8rem rgba(0,0,0,.28),inset 0 0 0 5px rgba(0,0,0,.14)}
+body[data-look="3"] .rec{background:repeating-radial-gradient(circle,rgba(0,0,0,.14) 0 1px,transparent 1px 5px),linear-gradient(rgba(0,0,0,.12),rgba(0,0,0,.12)),var(--cover) center/cover}
+body[data-look="3"] .plinth{border-radius:9%;box-shadow:0 .9rem 1.8rem rgba(0,0,0,.25),inset 0 0 0 2px rgba(255,255,255,.5),inset 0 0 0 7px rgba(255,255,255,.12)}
+.main{display:grid;gap:.6rem;min-width:0;width:100%}
+.t b{display:block;font-size:1.35rem;line-height:1.25;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.t span{display:block;font-size:1rem;color:var(--mut);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;min-height:1.2rem}
+.bar{display:grid;grid-template-columns:auto minmax(0,1fr) auto;gap:.6rem;align-items:center;font-size:.85rem;color:var(--mut);font-variant-numeric:tabular-nums}
+.trk{position:relative;height:1.1rem;cursor:pointer}
+.trk::before{content:"";position:absolute;left:0;right:0;top:calc(50% - 1px);height:2px;border-radius:2px;background:var(--ln)}
+.fill{position:absolute;left:0;top:calc(50% - 1px);height:2px;border-radius:2px;background:var(--ink);width:0}
+.dot{position:absolute;top:calc(50% - .35rem);left:0;width:.7rem;height:.7rem;margin-left:-.35rem;border-radius:50%;background:var(--ink)}
 .ctl{display:flex;align-items:center;justify-content:space-between}
-button{border:0;background:none;color:#3a2230;width:30px;height:30px;display:grid;place-items:center;border-radius:50%;cursor:pointer;padding:0}
-button svg{width:20px;height:20px;fill:currentColor}
-button.on{color:#d6336c}
-button.big{width:44px;height:44px;background:#3a2230;color:#fdeff5}
+button{border:0;background:none;color:var(--ink);width:2.4rem;height:2.4rem;display:grid;place-items:center;border-radius:50%;cursor:pointer;padding:0}
+button svg{width:1.6rem;height:1.6rem;fill:currentColor}
+button.on{color:var(--ac)}
+button.big{width:3.6rem;height:3.6rem;background:var(--ink);color:var(--btnink)}
 button.big:hover{transform:scale(1.06)}
-button.big svg{width:24px;height:24px}`;
+button.big svg{width:2rem;height:2rem}
+@media (min-aspect-ratio:7/5){
+  .mp{grid-template-columns:auto minmax(0,1fr);gap:1.6rem;justify-items:stretch;align-items:center;padding:1rem 1.4rem}
+  .tbl{width:min(46vw,calc(100vh - 2.2rem))}
+  .main{gap:.8rem}
+}
+@media (max-width:250px) and (max-aspect-ratio:7/5){
+  #bs,#br{display:none}
+  .ctl{justify-content:center;gap:1.4rem}
+  .tbl{width:min(100%,calc(100vh - 12rem))}
+}
+@media (max-height:190px){
+  .bar{display:none}
+  .t span{min-height:0}
+  .tbl{width:min(100%,calc(100vh - 10.5rem))}
+}
+@media (max-height:130px),(max-width:150px){
+  #bs,#br,#bp,#bn,.t span,.bar{display:none}
+  .t b{font-size:1.1rem}
+  .mp{gap:.6rem;padding:.6rem 1rem}
+  .tbl{width:min(100%,calc(100vh - 7.5rem))}
+}`;
 const ARM_REST=-23;   // degrees: lifted off the record
 const PIP_ARM='<svg class="armsvg" viewBox="0 0 300 300"><g id="arm" style="transform:rotate(-23deg)"><g transform="translate(252 50) rotate(18)">'
-  +'<rect x="-10" y="-40" width="20" height="28" rx="5" fill="#1d1d1f"/>'
-  +'<line x1="0" y1="0" x2="0" y2="176" stroke="#26262a" stroke-width="5" stroke-linecap="round"/><line x1="-1" y1="6" x2="-1" y2="170" stroke="#fff" stroke-opacity=".55" stroke-width="1"/>'
-  +'<circle r="19" fill="#d79ab3"/><circle r="15" fill="#1d1d1f"/><circle r="5" fill="#3a3a40"/>'
-  +'<rect x="-9" y="168" width="18" height="26" rx="3" fill="#1d1d1f"/><rect x="-5" y="192" width="10" height="7" rx="1" fill="#e4e8ec"/></g></g></svg>';
+  +'<rect x="-10" y="-40" width="20" height="28" rx="5" style="fill:var(--arm)"/>'
+  +'<line x1="0" y1="0" x2="0" y2="176" style="stroke:var(--arm)" stroke-width="5" stroke-linecap="round"/><line x1="-1" y1="6" x2="-1" y2="170" stroke="#fff" stroke-opacity=".55" stroke-width="1"/>'
+  +'<circle r="19" style="fill:var(--p2)"/><circle r="15" style="fill:var(--arm)"/><circle r="5" fill="#8a8a92" fill-opacity=".6"/>'
+  +'<rect x="-9" y="168" width="18" height="26" rx="3" style="fill:var(--arm)"/><rect x="-5" y="192" width="10" height="7" rx="1" fill="#e4e8ec"/></g></g></svg>';
+/* Each song gets its own colours (taken from its cover) and one of four turntable looks (chosen from the cover, so a song always looks the same). */
+const palCache={};
+function coverPalette(url){   // the cover's main hue and colourfulness, and whether it is a dark picture
+  if(palCache[url])return Promise.resolve(palCache[url]);
+  return new Promise(ok=>{
+    const im=new Image();im.crossOrigin='anonymous';
+    im.onload=()=>{try{
+      const c=document.createElement('canvas');c.width=c.height=24;const x=c.getContext('2d');x.drawImage(im,0,0,24,24);
+      const d=x.getImageData(0,0,24,24).data,w=new Array(12).fill(0),hs=new Array(12).fill(0),ss=new Array(12).fill(0);let L=0,n=0,chroma=0;
+      for(let i=0;i<d.length;i+=4){
+        const r=d[i]/255,g=d[i+1]/255,b=d[i+2]/255,mx=Math.max(r,g,b),mn=Math.min(r,g,b),l=(mx+mn)/2,dl=mx-mn;
+        const sat=dl?dl/(1-Math.abs(2*l-1)):0;let h=0;
+        if(dl){h=mx===r?((g-b)/dl)%6:mx===g?(b-r)/dl+2:(r-g)/dl+4;h=(h*60+360)%360}
+        const wt=sat*(1-Math.abs(2*l-1))+.01,k=Math.min(11,Math.floor(h/30));
+        w[k]+=wt;hs[k]+=h*wt;ss[k]+=sat*wt;L+=l;n++;chroma+=dl;
+      }
+      let k=0;for(let i=1;i<12;i++)if(w[i]>w[k])k=i;
+      const grey=chroma/n<.06;
+      ok(palCache[url]={h:grey?0:hs[k]/w[k],s:grey?.06:Math.min(.9,Math.max(.3,ss[k]/w[k])),dark:L/n<.38});
+    }catch(e){ok(null)}};   // the picture can't be read: keep the pink
+    im.onerror=()=>ok(null);
+    im.src=url;
+  });
+}
+function palVars(p){
+  const H=Math.round(p.h),S=p.s*100,hs=(s,l)=>'hsl('+H+','+Math.round(Math.max(0,Math.min(100,s)))+'%,'+l+'%)';
+  return p.dark?{'--bg1':hs(S*.45,17),'--bg2':hs(S*.5,9),'--ink':hs(30,94),'--p1':hs(S*.5,27),'--p2':hs(S*.5,19),'--r1':hs(S*.5,13),'--r2':hs(S*.55,25),'--ac':hs(85,66),'--btnink':hs(S*.5,9),'--ring':hs(S*.4,80),'--scr':hs(S*.4,38),'--arm':hs(15,84),'--gv':'rgba(255,255,255,.07)'}
+   :{'--bg1':hs(S*.5,96),'--bg2':hs(S*.55,89),'--ink':hs(Math.min(S,40),20),'--p1':hs(S*.8,86),'--p2':hs(S*.75,75),'--r1':hs(S*.85,69),'--r2':hs(S*.8,82),'--ac':hs(75,42),'--btnink':hs(S*.5,96),'--ring':hs(S*.6,92),'--scr':hs(S*.7,82),'--arm':hs(Math.min(S,25),11),'--gv':'rgba(255,255,255,.13)'};
+}
+const lookOf=url=>{let h=0;for(let i=0;i<url.length;i++)h=(h*31+url.charCodeAt(i))>>>0;return h%4};
 const PIP_ICONS={
   shuffle:'<path d="M10.59 9.17 5.41 4 4 5.41l5.17 5.17 1.42-1.41zM14.5 4l2.04 2.04L4 18.59 5.41 20 17.96 7.46 20 9.5V4h-5.5zm.33 9.41-1.41 1.41 3.13 3.13L14.5 20H20v-5.5l-2.04 2.04-3.13-3.13z"/>',
   prev:'<path d="M6 6h2v12H6zM9.5 12 18 6v12z"/>',
@@ -468,7 +531,16 @@ async function openPip(){
     if(tr){
       g('tt').textContent=tr.name;g('ta').textContent=(tr.artists||[]).map(a=>a.name).join(', ');
       const im=(tr.album.images||[])[0];g('cv').hidden=!im;
-      if(im&&im.url!==cover){cover=im.url;g('cv').src=cover}   // the song's picture is the label of the record
+      if(im&&im.url!==cover){   // the song's picture is the label of the record, and sets this song's colours and look
+        cover=im.url;g('cv').src=cover;
+        d.body.dataset.look=lookOf(cover);d.body.style.setProperty('--cover','url("'+cover+'")');
+        coverPalette(cover).then(pal=>{
+          if(!pip||cover!==im.url)return;
+          const v=pal?palVars(pal):{};
+          for(const k of ['--bg1','--bg2','--ink','--p1','--p2','--r1','--r2','--ac','--btnink','--ring','--scr','--arm','--gv'])
+            if(v[k])d.body.style.setProperty(k,v[k]);else d.body.style.removeProperty(k);
+        });
+      }
       const dur=st.duration||1,pos=Math.min(st.position||0,dur),p=pos/dur*100;
       d.body.classList.toggle('playing',!st.paused);
       g('arm').style.transform='rotate('+(st.paused?ARM_REST:p*.2)+'deg)';   // the arm rests off the record, and moves in as the song goes on
@@ -497,5 +569,6 @@ document.addEventListener('click',e=>{   // while the player floats, this tab ha
   if(u.origin!==location.origin||u.href.split('#')[0]===location.href.split('#')[0])return;
   a.target='_blank';a.rel='noopener';setTimeout(()=>{a.removeAttribute('target');a.removeAttribute('rel')},0);
 },true);
+setTimeout(()=>{if(!device&&!listCtx)showList(false)},7000);   // the player never came up: don't leave the page waiting, show Spotify's card
 const s=document.createElement('script');s.src='https://sdk.scdn.co/spotify-player.js';s.async=true;document.head.appendChild(s);
 })();
