@@ -216,6 +216,7 @@ ob_start(); ?>
       allow="autoplay; clipboard-write; encrypted-media; fullscreen; picture-in-picture"></iframe>
   </section>
 
+  <div class="music-pair">
   <section class="panel">
     <div class="sec-h"><h2>My playlists</h2><?php if (!$mini): ?><button class="btn sm" id="spPop" type="button">Pop out player ↗</button><?php endif; ?></div>
     <div class="sp-list" id="spSaved"><?php foreach ($saved as $r): ?>
@@ -250,6 +251,7 @@ ob_start(); ?>
     </div>
   </section>
   <?php endif; ?>
+  </div>
 
   <?php if ($acc): ?>
   <section class="panel">
