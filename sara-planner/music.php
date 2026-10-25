@@ -216,7 +216,6 @@ ob_start(); ?>
       allow="autoplay; clipboard-write; encrypted-media; fullscreen; picture-in-picture"></iframe>
   </section>
 
-  <div class="music-pair">
   <section class="panel">
     <div class="sec-h"><h2>My playlists</h2><?php if (!$mini): ?><button class="btn sm" id="spPop" type="button">Pop out player ↗</button><?php endif; ?></div>
     <div class="sp-list" id="spSaved"><?php foreach ($saved as $r): ?>
@@ -230,7 +229,7 @@ ob_start(); ?>
       <input type="url" name="link" id="spSaveLink" placeholder="Paste the link to one of your Spotify playlists" required aria-label="Link to your playlist">
       <button class="btn primary">Add</button>
     </form>
-    <p class="music-tip">In Spotify, open your playlist, tap ⋯ → Share → Copy link to playlist, and paste it here. You only do this once per playlist; after that it's a button here. If a playlist doesn't play, make it public in Spotify (⋯ → Make public).</p>
+    <p class="music-tip">In Spotify, open your playlist, tap ⋯ → Share → Copy link to playlist, and paste it here. If a playlist doesn't play, make it public in Spotify (⋯ → Make public).</p>
     <?php endif; ?>
   </section>
 
@@ -243,7 +242,6 @@ ob_start(); ?>
       <input type="url" name="link" id="spLink" placeholder="https://open.spotify.com/playlist/…" value="<?= h($link) ?>" required aria-label="Spotify link">
       <button class="btn primary">Play</button>
     </form>
-    <p class="music-tip">In Spotify, open a playlist, album, song or podcast and use Share → Copy link. Without a Spotify login you hear 30-second previews; logged in to Spotify in this browser, whole songs play.</p>
     <div class="music-presets">
       <?php foreach (MUSIC_PRESETS as [$name, $id]): ?>
       <button class="btn sm" type="button" data-sp-link="https://open.spotify.com/playlist/<?= h($id) ?>" translate="no"><?= h($name) ?></button>
@@ -251,7 +249,6 @@ ob_start(); ?>
     </div>
   </section>
   <?php endif; ?>
-  </div>
 
   <?php if ($acc): ?>
   <section class="panel">
