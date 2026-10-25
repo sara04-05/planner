@@ -97,6 +97,8 @@ function card(item,kind){
 }
 async function play(uri,url){
   if(player&&player.activateElement)player.activateElement();   // lets the browser start sound after this click
+  const link=url||('https://open.spotify.com/'+uri.split(':').slice(1).join('/'));
+  show(link,true);   // the big player always shows what you picked, so it never keeps showing an older playlist
   if(device&&premium!==false){
     const body=uri.startsWith('spotify:track:')?{uris:[uri]}:{context_uri:uri};
     try{
@@ -105,7 +107,6 @@ async function play(uri,url){
       if(r.status===403)noPremium();
     }catch(e){}
   }
-  show(url||('https://open.spotify.com/'+uri.split(':').slice(1).join('/')),true);
   embed.scrollIntoView({behavior:'smooth',block:'nearest'});
 }
 function noPremium(){premium=false;const n=$('spPremium');if(n)n.hidden=false;const p=$('spPlayer');if(p)p.hidden=true}
