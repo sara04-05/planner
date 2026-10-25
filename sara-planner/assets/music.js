@@ -251,10 +251,11 @@ window.onSpotifyWebPlaybackSDKReady=()=>{
     device=device_id;if(premium!==false&&box)box.hidden=false;
     const c=parse(embed.src);   // the playlist the page opened with: list its songs right away, so playing always goes through the controls
     if(c&&(c.type==='playlist'||c.type==='album')&&!listCtx&&!embedPlaying&&premium!==false)viewContext('spotify:'+c.type+':'+c.id,'');
+    else if(!listCtx)showList(false);   // nothing to list (a single song, an artist…): Spotify's card instead
   });
   player.addListener('not_ready',()=>{device=null});
   player.addListener('account_error',noPremium);              // not a Premium account
-  player.addListener('initialization_error',()=>{premium=false}); // this browser can't play protected music; the embed still works
+  player.addListener('initialization_error',()=>{premium=false;showList(false)}); // this browser can't play protected music; the embed still works
   player.addListener('authentication_error',()=>{token=null});
   player.addListener('player_state_changed',nowPlaying);
   player.connect();
@@ -497,5 +498,6 @@ document.addEventListener('click',e=>{   // while the player floats, this tab ha
   if(u.origin!==location.origin||u.href.split('#')[0]===location.href.split('#')[0])return;
   a.target='_blank';a.rel='noopener';setTimeout(()=>{a.removeAttribute('target');a.removeAttribute('rel')},0);
 },true);
+setTimeout(()=>{if(!device&&!listCtx)showList(false)},7000);   // the player never came up: don't leave the page waiting, show Spotify's card
 const s=document.createElement('script');s.src='https://sdk.scdn.co/spotify-player.js';s.async=true;document.head.appendChild(s);
 })();

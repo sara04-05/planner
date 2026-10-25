@@ -1819,6 +1819,7 @@ a.nbcover-link:focus-visible{outline:3px solid var(--accent);outline-offset:6px;
 .music-top{padding:8px;scroll-margin-top:84px}
 .sp-tracks{height:352px;display:flex;flex-direction:column;border-radius:12px;overflow:hidden;background:linear-gradient(180deg,color-mix(in srgb,var(--accent) 34%,var(--paper-2)) 0,var(--paper-2) 80%)}
 .sp-tracks[hidden]{display:none}
+.sp-loading{margin:auto;color:var(--muted);font-size:14px}
 .sp-tk-top{display:flex;gap:18px;align-items:flex-end;padding:16px 18px 12px;flex:none}
 .sp-tk-top .cov{width:112px;height:112px;border-radius:8px;object-fit:cover;box-shadow:0 6px 18px rgba(0,0,0,.35);flex:none}
 .sp-tk-top .inf{display:grid;gap:4px;min-width:0}
