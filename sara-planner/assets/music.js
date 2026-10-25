@@ -140,7 +140,8 @@ async function play(uri,url,name){
   }
   show(link,true,name);toTop();   // couldn't play it here: Spotify's own card shows it
 }
-function noPremium(){premium=false;listCtx='';showList(false);const n=$('spPremium');if(n)n.hidden=false;const p=$('spPlayer');if(p)p.hidden=true}
+function popHome(){const h=$('spPopHome'),b=$('spPop');if(h&&b&&!h.contains(b))h.appendChild(b)}   // the pop-out button lives under the volume slider; without that player it goes back to My playlists
+function noPremium(){premium=false;listCtx='';showList(false);popHome();const n=$('spPremium');if(n)n.hidden=false;const p=$('spPlayer');if(p)p.hidden=true}
 playHook=(link,name)=>{
   if(!device||premium===false)return false;
   const p=parse(link);if(!p)return false;
@@ -255,7 +256,7 @@ window.onSpotifyWebPlaybackSDKReady=()=>{
   });
   player.addListener('not_ready',()=>{device=null});
   player.addListener('account_error',noPremium);              // not a Premium account
-  player.addListener('initialization_error',()=>{premium=false;showList(false)}); // this browser can't play protected music; the embed still works
+  player.addListener('initialization_error',()=>{premium=false;showList(false);popHome()}); // this browser can't play protected music; the embed still works
   player.addListener('authentication_error',()=>{token=null});
   player.addListener('player_state_changed',nowPlaying);
   player.connect();
@@ -442,16 +443,26 @@ button.big svg{width:2rem;height:2rem}
   .ctl{justify-content:center;gap:1.4rem}
   .tbl{width:min(100%,calc(100vh - 12rem))}
 }
-@media (max-height:190px){
+@media (max-height:190px) and (max-aspect-ratio:7/5){
   .bar{display:none}
   .t span{min-height:0}
   .tbl{width:min(100%,calc(100vh - 10.5rem))}
 }
-@media (max-height:130px),(max-width:150px){
+@media (max-height:130px) and (max-aspect-ratio:7/5),(max-width:150px) and (max-aspect-ratio:7/5){
   #bs,#br,#bp,#bn,.t span,.bar{display:none}
   .t b{font-size:1.1rem}
   .mp{gap:.6rem;padding:.6rem 1rem}
   .tbl{width:min(100%,calc(100vh - 7.5rem))}
+}
+@media (min-aspect-ratio:7/5) and (max-width:300px){#bs,#br{display:none}.ctl{justify-content:space-evenly}}
+@media (min-aspect-ratio:7/5) and (max-height:130px){
+  .mp{gap:1rem;padding:.7rem 1rem}
+  .tbl{width:calc(100vh - 1.4rem)}
+  .main{gap:.45rem}
+  .t b{font-size:1.2rem}
+}
+@media (min-aspect-ratio:7/5) and (max-height:100px){.bar{display:none}}
+@media (min-aspect-ratio:7/5) and (max-height:75px){.t span{display:none}}
 }`;
 const ARM_REST=-23;   // degrees: lifted off the record
 const PIP_ARM='<svg class="armsvg" viewBox="0 0 300 300"><g id="arm" style="transform:rotate(-23deg)"><g transform="translate(252 50) rotate(18)">'
@@ -569,6 +580,6 @@ document.addEventListener('click',e=>{   // while the player floats, this tab ha
   if(u.origin!==location.origin||u.href.split('#')[0]===location.href.split('#')[0])return;
   a.target='_blank';a.rel='noopener';setTimeout(()=>{a.removeAttribute('target');a.removeAttribute('rel')},0);
 },true);
-setTimeout(()=>{if(!device&&!listCtx)showList(false)},7000);   // the player never came up: don't leave the page waiting, show Spotify's card
+setTimeout(()=>{if(!device&&!listCtx){showList(false);popHome()}},7000);   // the player never came up: don't leave the page waiting, show Spotify's card
 const s=document.createElement('script');s.src='https://sdk.scdn.co/spotify-player.js';s.async=true;document.head.appendChild(s);
 })();

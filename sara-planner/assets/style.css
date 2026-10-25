@@ -1872,12 +1872,14 @@ a.nbcover-link:focus-visible{outline:3px solid var(--accent);outline-offset:6px;
 .sp-art{width:56px;height:56px;border-radius:10px;object-fit:cover}
 .sp-meta{display:grid;min-width:0}
 .sp-meta span{color:var(--muted);font-size:13px}
-.sp-ctrl{display:flex;align-items:center;gap:8px}
-.sp-ctrl input[type=range]{width:110px;accent-color:var(--accent)}
+.sp-ctrl{display:grid;grid-template-columns:auto auto auto minmax(80px,110px);align-items:center;gap:8px}
+.sp-ctrl input[type=range]{width:100%;accent-color:var(--accent)}
+.sp-ctrl #spVol{grid-column:4;grid-row:1}
+.sp-ctrl #spPop{grid-column:4;grid-row:2;justify-self:end;white-space:nowrap}
 body.music-win{margin:0;padding:12px;background:var(--bg);color:var(--ink);font-family:'Plus Jakarta Sans',system-ui,sans-serif}
 .music.mini{gap:10px}
 .music.mini .sp-list{grid-template-columns:1fr}
-@media (max-width:640px){.music-link{flex-wrap:wrap}.sp-ctrl input[type=range]{width:80px}}
+@media (max-width:640px){.music-link{flex-wrap:wrap}}
 .music-tip{font-size:12.5px;color:var(--muted);margin:10px 0 0}
 .sp-saved{position:relative;min-width:0}
 .sp-saved .sp-item{width:100%;padding-right:34px}
