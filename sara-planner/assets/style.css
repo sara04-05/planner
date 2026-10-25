@@ -2303,3 +2303,11 @@ img.avatar{background:var(--accent-soft)}
 @media (min-width:1500px){
   .chat-log{max-height:62vh}
 }
+
+/* Notes and Messages sit on clean paper: no ruled lines through the cards, text and chat bubbles, and normal line spacing */
+.page:has(#notes),.page:has(#chat){background-image:none!important}
+.page:has(#notes) :is(p,li,small,h2,h3,.empty,.hint),.page:has(#chat) :is(p,li,small,h2,h3,.empty){line-height:1.5}
+.page:has(#notes) .nt-welcome p,.page:has(#notes) .nt-hint{margin-block:6px}
+.page:has(#notes) .nt-welcome h2{margin-bottom:6px}
+.page:has(#notes) .nt-ov-h h2,.page:has(#notes) .nt-title{line-height:1.2}
+.page:has(#notes) .nt-body{background-color:var(--paper)}
