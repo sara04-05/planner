@@ -106,6 +106,22 @@ function card(item,kind){
     +(pic?`<img alt="" src="${esc(pic)}" loading="lazy">`:'<i aria-hidden="true">'+ico('music')+'</i>')
     +`<span><b>${esc(item.name)}</b><small>${esc(sub)}</small></span></button>`;
 }
+async function startPlayback(body){   // ask Spotify to play on this page's player; say so when it can't
+  const send=()=>api('/me/player/play?device_id='+encodeURIComponent(device),{method:'PUT',body:JSON.stringify(body),headers:{'Content-Type':'application/json'}});
+  let r=await send();
+  if(r.status===404){   // Spotify doesn't know the player yet: make it the active one, then try again
+    try{await api('/me/player',{method:'PUT',body:JSON.stringify({device_ids:[device],play:false}),headers:{'Content-Type':'application/json'}})}catch(e){}
+    await new Promise(ok=>setTimeout(ok,700));
+    r=await send();
+  }
+  const ok=r.ok||r.status===204;
+  if(!ok){
+    if(r.status===403)noPremium();
+    else setBar(curName||t('Nothing playing yet'),t("Couldn't start playing. Try again in a moment."),null);
+    if(typeof log==='function')log('play: '+r.status);
+  }
+  return ok;
+}
 function stopCard(){   // only one thing plays at a time
   if(embedPlaying&&embed.contentWindow)embed.contentWindow.postMessage({command:'toggle'},'https://open.spotify.com');
   embedPlaying=false;box.dataset.src='';
@@ -119,11 +135,7 @@ async function play(uri,url,name){
     if(p)saveLink(p);
     if(name){curName=name;setBar(name,'',null)}   // until the player reports the song
     const body=/^spotify:(track|episode):/.test(uri)?{uris:[uri]}:{context_uri:uri};
-    try{
-      const r=await api('/me/player/play?device_id='+encodeURIComponent(device),{method:'PUT',body:JSON.stringify(body),headers:{'Content-Type':'application/json'}});
-      if(r.ok||r.status===204){toTop();return}
-      if(r.status===403)noPremium();
-    }catch(e){}
+    try{if(await startPlayback(body)){toTop();return}}catch(e){}
   }
   show(link,true,name);toTop();   // couldn't play it here: Spotify's own card shows it
 }
@@ -189,13 +201,13 @@ async function viewContext(ctx,uri){   // the playlist or album that is playing:
   tracksBox.innerHTML='<div class="sp-tk-h"><b translate="no">'+esc(curName)+'</b><span>'+songs.length+' '+esc(t('songs'))+'</span></div>'
     +songs.map((x,i)=>'<button type="button" class="sp-tk" data-tk="'+esc(x.uri)+'" translate="no"><span class="n">'+(i+1)+'</span><span class="m"><b>'+esc(x.name)+'</b><small>'+esc((x.artists||[]).map(a=>a.name).join(', '))+'</small></span><span class="d">'+fmt(x.duration_ms)+'</span></button>').join('');
   showList(true);markSong(uri);
-  if(!sdkStarted)setBar(curName||t('Nothing playing yet'),'',null);   // nothing has played yet: the controls name the list that the play button will start
+  if(!sdkStarted)setBar(curName||t('Nothing playing yet'),t('Press play to start'),null);   // nothing has played yet: the controls name the list that the play button will start
 }
 async function playList(offsetUri){   // play the listed playlist, from a song or from the start
   if(!listCtx||!device)return;
   if(player&&player.activateElement)player.activateElement();
   const body={context_uri:listCtx};if(offsetUri)body.offset={uri:offsetUri};
-  try{await api('/me/player/play?device_id='+encodeURIComponent(device),{method:'PUT',body:JSON.stringify(body),headers:{'Content-Type':'application/json'}})}catch(x){}
+  try{await startPlayback(body)}catch(x){}
 }
 if(tracksBox)tracksBox.addEventListener('click',e=>{const b=e.target.closest('[data-tk]');if(b)playList(b.dataset.tk)});   // a song in the list: play the list from there
 function mirror(tr){   // Spotify's card shows the song the controls are playing, so the two always agree
