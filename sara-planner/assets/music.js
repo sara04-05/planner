@@ -177,30 +177,54 @@ if(sForm)sForm.addEventListener('submit',async e=>{
 const box=$('spPlayer'),tog=$('spToggle');
 let sdkPlaying=false,sdkStarted=false;   // sdkStarted: the controls' player has played something since the page opened
 const fmt=ms=>{const s=Math.round((ms||0)/1000);return Math.floor(s/60)+':'+String(s%60).padStart(2,'0')};
-function markSong(uri){   // highlight the playing song in the list and keep it in view
+function markSong(uri,paused){   // mark the playing song in the list and keep it in view
   if(!tracksBox)return;
+  const list=tracksBox.querySelector('.sp-tk-list');if(!list)return;
   let on=null;
-  tracksBox.querySelectorAll('.sp-tk').forEach(r=>{const is=r.dataset.tk===uri;r.classList.toggle('on',is);if(is)on=r});
-  if(on)tracksBox.scrollTop=Math.max(0,on.offsetTop-tracksBox.clientHeight/2+on.offsetHeight/2);
+  list.querySelectorAll('.sp-tk').forEach(r=>{const is=r.dataset.tk===uri;r.classList.toggle('on',is);r.classList.toggle('paused',is&&!!paused);if(is)on=r});
+  if(on)list.scrollTop=Math.max(0,on.offsetTop-list.offsetTop-list.clientHeight/2+on.offsetHeight/2);
+}
+async function ctxMeta(c){   // name, cover picture and owner of the playlist or album
+  try{
+    const r=await api(c.type==='playlist'?'/playlists/'+c.id+'?fields=name,images,owner(display_name)':'/albums/'+c.id);
+    if(!r.ok)return {};
+    const j=await r.json();
+    return {name:j.name||'',image:((j.images||[])[0]||{}).url||'',sub:c.type==='playlist'?(j.owner&&j.owner.display_name)||'':(j.artists||[]).map(a=>a.name).join(', ')};
+  }catch(e){return {}}
+}
+function tint(url){   // colour the card with the cover's colours, like Spotify's own card
+  const im=new Image();im.crossOrigin='anonymous';
+  im.onload=()=>{try{
+    const c=document.createElement('canvas');c.width=c.height=8;const x=c.getContext('2d');x.drawImage(im,0,0,8,8);
+    const d=x.getImageData(0,0,8,8).data;let r=0,g=0,b=0,n=0;
+    for(let i=0;i<d.length;i+=4){r+=d[i];g+=d[i+1];b+=d[i+2];n++}
+    tracksBox.style.setProperty('--tk-c','rgb('+(r/n*.55|0)+','+(g/n*.55|0)+','+(b/n*.55|0)+')');
+    tracksBox.classList.add('tinted');
+  }catch(e){}};
+  im.src=url;
 }
 async function viewContext(ctx,uri){   // the playlist or album that is playing: its whole list, with the playing song marked
-  if(ctx===listCtx){markSong(uri);return}
+  if(ctx===listCtx){markSong(uri,!sdkPlaying);return}
   listCtx=ctx;
   const m=/^spotify:(playlist|album):([A-Za-z0-9]+)$/.exec(ctx);
-  const songs=await ctxSongs({type:m[1],id:m[2]});
+  const c={type:m[1],id:m[2]};
+  const [songs,meta]=await Promise.all([ctxSongs(c),ctxMeta(c)]);
   if(listCtx!==ctx)return;   // something else was picked meanwhile
   if(!songs.length){   // Spotify won't let us read this one (its own playlists, for example): its card shows the playlist instead
     showList(false);mirrored='';
     if(!embed.src.includes('/embed/'+m[1]+'/'+m[2])){embed.src='https://open.spotify.com/embed/'+m[1]+'/'+m[2]+'?utm_source=generator';embed.classList.remove('short')}
     return;
   }
-  if(!curName){   // opened with a playlist that has no name yet: ask for it
-    try{const r=await api(m[1]==='playlist'?'/playlists/'+m[2]+'?fields=name':'/albums/'+m[2]);if(r.ok)curName=(await r.json()).name||''}catch(e){}
-    if(listCtx!==ctx)return;
-  }
-  tracksBox.innerHTML='<div class="sp-tk-h"><b translate="no">'+esc(curName)+'</b><span>'+songs.length+' '+esc(t('songs'))+'</span></div>'
-    +songs.map((x,i)=>'<button type="button" class="sp-tk" data-tk="'+esc(x.uri)+'" translate="no"><span class="n">'+(i+1)+'</span><span class="m"><b>'+esc(x.name)+'</b><small>'+esc((x.artists||[]).map(a=>a.name).join(', '))+'</small></span><span class="d">'+fmt(x.duration_ms)+'</span></button>').join('');
-  showList(true);markSong(uri);
+  if(meta.name)curName=meta.name;
+  const total=Math.round(songs.reduce((n,x)=>n+(x.duration_ms||0),0)/60000);
+  const cover=meta.image||((songs[0].album&&songs[0].album.images||[])[0]||{}).url||'';
+  tracksBox.classList.remove('tinted');tracksBox.style.removeProperty('--tk-c');
+  tracksBox.innerHTML='<div class="sp-tk-top">'+(cover?'<img class="cov" alt="" src="'+esc(cover)+'">':'')
+    +'<div class="inf"><small>'+esc(t(m[1]==='album'?'Album':'Playlist'))+'</small><h3 translate="no">'+esc(curName)+'</h3>'
+    +'<span><span translate="no">'+esc(meta.sub||'')+(meta.sub?' · ':'')+'</span>'+songs.length+' '+esc(t('songs'))+' · '+(total>=60?Math.floor(total/60)+' '+esc(t('hr'))+' ':'')+(total%60)+' '+esc(t('min'))+'</span></div></div>'
+    +'<div class="sp-tk-list">'+songs.map((x,i)=>'<button type="button" class="sp-tk" data-tk="'+esc(x.uri)+'" translate="no"><span class="n"><i class="num">'+(i+1)+'</i><i class="ic-play">'+ico('play')+'</i><i class="ic-pause">'+ico('pause')+'</i></span><span class="m"><b>'+esc(x.name)+'</b><small>'+esc((x.artists||[]).map(a=>a.name).join(', '))+'</small></span><span class="d">'+fmt(x.duration_ms)+'</span></button>').join('')+'</div>';
+  if(cover)tint(cover);
+  showList(true);markSong(uri,!sdkPlaying);
   if(!sdkStarted)setBar(curName||t('Nothing playing yet'),t('Press play to start'),null);   // nothing has played yet: the controls name the list that the play button will start
 }
 async function playList(offsetUri){   // play the listed playlist, from a song or from the start
@@ -209,7 +233,11 @@ async function playList(offsetUri){   // play the listed playlist, from a song o
   const body={context_uri:listCtx};if(offsetUri)body.offset={uri:offsetUri};
   try{await startPlayback(body)}catch(x){}
 }
-if(tracksBox)tracksBox.addEventListener('click',e=>{const b=e.target.closest('[data-tk]');if(b)playList(b.dataset.tk)});   // a song in the list: play the list from there
+if(tracksBox)tracksBox.addEventListener('click',e=>{
+  const b=e.target.closest('[data-tk]');if(!b)return;
+  if(b.classList.contains('on')&&sdkStarted&&player){if(player.activateElement)player.activateElement();player.togglePlay();return}   // the song that is on: pause or resume it
+  playList(b.dataset.tk);
+});   // a song in the list: play the list from there
 function mirror(tr){   // Spotify's card shows the song the controls are playing, so the two always agree
   const m=/^spotify:track:([A-Za-z0-9]+)$/.exec(tr.uri||'');
   if(!m||m[1]===mirrored)return;
