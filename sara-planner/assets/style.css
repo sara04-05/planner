@@ -1817,6 +1817,18 @@ a.nbcover-link:focus-visible{outline:3px solid var(--accent);outline-offset:6px;
 .music{display:grid;gap:16px;max-width:820px}
 .music h2{font-size:18px;margin:0 0 6px}
 .music-top{padding:8px;scroll-margin-top:84px}
+.sp-tracks{height:352px;overflow:auto;border-radius:12px;background:var(--paper-2);padding:6px}
+.sp-tracks[hidden]{display:none}
+.sp-tk-h{display:flex;justify-content:space-between;gap:12px;align-items:baseline;padding:8px 10px 10px;border-bottom:1px solid var(--line);margin-bottom:4px}
+.sp-tk-h span{color:var(--muted);font-size:12.5px}
+.sp-tk{display:grid;grid-template-columns:30px minmax(0,1fr) auto;gap:10px;align-items:center;width:100%;padding:8px 10px;border:0;border-radius:8px;background:none;color:var(--ink);font:inherit;text-align:left;cursor:pointer}
+.sp-tk:hover{background:var(--accent-soft)}
+.sp-tk.on{background:var(--accent-soft);box-shadow:inset 3px 0 0 var(--accent)}
+.sp-tk .n,.sp-tk .d{color:var(--muted);font-size:13px;font-variant-numeric:tabular-nums}
+.sp-tk .m{display:grid;min-width:0}
+.sp-tk b,.sp-tk small{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.sp-tk small{color:var(--muted);font-size:12px}
+.sp-tk.on b{color:var(--accent)}
 .music-embed iframe{display:block;width:100%;height:352px;border:0;border-radius:12px}
 .music-embed iframe.short{height:152px}
 .music-link{display:flex;gap:8px;margin-top:6px}

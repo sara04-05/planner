@@ -18,13 +18,15 @@ function parse(link){
   if(!m)m=/^https?:\/\/open\.spotify\.com\/(?:intl-[a-z-]+\/)?(?:embed\/)?(playlist|album|track|artist|episode|show)\/([A-Za-z0-9]{10,40})/.exec(link);
   return m?{type:m[1],id:m[2]}:null;
 }
+const tracksBox=$('spTracks');let listCtx='';   // the playlist being played is listed here (instead of Spotify's card) when its songs can be read
+function showList(on){if(tracksBox){tracksBox.hidden=!on;embed.style.display=on?'none':''}}
 function saveLink(p){   // the link that opens next time you open Music
   const f=new FormData();f.append('csrf',csrf);f.append('do','link');f.append('link','https://open.spotify.com/'+p.type+'/'+p.id);
   fetch('music.php',{method:'POST',body:f,headers:{'X-Requested-With':'fetch'}}).catch(()=>{});
 }
 function show(link,save,name){
   const p=parse(link);if(!p)return false;
-  curName=name||'';embedPlaying=false;embedUri='';mirrored='';
+  curName=name||'';embedPlaying=false;embedUri='';mirrored='';listCtx='';showList(false);
   const ti=$('spTitle'),bx=$('spPlayer');
   if(bx)bx.dataset.src='';
   if(name&&ti){ti.textContent=name;$('spArtist').textContent='';$('spArt').hidden=true}   // the controls say what you picked until Spotify reports the song
@@ -125,7 +127,7 @@ async function play(uri,url,name){
   }
   show(link,true,name);toTop();   // couldn't play it here: Spotify's own card shows it
 }
-function noPremium(){premium=false;const n=$('spPremium');if(n)n.hidden=false;const p=$('spPlayer');if(p)p.hidden=true}
+function noPremium(){premium=false;listCtx='';showList(false);const n=$('spPremium');if(n)n.hidden=false;const p=$('spPlayer');if(p)p.hidden=true}
 playHook=(link,name)=>{
   if(!device||premium===false)return false;
   const p=parse(link);if(!p)return false;
@@ -162,6 +164,37 @@ if(sForm)sForm.addEventListener('submit',async e=>{
 /* ---------- playing right here (Spotify Premium) ---------- */
 const box=$('spPlayer'),tog=$('spToggle');
 let sdkPlaying=false;
+const fmt=ms=>{const s=Math.round((ms||0)/1000);return Math.floor(s/60)+':'+String(s%60).padStart(2,'0')};
+function markSong(uri){   // highlight the playing song in the list and keep it in view
+  if(!tracksBox)return;
+  let on=null;
+  tracksBox.querySelectorAll('.sp-tk').forEach(r=>{const is=r.dataset.tk===uri;r.classList.toggle('on',is);if(is)on=r});
+  if(on)tracksBox.scrollTop=Math.max(0,on.offsetTop-tracksBox.clientHeight/2+on.offsetHeight/2);
+}
+async function viewContext(ctx,uri){   // the playlist or album that is playing: its whole list, with the playing song marked
+  if(ctx===listCtx){markSong(uri);return}
+  listCtx=ctx;
+  const m=/^spotify:(playlist|album):([A-Za-z0-9]+)$/.exec(ctx);
+  const songs=await ctxSongs({type:m[1],id:m[2]});
+  if(listCtx!==ctx)return;   // something else was picked meanwhile
+  if(!songs.length){   // Spotify won't let us read this one (its own playlists, for example): its card shows the playlist instead
+    showList(false);mirrored='';
+    if(!embed.src.includes('/embed/'+m[1]+'/'+m[2])){embed.src='https://open.spotify.com/embed/'+m[1]+'/'+m[2]+'?utm_source=generator';embed.classList.remove('short')}
+    return;
+  }
+  if(!curName){   // opened with a playlist that has no name yet: ask for it
+    try{const r=await api(m[1]==='playlist'?'/playlists/'+m[2]+'?fields=name':'/albums/'+m[2]);if(r.ok)curName=(await r.json()).name||''}catch(e){}
+    if(listCtx!==ctx)return;
+  }
+  tracksBox.innerHTML='<div class="sp-tk-h"><b translate="no">'+esc(curName)+'</b><span>'+songs.length+' '+esc(t('songs'))+'</span></div>'
+    +songs.map((x,i)=>'<button type="button" class="sp-tk" data-tk="'+esc(x.uri)+'" translate="no"><span class="n">'+(i+1)+'</span><span class="m"><b>'+esc(x.name)+'</b><small>'+esc((x.artists||[]).map(a=>a.name).join(', '))+'</small></span><span class="d">'+fmt(x.duration_ms)+'</span></button>').join('');
+  showList(true);markSong(uri);
+}
+if(tracksBox)tracksBox.addEventListener('click',async e=>{   // a song in the list: play the list from there
+  const b=e.target.closest('[data-tk]');if(!b||!listCtx||!device)return;
+  if(player&&player.activateElement)player.activateElement();
+  try{await api('/me/player/play?device_id='+encodeURIComponent(device),{method:'PUT',body:JSON.stringify({context_uri:listCtx,offset:{uri:b.dataset.tk}}),headers:{'Content-Type':'application/json'}})}catch(x){}
+});
 function mirror(tr){   // Spotify's card shows the song the controls are playing, so the two always agree
   const m=/^spotify:track:([A-Za-z0-9]+)$/.exec(tr.uri||'');
   if(!m||m[1]===mirrored)return;
@@ -177,11 +210,17 @@ function nowPlaying(st){
   $('spTitle').textContent=tr.name;$('spArtist').textContent=(tr.artists||[]).map(a=>a.name).join(', ');
   if(img){art.src=img.url;art.hidden=false}
   tog.innerHTML=ico(st.paused?'play':'pause');
-  mirror(tr);
+  const ctx=st.context&&st.context.uri||'';
+  if(/^spotify:(playlist|album):[A-Za-z0-9]+$/.test(ctx))viewContext(ctx,tr.uri);
+  else{listCtx='';showList(false);mirror(tr)}
 }
 window.onSpotifyWebPlaybackSDKReady=()=>{
   player=new Spotify.Player({name:document.body.classList.contains('music-win')?'Splanner (small window)':'Splanner',getOAuthToken:cb=>getToken().then(cb,()=>{}),volume:.6});
-  player.addListener('ready',({device_id})=>{device=device_id;if(premium!==false&&box)box.hidden=false});
+  player.addListener('ready',({device_id})=>{
+    device=device_id;if(premium!==false&&box)box.hidden=false;
+    const c=parse(embed.src);   // the playlist the page opened with: list its songs right away, so playing always goes through the controls
+    if(c&&(c.type==='playlist'||c.type==='album')&&!listCtx&&!embedPlaying&&premium!==false)viewContext('spotify:'+c.type+':'+c.id,'');
+  });
   player.addListener('not_ready',()=>{device=null});
   player.addListener('account_error',noPremium);              // not a Premium account
   player.addListener('initialization_error',()=>{premium=false}); // this browser can't play protected music; the embed still works
@@ -215,32 +254,37 @@ const dbg=/[?&]debug\b/.test(location.search),dbgBox=dbg?document.createElement(
 if(dbg){dbgBox.style.cssText='font-size:11px;white-space:pre-wrap;word-break:break-all;margin:8px 0 0;max-height:160px;overflow:auto;color:var(--muted)';box.after(dbgBox)}
 const log=m=>{if(dbg){dbgBox.textContent=(dbgBox.textContent+'\n'+m).split('\n').slice(-10).join('\n')}};
 const ctxCache={};
-async function ctxSongs(){
-  const c=parse(embed.src);if(!c||(c.type!=='playlist'&&c.type!=='album'))return [];
+async function ctxSongs(c){   // the songs of a playlist or album, when Spotify lets this account read them
+  if(!c||(c.type!=='playlist'&&c.type!=='album'))return [];
   const key=c.type+c.id;if(key in ctxCache)return ctxCache[key];
-  let out=[];
+  let out=[],failed=false;
   try{
     if(c.type==='album'){
       const r=await api('/albums/'+c.id);if(r.ok){const j=await r.json();out=(j.tracks.items||[]).map(x=>({...x,album:{images:j.images}}))}
     }else{
-      for(let off=0;off<500;off+=100){
-        const r=await api('/playlists/'+c.id+'/tracks?limit=100&offset='+off+'&fields=items(track(name,uri,duration_ms,artists(name),album(images))),next');
-        if(!r.ok){log('playlist tracks: '+r.status);break}
-        const j=await r.json();out=out.concat((j.items||[]).map(i=>i.track).filter(Boolean));
+      let base='/playlists/'+c.id+'/tracks';
+      for(let off=0;off<1000;off+=100){
+        let r=await api(base+'?limit=100&offset='+off);
+        if(!r.ok&&off===0&&base.endsWith('/tracks')){base='/playlists/'+c.id+'/items';r=await api(base+'?limit=100&offset='+off)}   // Spotify has been renaming this call
+        if(!r.ok){log('playlist songs: '+r.status);break}
+        const j=await r.json();out=out.concat((j.items||[]).map(i=>i&&(i.track||i.item)).filter(Boolean));
         if(!j.next)break;
       }
     }
-  }catch(e){}
-  return ctxCache[key]=out;
+  }catch(e){failed=true}
+  out=out.filter(x=>x.uri&&x.uri.startsWith('spotify:track:'));
+  if(!failed)ctxCache[key]=out;
+  return out;
 }
 const pickByLen=(songs,len)=>{   // the song whose length is closest to the card's, unless two are about as close
-  const c=songs.map(x=>({x,d:Math.abs((x.duration_ms||0)-len)})).filter(o=>o.d<=1000).sort((a,b)=>a.d-b.d);
+  if(len>0&&len<5000)len*=1000;   // in case the card counts in seconds
+  const c=songs.map(x=>({x,d:Math.abs((x.duration_ms||0)-len)})).filter(o=>o.d<=1500).sort((a,b)=>a.d-b.d);
   return c.length&&(c.length===1||c[1].d-c[0].d>250)?c[0].x:null;
 };
 async function handOver(len,pos){   // the card started by hand on a playlist we can read: carry on in the controls, on the same song
   if(!device||premium===false||len<=31000)return false;
   const c=parse(embed.src);if(!c)return false;
-  const song=pickByLen(await ctxSongs(),len);
+  const song=pickByLen(await ctxSongs(c),len);
   if(!song||!embedPlaying)return false;
   stopCard();
   try{
@@ -267,7 +311,7 @@ async function embedNow(len,tries){
     if(j&&j.item&&j.is_playing){embedUri=j.item.uri||'now';showItem(j.item);done=true}
   }catch(e){log('currently-playing failed')}
   if(!done&&len){
-    const song=pickByLen(await ctxSongs(),len);
+    const song=pickByLen(await ctxSongs(parse(embed.src)),len);
     log('song of that length: '+(song?song.name:'none'));
     if(embedPlaying&&song){embedUri=song.uri||'len';showItem(song);done=true}
   }
