@@ -392,27 +392,46 @@ if(box){
 /* ---------- the floating player (Chrome and Edge): stays on top of other windows while this tab stays open ---------- */
 let pip=null;
 const PIP_CSS=`*{box-sizing:border-box}html,body{margin:0;height:100%}
-body{font-family:'Plus Jakarta Sans',system-ui,sans-serif;background:#f1f0ec;color:#141414;display:grid;place-items:center}
+body{font-family:'Plus Jakarta Sans',system-ui,sans-serif;color:#fff;background:linear-gradient(135deg,var(--c1,#4a4a52),var(--c2,#1c1c20));display:grid;place-items:center}
 .mp{display:grid;grid-template-columns:auto minmax(0,1fr);gap:16px;align-items:center;width:100%;padding:14px 18px}
-.cov{position:relative;width:100px;height:100px;border-radius:50%;background:#1b1b1b;box-shadow:0 6px 16px rgba(0,0,0,.25);overflow:hidden;animation:spin 7s linear infinite;animation-play-state:paused}
-.playing .cov{animation-play-state:running}
+.cov{width:104px;height:104px;border-radius:10px;overflow:hidden;background:rgba(255,255,255,.12);box-shadow:0 8px 22px rgba(0,0,0,.45)}
 .cov img{width:100%;height:100%;object-fit:cover;display:block}
-.cov::after{content:"";position:absolute;left:50%;top:50%;width:16px;height:16px;margin:-8px 0 0 -8px;border-radius:50%;background:#f1f0ec;box-shadow:0 0 0 3px rgba(0,0,0,.35)}
-@keyframes spin{to{transform:rotate(360deg)}}
 .main{display:grid;gap:8px;min-width:0}
-.t b{display:block;font-size:15px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-.t span{display:block;font-size:12.5px;color:#6b6b68;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;min-height:16px}
-.bar{display:grid;grid-template-columns:auto minmax(0,1fr) auto;gap:8px;align-items:center;font-size:11px;color:#6b6b68;font-variant-numeric:tabular-nums}
+.t b{display:block;font-size:16px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.t span{display:block;font-size:12.5px;color:rgba(255,255,255,.72);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;min-height:16px}
+.bar{display:grid;grid-template-columns:auto minmax(0,1fr) auto;gap:8px;align-items:center;font-size:11px;color:rgba(255,255,255,.72);font-variant-numeric:tabular-nums}
 .trk{position:relative;height:14px;cursor:pointer}
-.trk::before{content:"";position:absolute;left:0;right:0;top:6px;height:2px;border-radius:2px;background:#c9c8c3}
-.fill{position:absolute;left:0;top:6px;height:2px;border-radius:2px;background:#141414;width:0}
-.dot{position:absolute;top:3px;left:0;width:8px;height:8px;margin-left:-4px;border-radius:50%;background:#141414}
+.trk::before{content:"";position:absolute;left:0;right:0;top:5px;height:4px;border-radius:4px;background:rgba(255,255,255,.28)}
+.fill{position:absolute;left:0;top:5px;height:4px;border-radius:4px;background:#fff;width:0}
+.dot{position:absolute;top:2px;left:0;width:10px;height:10px;margin-left:-5px;border-radius:50%;background:#fff;opacity:0;transition:opacity .15s}
+.trk:hover .dot{opacity:1}
 .ctl{display:flex;align-items:center;justify-content:space-between}
-button{border:0;background:none;color:#141414;width:30px;height:30px;display:grid;place-items:center;border-radius:50%;cursor:pointer;padding:0}
+button{border:0;background:none;color:rgba(255,255,255,.85);width:30px;height:30px;display:grid;place-items:center;border-radius:50%;cursor:pointer;padding:0}
+button:hover{color:#fff}
 button svg{width:20px;height:20px;fill:currentColor}
-button.on{color:#7c5cff}
-button.big{width:44px;height:44px;background:#141414;color:#f1f0ec}
+button.on{color:#1ed760}
+button.big{width:44px;height:44px;background:#fff;color:#121212}
+button.big:hover{transform:scale(1.06)}
 button.big svg{width:24px;height:24px}`;
+const colorCache={};
+function coverColors(url){   // two colours (light, dark) taken from the cover, dark enough for white text, like Spotify's now-playing view
+  if(colorCache[url])return Promise.resolve(colorCache[url]);
+  return new Promise(ok=>{
+    const im=new Image();im.crossOrigin='anonymous';
+    im.onload=()=>{try{
+      const c=document.createElement('canvas');c.width=c.height=16;const x=c.getContext('2d');x.drawImage(im,0,0,16,16);
+      const d=x.getImageData(0,0,16,16).data;let r=0,g=0,b=0,w=0;
+      for(let i=0;i<d.length;i+=4){const wt=.15+(Math.max(d[i],d[i+1],d[i+2])-Math.min(d[i],d[i+1],d[i+2]))/255;r+=d[i]*wt;g+=d[i+1]*wt;b+=d[i+2]*wt;w+=wt}   // colourful pixels count more
+      r/=w;g/=w;b/=w;
+      const lum=(.2126*r+.7152*g+.0722*b)/255,k=lum>.34?.34/lum:1;
+      r*=k;g*=k;b*=k;
+      const f=m=>'rgb('+Math.round(r*m)+','+Math.round(g*m)+','+Math.round(b*m)+')';
+      ok(colorCache[url]=[f(1),f(.4)]);
+    }catch(e){ok(null)}};   // the picture can't be read: keep the default colours
+    im.onerror=()=>ok(null);
+    im.src=url;
+  });
+}
 const PIP_ICONS={
   shuffle:'<path d="M10.59 9.17 5.41 4 4 5.41l5.17 5.17 1.42-1.41zM14.5 4l2.04 2.04L4 18.59 5.41 20 17.96 7.46 20 9.5V4h-5.5zm.33 9.41-1.41 1.41 3.13 3.13L14.5 20H20v-5.5l-2.04 2.04-3.13-3.13z"/>',
   prev:'<path d="M6 6h2v12H6zM9.5 12 18 6v12z"/>',
@@ -443,7 +462,7 @@ async function openPip(){
     +'<div class="ctl"><button id="bs" aria-label="Shuffle">'+pipSvg('shuffle')+'</button><button id="bp" aria-label="Previous song">'+pipSvg('prev')+'</button>'
     +'<button class="big" id="bt" aria-label="Play or pause">'+pipSvg('play')+'</button><button id="bn" aria-label="Next song">'+pipSvg('next')+'</button><button id="br" aria-label="Repeat">'+pipSvg('repeat')+'</button></div></div></div>';
   const g=id=>d.getElementById(id);
-  let st=null;
+  let st=null,cover='';
   g('bp').onclick=()=>control('prev');g('bn').onclick=()=>control('next');g('bt').onclick=()=>control('toggle');
   g('bs').onclick=()=>{if(st)api('/me/player/shuffle?state='+(!st.shuffle)+'&device_id='+encodeURIComponent(device),{method:'PUT'}).catch(()=>{})};
   g('br').onclick=()=>{if(st)api('/me/player/repeat?state='+['context','track','off'][st.repeat_mode===0?0:st.repeat_mode===1?1:2]+'&device_id='+encodeURIComponent(device),{method:'PUT'}).catch(()=>{})};
@@ -454,15 +473,18 @@ async function openPip(){
     const tr=st&&st.track_window&&st.track_window.current_track;
     if(tr){
       g('tt').textContent=tr.name;g('ta').textContent=(tr.artists||[]).map(a=>a.name).join(', ');
-      const im=(tr.album.images||[])[0];if(im&&g('cv').src!==im.url){g('cv').src=im.url}g('cv').hidden=!im;
+      const im=(tr.album.images||[])[0];g('cv').hidden=!im;
+      if(im&&im.url!==cover){
+        cover=im.url;g('cv').src=cover;
+        coverColors(cover).then(c=>{if(!pip||cover!==im.url)return;if(c){d.body.style.setProperty('--c1',c[0]);d.body.style.setProperty('--c2',c[1])}else{d.body.style.removeProperty('--c1');d.body.style.removeProperty('--c2')}});
+      }
       const dur=st.duration||1,pos=Math.min(st.position||0,dur),p=pos/dur*100;
       g('fl').style.width=p+'%';g('dt').style.left=p+'%';g('tp').textContent=fmt(pos);g('tr').textContent='-'+fmt(dur-pos);
       g('bt').innerHTML=pipSvg(st.paused?'play':'pause');
-      g('mp').classList.toggle('playing',!st.paused);
-      g('bs').classList.toggle('on',!!st.shuffle);g('br').classList.toggle('on',st.repeat_mode>0);
+            g('bs').classList.toggle('on',!!st.shuffle);g('br').classList.toggle('on',st.repeat_mode>0);
     }else{   // nothing playing yet: say what the buttons will start
       g('tt').textContent=$('spTitle').textContent;g('ta').textContent=$('spArtist').textContent;
-      g('bt').innerHTML=pipSvg('play');g('mp').classList.remove('playing');
+      g('bt').innerHTML=pipSvg('play');
     }
   };
   const timer=setInterval(tick,500);tick();
