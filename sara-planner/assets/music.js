@@ -392,46 +392,40 @@ if(box){
 /* ---------- the floating player (Chrome and Edge): stays on top of other windows while this tab stays open ---------- */
 let pip=null;
 const PIP_CSS=`*{box-sizing:border-box}html,body{margin:0;height:100%}
-body{font-family:'Plus Jakarta Sans',system-ui,sans-serif;color:#fff;background:linear-gradient(135deg,var(--c1,#4a4a52),var(--c2,#1c1c20));display:grid;place-items:center}
-.mp{display:grid;grid-template-rows:auto auto;gap:16px;justify-items:center;width:100%;padding:22px 24px 20px}
-.cov{width:min(100%,calc(100vh - 215px));aspect-ratio:1;border-radius:10px;overflow:hidden;background:rgba(255,255,255,.12);box-shadow:0 12px 30px rgba(0,0,0,.5)}
-.cov img{width:100%;height:100%;object-fit:cover;display:block}
-.main{display:grid;gap:10px;min-width:0;width:100%}
-.t b{display:block;font-size:18px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-.t span{display:block;font-size:12.5px;color:rgba(255,255,255,.72);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;min-height:16px}
-.bar{display:grid;grid-template-columns:auto minmax(0,1fr) auto;gap:8px;align-items:center;font-size:11px;color:rgba(255,255,255,.72);font-variant-numeric:tabular-nums}
+body{font-family:'Plus Jakarta Sans',system-ui,sans-serif;color:#3a2230;background:linear-gradient(180deg,#fdeff5,#f8dce8);display:grid;place-items:center}
+.mp{display:grid;gap:14px;justify-items:center;width:100%;padding:16px 20px 16px}
+.tbl{width:min(100%,calc(100vh - 205px));aspect-ratio:1}
+.plinth{position:relative;width:100%;height:100%;border-radius:5%;background:linear-gradient(145deg,#f8cbdd,#eaa8c2);box-shadow:0 14px 28px rgba(150,60,100,.28),inset 0 0 0 2px rgba(255,255,255,.4)}
+.plinth::before,.plinth::after{content:"";position:absolute;top:4.5%;width:3%;height:3%;border-radius:50%;background:#f3b9d0;box-shadow:inset 0 1px 2px rgba(120,40,80,.4),0 1px 0 rgba(255,255,255,.6)}
+.plinth::before{left:5%}.plinth::after{left:62%}
+.rec{position:absolute;left:9.33%;top:14.67%;width:74.67%;height:74.67%;border-radius:50%;background:repeating-radial-gradient(circle,rgba(255,255,255,.13) 0 1px,transparent 1px 5px),conic-gradient(#e592b4,#f6c0d4 25%,#e592b4 50%,#f6c0d4 75%,#e592b4);box-shadow:0 0 0 3px rgba(255,255,255,.28),0 8px 16px rgba(150,60,100,.35);animation:spin 3.6s linear infinite;animation-play-state:paused}
+.playing .rec{animation-play-state:running}
+@keyframes spin{to{transform:rotate(360deg)}}
+.rec img{position:absolute;left:31%;top:31%;width:38%;height:38%;border-radius:50%;object-fit:cover;background:#cfd9de;box-shadow:0 0 0 3px #f7d6e3,0 0 0 4px rgba(150,60,100,.25)}
+.rec i{position:absolute;left:48.6%;top:48.6%;width:2.8%;height:2.8%;border-radius:50%;background:#e4e8ec;box-shadow:0 0 2px rgba(0,0,0,.5)}
+.armsvg{position:absolute;inset:0;width:100%;height:100%;overflow:visible;pointer-events:none}
+#arm{transform-origin:252px 50px;transition:transform .9s ease}
+.main{display:grid;gap:8px;min-width:0;width:100%}
+.t b{display:block;font-size:17px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.t span{display:block;font-size:12.5px;color:rgba(58,34,48,.65);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;min-height:16px}
+.bar{display:grid;grid-template-columns:auto minmax(0,1fr) auto;gap:8px;align-items:center;font-size:11px;color:rgba(58,34,48,.65);font-variant-numeric:tabular-nums}
 .trk{position:relative;height:14px;cursor:pointer}
-.trk::before{content:"";position:absolute;left:0;right:0;top:5px;height:4px;border-radius:4px;background:rgba(255,255,255,.28)}
-.fill{position:absolute;left:0;top:5px;height:4px;border-radius:4px;background:#fff;width:0}
-.dot{position:absolute;top:2px;left:0;width:10px;height:10px;margin-left:-5px;border-radius:50%;background:#fff;opacity:0;transition:opacity .15s}
-.trk:hover .dot{opacity:1}
+.trk::before{content:"";position:absolute;left:0;right:0;top:6px;height:2px;border-radius:2px;background:rgba(58,34,48,.22)}
+.fill{position:absolute;left:0;top:6px;height:2px;border-radius:2px;background:#3a2230;width:0}
+.dot{position:absolute;top:3px;left:0;width:8px;height:8px;margin-left:-4px;border-radius:50%;background:#3a2230}
 .ctl{display:flex;align-items:center;justify-content:space-between}
-button{border:0;background:none;color:rgba(255,255,255,.85);width:30px;height:30px;display:grid;place-items:center;border-radius:50%;cursor:pointer;padding:0}
-button:hover{color:#fff}
+button{border:0;background:none;color:#3a2230;width:30px;height:30px;display:grid;place-items:center;border-radius:50%;cursor:pointer;padding:0}
 button svg{width:20px;height:20px;fill:currentColor}
-button.on{color:#1ed760}
-button.big{width:44px;height:44px;background:#fff;color:#121212}
+button.on{color:#d6336c}
+button.big{width:44px;height:44px;background:#3a2230;color:#fdeff5}
 button.big:hover{transform:scale(1.06)}
 button.big svg{width:24px;height:24px}`;
-const colorCache={};
-function coverColors(url){   // two colours (light, dark) taken from the cover, dark enough for white text, like Spotify's now-playing view
-  if(colorCache[url])return Promise.resolve(colorCache[url]);
-  return new Promise(ok=>{
-    const im=new Image();im.crossOrigin='anonymous';
-    im.onload=()=>{try{
-      const c=document.createElement('canvas');c.width=c.height=16;const x=c.getContext('2d');x.drawImage(im,0,0,16,16);
-      const d=x.getImageData(0,0,16,16).data;let r=0,g=0,b=0,w=0;
-      for(let i=0;i<d.length;i+=4){const wt=.15+(Math.max(d[i],d[i+1],d[i+2])-Math.min(d[i],d[i+1],d[i+2]))/255;r+=d[i]*wt;g+=d[i+1]*wt;b+=d[i+2]*wt;w+=wt}   // colourful pixels count more
-      r/=w;g/=w;b/=w;
-      const lum=(.2126*r+.7152*g+.0722*b)/255,k=lum>.34?.34/lum:1;
-      r*=k;g*=k;b*=k;
-      const f=m=>'rgb('+Math.round(r*m)+','+Math.round(g*m)+','+Math.round(b*m)+')';
-      ok(colorCache[url]=[f(1),f(.4)]);
-    }catch(e){ok(null)}};   // the picture can't be read: keep the default colours
-    im.onerror=()=>ok(null);
-    im.src=url;
-  });
-}
+const ARM_REST=-23;   // degrees: lifted off the record
+const PIP_ARM='<svg class="armsvg" viewBox="0 0 300 300"><g id="arm" style="transform:rotate(-23deg)"><g transform="translate(252 50) rotate(18)">'
+  +'<rect x="-10" y="-40" width="20" height="28" rx="5" fill="#1d1d1f"/>'
+  +'<line x1="0" y1="0" x2="0" y2="176" stroke="#26262a" stroke-width="5" stroke-linecap="round"/><line x1="-1" y1="6" x2="-1" y2="170" stroke="#fff" stroke-opacity=".55" stroke-width="1"/>'
+  +'<circle r="19" fill="#d79ab3"/><circle r="15" fill="#1d1d1f"/><circle r="5" fill="#3a3a40"/>'
+  +'<rect x="-9" y="168" width="18" height="26" rx="3" fill="#1d1d1f"/><rect x="-5" y="192" width="10" height="7" rx="1" fill="#e4e8ec"/></g></g></svg>';
 const PIP_ICONS={
   shuffle:'<path d="M10.59 9.17 5.41 4 4 5.41l5.17 5.17 1.42-1.41zM14.5 4l2.04 2.04L4 18.59 5.41 20 17.96 7.46 20 9.5V4h-5.5zm.33 9.41-1.41 1.41 3.13 3.13L14.5 20H20v-5.5l-2.04 2.04-3.13-3.13z"/>',
   prev:'<path d="M6 6h2v12H6zM9.5 12 18 6v12z"/>',
@@ -451,12 +445,12 @@ async function openPip(){
   if(pip){pip.close();return true}
   if(!('documentPictureInPicture' in window)||!player||!device||premium===false)return false;   // other browsers: the small window instead
   let w;
-  try{w=await documentPictureInPicture.requestWindow({width:340,height:470})}catch(e){return false}
+  try{w=await documentPictureInPicture.requestWindow({width:340,height:500})}catch(e){return false}
   pip=w;
   const d=w.document;
   d.title='Splanner';
   d.head.insertAdjacentHTML('beforeend','<style>'+PIP_CSS+'</style>');
-  d.body.innerHTML='<div class="mp" id="mp"><div class="cov"><img id="cv" alt="" hidden></div><div class="main">'
+  d.body.innerHTML='<div class="mp" id="mp"><div class="tbl"><div class="plinth"><div class="rec"><img id="cv" alt="" hidden><i></i></div>'+PIP_ARM+'</div></div><div class="main">'
     +'<div class="t"><b id="tt" translate="no"></b><span id="ta" translate="no"></span></div>'
     +'<div class="bar"><span id="tp">0:00</span><div class="trk" id="trk"><i class="fill" id="fl"></i><i class="dot" id="dt"></i></div><span id="tr">-0:00</span></div>'
     +'<div class="ctl"><button id="bs" aria-label="Shuffle">'+pipSvg('shuffle')+'</button><button id="bp" aria-label="Previous song">'+pipSvg('prev')+'</button>'
@@ -474,17 +468,16 @@ async function openPip(){
     if(tr){
       g('tt').textContent=tr.name;g('ta').textContent=(tr.artists||[]).map(a=>a.name).join(', ');
       const im=(tr.album.images||[])[0];g('cv').hidden=!im;
-      if(im&&im.url!==cover){
-        cover=im.url;g('cv').src=cover;
-        coverColors(cover).then(c=>{if(!pip||cover!==im.url)return;if(c){d.body.style.setProperty('--c1',c[0]);d.body.style.setProperty('--c2',c[1])}else{d.body.style.removeProperty('--c1');d.body.style.removeProperty('--c2')}});
-      }
+      if(im&&im.url!==cover){cover=im.url;g('cv').src=cover}   // the song's picture is the label of the record
       const dur=st.duration||1,pos=Math.min(st.position||0,dur),p=pos/dur*100;
+      d.body.classList.toggle('playing',!st.paused);
+      g('arm').style.transform='rotate('+(st.paused?ARM_REST:p*.2)+'deg)';   // the arm rests off the record, and moves in as the song goes on
       g('fl').style.width=p+'%';g('dt').style.left=p+'%';g('tp').textContent=fmt(pos);g('tr').textContent='-'+fmt(dur-pos);
       g('bt').innerHTML=pipSvg(st.paused?'play':'pause');
             g('bs').classList.toggle('on',!!st.shuffle);g('br').classList.toggle('on',st.repeat_mode>0);
     }else{   // nothing playing yet: say what the buttons will start
       g('tt').textContent=$('spTitle').textContent;g('ta').textContent=$('spArtist').textContent;
-      g('bt').innerHTML=pipSvg('play');
+      g('bt').innerHTML=pipSvg('play');d.body.classList.remove('playing');g('arm').style.transform='rotate('+ARM_REST+'deg)';
     }
   };
   const timer=setInterval(tick,500);tick();
