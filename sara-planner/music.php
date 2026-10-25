@@ -54,6 +54,24 @@ function spotify_info(string $link): array
     }
 }
 
+/** Cover pictures for the suggested playlists. Spotify is asked once and the answer is kept in a small file for a month (an hour if Spotify couldn't be reached), so the page doesn't wait on Spotify each time. */
+function preset_covers(): array
+{
+    $file = sys_get_temp_dir() . '/splanner-preset-covers.json';
+    $have = json_decode((string)@file_get_contents($file), true);
+    $have = is_array($have) ? $have : [];
+    $changed = false;
+    foreach (MUSIC_PRESETS as [, $id]) {
+        $e = $have[$id] ?? null;
+        $age = time() - (int)($e['at'] ?? 0);
+        if ($e && $age < (($e['image'] ?? '') !== '' ? 30 * 86400 : 3600)) continue;
+        $have[$id] = ['image' => spotify_info('https://open.spotify.com/playlist/' . $id)['image'], 'at' => time()];
+        $changed = true;
+    }
+    if ($changed) @file_put_contents($file, json_encode($have), LOCK_EX);
+    return array_map(fn($e) => (string)($e['image'] ?? ''), $have);
+}
+
 const SAVED_NAMES = ['playlist' => 'My playlist', 'album' => 'Album', 'track' => 'Song', 'artist' => 'Artist', 'episode' => 'Podcast episode', 'show' => 'Podcast'];
 
 // ---- the browser player asks for a token (it lasts an hour, so this is asked rarely) ----
@@ -242,9 +260,10 @@ ob_start(); ?>
       <input type="url" name="link" id="spLink" placeholder="https://open.spotify.com/playlist/…" value="<?= h($link) ?>" required aria-label="Spotify link">
       <button class="btn primary">Play</button>
     </form>
-    <div class="music-presets">
-      <?php foreach (MUSIC_PRESETS as [$name, $id]): ?>
-      <button class="btn sm" type="button" data-sp-link="https://open.spotify.com/playlist/<?= h($id) ?>" translate="no"><?= h($name) ?></button>
+    <h3 class="sp-h">Suggested playlists</h3>
+    <div class="sp-list sp-presets">
+      <?php $covers = preset_covers(); foreach (MUSIC_PRESETS as [$name, $id, $about]): ?>
+      <button class="sp-item" type="button" data-sp-link="https://open.spotify.com/playlist/<?= h($id) ?>"><?php if (!empty($covers[$id])): ?><img alt="" src="<?= h($covers[$id]) ?>" loading="lazy"><?php else: ?><i aria-hidden="true"><?= ico('music') ?></i><?php endif; ?><span><b translate="no"><?= h($name) ?></b><small><?= h($about) ?></small></span></button>
       <?php endforeach; ?>
     </div>
   </section>

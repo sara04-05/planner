@@ -98,8 +98,8 @@ function spotify_parse_link(string $link): ?array
 
 /** Ready-made study playlists (Spotify's own), shown before someone picks anything. */
 const MUSIC_PRESETS = [
-    ['lofi beats', '37i9dQZF1DWWQRwui0ExPn'],
-    ['Deep Focus', '37i9dQZF1DWZeKCadgRdKQ'],
-    ['Peaceful Piano', '37i9dQZF1DX4sWSpwq3LiO'],
-    ['Intense Studying', '37i9dQZF1DX8NTLI2TtZa6'],
+    ['lofi beats', '37i9dQZF1DWWQRwui0ExPn', 'Chill beats to relax and study to'],
+    ['Deep Focus', '37i9dQZF1DWZeKCadgRdKQ', 'Calm, steady music to help you concentrate'],
+    ['Peaceful Piano', '37i9dQZF1DX4sWSpwq3LiO', 'Soft piano to unwind with'],
+    ['Intense Studying', '37i9dQZF1DX8NTLI2TtZa6', 'Driving beats for long study sessions'],
 ];

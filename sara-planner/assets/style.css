@@ -1821,7 +1821,6 @@ a.nbcover-link:focus-visible{outline:3px solid var(--accent);outline-offset:6px;
 .music-embed iframe.short{height:152px}
 .music-link{display:flex;gap:8px;margin-top:6px}
 .music-link input{flex:1;min-width:0;padding:9px 12px;border:1px solid var(--line);border-radius:10px;background:var(--paper);color:var(--ink);font:inherit}
-.music-presets{display:flex;flex-wrap:wrap;gap:8px;margin-top:12px}
 .music-note{margin:0;padding:10px 14px;border-radius:12px;border:1px solid var(--line);background:var(--paper-2);font-size:14px}
 .music-note.ok{background:var(--accent-soft);border-color:color-mix(in srgb,var(--accent) 35%,transparent)}
 .music-note.bad{border-color:var(--bad);background:var(--bad-soft)}
@@ -1834,6 +1833,7 @@ a.nbcover-link:focus-visible{outline:3px solid var(--accent);outline-offset:6px;
 .sp-item span{min-width:0;display:grid}
 .sp-item b,.sp-item small{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .sp-item small{color:var(--muted);font-size:12px}
+.sp-presets .sp-item small{white-space:normal;overflow:visible}
 .sp-player{display:flex;align-items:center;justify-content:space-between;gap:14px;flex-wrap:wrap}
 .sp-now{display:flex;align-items:center;gap:12px;min-width:0;flex:1}
 .sp-art{width:56px;height:56px;border-radius:10px;object-fit:cover}
