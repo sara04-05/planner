@@ -393,11 +393,11 @@ if(box){
 let pip=null;
 const PIP_CSS=`*{box-sizing:border-box}html,body{margin:0;height:100%}
 body{font-family:'Plus Jakarta Sans',system-ui,sans-serif;color:#fff;background:linear-gradient(135deg,var(--c1,#4a4a52),var(--c2,#1c1c20));display:grid;place-items:center}
-.mp{display:grid;grid-template-columns:auto minmax(0,1fr);gap:16px;align-items:center;width:100%;padding:14px 18px}
-.cov{width:104px;height:104px;border-radius:10px;overflow:hidden;background:rgba(255,255,255,.12);box-shadow:0 8px 22px rgba(0,0,0,.45)}
+.mp{display:grid;grid-template-rows:auto auto;gap:16px;justify-items:center;width:100%;padding:22px 24px 20px}
+.cov{width:min(100%,calc(100vh - 215px));aspect-ratio:1;border-radius:10px;overflow:hidden;background:rgba(255,255,255,.12);box-shadow:0 12px 30px rgba(0,0,0,.5)}
 .cov img{width:100%;height:100%;object-fit:cover;display:block}
-.main{display:grid;gap:8px;min-width:0}
-.t b{display:block;font-size:16px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.main{display:grid;gap:10px;min-width:0;width:100%}
+.t b{display:block;font-size:18px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .t span{display:block;font-size:12.5px;color:rgba(255,255,255,.72);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;min-height:16px}
 .bar{display:grid;grid-template-columns:auto minmax(0,1fr) auto;gap:8px;align-items:center;font-size:11px;color:rgba(255,255,255,.72);font-variant-numeric:tabular-nums}
 .trk{position:relative;height:14px;cursor:pointer}
@@ -451,7 +451,7 @@ async function openPip(){
   if(pip){pip.close();return true}
   if(!('documentPictureInPicture' in window)||!player||!device||premium===false)return false;   // other browsers: the small window instead
   let w;
-  try{w=await documentPictureInPicture.requestWindow({width:380,height:176})}catch(e){return false}
+  try{w=await documentPictureInPicture.requestWindow({width:340,height:470})}catch(e){return false}
   pip=w;
   const d=w.document;
   d.title='Splanner';
