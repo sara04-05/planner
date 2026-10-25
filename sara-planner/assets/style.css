@@ -2238,3 +2238,68 @@ img.avatar{background:var(--accent-soft)}
   .page .chat-send textarea{background:color-mix(in srgb,var(--ink) 5%,var(--paper));border-radius:22px;padding:11px 14px}
   .page .chat-send .btn{border-radius:22px;padding:0 18px}
 }
+
+/* Notes and Messages at every width: tablet, phone, small phone, phone on its side */
+@media (max-width:1000px){
+  .nt{grid-template-columns:minmax(0,220px) minmax(0,1fr);gap:22px}
+  .nt-ov-h h2{font-size:26px}
+}
+@media (max-width:760px){
+  .nt{grid-template-columns:minmax(0,1fr);gap:16px}
+  .nt:not([data-view="shelf"]) .nt-side{display:none}   /* the breadcrumb above the page takes you back; the side list only repeats it */
+  .nt-side{gap:10px}
+  .nt-list{max-height:none}
+  .nt-ov-h{margin-bottom:18px;padding-left:12px}
+  .nt-ov-h h2{font-size:23px}
+  .nt-overview .nt-files{margin-top:24px;padding-top:16px}
+  .nt-where{width:100%}
+  .nt-where select{flex:1 1 140px;max-width:none}
+  .nt-row .nt-paper-pick{flex:1 1 140px}
+  .nt-state{margin-left:0;flex:1 1 auto}
+  .nt-body{min-height:60vh}
+  .nt-title{width:100%}
+  .nt-loose{margin-top:24px;padding-top:18px}
+  .nt-crumb{overflow-wrap:anywhere}
+  .nt-files-h{flex-wrap:wrap}
+  .nt-doc-r{flex-wrap:wrap;gap:6px 12px}
+  .wb-bar{gap:6px 8px}
+  .wb-bar>.btn.primary{order:-1;margin-left:auto}
+  .wb-state{order:-1}
+  .wb-sheet{width:min(100%,calc((100dvh - 150px) * 1.6))}
+}
+@media (max-width:520px){
+  .nt-shelf{grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:12px}
+  .nt-book{min-height:108px;padding:14px 12px 14px 22px}
+  .nt-book b{font-size:16px}
+  .nt-chcards{grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:10px}
+  .nt-chcard{padding:13px 14px;min-height:76px}
+  .nt-plist{grid-template-columns:minmax(0,1fr)}
+  .nt-pics{grid-template-columns:repeat(auto-fill,minmax(120px,1fr));gap:10px}
+  .nt-drop{padding:14px 12px}
+  .nt-body{padding-right:12px}
+  .nt-body[data-paper="lined"]{padding-left:52px}
+  .nt-ov-bar{gap:6px}
+}
+@media (max-width:360px){
+  .nt-shelf,.nt-chcards{grid-template-columns:minmax(0,1fr)}
+  .page .chat-person{min-width:130px}
+  .page .chat-tools{flex-wrap:wrap}
+  .page .chat-head{padding:8px 10px}
+  .msg-edit{min-width:0}
+}
+@media (pointer:coarse){
+  .nt-item,.nt-grp-h,.nt-crumb-l{min-height:40px}
+  .wb-tool{min-width:40px;height:40px}
+  .wb-col{width:28px;height:28px}
+  .wb-handle{width:26px;height:26px;right:-13px;bottom:-13px}
+  .msg-more{min-width:32px;min-height:28px}
+}
+@media (max-height:520px) and (orientation:landscape){
+  .page .chat-log,.chat-log{min-height:120px;max-height:calc(100dvh - 190px)}
+  .page .chat-head .pmail{display:none}
+  .nt-body{min-height:260px}
+  .wb-sheet{width:min(100%,calc((100dvh - 110px) * 1.6))}
+}
+@media (min-width:1500px){
+  .chat-log{max-height:62vh}
+}
