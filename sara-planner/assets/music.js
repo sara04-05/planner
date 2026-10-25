@@ -80,7 +80,16 @@ const pop=$('spPop');
 if(pop)pop.addEventListener('click',async()=>{
   if(popHook&&await popHook())return;   // the floating player, where the browser allows it
   const w=window.open('music.php?mini=1','splanner-music','width=420,height='+(connected?660:520));
-  if(w){embed.src='about:blank';pop.textContent=t('Playing in the small window ↗');}
+  if(w){
+    const was=embed.src,label=pop.textContent;
+    embed.src='about:blank';embed.style.display='none';pop.textContent=t('Playing in the small window ↗');
+    const n=document.createElement('p');n.className='music-note ok';n.id='spWinNote';n.textContent=t('The player is open in the small window. Close it to bring the player back here.');
+    (playerBox||embed.parentNode).prepend(n);
+    const back=setInterval(()=>{   // the small window was closed: the player comes back to this page
+      if(!w.closed)return;
+      clearInterval(back);n.remove();embed.src=was;embed.style.display=listCtx?'none':'';pop.textContent=label;
+    },1000);
+  }
 });
 
 if(!connected)return;
