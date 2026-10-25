@@ -163,7 +163,7 @@ if(sForm)sForm.addEventListener('submit',async e=>{
 
 /* ---------- playing right here (Spotify Premium) ---------- */
 const box=$('spPlayer'),tog=$('spToggle');
-let sdkPlaying=false;
+let sdkPlaying=false,sdkStarted=false;   // sdkStarted: the controls' player has played something since the page opened
 const fmt=ms=>{const s=Math.round((ms||0)/1000);return Math.floor(s/60)+':'+String(s%60).padStart(2,'0')};
 function markSong(uri){   // highlight the playing song in the list and keep it in view
   if(!tracksBox)return;
@@ -189,12 +189,15 @@ async function viewContext(ctx,uri){   // the playlist or album that is playing:
   tracksBox.innerHTML='<div class="sp-tk-h"><b translate="no">'+esc(curName)+'</b><span>'+songs.length+' '+esc(t('songs'))+'</span></div>'
     +songs.map((x,i)=>'<button type="button" class="sp-tk" data-tk="'+esc(x.uri)+'" translate="no"><span class="n">'+(i+1)+'</span><span class="m"><b>'+esc(x.name)+'</b><small>'+esc((x.artists||[]).map(a=>a.name).join(', '))+'</small></span><span class="d">'+fmt(x.duration_ms)+'</span></button>').join('');
   showList(true);markSong(uri);
+  if(!sdkStarted)setBar(curName||t('Nothing playing yet'),'',null);   // nothing has played yet: the controls name the list that the play button will start
 }
-if(tracksBox)tracksBox.addEventListener('click',async e=>{   // a song in the list: play the list from there
-  const b=e.target.closest('[data-tk]');if(!b||!listCtx||!device)return;
+async function playList(offsetUri){   // play the listed playlist, from a song or from the start
+  if(!listCtx||!device)return;
   if(player&&player.activateElement)player.activateElement();
-  try{await api('/me/player/play?device_id='+encodeURIComponent(device),{method:'PUT',body:JSON.stringify({context_uri:listCtx,offset:{uri:b.dataset.tk}}),headers:{'Content-Type':'application/json'}})}catch(x){}
-});
+  const body={context_uri:listCtx};if(offsetUri)body.offset={uri:offsetUri};
+  try{await api('/me/player/play?device_id='+encodeURIComponent(device),{method:'PUT',body:JSON.stringify(body),headers:{'Content-Type':'application/json'}})}catch(x){}
+}
+if(tracksBox)tracksBox.addEventListener('click',e=>{const b=e.target.closest('[data-tk]');if(b)playList(b.dataset.tk)});   // a song in the list: play the list from there
 function mirror(tr){   // Spotify's card shows the song the controls are playing, so the two always agree
   const m=/^spotify:track:([A-Za-z0-9]+)$/.exec(tr.uri||'');
   if(!m||m[1]===mirrored)return;
@@ -204,7 +207,7 @@ function mirror(tr){   // Spotify's card shows the song the controls are playing
 }
 function nowPlaying(st){
   if(!st||!st.track_window||!st.track_window.current_track)return;
-  sdkPlaying=!st.paused;
+  sdkPlaying=!st.paused;sdkStarted=true;
   if(embedPlaying)return;
   box.dataset.src='';const tr=st.track_window.current_track,art=$('spArt'),img=(tr.album.images||[])[0];
   $('spTitle').textContent=tr.name;$('spArtist').textContent=(tr.artists||[]).map(a=>a.name).join(', ');
@@ -351,6 +354,7 @@ if(box){
       if(b.dataset.sp==='toggle'&&embed.contentWindow)embed.contentWindow.postMessage({command:'toggle'},'https://open.spotify.com');
       return;
     }
+    if(!sdkStarted&&listCtx&&device){playList('');return}   // nothing has played yet: the buttons start the listed playlist
     if(!player)return;
     if(player.activateElement)player.activateElement();
     ({prev:()=>player.previousTrack(),next:()=>player.nextTrack(),toggle:()=>player.togglePlay()})[b.dataset.sp]();
