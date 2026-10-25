@@ -229,6 +229,19 @@ input[type=checkbox]{accent-color:var(--accent);width:18px;height:18px;cursor:po
 .stbl td{padding:12px 10px;border-top:1px solid var(--line);font-size:14px}
 .stbl td.d{font-weight:700;font-size:12px;color:var(--muted)}
 .stbl tr.is-today td{background:color-mix(in srgb,var(--t-day) 55%,transparent)}
+/* Phone: all five columns fit the card (it clips, it does not scroll), the subject takes what is left */
+@media (max-width:640px){
+  .stbl table{min-width:0;table-layout:fixed}
+  .stbl th{font-size:10px;letter-spacing:.02em;padding:10px 4px}
+  .stbl td{padding:10px 4px}
+  .stbl :is(th,td):first-child{width:44px;padding-left:10px}
+  .stbl :is(th,td):nth-child(3){width:54px}
+  .stbl :is(th,td):nth-child(4){width:58px;text-align:center}
+  .stbl :is(th,td):nth-child(5){width:64px;padding-right:8px}
+  .stbl td>.cellin,.stbl td>.cellin.num{width:100%;max-width:none;padding:5px 4px;text-overflow:ellipsis}
+  .stbl .pdots{gap:3px}
+  .stbl .pdots i{width:10px;height:10px}
+}
 .pdots{display:inline-flex;gap:4px;border:0;background:none;padding:2px;cursor:pointer}
 .pdots i{width:11px;height:11px;border-radius:50%;border:2px solid var(--pc);display:block}
 .pdots i.on{background:var(--pc)}
@@ -441,6 +454,24 @@ table.ex tr:last-child td{border-bottom:0}
   .ytbl tr.now td.mn{background:var(--accent-soft)}
   .ytbl td.st .pill{white-space:nowrap}
   .ytbl td input[type=checkbox]{width:18px;height:18px;accent-color:var(--accent)}
+}
+/* Year table on small phones: one card per month instead of seven columns to scroll through */
+@media (max-width:560px){
+  .page .tbl.ytbl{min-width:0;display:block}
+  .page .tbl.ytbl :is(thead){display:none}
+  .page .tbl.ytbl :is(tbody,tfoot){display:block}
+  .page .tbl.ytbl tr{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:6px 10px;height:auto;padding:10px 12px;margin-bottom:8px;border:1px solid var(--line);border-radius:12px;background:var(--paper)}
+  .page .tbl.ytbl tr.now{border-color:var(--accent);background:var(--accent-soft)}
+  .page .tbl.ytbl tr.off{opacity:.7}
+  .page .tbl.ytbl td{display:block;height:auto;padding:0;line-height:1.3;text-align:left;min-width:0;white-space:normal}
+  .page .tbl.ytbl td[data-l]::before{content:attr(data-l);display:block;font-size:10px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:var(--muted);margin-bottom:2px}
+  .page .tbl.ytbl td.mn,.page .tbl.ytbl td.st{grid-column:1/-1}
+  .page .tbl.ytbl td.mn{position:static;background:none;font-weight:700;font-size:15px}
+  .page .tbl.ytbl td.st:empty{display:none}
+  .page .tbl.ytbl td:nth-child(3){white-space:nowrap}
+  .page .tbl.ytbl .cellin,.page .tbl.ytbl .r .cellin{width:calc(100% - 1.3em)!important;max-width:none;text-align:left}
+  .page .tbl.ytbl tfoot tr{border-top:2px solid var(--ink);background:none}
+  .page .tbl.ytbl tfoot td{border-top:0}
 }
 
 /* ================= Notebook sharing: design choices, blog, interests, public pages ================= */
@@ -738,6 +769,12 @@ a.btn:hover{text-decoration:none}
   .hello{max-width:56%}
   .hello .avatar{display:none}
   .hello{padding-left:12px}
+  .top .top-r .btn{padding:0}
+  .top .top-r{gap:4px}
+  .stbl :is(th,td):first-child{width:38px;padding-left:8px}
+  .stbl :is(th,td):nth-child(3){width:46px}
+  .stbl :is(th,td):nth-child(4){width:52px}
+  .stbl :is(th,td):nth-child(5){width:58px;padding-right:6px}
 }
 .nb-hero .nbx-page:not([data-paper]){background-image:none}
 /* chat between users (chat.php) */
@@ -1026,7 +1063,9 @@ button.pstat:hover span{color:var(--accent)}
 .pname2{font-weight:700;margin:0}.pbio2{margin:2px 0 0;font-size:14px;white-space:pre-wrap;overflow-wrap:anywhere}
 .phead-btns{grid-column:1/-1;display:flex;gap:8px;flex-wrap:wrap}
 .ptabs{display:flex;gap:4px;border-top:1px solid var(--line);margin-bottom:16px;overflow-x:auto}
-.ptabs button{background:none;border:0;border-top:2px solid transparent;margin-top:-1px;padding:12px 14px;font:inherit;font-size:13px;font-weight:700;letter-spacing:.03em;color:var(--muted);cursor:pointer;white-space:nowrap}
+.ptabs button{display:inline-flex;align-items:center;justify-content:center;gap:7px;background:none;border:0;border-top:2px solid transparent;margin-top:-1px;padding:12px 16px;font:inherit;font-size:15px;font-weight:600;line-height:1.2;color:var(--muted);cursor:pointer;white-space:nowrap}
+.ptabs button .ico{margin:0;width:18px;height:18px;flex:none}
+.ptabs button:hover{color:var(--ink)}
 .ptabs button[aria-selected="true"]{color:var(--ink);border-top-color:var(--ink)}
 .nbtiles{display:grid;grid-template-columns:repeat(auto-fill,minmax(120px,1fr));gap:14px;margin-bottom:6px}
 .nbtile{display:flex;flex-direction:column;gap:3px;align-items:center;text-align:center;background:none;border:0;padding:0;font:inherit;color:var(--ink);cursor:pointer}
@@ -1077,6 +1116,7 @@ a.nbtile{text-decoration:none}.nbtiles{margin-bottom:14px}.nbtile.on span{color:
 .ho-list li span{color:var(--muted);font-size:13px;flex:1}
 @media (max-width:640px){.ho-row{grid-template-columns:70px minmax(0,1fr)}.ho-axis{margin-left:80px}}
 .daysel{font:inherit;font-size:13px;padding:7px 8px;border-radius:10px;border:1px solid var(--line);background:var(--paper);color:var(--ink);max-width:190px}
+@media (max-width:560px){.vrow{flex-wrap:wrap}.vrow .vt{flex:1 1 0;min-width:0}.vrow .daysel{flex:1 1 100%;max-width:none;margin-left:34px}}
 
 /* more notebook covers: patterns drawn as SVG, one variable each; used by cover_css() in layout.php and coverCss() in social.js */
 :root{
@@ -1175,6 +1215,11 @@ a.nbtile{text-decoration:none}.nbtiles{margin-bottom:14px}.nbtile.on span{color:
 .st-nav .chipbtn{text-decoration:none;color:inherit}
 .st-sec{margin-bottom:var(--lh)}
 .st-sec h3{font-size:20px}
+.st-sec .xcard h3{font-size:16px}
+.st-preview{display:flex;flex-direction:column;gap:12px}
+.st-preview>h3,.st-preview>.sub{margin:0}
+.st-preview .xcard+.xcard{margin-top:0}
+.st-preview .xcard{background:none;border:0;border-top:1px solid var(--line);border-radius:0;padding:14px 0 0}
 .st-avatar{display:flex;align-items:center;gap:16px;margin-bottom:12px}
 .st-avatar .avatar.xl{width:96px;height:96px;font-size:38px}
 .st-avatar>div{display:flex;gap:8px;flex-wrap:wrap;align-items:center}

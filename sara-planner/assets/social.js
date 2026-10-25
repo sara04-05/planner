@@ -358,7 +358,7 @@ function syncControls(){
 const hm=m=>String(Math.floor(m/60)).padStart(2,'0')+':'+String(m%60).padStart(2,'0');
 const avatarHtml=(p,cls='xl')=>p.avatar?`<img class="avatar ${cls}" src="${esc(p.avatar)}" alt="">`:`<span class="avatar ${cls} letter" aria-hidden="true">${esc(((p.name||'S')[0]||'S').toUpperCase())}</span>`;
 const AUD=[['visitor','globe','Visitor','Someone with no account'],['user','user','Signed-in person','Someone with an account, not a friend'],['friend','users','Friend','Someone you accepted']];
-const PTABS=[['notebooks','notebook','Notebooks'],['friends','users','Friends'],['preview','eye','What others see'],['settings','settings','Settings']];
+const PTABS=[['notebooks','notebook','Notebooks'],['friends','users','Friends'],['settings','settings','Settings']];
 
 function profileHead(){
   const p=S.profile,likes=S.posts.reduce((n,x)=>n+x.likes,0);
@@ -406,24 +406,24 @@ function previewTab(){
   const canOpen=aud==='friend'||(p.public&&(aud==='user'||p.guest));
   const row=(label,sub,on,sw,seen)=>`<div class="vrow${seen?'':' off'}"><span class="vdot" aria-hidden="true">${ico(seen?'eye':'eye-off')}</span><span class="vt"><b>${label}</b><small>${sub}</small></span>${sw}</div>`;
   const tog=(on,attr,dis)=>`<label class="sw-mini"><input type="checkbox" ${on?'checked':''} ${dis?'disabled':''} ${attr}><span class="tg"></span></label>`;
-  const seg=`<div class="pilltabs aud">${AUD.map(a=>`<button type="button" data-x="aud" data-v="${a[0]}" aria-pressed="${aud===a[0]}">${ico(a[1])}${a[2]}</button>`).join('')}</div><p class="hint2">${AUD.find(a=>a[0]===aud)[3]}. Switch the toggles to decide what they get to see.</p>`;
-  let out=`<section class="xcard"><h3>Who can open my profile</h3>${seg}
-    ${row('My profile page',canOpen?'They can open it, see your name, bio'+(aud==='visitor'?'':' and picture')+'.':aud==='visitor'?(p.public?'Visitors without an account are blocked.':'Your profile is private.'):'Your profile is private, they only see your name, picture and bio.',p.public,tog(p.public,'data-xsw="public"'),canOpen)}
-    ${row('Visitors without an account',p.guest&&p.public?'Anyone with the link can look.':'Only people who log in can look.',p.guest,tog(p.guest,'data-xsw="guest"',!p.public),aud==='visitor'?p.public&&p.guest:true)}
-    <p class="hint2" style="margin-top:6px">Friends can always open your shared notebooks, even if your profile is private.</p></section>`;
+  const seg=`<div class="pilltabs aud">${AUD.map(a=>`<button type="button" data-x="aud" data-v="${a[0]}" aria-pressed="${aud===a[0]}">${ico(a[1])}${a[2]}</button>`).join('')}</div><p class="hint2">${AUD.find(a=>a[0]===aud)[3]}.</p>`;
+  let out=`<section class="xcard"><h3>My profile</h3>${seg}
+    ${row('Public profile',canOpen?'They can open it.':'They cannot open it.',p.public,tog(p.public,'data-xsw="public"'),canOpen)}
+    ${row('Visible without logging in',p.guest&&p.public?'Anyone with the link.':'Only people who log in.',p.guest,tog(p.guest,'data-xsw="guest"',!p.public),aud==='visitor'?p.public&&p.guest:true)}
+    <p class="hint2" style="margin-top:6px">Friends can always open shared notebooks.</p></section>`;
   // my day: you choose who sees it
   const lv=p.day,dayOn=aud==='friend'?lv>=1:aud==='user'?lv>=2&&p.public:lv>=3&&p.public&&p.guest;
   const dsel=`<select class="daysel" data-xday aria-label="Who can see my day">${DAYLV.map((l,i)=>`<option value="${i}"${i===lv?' selected':''}>${l}</option>`).join('')}</select>`;
-  out+=`<section class="xcard"><h3>My day (today)</h3>
-    ${row('Hour-by-hour plan for today',dayOn?'This audience sees it, on the Day page of your notebook. Nothing else of your planner.':lv===0?'Hidden from everyone.':'This audience cannot see it.',dayOn,dsel,dayOn)}
+  out+=`<section class="xcard"><h3>My day</h3>
+    ${row('Today’s plan',dayOn?'They see it on your Day page.':lv===0?'Hidden from everyone.':'They cannot see it.',dayOn,dsel,dayOn)}
     ${dayOn?dayList():''}</section>`;
   // notebooks
   out+=`<section class="xcard"><h3>Notebooks</h3>`+(S.notebooks.length?S.notebooks.map(n=>{
     const seen=canOpen&&n.public;
     const pg=seen?previewPages(n):'';
-    return `<div class="vnb">${row(`<span translate="no">${esc(n.title)}</span>`,n.public?`Shown to people who can open your profile`:'Private, only you',n.public,tog(n.public,'data-xsw="nb-public" data-id="'+n.id+'"'),seen)}${pg}</div>`;
+    return `<div class="vnb">${row(`<span translate="no">${esc(n.title)}</span>`,n.public?'Shown':'Private',n.public,tog(n.public,'data-xsw="nb-public" data-id="'+n.id+'"'),seen)}${pg}</div>`;
   }).join(''):'<p class="hint2">No notebooks yet.</p>')+`</section>`;
-  out+=`<p class="xrow"><a class="btn primary" href="u.php?u=${esc(p.slug)}" target="_blank" rel="noopener">Open my real profile as it looks to others ↗</a></p>`;
+  out+=`<p class="xrow"><a class="btn primary" href="u.php?u=${esc(p.slug)}" target="_blank" rel="noopener">Open my public profile ↗</a></p>`;
   return out;
 }
 function dayList(head){
@@ -499,8 +499,7 @@ function quickLook(nb){
 }
 function settingsTab(){
   const p=S.profile,nb=cur();
-  const dsel=`<select class="daysel" data-xday aria-label="Who can see my day">${DAYLV.map((l,i)=>`<option value="${i}"${i===p.day?' selected':''}>${l}</option>`).join('')}</select>`;
-  const nav=[['st-account','Account'],['st-privacy','Privacy'],['st-notebooks','Notebooks and Explore card'],['st-danger','Delete account']].map(x=>`<a class="chipbtn" href="#${x[0]}">${x[1]}</a>`).join('');
+  const nav=[['st-account','Account'],['st-preview','What others see'],['st-privacy','Alerts'],['st-notebooks','Notebooks'],['st-danger','Delete account']].map(x=>`<a class="chipbtn" href="#${x[0]}">${x[1]}</a>`).join('');
   const covers=(p.covers||[]).map(c=>coverMini(c,p.cover===c[0])).join('')+
     `<label class="cover-opt own${p.cover==='custom'?' on':''}" title="Your own picture"><input type="file" accept="image/*" data-xfile="ecover" data-kind="cover"><span class="nbc mini own-pic" aria-hidden="true" style="${p.cover_url?`background-image:url('${esc(p.cover_url)}');background-size:cover`:''}">${p.cover_url?'':'＋'}</span><span>Your own picture</span></label>`;
   const nbTiles=S.notebooks.length?`<div class="nbtiles">${S.notebooks.map(n=>`<button class="nbtile${nb&&n.id===nb.id?' on':''}" data-x="nb-pick-st" data-id="${n.id}"><i style="${coverCss({...n.design,cover_url:n.cover_url})}"></i><span translate="no">${esc(n.title)}</span><small>${n.public?ico('globe')+'Shown':ico('lock')+'Private'}</small></button>`).join('')}</div>`:'<p class="empty">You have no notebooks yet. Make one in the Notebooks tab.</p>';
@@ -513,19 +512,17 @@ function settingsTab(){
       <label class="l" for="ac-slug">Page name (your link)</label><input type="text" id="ac-slug" name="slug" maxlength="30" pattern="[A-Za-z0-9_]{3,30}" value="${esc(p.slug)}" required>
       <label class="l" for="ac-bio">Bio</label><textarea id="ac-bio" name="bio" maxlength="300" style="min-height:70px" placeholder="A few words about you">${esc(p.bio||'')}</textarea>
       <div class="xrow"><button class="btn primary">Save account</button></div></form></section>
-  <section class="xcard st-sec" id="st-privacy"><h3>Privacy and alerts</h3><p class="sub">Each switch saves straight away. Open “What others see” to check the result.</p>
-    ${sw('Public profile','People with an account can open it and send you a friend request.',p.public,'data-xsw="public"')}
-    ${sw('Visible without logging in','Also show it to visitors who have no account. Needs a public profile.',p.guest&&p.public,'data-xsw="guest"',!p.public)}
-    ${sw('Show me in Explore','Off by default: Explore only lists people who switch this on. Friends and your link work either way.',p.explore,'data-xsw="explore"')}
-    <label class="l">Who can see my day (today’s hour-by-hour plan, nothing else of your planner)</label>${dsel}
-    ${sw('Alert when someone likes my post','Shows in the bell at the top of the page.',!!(p.notify&&p.notify.like),'data-xsw="notify" data-k="like"')}
-    ${sw('Alert when someone comments on my post','Shows in the bell at the top of the page.',!(p.notify&&(p.notify.comment===0||p.notify.comment===false)),'data-xsw="notify" data-k="comment"')}</section>
-  <section class="xcard st-sec" id="st-notebooks"><h3>Notebooks and Explore card</h3><p class="sub">Pick a notebook to change its look, name, pages and who sees it. Your first notebook is also your card on Explore, so its cover is what people see there.</p>${nbTiles}
+  <section class="st-sec st-preview" id="st-preview"><h3>What others see</h3><p class="sub">Pick who is looking, then use the switches to choose what they see. Changes save straight away.</p>${previewTab()}</section>
+  <section class="xcard st-sec" id="st-privacy"><h3>Alerts</h3>
+    ${sw('Show me in Explore','Friends and your link work either way.',p.explore,'data-xsw="explore"')}
+    ${sw('Likes on my posts','Shows in the bell.',!!(p.notify&&p.notify.like),'data-xsw="notify" data-k="like"')}
+    ${sw('Comments on my posts','Shows in the bell.',!(p.notify&&(p.notify.comment===0||p.notify.comment===false)),'data-xsw="notify" data-k="comment"')}</section>
+  <section class="xcard st-sec" id="st-notebooks"><h3>Notebooks</h3><p class="sub">Pick one to change its look, name and pages. Your first notebook is your Explore card.</p>${nbTiles}
     ${nb?`<div class="st-nb">${quickLook(nb)}${settingsPanel(nb)}${pages}<div class="xrow" style="margin-top:12px"><button class="btn" data-x="st-deco">${ico('palette')}Look, colours and stickers</button><span class="hint2">Make your own cover colours, use your own picture, and make stickers from your pictures.</span></div></div>`:''}</section>
   <section class="xcard st-sec" id="st-danger"><h3>Delete account</h3><p class="sub">Logs you out and removes your account and everything in it for good.</p><a class="btn" href="change-password.php">Change my password</a> <a class="btn danger" href="delete-account.php">Delete my account</a></section>`;
 }
 function profileHtml(){
-  const body=ui.ptab==='friends'?friendsTab():ui.ptab==='preview'?previewTab():ui.ptab==='settings'?settingsTab():notebooksTab();
+  const body=ui.ptab==='friends'?friendsTab():ui.ptab==='settings'?settingsTab():notebooksTab();
   return hdr('Your notebook','Profile','')+profileHead()+`<div class="ptab-body">${body}</div>`;
 }
 
@@ -579,7 +576,10 @@ document.addEventListener('click',async e=>{
       case 'retry':loadErr='';S=null;redraw();return;
       // notebooks
       case 'nb-pick':if(ui.dirty)toast('Unsaved design changes were dropped.');pick(id);ui.nbShown=true;redraw();return;
-      case 'ptab':ui.ptab=b.dataset.v;redraw();return;
+      case 'ptab':{
+        const v=b.dataset.v;ui.ptab=v==='preview'?'settings':v;redraw();
+        if(v==='preview')setTimeout(()=>{const el=$('st-preview');if(el)el.scrollIntoView({behavior:'smooth'})},50);
+        return}
       case 'nb-settings':ui.ptab='settings';redraw();setTimeout(()=>{const el=$('st-notebooks');if(el)el.scrollIntoView({behavior:'smooth'})},50);return;
       case 'nb-pick-st':if(ui.dirty)toast('Unsaved design changes were dropped.');pick(id);redraw();setTimeout(()=>{const el=$('st-notebooks');if(el)el.scrollIntoView()},20);return;
       case 'st-look':{

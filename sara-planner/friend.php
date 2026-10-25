@@ -42,7 +42,7 @@ app_top($p['name'], ['active' => 'explore', 'covers' => true, 'eyebrow' => 'Frie
         </div>
         <div class="eyebrow">Today</div>
         <h2 class="nb-date"><?= h(date('l, j F', strtotime($today))) ?></h2>
-        <?php if ($self): ?><p class="hint2">This is exactly what your friends see. Only friends can see it, and you can switch it off in Profile → What others see.</p><?php endif; ?>
+        <?php if ($self): ?><p class="hint2">This is exactly what your friends see. Only friends can see it, and you can switch it off in Profile → Settings → What others see.</p><?php endif; ?>
         <?php if (!$shared): ?>
           <p class="nb-empty"><?= ico('lock') ?><?= h($p['name']) ?> keeps their day private.</p>
         <?php elseif (!$plan): ?>
