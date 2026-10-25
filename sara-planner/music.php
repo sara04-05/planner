@@ -16,7 +16,7 @@ require __DIR__ . '/spotify.php';
 
 $uid = require_login();
 $mini = isset($_GET['mini']);
-$isAdmin = is_admin($uid);   // connecting a Spotify account is only for the site admin (Spotify's test mode allows just a few people)
+$isAdmin = is_admin($uid);   // only the site admin is offered "Connect Spotify"; accounts that are already connected keep working as before
 
 function back(string $result): never
 {
@@ -79,7 +79,7 @@ const SAVED_NAMES = ['playlist' => 'My playlist', 'album' => 'Album', 'track' =>
 if (isset($_GET['token'])) {
     header('Content-Type: application/json');
     header('Cache-Control: no-store');
-    $acc = spotify_configured() && $isAdmin ? spotify_account($uid) : null;
+    $acc = spotify_configured() ? spotify_account($uid) : null;
     if (!$acc) { http_response_code(404); echo json_encode(['error' => 'Spotify is not connected.']); exit; }
     try {
         $token = spotify_token($uid, $acc);
@@ -145,7 +145,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     back('error');
 }
 
-// ---- connecting is for the admin only: everyone else just gets the page ----
+// ---- starting a connection is for the admin only: everyone else just gets the page ----
 if (!$isAdmin && (isset($_GET['connect']) || isset($_GET['code']) || isset($_GET['state']))) {
     header('Location: music.php');
     exit;
@@ -198,7 +198,7 @@ if (isset($_GET['code']) || (isset($_GET['error']) && isset($_GET['state']))) {
 
 // ---- the page ----
 $configured = spotify_configured();
-$acc = $configured && $isAdmin ? spotify_account($uid) : null;
+$acc = $configured ? spotify_account($uid) : null;
 $link = user_link($uid);
 $parsed = spotify_parse_link($link) ?? ['playlist', MUSIC_PRESETS[0][1]];
 $notes = [
