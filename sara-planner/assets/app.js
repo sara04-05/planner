@@ -121,8 +121,19 @@ function plan(y){
   return {y,months,target:goal/12,savedDone,need:cur.target,cur,left,goal};
 }
 function allowanceFor(y,m){return Math.max(0,incomeFor(y,m)-targets(y)[m].t)}
-const dailyAllow=d=>allowanceFor(d.getFullYear(),d.getMonth())/dim(d.getFullYear(),d.getMonth());
-function allowRange(a,b){let t=0;for(let d=new Date(a);d<=b;d=addDays(d,1))t+=dailyAllow(d);return t}
+const inThisMonth=d=>d.getFullYear()===TODAY.getFullYear()&&d.getMonth()===TODAY.getMonth();
+/** Left of this month's allowance (negative when you are over). */
+const monthLeft=()=>{const y=TODAY.getFullYear(),m=TODAY.getMonth();return allowanceFor(y,m)-sum(expIn(new Date(y,m,1),new Date(y,m,dim(y,m))))};
+/** Past days and other months: the month's allowance split evenly. Today and the rest of this month: whatever
+    is left of the allowance after the days already spent, split over the days still to come. */
+function dailyAllow(d){
+  const y=d.getFullYear(),m=d.getMonth(),n=dim(y,m);
+  if(!inThisMonth(d)||d<TODAY)return allowanceFor(y,m)/n;
+  return Math.max(0,allowanceFor(y,m)-sum(expIn(new Date(y,m,1),addDays(TODAY,-1))))/(n-TODAY.getDate()+1);
+}
+/** Days of this month before today count as what you really spent on them (that money is already gone from
+    the month), so a range that reaches today shows what is really left, not an allowance for days you can't use. */
+function allowRange(a,b){let t=0;const live=b>=TODAY;for(let d=new Date(a);d<=b;d=addDays(d,1))t+=live&&inThisMonth(d)&&d<TODAY?sum(expIn(d,d)):dailyAllow(d);return t}
 
 /* ---------- shared pieces ---------- */
 const navBtns=()=>`<button class="btn" data-act="shift" data-n="-1" aria-label="Previous">‹</button><button class="btn" data-act="today">Today</button><button class="btn" data-act="shift" data-n="1" aria-label="Next">›</button>`;
@@ -628,6 +639,7 @@ V.week=()=>{
     <div style="margin-top:18px">${catBars(list)}</div>
     <div class="total-line"><span>Week total</span><span class="amt">${eur(spent)}</span></div>
     <p class="s" style="font-size:12px;color:var(--muted);margin-top:4px">Weekly allowance ${eur(allow)}</p>
+    ${ws<=TODAY&&TODAY<=we?`<p class="s" style="font-size:12px;color:var(--muted);margin-top:2px">${monthLeft()<0?'Over this month by':'Left this month'} ${eur(Math.abs(monthLeft()))}</p>`:''}
   </section>
   <section><div class="sec-h"><h2>Add an expense</h2></div>${expForm(def)}${expRows(list,{limit:8})}</section></div>`;
 };
